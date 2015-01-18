@@ -1,0 +1,51 @@
+mxnode:
+ mxjar_repo: BUILD_PATH/runtimes/
+
+m2ee:
+ app_name: My Project Name
+ app_base: BUILD_PATH/
+ admin_port: ADMIN_PORT
+ admin_listen_addresses: "127.0.0.1"
+ custom_environment:
+  HOME: BUILD_PATH
+ javabin: BUILD_PATH/.local/bin/java
+ admin_pass: eikeecahngophopeetohweesonohrahphuidaofohhaeghapoo
+
+ runtime_port: RUNTIME_PORT
+ runtime_listen_addresses: "*"
+
+ pidfile: BUILD_PATH/process.pid
+
+ runtime_blocking_connector: true
+ preserve_environment: true
+
+ javaopts: [
+    "-Dfile.encoding=UTF-8",
+    "-XX:MaxPermSize=128M",
+    "-Djava.io.tmpdir=BUILD_PATH/data/tmp",
+ ]
+
+ allow_destroy_db: true
+
+ database_dump_path: 'BUILD_PATH/database'
+
+ model_upload_path: 'BUILD_PATH'
+ logfile: BUILD_PATH/log/out.log
+
+logging:
+ -
+   type: file
+   name: FileSubscriber
+   autosubscribe: INFO
+   filename: BUILD_PATH/log/out.log
+   max_size: 2097152
+   max_rotation: 10
+
+mxruntime:
+ DTAPMode: P
+ ApplicationRootUrl: https://APP_URI/
+
+ MicroflowConstants:
+  Module.Constant: text
+
+ ScheduledEventExecution: ALL

@@ -1,0 +1,186 @@
+#!/usr/bin/env python
+import os
+import sys
+import json
+import errno
+import shutil
+import logging
+import subprocess
+
+logging.basicConfig(level=logging.DEBUG)
+
+BUILD_DIR = sys.argv[1]
+CACHE_DIR = os.path.join(sys.argv[2], 'bust')
+DOT_LOCAL_LOCATION = os.path.join(BUILD_DIR, '.local')
+BUILDPACK_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+
+sys.path.insert(0, os.path.join(BUILDPACK_DIR, 'lib'))
+import buildpackutil
+import requests
+
+
+def download(url, destination):
+    logging.debug('downloading {url}'.format(url=url))
+    with open(destination, 'w') as file_handle:
+        response = requests.get(url, stream=True)
+        if not response.ok:
+            response.raise_for_status()
+        for block in response.iter_content(1024):
+            if not block:
+                break
+            file_handle.write(block)
+
+
+def download_and_unpack(url, destination):
+    file_name = url.split('/')[-1]
+    cached_location = os.path.join(CACHE_DIR, file_name)
+
+    logging.info('assuring {file_name}'.format(file_name=file_name))
+
+    if not os.path.isfile(cached_location):
+        logging.info('downloading {file_name}'.format(file_name=file_name))
+        download(url, cached_location)
+    else:
+        logging.debug('already present in cache {file_name}'.format(
+            file_name=file_name
+        ))
+
+    if file_name.endswith('.deb'):
+        subprocess.check_call(
+            ['dpkg-deb', '-x', cached_location, destination]
+        )
+    elif file_name.endswith('.tar.gz'):
+        subprocess.check_call(
+            ['tar', 'xf', cached_location, '-C', destination]
+        )
+    else:
+        raise Exception('do not know how to unpack {file_name}'.format(
+            file_name=file_name
+        ))
+
+    logging.debug('source {file_name} retrieved & unpacked'.format(
+        file_name=file_name
+    ))
+
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as e:
+        if e.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
+
+
+def parse_runtime_version(file_name):
+    with open(file_name) as file_handle:
+        data = json.loads(file_handle.read())
+        return data['RuntimeVersion']
+
+
+def check_environment_variable(variable, explanation):
+    value = os.environ.get(variable)
+    if value is None:
+        logging.warning(explanation)
+        return False
+    else:
+        return True
+
+
+def check_database_environment_variable():
+    try:
+        buildpackutil.get_database_config()
+        return True
+    except:
+        logging.warning(
+            'You should provide a DATABASE_URL by adding a database service '
+            'to this application, it can be either MySQL or Postgres'
+        )
+        return False
+
+
+def check_admin_password_environment_variable():
+    return check_environment_variable(
+        'ADMIN_PASSWORD',
+        'You should provide an ADMIN_PASSWORD environment variable'
+    )
+
+
+def set_up_java():
+    logging.debug('begin download and install java')
+    download_and_unpack(
+        'https://packages.mendix.com/debian/pool/non-free/o/oracle-j2re1.7'
+        '/oracle-j2re1.7_1.7.0+update55_amd64.deb',
+        DOT_LOCAL_LOCATION,
+    )
+    mkdir_p(os.path.join(DOT_LOCAL_LOCATION, 'bin'))
+    #  use ../ because path is different at staging, so final abspath unknown
+    os.symlink(
+        '../usr/lib/jvm/j2re1.7-oracle/bin/java',
+        os.path.join(DOT_LOCAL_LOCATION, 'bin', 'java')
+    )
+    logging.debug('end download and install java')
+
+
+def preflight_check():
+    logging.debug('pre-flight-check')
+    if not all([
+        check_database_environment_variable(),
+        check_admin_password_environment_variable(),
+    ]):
+        raise Exception('missing environment variables')
+
+
+def set_up_directory_structure():
+    logging.debug('making directory structure')
+    mkdir_p(CACHE_DIR)
+    mkdir_p(DOT_LOCAL_LOCATION)
+    for name in ['runtimes', 'log', 'database', 'data']:
+        mkdir_p(os.path.join(BUILD_DIR, name))
+    for name in ['files', 'tmp']:
+        mkdir_p(os.path.join(BUILD_DIR, 'data', name))
+
+
+def download_mendix_version():
+    logging.debug('downloading mendix version')
+    runtime_version = parse_runtime_version(
+        os.path.join(BUILD_DIR, 'model', 'metadata.json')
+    )
+    download_and_unpack(
+        'http://cdn.mendix.com/runtime/mendix-{runtime_version}.tar.gz'.format(
+            runtime_version=runtime_version
+        ),
+        os.path.join(BUILD_DIR, 'runtimes'),
+    )
+
+
+def copy_buildpack_resources():
+    shutil.copy(
+        os.path.join(BUILDPACK_DIR, 'm2ee.yaml'),
+        os.path.join(DOT_LOCAL_LOCATION, 'm2ee.yaml'),
+    )
+    shutil.copy(
+        os.path.join(BUILDPACK_DIR, 'start.py'),
+        os.path.join(BUILD_DIR, 'start.py'),
+    )
+    shutil.copytree(
+        os.path.join(BUILDPACK_DIR, 'lib'),
+        os.path.join(BUILD_DIR, 'lib'),
+    )
+    if os.environ.get('NEW_RELIC_LICENSE_KEY'):
+        shutil.copytree(
+            os.path.join(BUILDPACK_DIR, 'newrelic'),
+            os.path.join(BUILD_DIR, 'newrelic'),
+        )
+
+
+if __name__ == '__main__':
+    for key in os.environ.keys():
+        logging.debug('environment variable ' + key)
+
+    preflight_check()
+    set_up_directory_structure()
+    set_up_java()
+    download_mendix_version()
+    copy_buildpack_resources()
