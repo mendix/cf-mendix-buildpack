@@ -17,13 +17,13 @@ We simply push an mda (Mendix Deployment Archive) to Cloud Foundry.
 
     cf push <YOUR_APP> -b https://github.com/mendix/cf-mendix-buildpack -p <YOUR_MDA>.mda
 
-The first push generates a new app, but deployment will fail because the buildpack requires an `ADMIN_PASSWORD` variable and a connected PostgreSQL service. So go ahead and set this up after the first failed push.
+The first push generates a new app, but deployment will fail because the buildpack requires an `ADMIN_PASSWORD` variable and a connected PostgreSQL or MySQL service. So go ahead and set this up after the first failed push.
 
 Keep in mind that the admin password should comply with the policy you have set in the Modeler.
 
     cf set-env <YOUR_APP> ADMIN_PASSWORD "<YOURSECRETPASSWORD>"
 
-You also need to connect a PostgreSQL instance. Find out which services are available in your Cloud Foundry setup like this.
+You also need to connect a PostgreSQL or MySQL instance which allows more than 5 connections to the database. Find out which services are available in your Cloud Foundry setup like this.
 
     cf marketplace
 
@@ -111,6 +111,5 @@ Both CF & Heroku
 ### Limitations
 
  * Uploaded files will not persist!!!
- * You can only run unlicensed applications.
  * Scaling to more than one instance does not work.
  * Certificate management is not supported.
