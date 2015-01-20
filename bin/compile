@@ -168,7 +168,7 @@ def copy_buildpack_resources():
         os.path.join(BUILDPACK_DIR, 'lib'),
         os.path.join(BUILD_DIR, 'lib'),
     )
-    if os.environ.get('NEW_RELIC_LICENSE_KEY'):
+    if buildpackutil.get_new_relic_license_key():
         shutil.copytree(
             os.path.join(BUILDPACK_DIR, 'newrelic'),
             os.path.join(BUILD_DIR, 'newrelic'),

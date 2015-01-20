@@ -106,7 +106,7 @@ def set_application_name(m2ee, name):
 
 
 def activate_new_relic(m2ee, app_name):
-    if os.environ.get('NEW_RELIC_LICENSE_KEY') is None:
+    if buildpackutil.get_new_relic_license_key() is None:
         logger.debug(
             'Skipping New Relic setup, no license key found in environment'
         )
@@ -115,6 +115,9 @@ def activate_new_relic(m2ee, app_name):
     m2ee_section = m2ee.config._conf['m2ee']
     if 'custom_environment' not in m2ee_section:
         m2ee_section['custom_environment'] = {}
+    m2ee_section['custom_environment']['NEW_RELIC_LICENSE_KEY'] = (
+        buildpackutil.get_new_relic_license_key()
+    )
     m2ee_section['custom_environment']['NEW_RELIC_APP_NAME'] = app_name
     m2ee_section['custom_environment']['NEW_RELIC_LOG'] = (
         os.path.abspath('newrelic/agent.log')
