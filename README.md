@@ -110,6 +110,5 @@ Both CF & Heroku
 
 ### Limitations
 
- * Uploaded files will not persist!!!
- * Scaling to more than one instance does not work.
  * Certificate management is not supported.
+ * When scaling to more than one instance, scheduled events will be executed multiple times so make sure to deal with that in your application logic
