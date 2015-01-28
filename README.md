@@ -103,12 +103,3 @@ The default values for constants will be used as defined in your project. Howeve
 The default java heap size is set to the total available memory divided by two. If your application's memory limit is 1024M, the heap size is set to 512M. You might want to tweak this to your needs by using another environment variable in which case it is used directly.
 
     heroku config:set "HEAP_SIZE=512M"
-
-
-Both CF & Heroku
-----
-
-### Limitations
-
- * Certificate management is not supported.
- * When scaling to more than one instance, scheduled events will be executed multiple times so make sure to deal with that in your application logic
