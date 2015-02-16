@@ -110,8 +110,7 @@ def check_admin_password_environment_variable():
 def set_up_java():
     logging.debug('begin download and install java')
     download_and_unpack(
-        'https://packages.mendix.com/debian/pool/non-free/o/oracle-j2re1.7'
-        '/oracle-j2re1.7_1.7.0+update55_amd64.deb',
+        'http://cdn.mendix.com/mx-buildpack/oracle-j2re1.7-u55-amd64.deb',
         DOT_LOCAL_LOCATION,
     )
     mkdir_p(os.path.join(DOT_LOCAL_LOCATION, 'bin'))
