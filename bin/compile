@@ -7,7 +7,7 @@ import shutil
 import logging
 import subprocess
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
 BUILD_DIR = sys.argv[1]
 CACHE_DIR = os.path.join(sys.argv[2], 'bust')
