@@ -22,6 +22,8 @@ sys.path.insert(0, os.path.join(BUILDPACK_DIR, 'lib'))
 import buildpackutil
 import requests
 
+logging.getLogger("requests").setLevel(logging.WARNING)
+
 
 def download(url, destination):
     logging.debug('downloading {url}'.format(url=url))
