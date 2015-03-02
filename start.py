@@ -86,7 +86,7 @@ def set_heap_size(javaopts):
     heap_size = os.environ.get('HEAP_SIZE', max_memory)
     javaopts.append('-Xmx%s' % heap_size)
     javaopts.append('-Xms%s' % heap_size)
-    logger.info('Java heap size set to %s' % max_memory)
+    logger.debug('Java heap size set to %s' % max_memory)
 
 
 def set_runtime_config(metadata, mxruntime_config, vcap_data):
