@@ -214,9 +214,8 @@ def create_admin_user(m2ee):
 
 
 def display_running_version(m2ee):
-    feedback = m2ee.client.about().get_feedback()
-    logger.info("Using %s version %s" % (feedback['name'], feedback['version']))
     if m2ee.config.get_runtime_version() >= 4.4:
+        feedback = m2ee.client.about().get_feedback()
         if 'model_version' in feedback:
             logger.info('Model version: %s' % feedback['model_version'])
 
