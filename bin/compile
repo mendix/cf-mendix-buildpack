@@ -31,7 +31,7 @@ def download(url, destination):
         response = requests.get(url, stream=True)
         if not response.ok:
             response.raise_for_status()
-        for block in response.iter_content(1024):
+        for block in response.iter_content(4096):
             if not block:
                 break
             file_handle.write(block)
