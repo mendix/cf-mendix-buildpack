@@ -9,8 +9,9 @@ import sys
 sys.path.insert(0, 'lib')
 import buildpackutil
 from m2ee import M2EE, logger
+import logging
 
-logger.setLevel(10)
+logger.setLevel(logging.INFO)
 
 logger.info('Started Mendix Cloud Foundry Buildpack')
 
@@ -85,7 +86,7 @@ def set_heap_size(javaopts):
     heap_size = os.environ.get('HEAP_SIZE', max_memory)
     javaopts.append('-Xmx%s' % heap_size)
     javaopts.append('-Xms%s' % heap_size)
-    logger.info('Java heap size set to %s' % max_memory)
+    logger.debug('Java heap size set to %s' % max_memory)
 
 
 def set_runtime_config(metadata, mxruntime_config, vcap_data):
@@ -145,7 +146,12 @@ def set_up_m2ee_client(vcap_data):
 
 def set_up_logging_file():
     os.mkfifo('log/out.log')
-    subprocess.Popen(['cat', 'log/out.log'])
+    subprocess.Popen([
+        'sed',
+        '--unbuffered',
+        's|^[0-9\-]\+\s[0-9:\.]\+\s||',
+        'log/out.log',
+    ])
 
 
 def start_app(m2ee):
@@ -194,7 +200,8 @@ def start_app(m2ee):
 
 
 def create_admin_user(m2ee):
-    logger.info('Creating admin user')
+    logger.info('Ensuring admin user credentials')
+    logger.debug('Creating admin user')
     m2eeresponse = m2ee.client.create_admin_user({
         'password': os.environ.get('ADMIN_PASSWORD'),
     })
@@ -202,7 +209,7 @@ def create_admin_user(m2ee):
         m2eeresponse.display_error()
         sys.exit(1)
 
-    logger.info('Setting admin user password')
+    logger.debug('Setting admin user password')
     m2eeresponse = m2ee.client.create_admin_user({
         'username': m2ee.config._model_metadata['AdminUser'],
         'password': os.environ.get('ADMIN_PASSWORD'),
@@ -213,9 +220,8 @@ def create_admin_user(m2ee):
 
 
 def display_running_version(m2ee):
-    feedback = m2ee.client.about().get_feedback()
-    logger.info("Using %s version %s" % (feedback['name'], feedback['version']))
     if m2ee.config.get_runtime_version() >= 4.4:
+        feedback = m2ee.client.about().get_feedback()
         if 'model_version' in feedback:
             logger.info('Model version: %s' % feedback['model_version'])
 

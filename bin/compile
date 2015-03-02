@@ -22,6 +22,8 @@ sys.path.insert(0, os.path.join(BUILDPACK_DIR, 'lib'))
 import buildpackutil
 import requests
 
+logging.getLogger("requests").setLevel(logging.WARNING)
+
 
 def download(url, destination):
     logging.debug('downloading {url}'.format(url=url))
@@ -29,7 +31,7 @@ def download(url, destination):
         response = requests.get(url, stream=True)
         if not response.ok:
             response.raise_for_status()
-        for block in response.iter_content(1024):
+        for block in response.iter_content(4096):
             if not block:
                 break
             file_handle.write(block)
@@ -39,7 +41,7 @@ def download_and_unpack(url, destination):
     file_name = url.split('/')[-1]
     cached_location = os.path.join(CACHE_DIR, file_name)
 
-    logging.info('assuring {file_name}'.format(file_name=file_name))
+    logging.info('preparing {file_name}'.format(file_name=file_name))
 
     if not os.path.isfile(cached_location):
         logging.info('downloading {file_name}'.format(file_name=file_name))
@@ -179,11 +181,9 @@ def copy_buildpack_resources():
 
 
 if __name__ == '__main__':
-    for key in os.environ.keys():
-        logging.debug('environment variable ' + key)
-
     preflight_check()
     set_up_directory_structure()
     set_up_java()
     download_mendix_version()
     copy_buildpack_resources()
+    logging.info('buildpack compile completed')
