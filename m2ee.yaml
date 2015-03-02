@@ -45,7 +45,6 @@ mxruntime:
  DTAPMode: P
  ApplicationRootUrl: https://APP_URI/
 
- MicroflowConstants:
-  Module.Constant: text
+ MicroflowConstants: {}
 
  ScheduledEventExecution: ALL
