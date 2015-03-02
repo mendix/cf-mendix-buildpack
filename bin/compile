@@ -39,7 +39,7 @@ def download_and_unpack(url, destination):
     file_name = url.split('/')[-1]
     cached_location = os.path.join(CACHE_DIR, file_name)
 
-    logging.info('assuring {file_name}'.format(file_name=file_name))
+    logging.info('preparing {file_name}'.format(file_name=file_name))
 
     if not os.path.isfile(cached_location):
         logging.info('downloading {file_name}'.format(file_name=file_name))
@@ -179,9 +179,6 @@ def copy_buildpack_resources():
 
 
 if __name__ == '__main__':
-    for key in os.environ.keys():
-        logging.debug('environment variable ' + key)
-
     preflight_check()
     set_up_directory_structure()
     set_up_java()
