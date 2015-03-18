@@ -38,10 +38,16 @@ def download(url, destination):
             file_handle.write(block)
 
 
-def download_and_unpack(url, destination):
+def download_and_unpack(url, destination, use_cache=True):
     file_name = url.split('/')[-1]
-    mkdir_p(CACHE_DIR)
-    cached_location = os.path.join(CACHE_DIR, file_name)
+
+    if use_cache:
+        cache = CACHE_DIR
+    else:
+        cache = '/tmp/downloads'
+
+    mkdir_p(cache)
+    cached_location = os.path.join(cache, file_name)
 
     logging.info('preparing {file_name}'.format(file_name=file_name))
 
@@ -163,11 +169,18 @@ def download_mendix_version():
     logging.debug('downloading mendix version')
     url = os.environ.get('FORCED_MXRUNTIME_URL')
     if url is None:
+        use_cache = True
         version = parse_runtime_version(
             os.path.join(BUILD_DIR, 'model', 'metadata.json')
         )
         url = 'http://cdn.mendix.com/runtime/mendix-%s.tar.gz' % version
-    download_and_unpack(url, os.path.join(BUILD_DIR, 'runtimes'))
+    else:
+        use_cache = False
+    download_and_unpack(
+        url,
+        os.path.join(BUILD_DIR, 'runtimes'),
+        use_cache=use_cache,
+    )
 
 
 def copy_buildpack_resources():
@@ -233,11 +246,14 @@ def set_up_mx_build():
 
     url = os.environ.get('FORCED_MXBUILD_URL')
     if url is None:
+        use_cache = True
         url = (
             'http://cdn.mendix.com/runtime/mxbuild-%s.tar.gz' % mendix_version
         )
+    else:
+        use_cache = False
 
-    download_and_unpack(url, '/tmp/mxbuild')
+    download_and_unpack(url, '/tmp/mxbuild', use_cache=use_cache)
 
 
 def run_mx_build():
