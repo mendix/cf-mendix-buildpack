@@ -219,6 +219,31 @@ def create_admin_user(m2ee):
         sys.exit(1)
 
 
+def configure_debugger(m2ee):
+    debugger_password = os.environ.get('DEBUGGER_PASSWORD')
+
+    if debugger_password is None:
+        logger.debug('Not configuring debugger, as environment variable '
+                     'was not found')
+        return
+
+    response = m2ee.client.enable_debugger({
+        'password': debugger_password
+    })
+    response.display_error()
+    if not response.has_error():
+        logger.info(
+            'The remote debugger is now enabled, the password to '
+            'use is %s' % debugger_password
+        )
+        logger.info(
+            'You can use the remote debugger option in the Mendix '
+            'Business Modeler to connect to the /debugger/ sub '
+            'url on your application (e.g. '
+            'https://app.example.com/debugger/). '
+        )
+
+
 def display_running_version(m2ee):
     if m2ee.config.get_runtime_version() >= 4.4:
         feedback = m2ee.client.about().get_feedback()
@@ -248,4 +273,5 @@ if __name__ == '__main__':
     start_app(m2ee)
     create_admin_user(m2ee)
     display_running_version(m2ee)
+    configure_debugger(m2ee)
     loop_until_process_dies(m2ee)
