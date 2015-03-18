@@ -161,15 +161,13 @@ def set_up_directory_structure():
 
 def download_mendix_version():
     logging.debug('downloading mendix version')
-    runtime_version = parse_runtime_version(
-        os.path.join(BUILD_DIR, 'model', 'metadata.json')
-    )
-    download_and_unpack(
-        'http://cdn.mendix.com/runtime/mendix-{runtime_version}.tar.gz'.format(
-            runtime_version=runtime_version
-        ),
-        os.path.join(BUILD_DIR, 'runtimes'),
-    )
+    url = os.environ.get('FORCED_MXRUNTIME_URL')
+    if url is None:
+        version = parse_runtime_version(
+            os.path.join(BUILD_DIR, 'model', 'metadata.json')
+        )
+        url = 'http://cdn.mendix.com/runtime/mendix-%s.tar.gz' % version
+    download_and_unpack(url, os.path.join(BUILD_DIR, 'runtimes'))
 
 
 def copy_buildpack_resources():
@@ -232,12 +230,14 @@ def set_up_mx_build():
         raise Exception('Could not parse mendix version from mpr file')
 
     mkdir_p('/tmp/mxbuild')
-    download_and_unpack(
-        'http://cdn.mendix.com/runtime/mxbuild-{mendix_version}.tar.gz'.format(
-            mendix_version=mendix_version
-        ),
-        '/tmp/mxbuild',
-    )
+
+    url = os.environ.get('FORCED_MXBUILD_URL')
+    if url is None:
+        url = (
+            'http://cdn.mendix.com/runtime/mxbuild-%s.tar.gz' % mendix_version
+        )
+
+    download_and_unpack(url, '/tmp/mxbuild')
 
 
 def run_mx_build():
@@ -251,7 +251,7 @@ def run_mx_build():
         ),
         '/tmp/mono/etc/mono/config',
     ])
-    subprocess.check_call([
+    args = [
         '/tmp/mono/bin/mono',
         '--config', '/tmp/mono/etc/mono/config',
         '/tmp/mxbuild/modeler/mxbuild.exe',
@@ -260,8 +260,15 @@ def run_mx_build():
         '/j2sdk1.7-oracle'.format(build_dir=BUILD_DIR),
         '--java-exe-path=/tmp/javasdk/usr/lib/jvm'
         '/j2sdk1.7-oracle/bin/java'.format(build_dir=BUILD_DIR),
-        get_mpr_file(),
-    ], env=env)
+    ]
+    if os.environ.get('FORCED_MXBUILD_URL'):
+        args.append('--loose-version-check')
+        logging.warning(
+            'Using forced mxbuild version, the model will be converted'
+        )
+    args.append(get_mpr_file())
+    subprocess.check_call(args, env=env)
+
     for file_name in os.listdir(BUILD_DIR):
         path = os.path.join(BUILD_DIR, file_name)
         if file_name != '.local':
