@@ -5,6 +5,7 @@ import json
 import errno
 import shutil
 import logging
+import zipfile
 import subprocess
 
 logging.basicConfig(
@@ -39,6 +40,7 @@ def download(url, destination):
 
 def download_and_unpack(url, destination):
     file_name = url.split('/')[-1]
+    mkdir_p(CACHE_DIR)
     cached_location = os.path.join(CACHE_DIR, file_name)
 
     logging.info('preparing {file_name}'.format(file_name=file_name))
@@ -116,7 +118,7 @@ def check_admin_password_environment_variable():
 def set_up_java():
     logging.debug('begin download and install java')
     download_and_unpack(
-        'http://cdn.mendix.com/mx-buildpack/oracle-j2re1.7-u55-amd64.deb',
+        'http://cdn.mendix.com/mx-buildpack/oracle-j2re1.7-u75-amd64.deb',
         DOT_LOCAL_LOCATION,
     )
     mkdir_p(os.path.join(DOT_LOCAL_LOCATION, 'bin'))
@@ -126,6 +128,17 @@ def set_up_java():
         os.path.join(DOT_LOCAL_LOCATION, 'bin', 'java')
     )
     logging.debug('end download and install java')
+
+
+def set_up_java_sdk():
+    logging.debug('begin download and install java sdk')
+    destination = '/tmp/javasdk'
+    mkdir_p(destination)
+    download_and_unpack(
+        'http://cdn.mendix.com/mx-buildpack/oracle-j2sdk1.7-u75-amd64.deb',
+        destination,
+    )
+    logging.debug('end download and install java sdk')
 
 
 def preflight_check():
@@ -139,7 +152,6 @@ def preflight_check():
 
 def set_up_directory_structure():
     logging.debug('making directory structure')
-    mkdir_p(CACHE_DIR)
     mkdir_p(DOT_LOCAL_LOCATION)
     for name in ['runtimes', 'log', 'database', 'data']:
         mkdir_p(os.path.join(BUILD_DIR, name))
@@ -180,8 +192,98 @@ def copy_buildpack_resources():
         )
 
 
+def get_mpr_file():
+    mprs = filter(lambda x: x.endswith('.mpr'), os.listdir(BUILD_DIR))
+    if len(mprs) == 1:
+        return os.path.join(BUILD_DIR, mprs[0])
+    elif len(mprs) > 1:
+        raise Exception('More than one .mpr file found, can not continue')
+    else:
+        return None
+
+
+def is_source_push():
+    if get_mpr_file() is not None:
+        return True
+    else:
+        return False
+
+
+def set_up_mono():
+    mkdir_p('/tmp/mono')
+    download_and_unpack(
+        'http://cdn.mendix.com/mx-buildpack/mono-3.4.0_full.tar.gz',
+        '/tmp/',
+    )
+
+
+def set_up_mx_build():
+    import sqlite3
+    mendix_version = None
+    try:
+        cursor = sqlite3.connect(get_mpr_file()).cursor()
+        cursor.execute('SELECT _ProductVersion FROM _MetaData LIMIT 1')
+        record = cursor.fetchone()
+        mendix_version = record[0]
+    except:
+        pass
+
+    if mendix_version is None:
+        raise Exception('Could not parse mendix version from mpr file')
+
+    mkdir_p('/tmp/mxbuild')
+    download_and_unpack(
+        'http://cdn.mendix.com/runtime/mxbuild-{mendix_version}.tar.gz'.format(
+            mendix_version=mendix_version
+        ),
+        '/tmp/mxbuild',
+    )
+
+
+def run_mx_build():
+    env = dict(os.environ)
+    env['LD_LIBRARY_PATH'] = os.path.join(BUILDPACK_DIR, 'lib', 'mono-lib')
+    subprocess.check_call([
+        'sed',
+        '-i',
+        's|/app/vendor/mono/lib/libgdiplus.so|%s|g' % os.path.join(
+            BUILDPACK_DIR, 'lib', 'mono-lib', 'libgdiplus.so'
+        ),
+        '/tmp/mono/etc/mono/config',
+    ])
+    subprocess.check_call([
+        '/tmp/mono/bin/mono',
+        '--config', '/tmp/mono/etc/mono/config',
+        '/tmp/mxbuild/modeler/mxbuild.exe',
+        '--output=/tmp/model.mda',
+        '--java-home=/tmp/javasdk/usr/lib/jvm'
+        '/j2sdk1.7-oracle'.format(build_dir=BUILD_DIR),
+        '--java-exe-path=/tmp/javasdk/usr/lib/jvm'
+        '/j2sdk1.7-oracle/bin/java'.format(build_dir=BUILD_DIR),
+        get_mpr_file(),
+    ], env=env)
+    for file_name in os.listdir(BUILD_DIR):
+        path = os.path.join(BUILD_DIR, file_name)
+        if file_name != '.local':
+            if os.path.isdir(path):
+                shutil.rmtree(path)
+            else:
+                os.unlink(path)
+    zf = zipfile.ZipFile('/tmp/model.mda')
+    try:
+        zf.extractall(BUILD_DIR)
+    finally:
+        zf.close()
+
+
 if __name__ == '__main__':
     preflight_check()
+    if is_source_push():
+        logging.info('source push detected')
+        set_up_java_sdk()
+        set_up_mono()
+        set_up_mx_build()
+        run_mx_build()
     set_up_directory_structure()
     set_up_java()
     download_mendix_version()
