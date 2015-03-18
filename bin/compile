@@ -219,10 +219,18 @@ def set_up_mono():
 
 def set_up_mx_build():
     import sqlite3
-    cursor = sqlite3.connect(get_mpr_file()).cursor()
-    cursor.execute('SELECT _ProductVersion FROM _MetaData LIMIT 1')
-    record = cursor.fetchone()
-    mendix_version = record[0]
+    mendix_version = None
+    try:
+        cursor = sqlite3.connect(get_mpr_file()).cursor()
+        cursor.execute('SELECT _ProductVersion FROM _MetaData LIMIT 1')
+        record = cursor.fetchone()
+        mendix_version = record[0]
+    except:
+        pass
+
+    if mendix_version is None:
+        raise Exception('Could not parse mendix version from mpr file')
+
     mkdir_p('/tmp/mxbuild')
     download_and_unpack(
         'http://cdn.mendix.com/runtime/mxbuild-{mendix_version}.tar.gz'.format(
