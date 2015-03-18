@@ -194,8 +194,10 @@ def copy_buildpack_resources():
 
 def get_mpr_file():
     mprs = filter(lambda x: x.endswith('.mpr'), os.listdir(BUILD_DIR))
-    if len(mprs) > 0:
+    if len(mprs) == 1:
         return os.path.join(BUILD_DIR, mprs[0])
+    elif len(mprs) > 1:
+        raise Exception('More than one .mpr file found, can not continue')
     else:
         return None
 
