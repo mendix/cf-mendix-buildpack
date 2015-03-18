@@ -40,6 +40,7 @@ def download(url, destination):
 
 def download_and_unpack(url, destination):
     file_name = url.split('/')[-1]
+    mkdir_p(CACHE_DIR)
     cached_location = os.path.join(CACHE_DIR, file_name)
 
     logging.info('preparing {file_name}'.format(file_name=file_name))
@@ -151,7 +152,6 @@ def preflight_check():
 
 def set_up_directory_structure():
     logging.debug('making directory structure')
-    mkdir_p(CACHE_DIR)
     mkdir_p(DOT_LOCAL_LOCATION)
     for name in ['runtimes', 'log', 'database', 'data']:
         mkdir_p(os.path.join(BUILD_DIR, name))
