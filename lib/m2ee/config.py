@@ -92,8 +92,6 @@ class M2EEConfig:
                          % runtimePath)
             self._conf['mxruntime']['RuntimePath'] = runtimePath
 
-        self._warn_constants()
-
     def _setup_classpath(self):
         logger.debug("Determining classpath to be used...")
 
