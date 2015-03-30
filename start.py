@@ -90,6 +90,8 @@ def set_heap_size(javaopts):
 
 
 def set_runtime_config(metadata, mxruntime_config, vcap_data):
+    if os.getenv('DEVELOPMENT_MODE', '').lower() == 'true':
+        mxruntime_config['DTAPMode'] = 'D'
     database_config = buildpackutil.get_database_config()
     application_config = {
         'ApplicationRootUrl': 'https://%s' % vcap_data['application_uris'][0],
