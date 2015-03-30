@@ -62,6 +62,34 @@ def activate_license():
             prefs_file.write(prefs_body)
 
 
+def get_scheduled_events(metadata):
+    scheduled_events = os.getenv('SCHEDULED_EVENTS', None)
+    if scheduled_events is None or scheduled_events == 'ALL':
+        logger.debug('Enabling all scheduled events')
+        return ('ALL', None)
+    elif scheduled_events == 'NONE':
+        logger.debug('Disabling all scheduled events')
+        return ('NONE', None)
+    else:
+        parsed_scheduled_events = scheduled_events.split(',')
+        metadata_scheduled_events = [
+            scheduled_event['Name']
+            for scheduled_event
+            in metadata['ScheduledEvents']
+        ]
+        result = []
+        for scheduled_event in parsed_scheduled_events:
+            if scheduled_event not in metadata_scheduled_events:
+                logger.warning(
+                    'Scheduled event defined but not detected in model: "%s"'
+                    % scheduled_event
+                )
+            else:
+                result.append(scheduled_events)
+        logger.debug('Enabling scheduled events %s' % ','.join(result))
+        return ('SPECIFIED', result)
+
+
 def get_constants(metadata):
     constants = {}
     for constant in metadata['Constants']:
@@ -93,10 +121,17 @@ def set_runtime_config(metadata, mxruntime_config, vcap_data):
     if os.getenv('DEVELOPMENT_MODE', '').lower() == 'true':
         mxruntime_config['DTAPMode'] = 'D'
     database_config = buildpackutil.get_database_config()
+    scheduled_event_execution, my_scheduled_events = (
+        get_scheduled_events(metadata)
+    )
     application_config = {
         'ApplicationRootUrl': 'https://%s' % vcap_data['application_uris'][0],
         'MicroflowConstants': get_constants(metadata),
+        'ScheduledEventExecution': scheduled_event_execution,
     }
+    if my_scheduled_events is not None:
+        application_config['MyScheduledEvents'] = my_scheduled_events
+
     runtime_config = dict(database_config.items() + application_config.items())
 
     for key, value in runtime_config.iteritems():
