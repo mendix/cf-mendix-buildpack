@@ -129,7 +129,7 @@ def get_filestore_config():
         return {}
 
     logger.info(
-        'S3 config detected, activating s3 file store and JSESSIONID'
+        'S3 config detected, activating s3 file store'
     )
     config = {
         'com.mendix.core.StorageService': 'com.mendix.storage.s3',
