@@ -117,6 +117,35 @@ def set_heap_size(javaopts):
     logger.debug('Java heap size set to %s' % max_memory)
 
 
+def get_filestore_config():
+    access_key = os.getenv('S3_ACCESS_KEY_ID')
+    secret = os.getenv('S3_SECRET_ACCESS_KEY')
+    bucket = os.getenv('S3_BUCKET_NAME')
+    perform_deletes = os.getenv('S3_PERFORM_DELETES', '').lower() == 'false'
+    key_suffix = os.getenv('S3_KEY_SUFFIX')
+    endpoint = os.getenv('S3_ENDPOINT')
+
+    if not (access_key and secret and bucket):
+        return {}
+
+    logger.info(
+        'S3 config detected, activating s3 file store and JSESSIONID'
+    )
+    config = {
+        'com.mendix.core.StorageService': 'com.mendix.storage.s3',
+        'com.mendix.storage.s3.AccessKeyId': access_key,
+        'com.mendix.storage.s3.SecretAccessKey': secret,
+        'com.mendix.storage.s3.BucketName': bucket,
+    }
+    if not perform_deletes:
+        config['com.mendix.storage.s3.PerformDeleteFromStorage'] = False
+    if key_suffix:
+        config['com.mendix.storage.s3.ResourceNameSuffix'] = key_suffix
+    if endpoint:
+        config['com.mendix.storage.s3.EndPoint'] = endpoint
+    return config
+
+
 def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
     scheduled_event_execution, my_scheduled_events = (
         get_scheduled_events(metadata)
@@ -138,6 +167,7 @@ def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
 
     mxruntime_config.update(app_config)
     mxruntime_config.update(buildpackutil.get_database_config())
+    mxruntime_config.update(get_filestore_config())
 
 
 def set_application_name(m2ee, name):
