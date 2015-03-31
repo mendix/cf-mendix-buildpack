@@ -117,7 +117,7 @@ def set_heap_size(javaopts):
     logger.debug('Java heap size set to %s' % max_memory)
 
 
-def set_runtime_config(metadata, mxruntime_config, vcap_data):
+def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
     scheduled_event_execution, my_scheduled_events = (
         get_scheduled_events(metadata)
     )
@@ -133,6 +133,8 @@ def set_runtime_config(metadata, mxruntime_config, vcap_data):
     if os.getenv('DEVELOPMENT_MODE', '').lower() == 'true':
         app_config['DTAPMode'] = 'D'
 
+    if m2ee.config.get_runtime_version() >= 5.15:
+        app_config['com.mendix.core.SessionIdCookieName'] = 'JSESSIONID'
 
     mxruntime_config.update(app_config)
     mxruntime_config.update(buildpackutil.get_database_config())
