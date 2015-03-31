@@ -160,6 +160,11 @@ def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
         app_config['MyScheduledEvents'] = my_scheduled_events
 
     if os.getenv('DEVELOPMENT_MODE', '').lower() == 'true':
+        logger.warning(
+            'Runtime is being started in Development Mode. Set '
+            'DEVELOPMENT_MODE to "false" (currently "true") to '
+            'set it to production.'
+        )
         app_config['DTAPMode'] = 'D'
 
     if m2ee.config.get_runtime_version() >= 5.15:
