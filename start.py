@@ -118,24 +118,24 @@ def set_heap_size(javaopts):
 
 
 def set_runtime_config(metadata, mxruntime_config, vcap_data):
-    if os.getenv('DEVELOPMENT_MODE', '').lower() == 'true':
-        mxruntime_config['DTAPMode'] = 'D'
-    database_config = buildpackutil.get_database_config()
     scheduled_event_execution, my_scheduled_events = (
         get_scheduled_events(metadata)
     )
-    application_config = {
+    app_config = {
         'ApplicationRootUrl': 'https://%s' % vcap_data['application_uris'][0],
         'MicroflowConstants': get_constants(metadata),
         'ScheduledEventExecution': scheduled_event_execution,
     }
+
     if my_scheduled_events is not None:
-        application_config['MyScheduledEvents'] = my_scheduled_events
+        app_config['MyScheduledEvents'] = my_scheduled_events
 
-    runtime_config = dict(database_config.items() + application_config.items())
+    if os.getenv('DEVELOPMENT_MODE', '').lower() == 'true':
+        app_config['DTAPMode'] = 'D'
 
-    for key, value in runtime_config.iteritems():
-        mxruntime_config[key] = value
+
+    mxruntime_config.update(app_config)
+    mxruntime_config.update(buildpackutil.get_database_config())
 
 
 def set_application_name(m2ee, name):
