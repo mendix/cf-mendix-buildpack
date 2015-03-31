@@ -206,6 +206,7 @@ def set_up_m2ee_client(vcap_data):
         m2ee.config._model_metadata,
         m2ee.config._conf['mxruntime'],
         vcap_data,
+        m2ee,
     )
     set_heap_size(m2ee.config._conf['m2ee']['javaopts'])
     activate_new_relic(m2ee, vcap_data['application_name'])
