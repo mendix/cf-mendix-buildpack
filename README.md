@@ -84,6 +84,7 @@ The following environment variables are optional:
 * `S3_PERFORM_DELETES`: set to `false` to never delete items from the filestore. This is useful when you use the filestore without a backup mechanism.
 * `S3_KEY_SUFFIX`: if your bucket is multi-tenant you can append a string after each object name, you can restrict IAM users to objects with this suffix.
 * `S3_ENDPOINT`: for S3 itself this is not needed, for S3 compatible object stores set the domain on which the object store is available.
+* `S3_USE_V2_AUTH`: use Signature Version 2 Signing Process, this is useful for connecting to S3 compatible object stores like Riak-CS, or Ceph.
 
 
 ### Configuring the Java heap size

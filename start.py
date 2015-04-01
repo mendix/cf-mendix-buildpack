@@ -124,6 +124,7 @@ def get_filestore_config():
     perform_deletes = os.getenv('S3_PERFORM_DELETES', '').lower() == 'false'
     key_suffix = os.getenv('S3_KEY_SUFFIX')
     endpoint = os.getenv('S3_ENDPOINT')
+    v2_auth = os.getenv('S3_USE_V2_AUTH', '').lower() == 'true'
 
     if not (access_key and secret and bucket):
         return {}
@@ -141,6 +142,8 @@ def get_filestore_config():
         config['com.mendix.storage.s3.PerformDeleteFromStorage'] = False
     if key_suffix:
         config['com.mendix.storage.s3.ResourceNameSuffix'] = key_suffix
+    if v2_auth:
+        config['com.mendix.storage.s3.UseV2Auth'] = v2_auth
     if endpoint:
         config['com.mendix.storage.s3.EndPoint'] = endpoint
     return config
