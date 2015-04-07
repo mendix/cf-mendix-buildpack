@@ -1,7 +1,7 @@
 Run Mendix in Cloud Foundry
 =====
 
-There are guides for deploying Mendix apps to Cloud Foundry using the Mendix Business Modeler on [our documentation page](https://world.mendix.com/display/howto50/Deploying+a+Mendix+App+to+Cloud+Foundry). This page will document the more low-level details and CLI instructions.
+There are specific guides for deploying Mendix apps to the [Pivotal Web Services](https://world.mendix.com/display/howto50/Deploying+a+Mendix+App+to+Pivotal) and [HP Helion Development Platform](https://world.mendix.com/display/howto50/Deploying+a+Mendix+App+to+HP+Helion) flavors of Cloud Foundry on our [documentation page](https://world.mendix.com/display/howto50/Deploying+a+Mendix+App+to+Cloud+Foundry). This page will document the more low-level details and CLI instructions.
 
 
 Deploying using the CLI
