@@ -127,10 +127,15 @@ def get_filestore_config():
     v2_auth = os.getenv('S3_USE_V2_AUTH', '').lower() == 'true'
 
     if not (access_key and secret and bucket):
+        logger.warning(
+            'External file store not configured, uploaded files in the app '
+            'will not persist across restarts. See https://github.com/mendix/'
+            'cf-mendix-buildpack for file store configuration details.'
+        )
         return {}
 
     logger.info(
-        'S3 config detected, activating s3 file store'
+        'S3 config detected, activating external file store'
     )
     config = {
         'com.mendix.core.StorageService': 'com.mendix.storage.s3',
