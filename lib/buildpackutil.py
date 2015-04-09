@@ -3,7 +3,7 @@ import re
 import json
 
 
-def get_database_config():
+def get_database_config(development_mode=False):
     url = os.environ['DATABASE_URL']
     pattern = r'([a-zA-Z]+)://([^:]+):([^@]+)@([^/]+)/(.*)'
     match = re.search(pattern, url)
@@ -18,17 +18,33 @@ def get_database_config():
         )
 
     database_type_input = match.group(1)
-    if match.group(1) not in supported_databases:
+    if database_type_input not in supported_databases:
         raise Exception('Unknown database type: %s', database_type_input)
     database_type = supported_databases[database_type_input]
 
-    return {
+    config = {
         'DatabaseType': database_type,
         'DatabaseUserName': match.group(2),
         'DatabasePassword': match.group(3),
         'DatabaseHost': match.group(4),
         'DatabaseName': match.group(5),
     }
+    if development_mode:
+        config.update({
+            'ConnectionPoolingMaxIdle': 1,
+            'ConnectionPoolingMaxActive': 4,
+            'ConnectionPoolingNumTestsPerEvictionRun': 50,
+            'ConnectionPoolingSoftMinEvictableIdleTimeMillis': 1000,
+            'ConnectionPoolingTimeBetweenEvictionRunsMillis': 1000,
+        })
+    elif database_type_input == 'mysql':
+        config.update({
+            'ConnectionPoolingNumTestsPerEvictionRun': 50,
+            'ConnectionPoolingSoftMinEvictableIdleTimeMillis': 10000,
+            'ConnectionPoolingTimeBetweenEvictionRunsMillis': 10000,
+        })
+
+    return config
 
 
 def get_vcap_services_data():

@@ -149,6 +149,10 @@ def get_filestore_config():
     return config
 
 
+def is_development_mode():
+    return os.getenv('DEVELOPMENT_MODE', '').lower() == 'true'
+
+
 def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
     scheduled_event_execution, my_scheduled_events = (
         get_scheduled_events(metadata)
@@ -162,7 +166,7 @@ def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
     if my_scheduled_events is not None:
         app_config['MyScheduledEvents'] = my_scheduled_events
 
-    if os.getenv('DEVELOPMENT_MODE', '').lower() == 'true':
+    if is_development_mode():
         logger.warning(
             'Runtime is being started in Development Mode. Set '
             'DEVELOPMENT_MODE to "false" (currently "true") to '
@@ -174,7 +178,9 @@ def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
         app_config['com.mendix.core.SessionIdCookieName'] = 'JSESSIONID'
 
     mxruntime_config.update(app_config)
-    mxruntime_config.update(buildpackutil.get_database_config())
+    mxruntime_config.update(buildpackutil.get_database_config(
+        development_mode=is_development_mode(),
+    ))
     mxruntime_config.update(get_filestore_config())
 
 
