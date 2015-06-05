@@ -223,7 +223,7 @@ def is_source_push():
 def set_up_mono():
     mkdir_p('/tmp/mono')
     download_and_unpack(
-        'http://cdn.mendix.com/mx-buildpack/mono-3.4.0_full.tar.gz',
+        'http://cdn.mendix.com/mx-buildpack/mono-3.10.0.tar.gz',
         '/tmp/',
     )
 
