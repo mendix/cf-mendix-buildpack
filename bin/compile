@@ -29,10 +29,10 @@ import requests
 logging.getLogger("requests").setLevel(logging.WARNING)
 
 def contains_provided_mxruntime():
-    os.path.isdir(MXRUNTIME_DIR) and len(os.listdir(MXRUNTIME_DIR)) > 0
+    return os.path.isdir(MXRUNTIME_DIR) and len(os.listdir(MXRUNTIME_DIR)) > 0
 
 def contains_provided_mxbuild():
-    contains_provided_mxruntime() and os.path.isdir(MXBUILD_DIR)
+    return contains_provided_mxruntime() and os.path.isdir(MXBUILD_DIR)
 
 def download(url, destination):
     logging.debug('downloading {url}'.format(url=url))
@@ -339,7 +339,7 @@ def get_mda_file():
 
 def unzip_mda():
     mda = get_mda_file()
-    if not(mda is None):
+    if mda is not None:
         with zipfile.ZipFile(mda) as zf:
             zf.extractall(BUILD_DIR)
 
