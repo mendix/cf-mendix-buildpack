@@ -35,7 +35,11 @@ def determine_provided_mxruntime_version():
         versions = os.listdir(MXRUNTIME_DIR)
         if len(versions)==1:
             if versions[0].endswith('.tar.gz'):
-                return versions[0][:-7]
+                if versions[0].startswith('mendix-'):
+                    return versions[0][7:-7]
+                if versions[0].startswith('mxbuild-'):
+                    return versions[0][8:-7]
+                raise Exception('Unsupported file name %s. Expects something starting with \'mendix-\' or \'mxbuild-\'"' % versions[0])
             return versions[0]
         raise Exception('Found multiple mxruntimes. Don\'t know which one to choose '+versions)
     return None
