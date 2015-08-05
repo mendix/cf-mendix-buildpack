@@ -34,6 +34,8 @@ def determine_provided_mxruntime_version():
     if contains_provided_mxruntime():
         versions = os.listdir(MXRUNTIME_DIR)
         if len(versions)==1:
+            if versions[0].endswith('.tar.gz'):
+                return versions[0][:-7]
             return versions[0]
         raise Exception('Found multiple mxruntimes. Don\'t know which one to choose '+versions)
     return None
@@ -42,6 +44,28 @@ MXBUILD_DIR=os.path.join(MXRUNTIME_DIR, determine_provided_mxruntime_version(), 
 
 def contains_provided_mxbuild():
     return contains_provided_mxruntime() and os.path.isdir(MXBUILD_DIR)
+
+def unpack(file_name, destination):
+    if file_name.endswith('.deb'):
+        subprocess.check_call(
+            ['dpkg-deb', '-x', file_name, destination]
+        )
+    elif file_name.endswith('.tar.gz'):
+        subprocess.check_call(
+            ['tar', 'xf', file_name, '-C', destination]
+        )
+    else:
+        raise Exception('do not know how to unpack {file_name}'.format(
+            file_name=file_name
+        ))
+
+def unpack_mxruntime():
+    if contains_provided_mxruntime():
+        versions = os.listdir(MXRUNTIME_DIR)
+        if len(versions)==1 and versions[0].endswith('.tar.gz'):
+            zip = os.path.join(MXRUNTIME_DIR, versions[0])
+            unpack(zip, MXRUNTIME_DIR)
+            os.unlink(zip)
 
 def download(url, destination):
     logging.debug('downloading {url}'.format(url=url))
@@ -53,7 +77,6 @@ def download(url, destination):
             if not block:
                 break
             file_handle.write(block)
-
 
 def download_and_unpack(url, destination, use_cache=True):
     file_name = url.split('/')[-1]
@@ -76,18 +99,7 @@ def download_and_unpack(url, destination, use_cache=True):
             file_name=file_name
         ))
 
-    if file_name.endswith('.deb'):
-        subprocess.check_call(
-            ['dpkg-deb', '-x', cached_location, destination]
-        )
-    elif file_name.endswith('.tar.gz'):
-        subprocess.check_call(
-            ['tar', 'xf', cached_location, '-C', destination]
-        )
-    else:
-        raise Exception('do not know how to unpack {file_name}'.format(
-            file_name=file_name
-        ))
+    unpack(cached_location, destination)
 
     logging.debug('source {file_name} retrieved & unpacked'.format(
         file_name=file_name
@@ -297,7 +309,6 @@ def set_up_mx_build():
             use_cache = False
 
         download_and_unpack(url, MXBUILD_DIR, use_cache=use_cache)
-
 
 def run_mx_build():
     env = dict(os.environ)
