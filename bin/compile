@@ -18,9 +18,10 @@ BUILD_DIR = sys.argv[1]
 CACHE_DIR = os.path.join(sys.argv[2], 'bust')
 DOT_LOCAL_LOCATION = os.path.join(BUILD_DIR, '.local')
 BUILDPACK_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-USE_LOOSE_VERSION_CHECK=False
+USE_LOOSE_VERSION_CHECK = os.environ.get('FORCED_MXBUILD_URL') is not None
 MXRUNTIME_DIR=os.path.join(BUILD_DIR, 'runtimes')
-MXBUILD_DIR=os.path.join(MXRUNTIME_DIR, 'modeler')
+MXBUILD_DIR=os.path.join(MXRUNTIME_DIR, determine_provided_mxruntime_version(), 'modeler')
+DETECTED_MXVERSION=None
 
 sys.path.insert(0, os.path.join(BUILDPACK_DIR, 'lib'))
 import buildpackutil
@@ -33,6 +34,14 @@ def contains_provided_mxruntime():
 
 def contains_provided_mxbuild():
     return contains_provided_mxruntime() and os.path.isdir(MXBUILD_DIR)
+
+def determine_provided_mxruntime_version():
+    if contains_provided_mxruntime():
+        versions = os.listdir(MXRUNTIME_DIR)
+        if len(versions)==1:
+            return versions[0]
+        raise Exception('Found multiple mxruntimes. Don\'t know which one to choose '+versions)
+    return None
 
 def download(url, destination):
     logging.debug('downloading {url}'.format(url=url))
@@ -263,14 +272,16 @@ def detect_mendix_version_from_mpr():
         return None
 
 def determine_mendix_version():
-    mx_version = detect_mendix_version_from_mda()
-    if mx_version is None:
-        mx_version = detect_mendix_version_from_mpr()
-    if mx_version is None:
-        mx_version = detect_mendix_version_from_local_fs()
-    if mx_version is None:
-        raise Exception('Could not parse mendix version from provided app')
-    return mx_version
+    if DETECTED_MXVERSION is None:
+        mx_version = detect_mendix_version_from_mda()
+        if mx_version is None:
+            mx_version = detect_mendix_version_from_mpr()
+        if mx_version is None:
+            mx_version = detect_mendix_version_from_local_fs()
+        if mx_version is None:
+            raise Exception('Could not parse mendix version from provided app')
+        DETECTED_MXVERSION = mx_version
+    return DETECTED_MXVERSION
 
 def set_up_mx_build():
     if not(contains_provided_mxbuild()):
@@ -280,7 +291,6 @@ def set_up_mx_build():
 
         url = os.environ.get('FORCED_MXBUILD_URL')
         if url is None:
-            USE_LOOSE_VERSION_CHECK = True
             use_cache = True
             url = (
                 'http://cdn.mendix.com/runtime/mxbuild-%s.tar.gz' % mendix_version
@@ -349,6 +359,12 @@ if __name__ == '__main__':
     if contains_provided_mxruntime():
         logging.info("Running with provided runtime")
         USE_LOOSE_VERSION_CHECK = True
+
+        runtime_version = determine_provided_mxruntime_version()
+        app_requested_version = determine_mendix_version()
+        if runtime_version != app_requested_version:
+            # fool m2ee to allow starting this app with the specified runtime
+            os.symlink(os.join(MXRUNTIME_DIR, runtime_version), os.join(MXRUNTIME_DIR, app_requested_version)) 
     else:
         download_mendix_version()
 
