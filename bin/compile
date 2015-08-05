@@ -19,8 +19,7 @@ CACHE_DIR = os.path.join(sys.argv[2], 'bust')
 DOT_LOCAL_LOCATION = os.path.join(BUILD_DIR, '.local')
 BUILDPACK_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 USE_LOOSE_VERSION_CHECK = os.environ.get('FORCED_MXBUILD_URL') is not None
-MXRUNTIME_DIR=os.path.join(BUILD_DIR, 'runtimes')
-DETECTED_MXVERSION=None
+MXRUNTIME_DIR = os.path.join(BUILD_DIR, 'runtimes')
 
 sys.path.insert(0, os.path.join(BUILDPACK_DIR, 'lib'))
 import buildpackutil
@@ -273,16 +272,14 @@ def detect_mendix_version_from_mpr():
         return None
 
 def determine_mendix_version():
-    if DETECTED_MXVERSION is None:
-        mx_version = detect_mendix_version_from_mda()
-        if mx_version is None:
-            mx_version = detect_mendix_version_from_mpr()
-        if mx_version is None:
-            mx_version = detect_mendix_version_from_local_fs()
-        if mx_version is None:
-            raise Exception('Could not parse mendix version from provided app')
-        DETECTED_MXVERSION = mx_version
-    return DETECTED_MXVERSION
+    mx_version = detect_mendix_version_from_mda()
+    if mx_version is None:
+        mx_version = detect_mendix_version_from_mpr()
+    if mx_version is None:
+        mx_version = detect_mendix_version_from_local_fs()
+    if mx_version is None:
+        raise Exception('Could not parse mendix version from provided app')
+    return mx_version
 
 def set_up_mx_build():
     if not(contains_provided_mxbuild()):
