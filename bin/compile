@@ -355,11 +355,11 @@ if __name__ == '__main__':
     preflight_check()
     set_up_directory_structure()
     if contains_provided_mxruntime():
-        logging.info("Running with provided runtime")
         USE_LOOSE_VERSION_CHECK = True
 
         runtime_version = determine_provided_mxruntime_version()
         app_requested_version = determine_mendix_version()
+        logging.info('Running app with requested version ' % app_requested_version % ' with provided runtime version ' % runtime_version)
         if runtime_version != app_requested_version:
             # fool m2ee to allow starting this app with the specified runtime
             os.symlink(os.path.join(MXRUNTIME_DIR, runtime_version), os.path.join(MXRUNTIME_DIR, app_requested_version)) 
