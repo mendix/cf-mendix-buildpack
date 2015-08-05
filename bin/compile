@@ -168,8 +168,7 @@ def set_up_directory_structure():
     logging.debug('making directory structure')
     mkdir_p(DOT_LOCAL_LOCATION)
     for name in ['runtimes', 'log', 'database', 'data']:
-        if not(os.path.isdir(os.path.join(BUILD_DIR, name))):
-            mkdir_p(os.path.join(BUILD_DIR, name))
+        mkdir_p(os.path.join(BUILD_DIR, name))
     for name in ['files', 'tmp']:
         mkdir_p(os.path.join(BUILD_DIR, 'data', name))
 
