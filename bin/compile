@@ -359,10 +359,10 @@ if __name__ == '__main__':
 
         runtime_version = determine_provided_mxruntime_version()
         app_requested_version = determine_mendix_version()
-        logging.info('Running app with requested version "%s" with provided runtime version "%s"' %(runtime_version,app_requested_version))
+        logging.info('Running app with requested version "%s" with provided runtime version "%s"' %(app_requested_version, runtime_version))
         if runtime_version != app_requested_version:
             # fool m2ee to allow starting this app with the specified runtime
-            os.symlink(os.path.join(MXRUNTIME_DIR, runtime_version), os.path.join(MXRUNTIME_DIR, app_requested_version)) 
+            os.symlink(os.path.join(MXRUNTIME_DIR, app_requested_version), os.path.join(MXRUNTIME_DIR, runtime_version)) 
     else:
         download_mendix_version()
 
