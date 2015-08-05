@@ -21,7 +21,7 @@ We push an mda (Mendix Deployment Archive) that was built by the Mendix Business
 
 We can also push a project directory. This will move the build process (using mxbuild) to Cloud Foundry:
 
-    cd <PROJECT DIR>; cf push -b https://github.com/mendix/cf-mendix-buildpack
+    cd <PROJECT DIR>; cf push <YOUR_APP> -b https://github.com/mendix/cf-mendix-buildpack
 
 Note that building the project in Cloud Foundry takes more time and requires enough memory in the compile step.
 
