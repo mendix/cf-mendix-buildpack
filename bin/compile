@@ -94,13 +94,6 @@ def mkdir_p(path):
         else:
             raise
 
-
-def parse_runtime_version(file_name):
-    with open(file_name) as file_handle:
-        data = json.loads(file_handle.read())
-        return data['RuntimeVersion']
-
-
 def check_environment_variable(variable, explanation):
     value = os.environ.get(variable)
     if value is None:
@@ -178,9 +171,7 @@ def download_mendix_version():
     url = os.environ.get('FORCED_MXRUNTIME_URL')
     if url is None:
         use_cache = True
-        version = parse_runtime_version(
-            os.path.join(BUILD_DIR, 'model', 'metadata.json')
-        )
+        version = determine_mendix_version()
         url = 'http://cdn.mendix.com/runtime/mendix-%s.tar.gz' % version
     else:
         use_cache = False
@@ -235,21 +226,55 @@ def set_up_mono():
         '/tmp/',
     )
 
+def read_runtime_version_from_file_handle(file_handle):
+    data = json.loads(file_handle.read())
+    return data['RuntimeVersion']
+
+def detect_mendix_version_from_mda():
+    mda = get_mda_file()
+    if mda is None:
+        return None
+    with zipfile.ZipFile(mda) as zf:
+        with zf.open('model/metadata.json') as file_handle:
+            return read_runtime_version_from_file_handle(file_handle)
+
+def detect_mendix_version_from_local_fs():
+    metadata_file = os.path.join(BUILD_DIR, 'model', 'metadata.json')
+    if os.path.exists(metadata_file):
+        with open(metadata_file) as file_handle:
+            return read_runtime_version_from_file_handle(file_handle)
+    return None
+
+def detect_mendix_version_from_mpr():
+    mpr = get_mpr_file()
+    if mpr is None:
+        return None
+    import sqlite3
+    try:
+        conn = sqlite3.connect(get_mpr_file())
+        try:
+            cursor = conn.cursor()
+            cursor.execute('SELECT _ProductVersion FROM _MetaData LIMIT 1')
+            record = cursor.fetchone()
+            return record[0]
+        finally:
+            conn.close()
+    except:
+        return None
+
+def determine_mendix_version():
+    mx_version = detect_mendix_version_from_mda()
+    if mx_version is None:
+        mx_version = detect_mendix_version_from_mpr()
+    if mx_version is None:
+        mx_version = detect_mendix_version_from_local_fs()
+    if mx_version is None:
+        raise Exception('Could not parse mendix version from provided app')
+    return mx_version
 
 def set_up_mx_build():
     if not(contains_provided_mxbuild()):
-        import sqlite3
-        mendix_version = None
-        try:
-            cursor = sqlite3.connect(get_mpr_file()).cursor()
-            cursor.execute('SELECT _ProductVersion FROM _MetaData LIMIT 1')
-            record = cursor.fetchone()
-            mendix_version = record[0]
-        except:
-            pass
-
-        if mendix_version is None:
-            raise Exception('Could not parse mendix version from mpr file')
+        mendix_version = determine_mendix_version()
 
         mkdir_p(MXBUILD_DIR)
 
@@ -315,11 +340,8 @@ def get_mda_file():
 def unzip_mda():
     mda = get_mda_file()
     if not(mda is None):
-        zf = zipfile.ZipFile(mda)
-        try:
+        with zipfile.ZipFile(mda) as zf:
             zf.extractall(BUILD_DIR)
-        finally:
-            zf.close()
 
 if __name__ == '__main__':
     preflight_check()
