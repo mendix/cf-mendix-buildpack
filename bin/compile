@@ -20,7 +20,6 @@ DOT_LOCAL_LOCATION = os.path.join(BUILD_DIR, '.local')
 BUILDPACK_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 USE_LOOSE_VERSION_CHECK = os.environ.get('FORCED_MXBUILD_URL') is not None
 MXRUNTIME_DIR=os.path.join(BUILD_DIR, 'runtimes')
-MXBUILD_DIR=os.path.join(MXRUNTIME_DIR, determine_provided_mxruntime_version(), 'modeler')
 DETECTED_MXVERSION=None
 
 sys.path.insert(0, os.path.join(BUILDPACK_DIR, 'lib'))
@@ -32,9 +31,6 @@ logging.getLogger("requests").setLevel(logging.WARNING)
 def contains_provided_mxruntime():
     return os.path.isdir(MXRUNTIME_DIR) and len(os.listdir(MXRUNTIME_DIR)) > 0
 
-def contains_provided_mxbuild():
-    return contains_provided_mxruntime() and os.path.isdir(MXBUILD_DIR)
-
 def determine_provided_mxruntime_version():
     if contains_provided_mxruntime():
         versions = os.listdir(MXRUNTIME_DIR)
@@ -42,6 +38,11 @@ def determine_provided_mxruntime_version():
             return versions[0]
         raise Exception('Found multiple mxruntimes. Don\'t know which one to choose '+versions)
     return None
+
+MXBUILD_DIR=os.path.join(MXRUNTIME_DIR, determine_provided_mxruntime_version(), 'modeler')
+
+def contains_provided_mxbuild():
+    return contains_provided_mxruntime() and os.path.isdir(MXBUILD_DIR)
 
 def download(url, destination):
     logging.debug('downloading {url}'.format(url=url))
