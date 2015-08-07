@@ -103,3 +103,11 @@ You can enable the Mendix Debugger by setting a `DEBUGGER_PASSWORD` environment 
 ### Enabling sticky sessions
 
 Mendix apps in version 5.15 and up will automatically set `JSESSIONID` as the session cookie. In most Cloud Foundry configurations this will automatically enable session stickiness, which is required for running Mendix apps with more than one instance. For some distributions you might need to explicitly enable session stickiness in the HTTP router.
+
+
+Contributing
+====
+
+Make sure your code complies with pep8 and that no pyflakes errors/warnings are present.
+
+Rebase your git history in such a way that each commit makes one consistent change. Don't include separate "fixup" commits later on.
