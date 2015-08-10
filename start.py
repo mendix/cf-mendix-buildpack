@@ -117,8 +117,8 @@ def set_heap_size(javaopts):
     logger.debug('Java heap size set to %s' % max_memory)
 
 
-def get_filestore_config():
-    access_key = secret = bucket = None
+def get_filestore_config(m2ee):
+    access_key = secret = bucket = encryption_keys = None
 
     vcap_services = buildpackutil.get_vcap_services_data()
     if vcap_services and 'amazon-s3' in vcap_services:
@@ -126,10 +126,13 @@ def get_filestore_config():
         access_key = _conf['access_key_id']
         secret = _conf['secret_access_key']
         bucket = _conf['bucket']
+        # Change prepared for s3-cf-service-broker S3.EncryptionKeys support, then enable this.
+        # encryption_keys = _conf['encryption_keys']
 
     access_key = os.getenv('S3_ACCESS_KEY_ID', access_key)
     secret = os.getenv('S3_SECRET_ACCESS_KEY', secret)
     bucket = os.getenv('S3_BUCKET_NAME', bucket)
+    encryption_keys = os.getenv('S3_ENCRYPTION_KEYS', encryption_keys)
 
     perform_deletes = os.getenv('S3_PERFORM_DELETES', '').lower() == 'false'
     key_suffix = os.getenv('S3_KEY_SUFFIX')
@@ -161,6 +164,8 @@ def get_filestore_config():
         config['com.mendix.storage.s3.UseV2Auth'] = v2_auth
     if endpoint:
         config['com.mendix.storage.s3.EndPoint'] = endpoint
+    if m2ee.config.get_runtime_version() >= 5.17 and encryption_keys:
+        config['com.mendix.storage.s3.EncryptionKeys'] = json.loads(encryption_keys)
     return config
 
 
@@ -196,7 +201,7 @@ def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
     mxruntime_config.update(buildpackutil.get_database_config(
         development_mode=is_development_mode(),
     ))
-    mxruntime_config.update(get_filestore_config())
+    mxruntime_config.update(get_filestore_config(m2ee))
 
 
 def set_application_name(m2ee, name):
