@@ -179,7 +179,7 @@ def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
         )
         app_config['DTAPMode'] = 'D'
 
-    if m2ee.config.get_runtime_version() >= 5.15 and os.getenv('USE_STICKY_SESSIONS', '').lower() == 'true':
+    if m2ee.config.get_runtime_version() >= 5.15 and os.getenv('DISABLE_STICKY_SESSIONS', '').lower() != 'true':
         logger.info('Sticky sessions are enabled')
         app_config['com.mendix.core.SessionIdCookieName'] = 'JSESSIONID'
 

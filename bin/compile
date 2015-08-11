@@ -393,8 +393,12 @@ def get_mda_file():
 def unzip_mda():
     mda = get_mda_file()
     if mda is not None:
-        with zipfile.ZipFile(mda) as zf:
+        zf = zipfile.ZipFile(mda)
+        try:
             zf.extractall(BUILD_DIR)
+        finally:
+            zf.close()
+
 
 if __name__ == '__main__':
     preflight_check()
