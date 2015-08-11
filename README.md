@@ -96,6 +96,13 @@ The default java heap size is set to the total available memory divided by two. 
     cf set-env <YOUR_APP> HEAP_SIZE 512M
 
 
+### Configuring the Java version
+
+The default Java version is 7. If you want to run on Java 8, you can set the environment variable `JAVA_VERSION` to `8`.
+
+    cf set-env <YOUR_APP> JAVA_VERSION 8
+
+
 ### Enabling the Mendix Debugger
 
 You can enable the Mendix Debugger by setting a `DEBUGGER_PASSWORD` environment variable. This will enable and open up the debugger for the lifetime of this process and is to be used with caution. The debugger is reachable on https://DOMAIN/debugger/. You can follow the second half of this [How To](https://world.mendix.com/display/howto50/Debugging+Microflows+Remotely) to connect with the Mendix Business Modeler. To stop the debugger, unset the environment variable and restart the application.
