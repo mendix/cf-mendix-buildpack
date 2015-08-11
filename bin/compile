@@ -87,6 +87,21 @@ def unpack_mxruntime():
             os.unlink(zip)
 
 
+def _get_java_version():
+    versions = {
+        '7': '7u80',
+        '8': '8u45',
+    }
+    main_java_version = os.getenv('JAVA_VERSION', '7')
+
+    if main_java_version not in versions.keys():
+        raise Exception(
+            'Invalid Java version specified: %s'
+            % main_java_version
+        )
+    return versions[main_java_version]
+
+
 def download(url, destination):
     logging.debug('downloading {url}'.format(url=url))
     with open(destination, 'w') as file_handle:
@@ -169,13 +184,17 @@ def set_up_java():
     logging.debug('begin download and install java')
     download_and_unpack(
         'http://cdn.mendix.com/mx-buildpack/'
-        'oracle-java7u80-jre_7u80_amd64.deb',
+        'oracle-java{java_version}-jre_{java_version}_amd64.deb'.format(
+            java_version=_get_java_version()
+        ),
         DOT_LOCAL_LOCATION,
     )
     mkdir_p(os.path.join(DOT_LOCAL_LOCATION, 'bin'))
     #  use ../ because path is different at staging, so final abspath unknown
     os.symlink(
-        '../usr/lib/jvm/jre-7u80-oracle-x64/bin/java',
+        '../usr/lib/jvm/jre-{java_version}-oracle-x64/bin/java'.format(
+            java_version=_get_java_version()
+        ),
         os.path.join(DOT_LOCAL_LOCATION, 'bin', 'java')
     )
     logging.debug('end download and install java')
@@ -187,7 +206,9 @@ def set_up_java_sdk():
     mkdir_p(destination)
     download_and_unpack(
         'http://cdn.mendix.com/mx-buildpack/'
-        'oracle-java7u80-jdk_7u80_amd64.deb',
+        'oracle-java{java_version}-jdk_{java_version}_amd64.deb'.format(
+            java_version=_get_java_version()
+        ),
         destination,
     )
     logging.debug('end download and install java sdk')
@@ -359,9 +380,15 @@ def run_mx_build():
         os.path.join(MXBUILD_DIR, 'mxbuild.exe'),
         '--output=' % os.path.join(BUILD_DIR, 'model.mda'),
         '--java-home=/tmp/javasdk/usr/lib/jvm'
-        '/jdk-7u80-oracle-x64'.format(build_dir=BUILD_DIR),
+        '/jdk-{java_version}-oracle-x64'.format(
+            build_dir=BUILD_DIR,
+            java_version=_get_java_version()
+        ),
         '--java-exe-path=/tmp/javasdk/usr/lib/jvm'
-        '/jdk-7u80-oracle-x64/bin/java'.format(build_dir=BUILD_DIR),
+        '/jdk-{java_version}-oracle-x64/bin/java'.format(
+            build_dir=BUILD_DIR,
+            java_version=_get_java_version()
+        ),
     ]
     if USE_LOOSE_VERSION_CHECK:
         args.append('--loose-version-check')
