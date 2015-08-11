@@ -52,11 +52,22 @@ def determine_provided_mxruntime_version():
         )
     return None
 
-MXBUILD_DIR = os.path.join(
-    MXRUNTIME_DIR,
-    determine_provided_mxruntime_version(),
-    'modeler',
-)
+
+def determine_mxbuild_dir():
+    if contains_provided_mxruntime():
+        return os.path.join(
+            MXRUNTIME_DIR,
+            determine_provided_mxruntime_version(),
+            'modeler',
+        ) 
+    return os.path.join(
+        'tmp',
+        'mxbuild',
+        'modeler',
+    )
+
+
+MXBUILD_DIR = determine_mxbuild_dir()
 
 
 def contains_provided_mxbuild():
