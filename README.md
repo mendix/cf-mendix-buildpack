@@ -107,4 +107,11 @@ You can enable the Mendix Debugger by setting a `DEBUGGER_PASSWORD` environment 
 
 ### Enabling sticky sessions
 
-You can enable Sticky Sessions by setting a `USE_STICKY_SESSIONS` environment variable with value `true`. In Mendix version 5.15 and up this will automatically set `JSESSIONID` as the session cookie. In most Cloud Foundry configurations this will automatically enable session stickiness, which is required for running Mendix apps with more than one instance. For some distributions you might need to explicitly enable session stickiness in the HTTP router.
+In Mendix version 5.15 and up will automatically set `JSESSIONID` as the session cookie. In most Cloud Foundry configurations this will automatically enable session stickiness, which is required for running Mendix apps with more than one instance. For some distributions you might need to explicitly enable session stickiness in the HTTP router. You can disable Sticky Sessions by setting a `DISABLE_STICKY_SESSIONS` environment variable with value `true`.
+
+Contributing
+===
+
+Make sure your code complies with pep8 and that no pyflakes errors/warnings are present.
+
+Rebase your git history in such a way that each commit makes one consistent change. Don't include separate "fixup" commits later on.
