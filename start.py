@@ -126,8 +126,8 @@ def get_filestore_config(m2ee):
         access_key = _conf['access_key_id']
         secret = _conf['secret_access_key']
         bucket = _conf['bucket']
-        # Change prepared for s3-cf-service-broker S3.EncryptionKeys support, then enable this.
-        # encryption_keys = _conf['encryption_keys']
+        if 'encryption_keys' in _conf:
+            encryption_keys = _conf['encryption_keys']
 
     access_key = os.getenv('S3_ACCESS_KEY_ID', access_key)
     secret = os.getenv('S3_SECRET_ACCESS_KEY', secret)
