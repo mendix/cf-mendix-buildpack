@@ -118,7 +118,7 @@ def set_heap_size(javaopts):
 
 
 def get_filestore_config(m2ee):
-    access_key = secret = bucket = encryption_keys = None
+    access_key = secret = bucket = encryption_keys = key_suffix = None
 
     vcap_services = buildpackutil.get_vcap_services_data()
     if vcap_services and 'amazon-s3' in vcap_services:
@@ -128,6 +128,8 @@ def get_filestore_config(m2ee):
         bucket = _conf['bucket']
         if 'encryption_keys' in _conf:
             encryption_keys = _conf['encryption_keys']
+        if 'key_suffix' in _conf:
+            key_suffix = _conf['key_suffix']
 
     access_key = os.getenv('S3_ACCESS_KEY_ID', access_key)
     secret = os.getenv('S3_SECRET_ACCESS_KEY', secret)
@@ -135,7 +137,7 @@ def get_filestore_config(m2ee):
     encryption_keys = os.getenv('S3_ENCRYPTION_KEYS', encryption_keys)
 
     perform_deletes = os.getenv('S3_PERFORM_DELETES', '').lower() == 'false'
-    key_suffix = os.getenv('S3_KEY_SUFFIX')
+    key_suffix = os.getenv('S3_KEY_SUFFIX', key_suffix)
     endpoint = os.getenv('S3_ENDPOINT')
     v2_auth = os.getenv('S3_USE_V2_AUTH', '').lower() == 'true'
 
