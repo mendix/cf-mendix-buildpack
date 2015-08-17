@@ -134,7 +134,8 @@ def get_filestore_config(m2ee):
     access_key = os.getenv('S3_ACCESS_KEY_ID', access_key)
     secret = os.getenv('S3_SECRET_ACCESS_KEY', secret)
     bucket = os.getenv('S3_BUCKET_NAME', bucket)
-    encryption_keys = os.getenv('S3_ENCRYPTION_KEYS', encryption_keys)
+    if 'S3_ENCRYPTION_KEYS' in os.environ:
+        encryption_keys = json.loads(os.getenv('S3_ENCRYPTION_KEYS'))
 
     perform_deletes = os.getenv('S3_PERFORM_DELETES', '').lower() == 'false'
     key_suffix = os.getenv('S3_KEY_SUFFIX', key_suffix)
@@ -167,7 +168,7 @@ def get_filestore_config(m2ee):
     if endpoint:
         config['com.mendix.storage.s3.EndPoint'] = endpoint
     if m2ee.config.get_runtime_version() >= 5.17 and encryption_keys:
-        config['com.mendix.storage.s3.EncryptionKeys'] = json.loads(encryption_keys)
+        config['com.mendix.storage.s3.EncryptionKeys'] = encryption_keys
     return config
 
 
