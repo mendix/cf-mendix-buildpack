@@ -126,7 +126,7 @@ def check_admin_password_environment_variable():
 def set_up_java():
     logging.debug('begin download and install java')
     download_and_unpack(
-        'https://cdn.mendix.com/mx-buildpack/'
+        'http://cdn.mendix.com/mx-buildpack/'
         'oracle-java7u80-jre_7u80_amd64.deb',
         DOT_LOCAL_LOCATION,
     )
@@ -144,7 +144,7 @@ def set_up_java_sdk():
     destination = '/tmp/javasdk'
     mkdir_p(destination)
     download_and_unpack(
-        'https://cdn.mendix.com/mx-buildpack/'
+        'http://cdn.mendix.com/mx-buildpack/'
         'oracle-java7u80-jdk_7u80_amd64.deb',
         destination,
     )
@@ -177,7 +177,7 @@ def download_mendix_version():
         version = parse_runtime_version(
             os.path.join(BUILD_DIR, 'model', 'metadata.json')
         )
-        url = 'https://cdn.mendix.com/runtime/mendix-%s.tar.gz' % version
+        url = 'http://cdn.mendix.com/runtime/mendix-%s.tar.gz' % version
     else:
         use_cache = False
     download_and_unpack(
@@ -227,7 +227,7 @@ def is_source_push():
 def set_up_mono():
     mkdir_p('/tmp/mono')
     download_and_unpack(
-        'https://cdn.mendix.com/mx-buildpack/mono-3.10.0.tar.gz',
+        'http://cdn.mendix.com/mx-buildpack/mono-3.10.0.tar.gz',
         '/tmp/',
     )
 
@@ -252,7 +252,7 @@ def set_up_mx_build():
     if url is None:
         use_cache = True
         url = (
-            'https://cdn.mendix.com/runtime/mxbuild-%s.tar.gz' % mendix_version
+            'http://cdn.mendix.com/runtime/mxbuild-%s.tar.gz' % mendix_version
         )
     else:
         use_cache = False
