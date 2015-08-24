@@ -35,7 +35,7 @@ def contains_provided_mxruntime():
 def determine_provided_mxruntime_version():
     if contains_provided_mxruntime():
         versions = os.listdir(MXRUNTIME_DIR)
-        subprocess.call(['find', MXBUILD_DIR])
+        subprocess.call(['find', BUILD_DIR])
         if len(versions) == 1:
             if versions[0].endswith('.tar.gz'):
                 if versions[0].startswith('mendix-'):
