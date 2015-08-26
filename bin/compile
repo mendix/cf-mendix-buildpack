@@ -32,6 +32,27 @@ def contains_provided_mxruntime():
     return os.path.isdir(MXRUNTIME_DIR) and len(os.listdir(MXRUNTIME_DIR)) > 0
 
 
+def remove_old_runtimes():
+    def remove_empty_dir(path):
+        if not os.path.isdir(path):
+            return
+
+        files = os.listdir(path)
+        if len(files):
+            for f in files:
+                child = os.path.join(path, f)
+                if os.path.isdir(child):
+                    remove_empty_dir(child)
+
+        files = os.listdir(path)
+        if len(files) == 0:
+            os.rmdir(path)
+
+    runtimes = os.listdir(RUNTIME_DIR)
+    for runtime in runtimes:
+        remove_empty_dir(runtime)
+
+
 def determine_provided_mxruntime_version():
     if contains_provided_mxruntime():
         remove_old_runtimes()
@@ -439,26 +460,6 @@ def unzip_mda():
             zf.extractall(BUILD_DIR)
         finally:
             zf.close()
-
-def remove_old_runtimes():
-    def remove_empty_dir(path):
-        if not os.path.isdir(path):
-            return
-
-        files = os.listdir(path)
-        if len(files):
-            for f in files:
-                child = os.path.join(path, f)
-                if os.path.isdir(child):
-                    remove_empty_dir(child)
-
-        files = os.listdir(path)
-        if len(files) == 0:
-            os.rmdir(path)
-
-    runtimes = os.listdir(RUNTIME_DIR)
-    for runtime in runtimes:
-	remove_empty_dir(runtime)
 
 
 if __name__ == '__main__':
