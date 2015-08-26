@@ -48,7 +48,7 @@ def remove_old_runtimes():
         if len(files) == 0:
             os.rmdir(path)
 
-    runtimes = os.listdir(RUNTIME_DIR)
+    runtimes = os.listdir(MXRUNTIME_DIR)
     for runtime in runtimes:
         remove_empty_dir(runtime)
 
