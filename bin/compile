@@ -453,7 +453,7 @@ def remove_old_runtimes():
                     remove_empty_dir(child)
                 return
 
-        os.rmdir(runtime)
+        os.rmdir(path)
 
     runtimes = os.listdir(RUNTIME_DIR)
     for runtime in runtimes:
