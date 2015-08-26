@@ -34,6 +34,7 @@ def contains_provided_mxruntime():
 
 def determine_provided_mxruntime_version():
     if contains_provided_mxruntime():
+        remove_old_runtimes()
         versions = os.listdir(MXRUNTIME_DIR)
         if len(versions) == 1:
             if versions[0].endswith('.tar.gz'):
@@ -467,7 +468,6 @@ if __name__ == '__main__':
         USE_LOOSE_VERSION_CHECK = True
 
         unpack_mxruntime()
-        remove_old_runtimes()
         runtime_version = determine_provided_mxruntime_version()
         app_requested_version = determine_mendix_version()
         logging.info(
