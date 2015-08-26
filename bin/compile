@@ -449,9 +449,9 @@ def remove_old_runtimes():
         if len(files):
             for f in files:
                 child = os.path.join(path, f)
-                    if os.path.isdir(child):
-                        remove_empty_dir(child)
-                    return
+                if os.path.isdir(child):
+                    remove_empty_dir(child)
+                return
 
         os.rmdir(runtime)
 
