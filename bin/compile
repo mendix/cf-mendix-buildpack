@@ -52,7 +52,6 @@ def remove_old_runtimes():
 def determine_provided_mxruntime_version():
     if contains_provided_mxruntime():
         remove_old_runtimes()
-        subprocess.call(['find', MXRUNTIME_DIR])
         versions = os.listdir(MXRUNTIME_DIR)
         if len(versions) == 1:
             if versions[0].endswith('.tar.gz'):
