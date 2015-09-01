@@ -32,8 +32,26 @@ def contains_provided_mxruntime():
     return os.path.isdir(MXRUNTIME_DIR) and len(os.listdir(MXRUNTIME_DIR)) > 0
 
 
+def remove_old_runtimes():
+    def remove_empty_dir(path):
+        if not os.path.isdir(path):
+            return
+
+        files = os.listdir(path)
+        for f in files:
+            child = os.path.join(path, f)
+            remove_empty_dir(child)
+
+        files = os.listdir(path)
+        if len(files) == 0:
+            os.rmdir(path)
+
+    remove_empty_dir(MXRUNTIME_DIR)
+
+
 def determine_provided_mxruntime_version():
     if contains_provided_mxruntime():
+        remove_old_runtimes()
         versions = os.listdir(MXRUNTIME_DIR)
         if len(versions) == 1:
             if versions[0].endswith('.tar.gz'):
