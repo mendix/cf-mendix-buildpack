@@ -6,6 +6,7 @@ import signal
 import subprocess
 import time
 import sys
+import requests
 sys.path.insert(0, 'lib')
 import buildpackutil
 from m2ee import M2EE, logger
@@ -350,6 +351,29 @@ def set_up_logging_file():
     ])
 
 
+def service_backups():
+    vcap_services = buildpackutil.get_vcap_services_data()
+    backup = 'backup'
+    if not vcap_services or backup not in vcap_services:
+        logger.info("No backup service detected")
+        return
+
+    backup_service = {}
+    aws_s3 = 'amazon-s3'
+    if aws_s3 in vcap_services:
+        backup_service['databaseCredentials'] = vcap_services[aws_s3]
+    postgres = 'PostgreSQL'
+    if aws_s3 in vcap_services:
+        backup_service['filesCredentials'] = vcap_services[postgres]
+
+    backup_url = vcap_services[backup][0]['credentials']['url']
+    result = requests.put(backup_url, data=backup_service)
+    if result.status_code == 200:
+        logger.info("Successfully updated backup service")
+    else:
+        logger.warning("Failed to update backup service: " + result.text)
+
+
 def start_app(m2ee):
     m2ee.start_appcontainer()
     if not m2ee.send_runtime_config():
@@ -466,6 +490,7 @@ if __name__ == '__main__':
 
     signal.signal(signal.SIGTERM, sigterm_handler)
 
+    service_backups()
     start_app(m2ee)
     create_admin_user(m2ee)
     display_running_version(m2ee)
