@@ -198,6 +198,8 @@ def check_database_environment_variable():
         logging.warning(
             'You should provide a DATABASE_URL by adding a database service '
             'to this application, it can be either MySQL or Postgres'
+            'If this is the first push of a new app, set up a database service'
+            'and push again afterwards'
         )
         return False
 
