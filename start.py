@@ -172,6 +172,18 @@ def get_filestore_config(m2ee):
     return config
 
 
+def get_custom_settings(metadata, existing_config):
+    custom_settings_key = 'Configuration'
+    if custom_settings_key in metadata:
+        config = {}
+        for k, v in metadata[custom_settings_key].iteritems():
+            if k not in existing_config:
+                config[k] = v
+        return config
+    else:
+        return {}
+
+
 def is_development_mode():
     return os.getenv('DEVELOPMENT_MODE', '').lower() == 'true'
 
@@ -206,6 +218,7 @@ def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
         development_mode=is_development_mode(),
     ))
     mxruntime_config.update(get_filestore_config(m2ee))
+    mxruntime_config.update(get_custom_settings(metadata, mxruntime_config))
 
 
 def set_application_name(m2ee, name):
