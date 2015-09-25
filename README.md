@@ -105,6 +105,8 @@ You can enable the Mendix Debugger by setting a `DEBUGGER_PASSWORD` environment 
 
 Mendix apps in version 5.15 and up will automatically set `JSESSIONID` as the session cookie. In most Cloud Foundry configurations this will automatically enable session stickiness, which is required for running Mendix apps with more than one instance. For some distributions you might need to explicitly enable session stickiness in the HTTP router.
 
+If you want to disable the session stickiness, you can set the environment variable `DISABLE_STICKY_SESSIONS` to `true`.
+
 
 Contributing
 ====
