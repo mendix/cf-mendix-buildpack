@@ -219,6 +219,9 @@ def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
     ))
     mxruntime_config.update(get_filestore_config(m2ee))
     mxruntime_config.update(get_custom_settings(metadata, mxruntime_config))
+    for k, v in os.environ.iteritems():
+        if k.startswith('MXRUNTIME_'):
+            mxruntime_config[k.replace('MXRUNTIME_', '', 1)] = v
 
 
 def set_application_name(m2ee, name):
