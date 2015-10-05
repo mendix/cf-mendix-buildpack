@@ -175,8 +175,6 @@ class M2EERunner:
             logger.trace("[%s] Doing unclean exit from intermediate process "
                          "now." % os.getpid())
             os._exit(1)
-        logger.trace("Calling CloseStdIO...")
-        self._client.close_stdio().display_error()
         logger.trace("[%s] Exiting intermediate process..." % os.getpid())
         os._exit(0)
 
