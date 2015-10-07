@@ -123,6 +123,7 @@ From Mendix 6 onwards it is possible to configure clustering support. With clust
 To optimize performance it is possible to choose for REDIS as State Storage. To use that, add the `RedisCloud` service to your application and configure Mendix to use REDIS for State Storage by setting the environment variable `CLUSTER_STATE_IMPLEMENTATION` to `redis`. In case your selected REDIS service has limited connections available, configure the maximum amount of connections that REDIS can allocate per Mendix Business Server instance by setting the environment variable `CLUSTER_STATE_REDIS_MAX_CONNECTIONS` to the amount of connections available in your plan divided by the amount of instances you want to run.
 
 NOTE: Clustering support is a BETA feature and as such not supported by Mendix for production usage. Settings and implementations may be changed in future releases!
+
 NOTE: Enabling clustering support will automatically disable sticky sessions
 
 Contributing
