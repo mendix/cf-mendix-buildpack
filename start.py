@@ -180,19 +180,27 @@ def determine_cluster_redis_credentials():
     sys.exit(1)
 
 
+def is_cluster_enabled():
+    os.getenv('CLUSTER_ENABLED', 'false') == 'true'
+
 def get_cluster_config():
     config = {}
-    if os.getenv('CLUSTER_ENABLED', 'false') == 'true':
+    if is_cluster_enabled():
         config['com.mendix.core.IsClustered'] = 'true'
-        config['com.mendix.core.state.implementation'] = os.getenv('CLUSTER_STATE_IMPLEMENTATION', 'mxdb')
+        config['com.mendix.core.state.implementation'] = (
+            os.getenv('CLUSTER_STATE_IMPLEMENTATION', 'mxdb')
+        )
 
         if config['com.mendix.core.state.implementation'].startswith('redis'):
             redis_creds = determine_cluster_redis_credentials()
+            max_conns = os.getenv('CLUSTER_STATE_REDIS_MAX_CONNECTIONS', '30')
 
-            config['com.mendix.core.state.redis.host'] = redis_creds['hostname']
-            config['com.mendix.core.state.redis.port'] = redis_creds['port']
-            config['com.mendix.core.state.redis.secret'] = redis_creds['password']
-            config['com.mendix.core.state.redis.maxconnections'] = os.getenv('CLUSTER_STATE_REDIS_MAX_CONNECTIONS', '30')
+            config.update({
+                'com.mendix.core.state.redis.host': redis_creds['hostname'],
+                'com.mendix.core.state.redis.port': redis_creds['port'],
+                'com.mendix.core.state.redis.secret': redis_creds['password'],
+                'com.mendix.core.state.redis.maxconnections': max_conns,
+            })
     return config
 
 
@@ -233,9 +241,10 @@ def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
         )
         app_config['DTAPMode'] = 'D'
 
-    if m2ee.config.get_runtime_version() >= 5.15:
-        if os.getenv('DISABLE_STICKY_SESSIONS', '').lower() != 'true':
-            app_config['com.mendix.core.SessionIdCookieName'] = 'JSESSIONID'
+    if (m2ee.config.get_runtime_version() >= 5.15 and 
+          os.getenv('DISABLE_STICKY_SESSIONS', '').lower() != 'true' and 
+          not is_cluster_enabled()):
+        app_config['com.mendix.core.SessionIdCookieName'] = 'JSESSIONID'
 
     mxruntime_config.update(app_config)
     mxruntime_config.update(buildpackutil.get_database_config(
