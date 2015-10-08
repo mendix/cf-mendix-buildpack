@@ -181,7 +181,7 @@ def determine_cluster_redis_credentials():
 
 
 def is_cluster_enabled():
-    os.getenv('CLUSTER_ENABLED', 'false') == 'true'
+    return os.getenv('CLUSTER_ENABLED', 'false') == 'true'
 
 def get_cluster_config():
     config = {}
