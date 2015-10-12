@@ -108,12 +108,23 @@ The default Java version is 7. If you want to run on Java 8, you can set the env
 
 You can enable the Mendix Debugger by setting a `DEBUGGER_PASSWORD` environment variable. This will enable and open up the debugger for the lifetime of this process and is to be used with caution. The debugger is reachable on https://DOMAIN/debugger/. You can follow the second half of this [How To](https://world.mendix.com/display/howto50/Debugging+Microflows+Remotely) to connect with the Mendix Business Modeler. To stop the debugger, unset the environment variable and restart the application.
 
+
 ### Enabling sticky sessions
 
 Mendix apps in version 5.15 and up will automatically set `JSESSIONID` as the session cookie. In most Cloud Foundry configurations this will automatically enable session stickiness, which is required for running Mendix apps with more than one instance. For some distributions you might need to explicitly enable session stickiness in the HTTP router.
 
 If you want to disable the session stickiness, you can set the environment variable `DISABLE_STICKY_SESSIONS` to `true`.
 
+
+### Configuring Cluster Support (BETA feature for Mendix 6)
+
+From Mendix 6 onwards it is possible to configure clustering support. With clustering support it is possible to run multiple instances of your application to achieve High Availability. Clustering support can be enabled by setting the environment variable `CLUSTER_ENABLED` to `true`.
+
+To optimize performance it is possible to choose for REDIS as State Storage. To use that, add the `RedisCloud` service to your application and configure Mendix to use REDIS for State Storage by setting the environment variable `CLUSTER_STATE_IMPLEMENTATION` to `redis`. In case your selected REDIS service has limited connections available, configure the maximum amount of connections that REDIS can allocate per Mendix Business Server instance by setting the environment variable `CLUSTER_STATE_REDIS_MAX_CONNECTIONS` to the amount of connections available in your plan divided by the amount of instances you want to run.
+
+NOTE: Clustering support is a BETA feature and as such not supported by Mendix for production usage. Settings and implementations may be changed in future releases!
+
+NOTE: Enabling clustering support will automatically disable sticky sessions
 
 Contributing
 ====
