@@ -187,19 +187,19 @@ def get_cluster_config():
     config = {}
     if is_cluster_enabled():
         config['com.mendix.core.IsClustered'] = 'true'
-        config['com.mendix.core.state.implementation'] = (
+        config['com.mendix.core.state.Implementation'] = (
             os.getenv('CLUSTER_STATE_IMPLEMENTATION', 'mxdb')
         )
 
-        if config['com.mendix.core.state.implementation'].startswith('redis'):
+        if config['com.mendix.core.state.Implementation'].startswith('redis'):
             redis_creds = determine_cluster_redis_credentials()
             max_conns = os.getenv('CLUSTER_STATE_REDIS_MAX_CONNECTIONS', '30')
 
             config.update({
-                'com.mendix.core.state.redis.host': redis_creds['hostname'],
-                'com.mendix.core.state.redis.port': redis_creds['port'],
-                'com.mendix.core.state.redis.secret': redis_creds['password'],
-                'com.mendix.core.state.redis.maxconnections': max_conns,
+                'com.mendix.core.state.redis.Host': redis_creds['hostname'],
+                'com.mendix.core.state.redis.Port': redis_creds['port'],
+                'com.mendix.core.state.redis.Secret': redis_creds['password'],
+                'com.mendix.core.state.redis.MaxConnections': max_conns,
             })
     return config
 
