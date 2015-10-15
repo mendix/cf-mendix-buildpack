@@ -4,6 +4,12 @@ import json
 
 
 def get_database_config(development_mode=False):
+    if any(map(
+            lambda x: x.startswith('MXRUNTIME_Database'),
+            os.environ.keys()
+    )):
+        return {}
+
     url = os.environ['DATABASE_URL']
     pattern = r'([a-zA-Z]+)://([^:]+):([^@]+)@([^/]+)/(.*)'
     match = re.search(pattern, url)
