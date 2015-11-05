@@ -703,7 +703,7 @@ class M2EEConfig:
             if self.use_hybrid_appcontainer():
                 return "com.mendix.m2ee.AppContainer"
             return "com.mendix.m2ee.server.HttpAdminAppContainer"
-        if self.runtime_version // 5:
+        if self.runtime_version >= 5:
             return "org.apache.felix.main.Main"
 
         raise Exception("Trying to determine appcontainer main class for "
@@ -746,7 +746,7 @@ class M2EEConfig:
                 os.path.join(self._runtime_path, 'runtime', '*'),
                 os.path.join(self._runtime_path, 'runtime', 'lib', '*'),
             ])
-        elif self.runtime_version // 5:
+        elif self.runtime_version >= 5:
             classpath.extend([
                 os.path.join(self._runtime_path, 'runtime', 'felix', 'bin',
                              'felix.jar'),
