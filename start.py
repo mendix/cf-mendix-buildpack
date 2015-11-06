@@ -46,8 +46,14 @@ def activate_license():
   <entry key="license_key" value="{{LICENSE_KEY}}"/>
 </map>"""
 
-    license = os.environ.get('LICENSE_KEY', None)
-    server_id = os.environ.get('SERVER_ID', None)
+    license = os.environ.get(
+        'FORCED_LICENSE_KEY',
+        os.environ.get('LICENSE_KEY', None)
+    )
+    server_id = os.environ.get(
+        'FORCED_SERVER_ID',
+        os.environ.get('SERVER_ID', None)
+    )
     if license is not None and server_id is not None:
         logger.debug('A license was supplied so going to activate it')
         prefs_body = prefs_template.replace(
