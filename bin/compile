@@ -474,7 +474,7 @@ if __name__ == '__main__':
 
         unpack_mxruntime()
         runtime_version = determine_provided_mxruntime_version()
-        app_requested_version = determine_mendix_version()
+        app_requested_version = str(determine_mendix_version())
         logging.info(
             'Running app requiring version "%s" with provided runtime '
             'version "%s"' % (app_requested_version, runtime_version)
