@@ -23,6 +23,7 @@ MXRUNTIME_DIR = os.path.join(BUILD_DIR, 'runtimes')
 
 sys.path.insert(0, os.path.join(BUILDPACK_DIR, 'lib'))
 import buildpackutil
+from m2ee.version import MXVersion
 import requests
 
 logging.getLogger("requests").setLevel(logging.WARNING)
@@ -121,7 +122,11 @@ def _get_java_version():
         '7': '7u80',
         '8': '8u45',
     }
-    main_java_version = os.getenv('JAVA_VERSION', '7')
+    if determine_mendix_version() >= 5.18:
+        default = '8'
+    else:
+        default = '7'
+    main_java_version = os.getenv('JAVA_VERSION', default)
 
     if main_java_version not in versions.keys():
         raise Exception(
@@ -268,8 +273,9 @@ def download_mendix_version():
     url = os.environ.get('FORCED_MXRUNTIME_URL')
     if url is None:
         use_cache = True
-        version = determine_mendix_version()
-        url = 'http://cdn.mendix.com/runtime/mendix-%s.tar.gz' % version
+        url = 'http://cdn.mendix.com/runtime/mendix-%s.tar.gz' % str(
+            determine_mendix_version()
+        )
     else:
         use_cache = False
     download_and_unpack(
@@ -372,7 +378,7 @@ def determine_mendix_version():
         mx_version = detect_mendix_version_from_local_fs()
     if mx_version is None:
         raise Exception('Could not parse mendix version from provided app')
-    return mx_version
+    return MXVersion(mx_version)
 
 
 def set_up_mx_build():

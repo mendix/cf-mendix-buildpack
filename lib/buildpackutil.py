@@ -38,7 +38,7 @@ def get_database_config(development_mode=False):
     if development_mode:
         config.update({
             'ConnectionPoolingMaxIdle': 1,
-            'ConnectionPoolingMaxActive': 4,
+            'ConnectionPoolingMaxActive': 20,
             'ConnectionPoolingNumTestsPerEvictionRun': 50,
             'ConnectionPoolingSoftMinEvictableIdleTimeMillis': 1000,
             'ConnectionPoolingTimeBetweenEvictionRunsMillis': 1000,
