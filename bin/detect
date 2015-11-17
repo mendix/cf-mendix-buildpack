@@ -8,6 +8,9 @@ if [[ -d model && -d web && -f model/metadata.json ]]; then
 elif [[ -d userlib && -d javasource && -d theme && -f *.mpr ]]; then
     echo "Mendix Cloud Foundry Buildpack"
     exit 0
+elif [[ -d runtimes && -f *.mda ]]; then
+    echo "Mendix Cloud Foundry Buildpack for runtime testing"
+    exit 0
 else
     echo "no"
     exit 1

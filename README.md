@@ -15,16 +15,21 @@ Install the Cloud Foundry command line executable. You can find this on the [rel
 
 ### Push your app
 
-We push an mda (Mendix Deployment Archive) that was built by the Mendix Business Modeler to Cloud Foundry.
+You can push an mda (Mendix Deployment Archive) that was built by the Mendix Business Modeler to Cloud Foundry.
 
     cf push <YOUR_APP> -b https://github.com/mendix/cf-mendix-buildpack -p <YOUR_MDA>.mda
 
-We can also push a project directory. This will move the build process (using mxbuild) to Cloud Foundry:
+Or the folder containing an mda:
 
-    cd <PROJECT DIR>; cf push -b https://github.com/mendix/cf-mendix-buildpack
+    cd <MDA DIR>; cf push <YOUR_APP> -b https://github.com/mendix/cf-mendix-buildpack
+
+You can also push a project directory. This will move the build process (using mxbuild) to Cloud Foundry:
+
+    cd <PROJECT DIR>; cf push <YOUR_APP> -b https://github.com/mendix/cf-mendix-buildpack
 
 Note that building the project in Cloud Foundry takes more time and requires enough memory in the compile step.
 
+Additionally, it's possible to provide the Mendix Runtime with your app. This prevents the BuildPack to download the corresponding Mendix Runtime version from the CDN. It als forces your app to be run with that runtime. To achieve that, publish a folder containing an mda or project directory with a folder named `runtimes` inside it. This `runtimes` folder should contain a folder with a Mendix Runtime version having at least the subfolder `runtime` in it. Additionally it is possible to provide the MxBuild version as well by also including the `modeler` folder.
 
 ### Configuring admin password
 
@@ -126,8 +131,9 @@ NOTE: Clustering support is a BETA feature and as such not supported by Mendix f
 
 NOTE: Enabling clustering support will automatically disable sticky sessions
 
+
 Contributing
-====
+===
 
 Make sure your code complies with pep8 and that no pyflakes errors/warnings are present.
 

@@ -18,6 +18,8 @@ BUILD_DIR = sys.argv[1]
 CACHE_DIR = os.path.join(sys.argv[2], 'bust')
 DOT_LOCAL_LOCATION = os.path.join(BUILD_DIR, '.local')
 BUILDPACK_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+USE_LOOSE_VERSION_CHECK = os.environ.get('FORCED_MXBUILD_URL') is not None
+MXRUNTIME_DIR = os.path.join(BUILD_DIR, 'runtimes')
 
 sys.path.insert(0, os.path.join(BUILDPACK_DIR, 'lib'))
 import buildpackutil
@@ -27,12 +29,100 @@ import requests
 logging.getLogger("requests").setLevel(logging.WARNING)
 
 
+def contains_provided_mxruntime():
+    return os.path.isdir(MXRUNTIME_DIR) and len(os.listdir(MXRUNTIME_DIR)) > 0
+
+
+def remove_old_runtimes():
+    def remove_empty_dir(path):
+        if not os.path.isdir(path):
+            return
+
+        files = os.listdir(path)
+        for f in files:
+            child = os.path.join(path, f)
+            remove_empty_dir(child)
+
+        files = os.listdir(path)
+        if len(files) == 0:
+            os.rmdir(path)
+
+    remove_empty_dir(MXRUNTIME_DIR)
+
+
+def determine_provided_mxruntime_version():
+    if contains_provided_mxruntime():
+        remove_old_runtimes()
+        versions = os.listdir(MXRUNTIME_DIR)
+        if len(versions) == 1:
+            if versions[0].endswith('.tar.gz'):
+                if versions[0].startswith('mendix-'):
+                    return versions[0][7:-7]
+                if versions[0].startswith('mxbuild-'):
+                    return versions[0][8:-7]
+                raise Exception(
+                    "Unsupported file name %s. Expects something starting "
+                    "with 'mendix-' or 'mxbuild-'" % versions[0]
+                )
+            return versions[0]
+        raise Exception(
+            "Found multiple mxruntimes. Don't know which one to choose: %s "
+            % versions
+        )
+    return None
+
+
+def determine_mxbuild_dir():
+    if contains_provided_mxruntime():
+        return os.path.join(
+            MXRUNTIME_DIR,
+            determine_provided_mxruntime_version(),
+            'modeler',
+        ) 
+    return os.path.join(
+        'tmp',
+        'mxbuild',
+        'modeler',
+    )
+
+
+MXBUILD_DIR = determine_mxbuild_dir()
+
+
+def contains_provided_mxbuild():
+    return contains_provided_mxruntime() and os.path.isdir(MXBUILD_DIR)
+
+
+def unpack(file_name, destination):
+    if file_name.endswith('.deb'):
+        subprocess.check_call(
+            ['dpkg-deb', '-x', file_name, destination]
+        )
+    elif file_name.endswith('.tar.gz'):
+        subprocess.check_call(
+            ['tar', 'xf', file_name, '-C', destination]
+        )
+    else:
+        raise Exception('do not know how to unpack {file_name}'.format(
+            file_name=file_name
+        ))
+
+
+def unpack_mxruntime():
+    if contains_provided_mxruntime():
+        versions = os.listdir(MXRUNTIME_DIR)
+        if len(versions) == 1 and versions[0].endswith('.tar.gz'):
+            zip = os.path.join(MXRUNTIME_DIR, versions[0])
+            unpack(zip, MXRUNTIME_DIR)
+            os.unlink(zip)
+
+
 def _get_java_version():
     versions = {
         '7': '7u80',
         '8': '8u45',
     }
-    if get_runtime_version() >= 5.18:
+    if determine_mendix_version() >= 5.18:
         default = '8'
     else:
         default = '7'
@@ -79,18 +169,7 @@ def download_and_unpack(url, destination, use_cache=True):
             file_name=file_name
         ))
 
-    if file_name.endswith('.deb'):
-        subprocess.check_call(
-            ['dpkg-deb', '-x', cached_location, destination]
-        )
-    elif file_name.endswith('.tar.gz'):
-        subprocess.check_call(
-            ['tar', 'xf', cached_location, '-C', destination]
-        )
-    else:
-        raise Exception('do not know how to unpack {file_name}'.format(
-            file_name=file_name
-        ))
+    unpack(cached_location, destination)
 
     logging.debug('source {file_name} retrieved & unpacked'.format(
         file_name=file_name
@@ -105,13 +184,6 @@ def mkdir_p(path):
             pass
         else:
             raise
-
-
-def get_runtime_version():
-    file_name = os.path.join(BUILD_DIR, 'model', 'metadata.json')
-    with open(file_name) as file_handle:
-        data = json.loads(file_handle.read())
-        return MXVersion(data['RuntimeVersion'])
 
 
 def check_environment_variable(variable, explanation):
@@ -202,13 +274,13 @@ def download_mendix_version():
     if url is None:
         use_cache = True
         url = 'http://cdn.mendix.com/runtime/mendix-%s.tar.gz' % str(
-            get_runtime_version()
+            determine_mendix_version()
         )
     else:
         use_cache = False
     download_and_unpack(
         url,
-        os.path.join(BUILD_DIR, 'runtimes'),
+        MXRUNTIME_DIR,
         use_cache=use_cache,
     )
 
@@ -258,32 +330,74 @@ def set_up_mono():
     )
 
 
-def set_up_mx_build():
+def read_runtime_version_from_file_handle(file_handle):
+    data = json.loads(file_handle.read())
+    return data['RuntimeVersion']
+
+
+def detect_mendix_version_from_mda():
+    mda = get_mda_file()
+    if mda is None:
+        return None
+    with zipfile.ZipFile(mda) as zf:
+        with zf.open('model/metadata.json') as file_handle:
+            return read_runtime_version_from_file_handle(file_handle)
+
+
+def detect_mendix_version_from_local_fs():
+    metadata_file = os.path.join(BUILD_DIR, 'model', 'metadata.json')
+    if os.path.exists(metadata_file):
+        with open(metadata_file) as file_handle:
+            return read_runtime_version_from_file_handle(file_handle)
+    return None
+
+
+def detect_mendix_version_from_mpr():
+    mpr = get_mpr_file()
+    if mpr is None:
+        return None
     import sqlite3
-    mendix_version = None
     try:
-        cursor = sqlite3.connect(get_mpr_file()).cursor()
-        cursor.execute('SELECT _ProductVersion FROM _MetaData LIMIT 1')
-        record = cursor.fetchone()
-        mendix_version = record[0]
+        conn = sqlite3.connect(get_mpr_file())
+        try:
+            cursor = conn.cursor()
+            cursor.execute('SELECT _ProductVersion FROM _MetaData LIMIT 1')
+            record = cursor.fetchone()
+            return record[0]
+        finally:
+            conn.close()
     except:
-        pass
+        return None
 
-    if mendix_version is None:
-        raise Exception('Could not parse mendix version from mpr file')
 
-    mkdir_p('/tmp/mxbuild')
+def determine_mendix_version():
+    mx_version = detect_mendix_version_from_mda()
+    if mx_version is None:
+        mx_version = detect_mendix_version_from_mpr()
+    if mx_version is None:
+        mx_version = detect_mendix_version_from_local_fs()
+    if mx_version is None:
+        raise Exception('Could not parse mendix version from provided app')
+    return MXVersion(mx_version)
 
-    url = os.environ.get('FORCED_MXBUILD_URL')
-    if url is None:
-        use_cache = True
-        url = (
-            'http://cdn.mendix.com/runtime/mxbuild-%s.tar.gz' % mendix_version
-        )
-    else:
-        use_cache = False
 
-    download_and_unpack(url, '/tmp/mxbuild', use_cache=use_cache)
+def set_up_mx_build():
+    if not(contains_provided_mxbuild()):
+        mendix_version = determine_mendix_version()
+
+        mkdir_p(MXBUILD_DIR)
+
+        url = os.environ.get('FORCED_MXBUILD_URL')
+        if url is None:
+            use_cache = True
+            url = (
+                'http://cdn.mendix.com/runtime/mxbuild-%s.tar.gz'
+                % mendix_version
+            )
+        else:
+            use_cache = False
+
+        download_and_unpack(url, MXBUILD_DIR, use_cache=use_cache)
 
 
 def run_mx_build():
@@ -300,8 +414,8 @@ def run_mx_build():
     args = [
         '/tmp/mono/bin/mono',
         '--config', '/tmp/mono/etc/mono/config',
-        '/tmp/mxbuild/modeler/mxbuild.exe',
-        '--output=/tmp/model.mda',
+        os.path.join(MXBUILD_DIR, 'mxbuild.exe'),
+        '--output=' % os.path.join(BUILD_DIR, 'model.mda'),
         '--java-home=/tmp/javasdk/usr/lib/jvm'
         '/jdk-{java_version}-oracle-x64'.format(
             build_dir=BUILD_DIR,
@@ -313,7 +427,7 @@ def run_mx_build():
             java_version=_get_java_version()
         ),
     ]
-    if os.environ.get('FORCED_MXBUILD_URL'):
+    if USE_LOOSE_VERSION_CHECK:
         args.append('--loose-version-check')
         logging.warning(
             'Using forced mxbuild version, the model will be converted'
@@ -323,28 +437,64 @@ def run_mx_build():
 
     for file_name in os.listdir(BUILD_DIR):
         path = os.path.join(BUILD_DIR, file_name)
-        if file_name != '.local':
+        if not(file_name.endswith('.mda')) and not(
+                file_name in ['.local', 'runtimes']
+        ):
             if os.path.isdir(path):
                 shutil.rmtree(path)
             else:
                 os.unlink(path)
-    zf = zipfile.ZipFile('/tmp/model.mda')
-    try:
-        zf.extractall(BUILD_DIR)
-    finally:
-        zf.close()
+
+
+def get_mda_file():
+    mdas = filter(lambda x: x.endswith('.mda'), os.listdir(BUILD_DIR))
+    if len(mdas) == 1:
+        return os.path.join(BUILD_DIR, mdas[0])
+    elif len(mdas) > 1:
+        raise Exception('More than one .mda file found, can not continue')
+    else:
+        return None
+
+
+def unzip_mda():
+    mda = get_mda_file()
+    if mda is not None:
+        zf = zipfile.ZipFile(mda)
+        try:
+            zf.extractall(BUILD_DIR)
+        finally:
+            zf.close()
 
 
 if __name__ == '__main__':
     preflight_check()
+    set_up_directory_structure()
+    if contains_provided_mxruntime():
+        USE_LOOSE_VERSION_CHECK = True
+
+        unpack_mxruntime()
+        runtime_version = determine_provided_mxruntime_version()
+        app_requested_version = str(determine_mendix_version())
+        logging.info(
+            'Running app requiring version "%s" with provided runtime '
+            'version "%s"' % (app_requested_version, runtime_version)
+        )
+        if runtime_version != app_requested_version:
+            # fool m2ee to allow starting this app with the specified runtime
+            os.rename(
+                os.path.join(MXRUNTIME_DIR, runtime_version),
+                os.path.join(MXRUNTIME_DIR, app_requested_version),
+            )
+    else:
+        download_mendix_version()
+
     if is_source_push():
         logging.info('source push detected')
         set_up_java_sdk()
         set_up_mono()
         set_up_mx_build()
         run_mx_build()
-    set_up_directory_structure()
+    unzip_mda()
     set_up_java()
-    download_mendix_version()
     copy_buildpack_resources()
     logging.info('buildpack compile completed')

@@ -50,7 +50,18 @@ def get_database_config(development_mode=False):
             'ConnectionPoolingTimeBetweenEvictionRunsMillis': 10000,
         })
 
+    add_config_when_set(config, 'ConnectionPoolingMaxIdle')
+    add_config_when_set(config, 'ConnectionPoolingMaxActive')
+    add_config_when_set(config, 'ConnectionPoolingMinIdle')
+    add_config_when_set(config, 'ConnectionPoolingMinActive')
+
     return config
+
+
+def add_config_when_set(config, config_name):
+    value = os.environ.get(config_name)
+    if not value is None:
+        config[config_name] = value
 
 
 def get_vcap_services_data():
