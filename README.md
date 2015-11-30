@@ -126,6 +126,18 @@ NOTE: Clustering support is a BETA feature and as such not supported by Mendix f
 
 NOTE: Enabling clustering support will automatically disable sticky sessions
 
+
+### Offline buildpack settings
+
+If you are running Cloud Foundry without a connection to the Internet, you should specify an on-premises web server that hosts Mendix Runtime files and other buildpack resources. You can set the endpoint with the following environment variable:
+
+`BLOBSTORE: https://my-intranet-webserver.my-company.com/mendix/`
+
+The preferred way to set up this on-premises web server is as a transparant proxy to `https://cdn.mendix.com/`. This prevents manual work by system administrators every time a new Mendix version is released.
+
+Alternatively you can make the required mendix runtime files `mendix-VERSION.tar.gz` available under `BLOBSTORE/runtime/`. You should also make the Java version available on `/mx-buildpack/oracle-java8u45-jdk_8u45_amd64.deb` available under `BLOBSTORE/mx-buildpack/`. The original files can be downloaded from `https://cdn.mendix.com/`.
+
+
 Contributing
 ====
 
