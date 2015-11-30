@@ -68,7 +68,7 @@ def get_new_relic_license_key():
 
 
 def get_blobstore_url(filename):
-    return os.path.join(
-        os.environ.get('BLOBSTORE', 'http://cdn.mendix.com/'),
-        filename
-    )
+    main_url = os.environ.get('BLOBSTORE', 'http://cdn.mendix.com')
+    if main_url[-1] == '/':
+        main_url = main_url[0:-1]
+    return main_url + filename
