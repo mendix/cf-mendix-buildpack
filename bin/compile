@@ -211,11 +211,19 @@ def download_mendix_version():
         )
     else:
         use_cache = False
-    download_and_unpack(
-        url,
-        os.path.join(BUILD_DIR, 'runtimes'),
-        use_cache=use_cache,
-    )
+    mendix_runtimes_path = '/usr/local/share/mendix-runtimes.git'
+    if os.path.isdir(mendix_runtimes_path):
+        mendix_runtime_version_path = os.path.join(BUILD_DIR, 'runtimes', str(get_runtime_version()))
+        mkdir_p(mendix_runtime_version_path)
+        env = dict(os.environ)
+        env['GIT_WORK_TREE'] = mendix_runtime_version_path
+        subprocess.check_call(['git', 'checkout', str(get_runtime_version()), '-f'], cwd=mendix_runtimes_path, env=env)
+    else:
+        download_and_unpack(
+            url,
+            os.path.join(BUILD_DIR, 'runtimes'),
+            use_cache=use_cache,
+        )
 
 
 def copy_buildpack_resources():
