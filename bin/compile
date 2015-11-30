@@ -169,9 +169,8 @@ def set_up_java():
         )
     else:
         logging.info('rootfs with java detected, not downloading and unpacking it myself')
-        #  use ../ because path is different at staging, so final abspath unknown
         os.symlink(
-            '../usr/lib/jvm/jdk-{java_version}-oracle-x64/bin/java'.format(
+            '/usr/lib/jvm/jdk-{java_version}-oracle-x64/bin/java'.format(
                 java_version=_get_java_version()
             ),
             os.path.join(DOT_LOCAL_LOCATION, 'bin', 'java')
