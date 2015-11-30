@@ -148,10 +148,11 @@ def set_up_java():
     logging.debug('begin download and install java')
     mkdir_p(os.path.join(DOT_LOCAL_LOCATION, 'bin'))
     if not os.path.isdir(
-        '/usr/lib/jvm/jdk-{java_version}-oracle-x64'.format(
-            java_version=_get_java_version()
-        )
+            '/usr/lib/jvm/jdk-{java_version}-oracle-x64'.format(
+                java_version=_get_java_version()
+            )
     ):
+        logging.info('rootfs without java detected, downloading and unpacking it now')
         download_and_unpack(
             'http://cdn.mendix.com/mx-buildpack/'
             'oracle-java{java_version}-jre_{java_version}_amd64.deb'.format(
@@ -167,6 +168,7 @@ def set_up_java():
             os.path.join(DOT_LOCAL_LOCATION, 'bin', 'java')
         )
     else:
+        logging.info('rootfs with java detected, not downloading and unpacking it myself')
         #  use ../ because path is different at staging, so final abspath unknown
         os.symlink(
             '../usr/lib/jvm/jdk-{java_version}-oracle-x64/bin/java'.format(
@@ -221,12 +223,14 @@ def download_mendix_version():
         use_cache = False
     mendix_runtimes_path = '/usr/local/share/mendix-runtimes.git'
     if os.path.isdir(mendix_runtimes_path):
+        logging.info('rootfs with mendix runtimes detected, not downloading it myself')
         mendix_runtime_version_path = os.path.join(BUILD_DIR, 'runtimes', str(get_runtime_version()))
         mkdir_p(mendix_runtime_version_path)
         env = dict(os.environ)
         env['GIT_WORK_TREE'] = mendix_runtime_version_path
         subprocess.check_call(['git', 'checkout', str(get_runtime_version()), '-f'], cwd=mendix_runtimes_path, env=env)
     else:
+        logging.info('rootfs without mendix runtimes detected, downloading and unpacking it now')
         download_and_unpack(
             url,
             os.path.join(BUILD_DIR, 'runtimes'),
