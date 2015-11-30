@@ -65,3 +65,10 @@ def get_new_relic_license_key():
     if vcap_services and 'newrelic' in vcap_services:
         return vcap_services['newrelic'][0]['credentials']['licenseKey']
     return None
+
+
+def get_blobstore_url(filename):
+    return os.path.join(
+        os.environ.get('BLOBSTORE', 'http://cdn.mendix.com/'),
+        filename
+    )

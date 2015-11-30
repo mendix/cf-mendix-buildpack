@@ -147,9 +147,11 @@ def check_admin_password_environment_variable():
 def set_up_java():
     logging.debug('begin download and install java')
     download_and_unpack(
-        'http://cdn.mendix.com/mx-buildpack/'
-        'oracle-java{java_version}-jre_{java_version}_amd64.deb'.format(
-            java_version=_get_java_version()
+        buildpackutil.get_blobstore_url(
+            '/mx-buildpack/'
+            'oracle-java{java_version}-jre_{java_version}_amd64.deb'.format(
+                java_version=_get_java_version()
+            ),
         ),
         DOT_LOCAL_LOCATION,
     )
@@ -169,9 +171,11 @@ def set_up_java_sdk():
     destination = '/tmp/javasdk'
     mkdir_p(destination)
     download_and_unpack(
-        'http://cdn.mendix.com/mx-buildpack/'
-        'oracle-java{java_version}-jdk_{java_version}_amd64.deb'.format(
-            java_version=_get_java_version()
+        buildpackutil.get_blobstore_url(
+            '/mx-buildpack/'
+            'oracle-java{java_version}-jdk_{java_version}_amd64.deb'.format(
+                java_version=_get_java_version()
+            ),
         ),
         destination,
     )
@@ -201,8 +205,10 @@ def download_mendix_version():
     url = os.environ.get('FORCED_MXRUNTIME_URL')
     if url is None:
         use_cache = True
-        url = 'http://cdn.mendix.com/runtime/mendix-%s.tar.gz' % str(
-            get_runtime_version()
+        url = buildpackutil.get_blobstore_url(
+            '/runtime/mendix-%s.tar.gz' % str(
+                get_runtime_version()
+            )
         )
     else:
         use_cache = False
@@ -253,7 +259,7 @@ def is_source_push():
 def set_up_mono():
     mkdir_p('/tmp/mono')
     download_and_unpack(
-        'http://cdn.mendix.com/mx-buildpack/mono-3.10.0.tar.gz',
+        buildpackutil.get_blobstore_url('/mx-buildpack/mono-3.10.0.tar.gz'),
         '/tmp/',
     )
 
@@ -277,8 +283,8 @@ def set_up_mx_build():
     url = os.environ.get('FORCED_MXBUILD_URL')
     if url is None:
         use_cache = True
-        url = (
-            'http://cdn.mendix.com/runtime/mxbuild-%s.tar.gz' % mendix_version
+        url = buildpackutil.get_blobstore_url(
+            '/runtime/mxbuild-%s.tar.gz' % mendix_version
         )
     else:
         use_cache = False
