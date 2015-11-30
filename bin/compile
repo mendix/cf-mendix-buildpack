@@ -146,6 +146,7 @@ def check_admin_password_environment_variable():
 
 def set_up_java():
     logging.debug('begin download and install java')
+    mkdir_p(os.path.join(DOT_LOCAL_LOCATION, 'bin'))
     if not os.path.isdir(
         '/usr/lib/jvm/jdk-{java_version}-oracle-x64'.format(
             java_version=_get_java_version()
@@ -158,14 +159,21 @@ def set_up_java():
             ),
             DOT_LOCAL_LOCATION,
         )
-    mkdir_p(os.path.join(DOT_LOCAL_LOCATION, 'bin'))
-    #  use ../ because path is different at staging, so final abspath unknown
-    os.symlink(
-        '../usr/lib/jvm/jre-{java_version}-oracle-x64/bin/java'.format(
-            java_version=_get_java_version()
-        ),
-        os.path.join(DOT_LOCAL_LOCATION, 'bin', 'java')
-    )
+        #  use ../ because path is different at staging, so final abspath unknown
+        os.symlink(
+            '../usr/lib/jvm/jre-{java_version}-oracle-x64/bin/java'.format(
+                java_version=_get_java_version()
+            ),
+            os.path.join(DOT_LOCAL_LOCATION, 'bin', 'java')
+        )
+    else:
+        #  use ../ because path is different at staging, so final abspath unknown
+        os.symlink(
+            '../usr/lib/jvm/jdk-{java_version}-oracle-x64/bin/java'.format(
+                java_version=_get_java_version()
+            ),
+            os.path.join(DOT_LOCAL_LOCATION, 'bin', 'java')
+        )
     logging.debug('end download and install java')
 
 
