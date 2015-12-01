@@ -88,6 +88,7 @@ The following environment variables are optional:
 * `S3_ENDPOINT`: for S3 itself this is not needed, for S3 compatible object stores set the domain on which the object store is available.
 * `S3_USE_V2_AUTH`: use Signature Version 2 Signing Process, this is useful for connecting to S3 compatible object stores like Riak-CS, or Ceph.
 * `S3_ENCRYPTION_KEYS`: a [JSON string](example-s3-encryption-keys.json) containing a list of keys which can be used to encrypt and decrypt data at rest in S3.
+* `S3_USE_SSE`: if set to `true` this will enable Server Side Encryption in S3, available from Mendix 6.0
 
 
 ### Configuring the Java heap size

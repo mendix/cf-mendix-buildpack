@@ -147,6 +147,7 @@ def get_filestore_config(m2ee):
     key_suffix = os.getenv('S3_KEY_SUFFIX', key_suffix)
     endpoint = os.getenv('S3_ENDPOINT')
     v2_auth = os.getenv('S3_USE_V2_AUTH', '').lower() == 'true'
+    sse = os.getenv('S3_USE_SSE', '').lower() == 'true'
 
     if not (access_key and secret and bucket):
         logger.warning(
@@ -175,6 +176,8 @@ def get_filestore_config(m2ee):
         config['com.mendix.storage.s3.EndPoint'] = endpoint
     if m2ee.config.get_runtime_version() >= 5.17 and encryption_keys:
         config['com.mendix.storage.s3.EncryptionKeys'] = encryption_keys
+    if m2ee.config.get_runtime_version() >= 6 and sse:
+        config['com.mendix.storage.s3.UseSSE'] = sse
     return config
 
 
