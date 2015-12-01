@@ -223,11 +223,6 @@ def download_mendix_version():
     mendix_runtimes_path = '/usr/local/share/mendix-runtimes.git'
     if os.path.isdir(mendix_runtimes_path):
         logging.info('rootfs with mendix runtimes detected, not downloading it myself')
-        mendix_runtime_version_path = os.path.join(BUILD_DIR, 'runtimes', str(get_runtime_version()))
-        mkdir_p(mendix_runtime_version_path)
-        env = dict(os.environ)
-        env['GIT_WORK_TREE'] = mendix_runtime_version_path
-        subprocess.check_call(['git', 'checkout', str(get_runtime_version()), '-f'], cwd=mendix_runtimes_path, env=env)
     else:
         logging.info('rootfs without mendix runtimes detected, downloading and unpacking it now')
         download_and_unpack(
