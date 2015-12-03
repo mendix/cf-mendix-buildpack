@@ -300,9 +300,9 @@ def activate_new_relic(m2ee, app_name):
 def set_up_m2ee_client(vcap_data):
     m2ee = M2EE(yamlfiles=['.local/m2ee.yaml'], load_default_files=False)
     mendix_runtimes_path = '/usr/local/share/mendix-runtimes.git'
-    if os.path.isdir(mendix_runtimes_path):
-        version = m2ee.config.get_runtime_version()
-        mendix_runtime_version_path = os.path.join(os.getcwd(), 'runtimes', str(version))
+    version = m2ee.config.get_runtime_version()
+    mendix_runtime_version_path = os.path.join(os.getcwd(), 'runtimes', str(version))
+    if os.path.isdir(mendix_runtimes_path) and not os.path.isdir(mendix_runtime_version_path):
         subprocess.check_call(['mkdir', '-p', mendix_runtime_version_path])
         env = dict(os.environ)
         env['GIT_WORK_TREE'] = mendix_runtime_version_path
