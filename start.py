@@ -6,8 +6,8 @@ import signal
 import subprocess
 import time
 import sys
-import requests
 sys.path.insert(0, 'lib')
+import requests
 import buildpackutil
 from m2ee import M2EE, logger
 import logging
