@@ -340,7 +340,8 @@ def service_backups():
         files_credentials['accessKey'] = s3_credentials['access_key_id']
         files_credentials['secretKey'] = s3_credentials['secret_access_key']
         files_credentials['bucketName'] = s3_credentials['bucket']
-        files_credentials['keySuffix'] = s3_credentials['key_suffix']
+        if 'key_suffix' in s3_credentials: # Not all s3 plans have this field
+            files_credentials['keySuffix'] = s3_credentials['key_suffix']
         backup_service['filesCredentials'] = files_credentials
     postgres = 'PostgreSQL'
     if postgres in vcap_services:
