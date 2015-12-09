@@ -7,6 +7,7 @@ import subprocess
 import time
 import sys
 sys.path.insert(0, 'lib')
+import requests
 import buildpackutil
 from m2ee import M2EE, logger
 import logging
@@ -324,6 +325,48 @@ def set_up_logging_file():
     ])
 
 
+def service_backups():
+    vcap_services = buildpackutil.get_vcap_services_data()
+    backup = 'schnapps'
+    if not vcap_services or backup not in vcap_services:
+        logger.info("No backup service detected")
+        return
+
+    backup_service = {}
+    aws_s3 = 'amazon-s3'
+    if aws_s3 in vcap_services:
+        s3_credentials = vcap_services[aws_s3][0]['credentials']
+        files_credentials = {}
+        files_credentials['accessKey'] = s3_credentials['access_key_id']
+        files_credentials['secretKey'] = s3_credentials['secret_access_key']
+        files_credentials['bucketName'] = s3_credentials['bucket']
+        if 'key_suffix' in s3_credentials: # Not all s3 plans have this field
+            files_credentials['keySuffix'] = s3_credentials['key_suffix']
+        backup_service['filesCredentials'] = files_credentials
+    postgres = 'PostgreSQL'
+    if postgres in vcap_services:
+        database_credentials = {}
+        postgres_url = buildpackutil.get_database_config(url=vcap_services[postgres][0]['credentials']['uri'])
+        host_and_port = postgres_url['DatabaseHost'].split(':')
+        if len(host_and_port) > 1:
+            database_credentials['port'] = int(host_and_port[1])
+        else:
+            database_credentials['port'] = 5432
+        database_credentials['host'] = host_and_port[0]
+        database_credentials['username'] = postgres_url['DatabaseUserName']
+        database_credentials['password'] = postgres_url['DatabasePassword']
+        database_credentials['dbname'] = postgres_url['DatabaseName']
+        backup_service['databaseCredentials'] = database_credentials
+
+    backup_url = vcap_services[backup][0]['credentials']['url']
+    headers = { 'Content-Type': 'application/json'}
+    result = requests.put(backup_url, headers=headers, data=json.dumps(backup_service))
+    if result.status_code == 200:
+        logger.info("Successfully updated backup service")
+    else:
+        logger.warning("Failed to update backup service: " + result.text)
+
+
 def start_app(m2ee):
     m2ee.start_appcontainer()
     if not m2ee.send_runtime_config():
@@ -440,6 +483,7 @@ if __name__ == '__main__':
 
     signal.signal(signal.SIGTERM, sigterm_handler)
 
+    service_backups()
     start_app(m2ee)
     create_admin_user(m2ee)
     display_running_version(m2ee)
