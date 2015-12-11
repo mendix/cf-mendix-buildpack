@@ -385,7 +385,9 @@ def service_backups():
         backup_service['databaseCredentials'] = database_credentials
 
     backup_url = vcap_services[backup][0]['credentials']['url']
-    headers = { 'Content-Type': 'application/json'}
+    backup_apikey = vcap_services[backup][0]['credentials']['apiKey']
+    headers = { 'Content-Type': 'application/json',
+                'apiKey': backup_apikey }
     result = requests.put(backup_url, headers=headers, data=json.dumps(backup_service))
     if result.status_code == 200:
         logger.info("Successfully updated backup service")
