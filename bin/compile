@@ -147,12 +147,13 @@ def check_admin_password_environment_variable():
 def set_up_java():
     logging.debug('begin download and install java')
     mkdir_p(os.path.join(DOT_LOCAL_LOCATION, 'bin'))
+
     if not os.path.isdir(
             '/usr/lib/jvm/jdk-{java_version}-oracle-x64'.format(
                 java_version=_get_java_version()
             )
     ):
-        logging.info('rootfs without java detected, downloading and unpacking it now')
+        logging.info('rootfs without java sdk detected, downloading and unpacking it now')
         download_and_unpack(
             buildpackutil.get_blobstore_url(
                 '/mx-buildpack/'
@@ -170,29 +171,46 @@ def set_up_java():
             os.path.join(DOT_LOCAL_LOCATION, 'bin', 'java')
         )
     else:
-        logging.info('rootfs with java detected, not downloading and unpacking it myself')
+        logging.info('rootfs with java sdk detected, not downloading and unpacking it myself')
         os.symlink(
             '/usr/lib/jvm/jdk-{java_version}-oracle-x64/bin/java'.format(
                 java_version=_get_java_version()
             ),
             os.path.join(DOT_LOCAL_LOCATION, 'bin', 'java')
         )
+
     logging.debug('end download and install java')
 
 
 def set_up_java_sdk():
     logging.debug('begin download and install java sdk')
     destination = '/tmp/javasdk'
-    mkdir_p(destination)
-    download_and_unpack(
-        buildpackutil.get_blobstore_url(
-            '/mx-buildpack/'
-            'oracle-java{java_version}-jdk_{java_version}_amd64.deb'.format(
+
+    if not os.path.isdir(
+            '/usr/lib/jvm/jdk-{java_version}-oracle-x64'.format(
+                java_version=_get_java_version()
+            )
+    ):
+        logging.info('rootfs without java sdk detected, downloading and unpacking it now')
+        mkdir_p(destination)
+        download_and_unpack(
+            buildpackutil.get_blobstore_url(
+                '/mx-buildpack/'
+                'oracle-java{java_version}-jdk_{java_version}_amd64.deb'.format(
+                    java_version=_get_java_version()
+                ),
+            ),
+            destination,
+        )
+    else:
+        logging.info('rootfs with java sdk detected, not downloading and unpacking it myself')
+        os.symlink(
+            '/usr/lib/jvm/jdk-{java_version}-oracle-x64/bin/java'.format(
                 java_version=_get_java_version()
             ),
-        ),
-        destination,
-    )
+            destination,
+        )
+
     logging.debug('end download and install java sdk')
 
 
