@@ -309,7 +309,19 @@ def set_up_m2ee_client(vcap_data):
         subprocess.check_call(['mkdir', '-p', mendix_runtime_version_path])
         env = dict(os.environ)
         env['GIT_WORK_TREE'] = mendix_runtime_version_path
-        subprocess.check_call(['git', 'checkout', str(version), '-f'], cwd=mendix_runtimes_path, env=env)
+
+        try:
+            # checkout the runtime version
+            subprocess.check_output(['git', 'checkout', str(version), '-f'], cwd=mendix_runtimes_path, env=env, stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            # the tag for this runtime version is not available?
+            if 1 == e.returncode and 'pathspec' in e.output:
+                # do a 'git fetch --tags' to refresh the runtime versions in the bare repo
+                logging.info('mendix runtime version {mx_version} is missing in this rootfs'.format(mx_version=version))
+                subprocess.check_call(['git', 'fetch', '--tags'], cwd=mendix_runtimes_path, env=env)
+                # then retry to checkout the runtime version
+                subprocess.check_output(['git', 'checkout', str(version), '-f'], cwd=mendix_runtimes_path, env=env, stderr=subprocess.STDOUT)
+
         m2ee.reload_config()
     set_runtime_config(
         m2ee.config._model_metadata,
