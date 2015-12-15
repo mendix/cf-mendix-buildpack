@@ -302,6 +302,15 @@ def activate_new_relic(m2ee, app_name):
 
 def set_up_m2ee_client(vcap_data):
     m2ee = M2EE(yamlfiles=['.local/m2ee.yaml'], load_default_files=False)
+    mendix_runtimes_path = '/usr/local/share/mendix-runtimes.git'
+    version = m2ee.config.get_runtime_version()
+    mendix_runtime_version_path = os.path.join(os.getcwd(), 'runtimes', str(version))
+    if os.path.isdir(mendix_runtimes_path) and not os.path.isdir(mendix_runtime_version_path):
+        subprocess.check_call(['mkdir', '-p', mendix_runtime_version_path])
+        env = dict(os.environ)
+        env['GIT_WORK_TREE'] = mendix_runtime_version_path
+        subprocess.check_call(['git', 'checkout', str(version), '-f'], cwd=mendix_runtimes_path, env=env)
+        m2ee.reload_config()
     set_runtime_config(
         m2ee.config._model_metadata,
         m2ee.config._conf['mxruntime'],
@@ -311,6 +320,7 @@ def set_up_m2ee_client(vcap_data):
     set_heap_size(m2ee.config._conf['m2ee']['javaopts'])
     activate_new_relic(m2ee, vcap_data['application_name'])
     set_application_name(m2ee, vcap_data['application_name'])
+
     return m2ee
 
 

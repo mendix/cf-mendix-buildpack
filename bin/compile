@@ -146,23 +146,37 @@ def check_admin_password_environment_variable():
 
 def set_up_java():
     logging.debug('begin download and install java')
-    download_and_unpack(
-        buildpackutil.get_blobstore_url(
-            '/mx-buildpack/'
-            'oracle-java{java_version}-jre_{java_version}_amd64.deb'.format(
+    mkdir_p(os.path.join(DOT_LOCAL_LOCATION, 'bin'))
+    if not os.path.isdir(
+            '/usr/lib/jvm/jdk-{java_version}-oracle-x64'.format(
+                java_version=_get_java_version()
+            )
+    ):
+        logging.info('rootfs without java detected, downloading and unpacking it now')
+        download_and_unpack(
+            buildpackutil.get_blobstore_url(
+                '/mx-buildpack/'
+                'oracle-java{java_version}-jre_{java_version}_amd64.deb'.format(
+                    java_version=_get_java_version()
+                ),
+            ),
+            DOT_LOCAL_LOCATION,
+        )
+        #  use ../ because path is different at staging, so final abspath unknown
+        os.symlink(
+            '../usr/lib/jvm/jre-{java_version}-oracle-x64/bin/java'.format(
                 java_version=_get_java_version()
             ),
-        ),
-        DOT_LOCAL_LOCATION,
-    )
-    mkdir_p(os.path.join(DOT_LOCAL_LOCATION, 'bin'))
-    #  use ../ because path is different at staging, so final abspath unknown
-    os.symlink(
-        '../usr/lib/jvm/jre-{java_version}-oracle-x64/bin/java'.format(
-            java_version=_get_java_version()
-        ),
-        os.path.join(DOT_LOCAL_LOCATION, 'bin', 'java')
-    )
+            os.path.join(DOT_LOCAL_LOCATION, 'bin', 'java')
+        )
+    else:
+        logging.info('rootfs with java detected, not downloading and unpacking it myself')
+        os.symlink(
+            '/usr/lib/jvm/jdk-{java_version}-oracle-x64/bin/java'.format(
+                java_version=_get_java_version()
+            ),
+            os.path.join(DOT_LOCAL_LOCATION, 'bin', 'java')
+        )
     logging.debug('end download and install java')
 
 
@@ -212,11 +226,16 @@ def download_mendix_version():
         )
     else:
         use_cache = False
-    download_and_unpack(
-        url,
-        os.path.join(BUILD_DIR, 'runtimes'),
-        use_cache=use_cache,
-    )
+    mendix_runtimes_path = '/usr/local/share/mendix-runtimes.git'
+    if os.path.isdir(mendix_runtimes_path) and not os.environ.get('FORCED_MXRUNTIME_URL'):
+        logging.info('rootfs with mendix runtimes detected, not downloading it myself')
+    else:
+        logging.info('rootfs without mendix runtimes detected, downloading and unpacking it now')
+        download_and_unpack(
+            url,
+            os.path.join(BUILD_DIR, 'runtimes'),
+            use_cache=use_cache,
+        )
 
 
 def copy_buildpack_resources():
