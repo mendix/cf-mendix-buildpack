@@ -15,9 +15,13 @@ def get_database_config(development_mode=False, url=None):
             os.environ.keys()
     )):
         return {}
+
+    if url is None:
+        url = get_database_uri_from_vcap()
     if url is None:
         url = os.environ['DATABASE_URL']
-    pattern = r'([a-zA-Z]+)://([^:]+):([^@]+)@([^/]+)/(.*)'
+    pattern = r'([a-zA-Z]+)://([^:]+):([^@]+)@([^/]+)/([^?]*)(\?.*)?'
+
     match = re.search(pattern, url)
     supported_databases = {
         'postgres':  'PostgreSQL',
@@ -64,6 +68,13 @@ def get_vcap_services_data():
         return json.loads(os.environ.get('VCAP_SERVICES'))
     else:
         return None
+
+
+def get_database_uri_from_vcap():
+    vcap_services = get_vcap_services_data()
+    if vcap_services and 'p-mysql' in vcap_services:
+        return vcap_services['p-mysql'][0]['credentials']['uri']
+    return None
 
 
 def get_new_relic_license_key():
