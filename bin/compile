@@ -2,7 +2,6 @@
 import os
 import sys
 import json
-import errno
 import shutil
 import logging
 import zipfile
@@ -22,7 +21,6 @@ BUILDPACK_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, os.path.join(BUILDPACK_DIR, 'lib'))
 import buildpackutil
 from m2ee.version import MXVersion
-import requests
 
 logging.getLogger("requests").setLevel(logging.WARNING)
 
@@ -44,67 +42,6 @@ def _get_java_version():
             % main_java_version
         )
     return versions[main_java_version]
-
-
-def download(url, destination):
-    logging.debug('downloading {url}'.format(url=url))
-    with open(destination, 'w') as file_handle:
-        response = requests.get(url, stream=True)
-        if not response.ok:
-            response.raise_for_status()
-        for block in response.iter_content(4096):
-            if not block:
-                break
-            file_handle.write(block)
-
-
-def download_and_unpack(url, destination, use_cache=True):
-    file_name = url.split('/')[-1]
-
-    if use_cache:
-        cache = CACHE_DIR
-    else:
-        cache = '/tmp/downloads'
-
-    mkdir_p(cache)
-    cached_location = os.path.join(cache, file_name)
-
-    logging.info('preparing {file_name}'.format(file_name=file_name))
-
-    if not os.path.isfile(cached_location):
-        logging.info('downloading {file_name}'.format(file_name=file_name))
-        download(url, cached_location)
-    else:
-        logging.debug('already present in cache {file_name}'.format(
-            file_name=file_name
-        ))
-
-    if file_name.endswith('.deb'):
-        subprocess.check_call(
-            ['dpkg-deb', '-x', cached_location, destination]
-        )
-    elif file_name.endswith('.tar.gz'):
-        subprocess.check_call(
-            ['tar', 'xf', cached_location, '-C', destination]
-        )
-    else:
-        raise Exception('do not know how to unpack {file_name}'.format(
-            file_name=file_name
-        ))
-
-    logging.debug('source {file_name} retrieved & unpacked'.format(
-        file_name=file_name
-    ))
-
-
-def mkdir_p(path):
-    try:
-        os.makedirs(path)
-    except OSError as e:
-        if e.errno == errno.EEXIST and os.path.isdir(path):
-            pass
-        else:
-            raise
 
 
 def get_runtime_version():
@@ -146,7 +83,7 @@ def check_admin_password_environment_variable():
 
 def set_up_java():
     logging.debug('begin download and install java')
-    mkdir_p(os.path.join(DOT_LOCAL_LOCATION, 'bin'))
+    buildpackutil.mkdir_p(os.path.join(DOT_LOCAL_LOCATION, 'bin'))
 
     if not os.path.isdir(
             '/usr/lib/jvm/jdk-{java_version}-oracle-x64'.format(
@@ -154,7 +91,7 @@ def set_up_java():
             )
     ):
         logging.info('rootfs without java sdk detected, downloading and unpacking it now')
-        download_and_unpack(
+        buildpackutil.download_and_unpack(
             buildpackutil.get_blobstore_url(
                 '/mx-buildpack/'
                 'oracle-java{java_version}-jre_{java_version}_amd64.deb'.format(
@@ -162,6 +99,7 @@ def set_up_java():
                 ),
             ),
             DOT_LOCAL_LOCATION,
+            CACHE_DIR,
         )
         #  use ../ because path is different at staging, so final abspath unknown
         os.symlink(
@@ -192,8 +130,8 @@ def set_up_java_sdk():
             )
     ):
         logging.info('rootfs without java sdk detected, downloading and unpacking it now')
-        mkdir_p(destination)
-        download_and_unpack(
+        buildpackutil.mkdir_p(destination)
+        buildpackutil.download_and_unpack(
             buildpackutil.get_blobstore_url(
                 '/mx-buildpack/'
                 'oracle-java{java_version}-jdk_{java_version}_amd64.deb'.format(
@@ -201,6 +139,7 @@ def set_up_java_sdk():
                 ),
             ),
             destination,
+            CACHE_DIR,
         )
     else:
         logging.info('rootfs with java sdk detected, not downloading and unpacking it myself')
@@ -225,34 +164,34 @@ def preflight_check():
 
 def set_up_directory_structure():
     logging.debug('making directory structure')
-    mkdir_p(DOT_LOCAL_LOCATION)
+    buildpackutil.mkdir_p(DOT_LOCAL_LOCATION)
     for name in ['runtimes', 'log', 'database', 'data']:
-        mkdir_p(os.path.join(BUILD_DIR, name))
+        buildpackutil.mkdir_p(os.path.join(BUILD_DIR, name))
     for name in ['files', 'tmp']:
-        mkdir_p(os.path.join(BUILD_DIR, 'data', name))
+        buildpackutil.mkdir_p(os.path.join(BUILD_DIR, 'data', name))
 
 
 def download_mendix_version():
     logging.debug('downloading mendix version')
     url = os.environ.get('FORCED_MXRUNTIME_URL')
     if url is None:
-        use_cache = True
+        cache_dir = CACHE_DIR
         url = buildpackutil.get_blobstore_url(
             '/runtime/mendix-%s.tar.gz' % str(
                 get_runtime_version()
             )
         )
     else:
-        use_cache = False
+        cache_dir = '/tmp/downloads'
     mendix_runtimes_path = '/usr/local/share/mendix-runtimes.git'
     if os.path.isdir(mendix_runtimes_path) and not os.environ.get('FORCED_MXRUNTIME_URL'):
         logging.info('rootfs with mendix runtimes detected, not downloading it myself')
     else:
         logging.info('rootfs without mendix runtimes detected, downloading and unpacking it now')
-        download_and_unpack(
+        buildpackutil.download_and_unpack(
             url,
             os.path.join(BUILD_DIR, 'runtimes'),
-            use_cache=use_cache,
+            cache_dir=cache_dir,
         )
 
 
@@ -294,10 +233,11 @@ def is_source_push():
 
 
 def set_up_mono():
-    mkdir_p('/tmp/mono')
-    download_and_unpack(
+    buildpackutil.mkdir_p('/tmp/mono')
+    buildpackutil.download_and_unpack(
         buildpackutil.get_blobstore_url('/mx-buildpack/mono-3.10.0.tar.gz'),
         '/tmp/',
+        CACHE_DIR,
     )
 
 
@@ -315,18 +255,18 @@ def set_up_mx_build():
     if mendix_version is None:
         raise Exception('Could not parse mendix version from mpr file')
 
-    mkdir_p('/tmp/mxbuild')
+    buildpackutil.mkdir_p('/tmp/mxbuild')
 
     url = os.environ.get('FORCED_MXBUILD_URL')
     if url is None:
-        use_cache = True
+        cache_dir = CACHE_DIR
         url = buildpackutil.get_blobstore_url(
             '/runtime/mxbuild-%s.tar.gz' % mendix_version
         )
     else:
-        use_cache = False
+        cache_dir = '/tmp/downloads'
 
-    download_and_unpack(url, '/tmp/mxbuild', use_cache=use_cache)
+    buildpackutil.download_and_unpack(url, '/tmp/mxbuild', cache_dir=cache_dir)
 
 
 def run_mx_build():

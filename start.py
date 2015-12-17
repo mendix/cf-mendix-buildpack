@@ -302,25 +302,29 @@ def activate_new_relic(m2ee, app_name):
 
 def set_up_m2ee_client(vcap_data):
     m2ee = M2EE(yamlfiles=['.local/m2ee.yaml'], load_default_files=False)
-    mendix_runtimes_path = '/usr/local/share/mendix-runtimes.git'
     version = m2ee.config.get_runtime_version()
+
+    mendix_runtimes_path = '/usr/local/share/mendix-runtimes.git'
     mendix_runtime_version_path = os.path.join(os.getcwd(), 'runtimes', str(version))
     if os.path.isdir(mendix_runtimes_path) and not os.path.isdir(mendix_runtime_version_path):
-        subprocess.check_call(['mkdir', '-p', mendix_runtime_version_path])
+        buildpackutil.mkdir_p(mendix_runtime_version_path)
         env = dict(os.environ)
         env['GIT_WORK_TREE'] = mendix_runtime_version_path
 
-        try:
-            # checkout the runtime version
-            subprocess.check_output(['git', 'checkout', str(version), '-f'], cwd=mendix_runtimes_path, env=env, stderr=subprocess.STDOUT)
-        except subprocess.CalledProcessError as e:
-            # the tag for this runtime version is not available?
-            if 1 == e.returncode and 'pathspec' in e.output:
-                # do a 'git fetch --tags' to refresh the runtime versions in the bare repo
-                logging.info('mendix runtime version {mx_version} is missing in this rootfs'.format(mx_version=version))
-                subprocess.check_call(['git', 'fetch', '--tags'], cwd=mendix_runtimes_path, env=env)
-                # then retry to checkout the runtime version
-                subprocess.check_output(['git', 'checkout', str(version), '-f'], cwd=mendix_runtimes_path, env=env, stderr=subprocess.STDOUT)
+        # checkout the runtime version
+        process = subprocess.Popen(['git', 'checkout', str(version), '-f'], cwd=mendix_runtimes_path, env=env,
+                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if process.returncode is not 0:
+            # do a 'git fetch --tags' to refresh the bare repo, then retry to checkout the runtime version
+            logging.info('mendix runtime version {mx_version} is missing in this rootfs'.format(mx_version=version))
+            process = subprocess.Popen(['git', 'fetch', '--tags', '&&', 'git', 'checkout', str(version), '-f'],
+                                       cwd=mendix_runtimes_path, env=env, stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE)
+            if process.returncode is not 0:
+                # download the mendix runtime version from our blobstore
+                logging.info('unable to use rootfs for mendix runtime version {mx_version}'.format(mx_version=version))
+                url = buildpackutil.get_blobstore_url('/runtime/mendix-%s.tar.gz' % str(version))
+                buildpackutil.download_and_unpack(url, mendix_runtimes_path)
 
         m2ee.reload_config()
     set_runtime_config(
