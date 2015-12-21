@@ -315,13 +315,13 @@ def set_up_m2ee_client(vcap_data):
         # checkout the runtime version
         process = subprocess.Popen(['git', 'checkout', str(version), '-f'], cwd=mendix_runtimes_path, env=env,
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if process.returncode is not 0:
+        if process.returncode != 0:
             # do a 'git fetch --tags' to refresh the bare repo, then retry to checkout the runtime version
             logging.info('mendix runtime version {mx_version} is missing in this rootfs'.format(mx_version=version))
             process = subprocess.Popen(['git', 'fetch', '--tags', '&&', 'git', 'checkout', str(version), '-f'],
                                        cwd=mendix_runtimes_path, env=env, stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE)
-            if process.returncode is not 0:
+            if process.returncode != 0:
                 # download the mendix runtime version from our blobstore
                 logging.info('unable to use rootfs for mendix runtime version {mx_version}'.format(mx_version=version))
                 url = buildpackutil.get_blobstore_url('/runtime/mendix-%s.tar.gz' % str(version))
