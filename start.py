@@ -7,6 +7,7 @@ import subprocess
 import time
 import sys
 sys.path.insert(0, 'lib')
+import requests
 import buildpackutil
 from m2ee import M2EE, logger
 import logging
@@ -302,6 +303,31 @@ def activate_new_relic(m2ee, app_name):
 
 def set_up_m2ee_client(vcap_data):
     m2ee = M2EE(yamlfiles=['.local/m2ee.yaml'], load_default_files=False)
+    version = m2ee.config.get_runtime_version()
+
+    mendix_runtimes_path = '/usr/local/share/mendix-runtimes.git'
+    mendix_runtime_version_path = os.path.join(os.getcwd(), 'runtimes', str(version))
+    if os.path.isdir(mendix_runtimes_path) and not os.path.isdir(mendix_runtime_version_path):
+        buildpackutil.mkdir_p(mendix_runtime_version_path)
+        env = dict(os.environ)
+        env['GIT_WORK_TREE'] = mendix_runtime_version_path
+
+        # checkout the runtime version
+        process = subprocess.Popen(['git', 'checkout', str(version), '-f'], cwd=mendix_runtimes_path, env=env,
+                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if process.returncode != 0:
+            # do a 'git fetch --tags' to refresh the bare repo, then retry to checkout the runtime version
+            logging.info('mendix runtime version {mx_version} is missing in this rootfs'.format(mx_version=version))
+            process = subprocess.Popen(['git', 'fetch', '--tags', '&&', 'git', 'checkout', str(version), '-f'],
+                                       cwd=mendix_runtimes_path, env=env, stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE)
+            if process.returncode != 0:
+                # download the mendix runtime version from our blobstore
+                logging.info('unable to use rootfs for mendix runtime version {mx_version}'.format(mx_version=version))
+                url = buildpackutil.get_blobstore_url('/runtime/mendix-%s.tar.gz' % str(version))
+                buildpackutil.download_and_unpack(url, mendix_runtimes_path)
+
+        m2ee.reload_config()
     set_runtime_config(
         m2ee.config._model_metadata,
         m2ee.config._conf['mxruntime'],
@@ -311,6 +337,7 @@ def set_up_m2ee_client(vcap_data):
     set_heap_size(m2ee.config._conf['m2ee']['javaopts'])
     activate_new_relic(m2ee, vcap_data['application_name'])
     set_application_name(m2ee, vcap_data['application_name'])
+
     return m2ee
 
 
@@ -322,6 +349,50 @@ def set_up_logging_file():
         's|^[0-9\-]\+\s[0-9:\.]\+\s||',
         'log/out.log',
     ])
+
+
+def service_backups():
+    vcap_services = buildpackutil.get_vcap_services_data()
+    backup = 'schnapps'
+    if not vcap_services or backup not in vcap_services:
+        logger.info("No backup service detected")
+        return
+
+    backup_service = {}
+    aws_s3 = 'amazon-s3'
+    if aws_s3 in vcap_services:
+        s3_credentials = vcap_services[aws_s3][0]['credentials']
+        files_credentials = {}
+        files_credentials['accessKey'] = s3_credentials['access_key_id']
+        files_credentials['secretKey'] = s3_credentials['secret_access_key']
+        files_credentials['bucketName'] = s3_credentials['bucket']
+        if 'key_suffix' in s3_credentials: # Not all s3 plans have this field
+            files_credentials['keySuffix'] = s3_credentials['key_suffix']
+        backup_service['filesCredentials'] = files_credentials
+    postgres = 'PostgreSQL'
+    if postgres in vcap_services:
+        database_credentials = {}
+        postgres_url = buildpackutil.get_database_config(url=vcap_services[postgres][0]['credentials']['uri'])
+        host_and_port = postgres_url['DatabaseHost'].split(':')
+        if len(host_and_port) > 1:
+            database_credentials['port'] = int(host_and_port[1])
+        else:
+            database_credentials['port'] = 5432
+        database_credentials['host'] = host_and_port[0]
+        database_credentials['username'] = postgres_url['DatabaseUserName']
+        database_credentials['password'] = postgres_url['DatabasePassword']
+        database_credentials['dbname'] = postgres_url['DatabaseName']
+        backup_service['databaseCredentials'] = database_credentials
+
+    backup_url = vcap_services[backup][0]['credentials']['url']
+    backup_apikey = vcap_services[backup][0]['credentials']['apiKey']
+    headers = { 'Content-Type': 'application/json',
+                'apiKey': backup_apikey }
+    result = requests.put(backup_url, headers=headers, data=json.dumps(backup_service))
+    if result.status_code == 200:
+        logger.info("Successfully updated backup service")
+    else:
+        logger.warning("Failed to update backup service: " + result.text)
 
 
 def start_app(m2ee):
@@ -440,6 +511,7 @@ if __name__ == '__main__':
 
     signal.signal(signal.SIGTERM, sigterm_handler)
 
+    service_backups()
     start_app(m2ee)
     create_admin_user(m2ee)
     display_running_version(m2ee)

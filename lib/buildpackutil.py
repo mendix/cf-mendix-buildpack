@@ -1,16 +1,28 @@
 import os
 import re
 import json
+import errno
+import subprocess
+import logging
+import sys
+sys.path.insert(0, 'lib')
+import requests
+
+logging.basicConfig(
+    level=logging.INFO,
+    stream=sys.stdout,
+    format='%(levelname)s: %(message)s',
+)
 
 
-def get_database_config(development_mode=False):
+def get_database_config(development_mode=False, url=None):
     if any(map(
             lambda x: x.startswith('MXRUNTIME_Database'),
             os.environ.keys()
     )):
         return {}
-
-    url = os.environ['DATABASE_URL']
+    if url is None:
+        url = os.environ['DATABASE_URL']
     pattern = r'([a-zA-Z]+)://([^:]+):([^@]+)@([^/]+)/(.*)'
     match = re.search(pattern, url)
     supported_databases = {
@@ -72,3 +84,58 @@ def get_blobstore_url(filename):
     if main_url[-1] == '/':
         main_url = main_url[0:-1]
     return main_url + filename
+
+
+def download_and_unpack(url, destination, cache_dir='/tmp/downloads'):
+    file_name = url.split('/')[-1]
+    mkdir_p(cache_dir)
+    cached_location = os.path.join(cache_dir, file_name)
+
+    logging.info('preparing {file_name}'.format(file_name=file_name))
+
+    if not os.path.isfile(cached_location):
+        logging.info('downloading {file_name}'.format(file_name=file_name))
+        download(url, cached_location)
+    else:
+        logging.debug('already present in cache {file_name}'.format(
+            file_name=file_name
+        ))
+
+    if file_name.endswith('.deb'):
+        subprocess.check_call(
+            ['dpkg-deb', '-x', cached_location, destination]
+        )
+    elif file_name.endswith('.tar.gz'):
+        subprocess.check_call(
+            ['tar', 'xf', cached_location, '-C', destination]
+        )
+    else:
+        raise Exception('do not know how to unpack {file_name}'.format(
+            file_name=file_name
+        ))
+
+    logging.debug('source {file_name} retrieved & unpacked'.format(
+        file_name=file_name
+    ))
+
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as e:
+        if e.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
+
+
+def download(url, destination):
+    logging.debug('downloading {url}'.format(url=url))
+    with open(destination, 'w') as file_handle:
+        response = requests.get(url, stream=True)
+        if not response.ok:
+            response.raise_for_status()
+        for block in response.iter_content(4096):
+            if not block:
+                break
+            file_handle.write(block)
