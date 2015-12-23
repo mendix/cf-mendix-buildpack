@@ -327,7 +327,7 @@ def set_up_m2ee_client(vcap_data):
                 # download the mendix runtime version from our blobstore
                 logging.info('unable to use rootfs for mendix runtime version {mx_version}'.format(mx_version=version))
                 url = buildpackutil.get_blobstore_url('/runtime/mendix-%s.tar.gz' % str(version))
-                buildpackutil.download_and_unpack(url, mendix_runtime_version_path)
+                buildpackutil.download_and_unpack(url, os.path.join(os.getcwd(), 'runtimes'))
 
         m2ee.reload_config()
     set_runtime_config(
