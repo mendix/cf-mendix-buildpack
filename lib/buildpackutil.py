@@ -8,12 +8,6 @@ import sys
 sys.path.insert(0, 'lib')
 import requests
 
-logging.basicConfig(
-    level=logging.INFO,
-    stream=sys.stdout,
-    format='%(levelname)s: %(message)s',
-)
-
 
 def get_database_config(development_mode=False, url=None):
     if any(map(
