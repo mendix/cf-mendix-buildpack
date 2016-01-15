@@ -366,42 +366,42 @@ def set_up_logging_file():
 
 def service_backups():
     vcap_services = buildpackutil.get_vcap_services_data()
-    backup = 'schnapps'
-    if not vcap_services or backup not in vcap_services:
+    if not vcap_services or 'schnapps' not in vcap_services:
         logger.info("No backup service detected")
         return
 
     backup_service = {}
-    aws_s3 = 'amazon-s3'
-    if aws_s3 in vcap_services:
-        s3_credentials = vcap_services[aws_s3][0]['credentials']
-        files_credentials = {}
-        files_credentials['accessKey'] = s3_credentials['access_key_id']
-        files_credentials['secretKey'] = s3_credentials['secret_access_key']
-        files_credentials['bucketName'] = s3_credentials['bucket']
-        if 'key_suffix' in s3_credentials: # Not all s3 plans have this field
-            files_credentials['keySuffix'] = s3_credentials['key_suffix']
-        backup_service['filesCredentials'] = files_credentials
-    postgres = 'PostgreSQL'
-    if postgres in vcap_services:
-        database_credentials = {}
-        postgres_url = buildpackutil.get_database_config()
-        host_and_port = postgres_url['DatabaseHost'].split(':')
-        if len(host_and_port) > 1:
-            database_credentials['port'] = int(host_and_port[1])
-        else:
-            database_credentials['port'] = 5432
-        database_credentials['host'] = host_and_port[0]
-        database_credentials['username'] = postgres_url['DatabaseUserName']
-        database_credentials['password'] = postgres_url['DatabasePassword']
-        database_credentials['dbname'] = postgres_url['DatabaseName']
-        backup_service['databaseCredentials'] = database_credentials
+    if 'amazon-s3' in vcap_services:
+        s3_credentials = vcap_services['amazon-s3'][0]['credentials']
+        backup_service['filesCredentials'] = {
+            'accessKey': s3_credentials['access_key_id'],
+            'secretKey': s3_credentials['secret_access_key'],
+            'bucketName': s3_credentials['bucket'],
+        }
+        if 'key_suffix' in s3_credentials:  # Not all s3 plans have this field
+            backup_service['filesCredentials']['keySuffix'] = s3_credentials['key_suffix']
 
-    backup_url = vcap_services[backup][0]['credentials']['url']
-    backup_apikey = vcap_services[backup][0]['credentials']['apiKey']
-    headers = { 'Content-Type': 'application/json',
-                'apiKey': backup_apikey }
-    result = requests.put(backup_url, headers=headers, data=json.dumps(backup_service))
+    if 'PostgreSQL' in vcap_services:
+        db_config = buildpackutil.get_database_config()
+        host_and_port = db_config['DatabaseHost'].split(':')
+        backup_service['databaseCredentials'] = {
+            'host': host_and_port[0],
+            'username': db_config['DatabaseUserName'],
+            'password': db_config['DatabasePassword'],
+            'dbname': db_config['DatabaseName'],
+            'port': int(host_and_port[1]) if len(host_and_port) > 1 else 5432,
+        }
+    schnapps_url = vcap_services['schnapps'][0]['credentials']['url'],
+    schnapps_api_key = vcap_services['schnapps'][0]['credentials']['apiKey']
+
+    result = requests.put(
+        schnapps_url,
+        headers={
+            'Content-Type': 'application/json',
+            'apiKey': schnapps_api_key
+        },
+        data=json.dumps(backup_service),
+    )
     if result.status_code == 200:
         logger.info("Successfully updated backup service")
     else:
