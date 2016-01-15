@@ -385,7 +385,7 @@ def service_backups():
     postgres = 'PostgreSQL'
     if postgres in vcap_services:
         database_credentials = {}
-        postgres_url = buildpackutil.get_database_config(url=vcap_services[postgres][0]['credentials']['uri'])
+        postgres_url = buildpackutil.get_database_config()
         host_and_port = postgres_url['DatabaseHost'].split(':')
         if len(host_and_port) > 1:
             database_credentials['port'] = int(host_and_port[1])
