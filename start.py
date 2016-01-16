@@ -128,6 +128,8 @@ def get_filestore_config(m2ee):
     access_key = secret = bucket = encryption_keys = key_suffix = None
 
     vcap_services = buildpackutil.get_vcap_services_data()
+    endpoint = None
+    v2_auth = ''
     if vcap_services and 'amazon-s3' in vcap_services:
         _conf = vcap_services['amazon-s3'][0]['credentials']
         access_key = _conf['access_key_id']
@@ -137,6 +139,15 @@ def get_filestore_config(m2ee):
             encryption_keys = _conf['encryption_keys']
         if 'key_suffix' in _conf:
             key_suffix = _conf['key_suffix']
+    elif vcap_services and 'p-riakcs' in vcap_services:
+        _conf = vcap_services['p-riakcs'][0]['credentials']
+        access_key = _conf['access_key_id']
+        secret = _conf['secret_access_key']
+        pattern = r'https://(([^:]+):([^@]+)@)?([^/]+)/(.*)'
+        match = re.search(pattern, _conf['uri'])
+        endpoint = 'https://' + match.group(4)
+        bucket = match.group(5)
+        v2_auth = 'true'
 
     access_key = os.getenv('S3_ACCESS_KEY_ID', access_key)
     secret = os.getenv('S3_SECRET_ACCESS_KEY', secret)
@@ -146,8 +157,8 @@ def get_filestore_config(m2ee):
 
     perform_deletes = os.getenv('S3_PERFORM_DELETES', '').lower() == 'false'
     key_suffix = os.getenv('S3_KEY_SUFFIX', key_suffix)
-    endpoint = os.getenv('S3_ENDPOINT')
-    v2_auth = os.getenv('S3_USE_V2_AUTH', '').lower() == 'true'
+    endpoint = os.getenv('S3_ENDPOINT', endpoint)
+    v2_auth = os.getenv('S3_USE_V2_AUTH', v2_auth).lower() == 'true'
     sse = os.getenv('S3_USE_SSE', '').lower() == 'true'
 
     if not (access_key and secret and bucket):
