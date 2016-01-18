@@ -226,6 +226,17 @@ def get_cluster_config():
     return config
 
 
+def get_certificate_authorities():
+    config = {}
+    cas = os.getenv('CERTIFICATE_AUTHORITIES', None)
+    if cas:
+        location = os.path.abspath('.local/certificate_authorities.crt')
+        with open(location, 'w') as output_file:
+            output_file.write(cas)
+        config['CACertificates'] = location
+    return config
+
+
 def get_custom_settings(metadata, existing_config):
     custom_settings_key = 'Configuration'
     if custom_settings_key in metadata:
@@ -274,6 +285,7 @@ def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
     ))
     mxruntime_config.update(get_filestore_config(m2ee))
     mxruntime_config.update(get_cluster_config())
+    mxruntime_config.update(get_certificate_authorities())
     mxruntime_config.update(get_custom_settings(metadata, mxruntime_config))
     for k, v in os.environ.iteritems():
         if k.startswith('MXRUNTIME_'):
