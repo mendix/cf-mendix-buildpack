@@ -212,6 +212,12 @@ The contents of this variable should be a concatenated string containing a the a
 Please note, these are two internal Mendix CAs which you should not actually add to your trust store.
 
 
+Data Snapshots
+====
+
+If you want to enable initializing your database and files from an existing data snapshot included in the MDA, set `USE_DATA_SNAPSHOT` to `true`.
+
+
 Contributing
 ====
 

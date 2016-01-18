@@ -248,15 +248,15 @@ def get_certificate_authorities():
 
 
 def get_custom_settings(metadata, existing_config):
-    custom_settings_key = 'Configuration'
-    if custom_settings_key in metadata:
-        config = {}
-        for k, v in metadata[custom_settings_key].iteritems():
-            if k not in existing_config:
-                config[k] = v
-        return config
-    else:
-        return {}
+    if os.getenv('USE_DATA_SNAPSHOT', 'false').lower() == 'true':
+        custom_settings_key = 'Configuration'
+        if custom_settings_key in metadata:
+            config = {}
+            for k, v in metadata[custom_settings_key].iteritems():
+                if k not in existing_config:
+                    config[k] = v
+            return config
+    return {}
 
 
 def is_development_mode():
