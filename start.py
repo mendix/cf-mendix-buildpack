@@ -230,10 +230,20 @@ def get_certificate_authorities():
     config = {}
     cas = os.getenv('CERTIFICATE_AUTHORITIES', None)
     if cas:
-        location = os.path.abspath('.local/certificate_authorities.crt')
-        with open(location, 'w') as output_file:
-            output_file.write(cas)
-        config['CACertificates'] = location
+        ca_list = cas.split('-----BEGIN CERTIFICATE-----')
+        n = 0
+        files = []
+        for ca in ca_list:
+            if '-----END CERTIFICATE-----' in ca:
+                ca = '-----BEGIN CERTIFICATE-----' + ca
+                location = os.path.abspath(
+                    '.local/certificate_authorities.%d.crt' % n
+                )
+                with open(location, 'w') as output_file:
+                    output_file.write(cas)
+                files.append(location)
+                n += 1
+        config['CACertificates'] = ','.join(files)
     return config
 
 
