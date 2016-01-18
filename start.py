@@ -391,7 +391,7 @@ def service_backups():
             'dbname': db_config['DatabaseName'],
             'port': int(host_and_port[1]) if len(host_and_port) > 1 else 5432,
         }
-    schnapps_url = vcap_services['schnapps'][0]['credentials']['url'],
+    schnapps_url = vcap_services['schnapps'][0]['credentials']['url']
     schnapps_api_key = vcap_services['schnapps'][0]['credentials']['apiKey']
 
     result = requests.put(
