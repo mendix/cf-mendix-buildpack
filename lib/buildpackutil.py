@@ -9,15 +9,14 @@ sys.path.insert(0, 'lib')
 import requests
 
 
-def get_database_config(development_mode=False, url=None):
+def get_database_config(development_mode=False):
     if any(map(
             lambda x: x.startswith('MXRUNTIME_Database'),
             os.environ.keys()
     )):
         return {}
 
-    if url is None:
-        url = get_database_uri_from_vcap()
+    url = get_database_uri_from_vcap()
     if url is None:
         url = os.environ['DATABASE_URL']
     pattern = r'([a-zA-Z]+)://([^:]+):([^@]+)@([^/]+)/([^?]*)(\?.*)?'
@@ -74,6 +73,8 @@ def get_database_uri_from_vcap():
     vcap_services = get_vcap_services_data()
     if vcap_services and 'p-mysql' in vcap_services:
         return vcap_services['p-mysql'][0]['credentials']['uri']
+    elif 'PostgreSQL' in vcap_services:
+        return vcap_services['PostgreSQL'][0]['credentials']['uri']
     return None
 
 
