@@ -93,9 +93,9 @@ def set_up_java():
     buildpackutil.mkdir_p(os.path.join(DOT_LOCAL_LOCATION, 'bin'))
 
     if not os.path.isdir(
-            '/usr/lib/jvm/jdk-{java_version}-oracle-x64'.format(
-                java_version=_get_java_version()
-            )
+        '/usr/lib/jvm/jdk-{java_version}-oracle-x64'.format(
+            java_version=_get_java_version()
+        )
     ):
         logging.info('rootfs without java sdk detected, downloading and unpacking it now')
         buildpackutil.download_and_unpack(
