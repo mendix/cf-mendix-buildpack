@@ -46,9 +46,16 @@ def _get_java_version():
 
 def get_runtime_version():
     file_name = os.path.join(BUILD_DIR, 'model', 'metadata.json')
-    with open(file_name) as file_handle:
-        data = json.loads(file_handle.read())
-        return MXVersion(data['RuntimeVersion'])
+    try:
+        with open(file_name) as file_handle:
+            data = json.loads(file_handle.read())
+            return MXVersion(data['RuntimeVersion'])
+    except IOError:
+        import sqlite3
+        cursor = sqlite3.connect(get_mpr_file()).cursor()
+        cursor.execute('SELECT _ProductVersion FROM _MetaData LIMIT 1')
+        record = cursor.fetchone()
+        return MXVersion(record[0])
 
 
 def check_environment_variable(variable, explanation):
@@ -242,18 +249,7 @@ def set_up_mono():
 
 
 def set_up_mx_build():
-    import sqlite3
-    mendix_version = None
-    try:
-        cursor = sqlite3.connect(get_mpr_file()).cursor()
-        cursor.execute('SELECT _ProductVersion FROM _MetaData LIMIT 1')
-        record = cursor.fetchone()
-        mendix_version = record[0]
-    except:
-        pass
-
-    if mendix_version is None:
-        raise Exception('Could not parse mendix version from mpr file')
+    mendix_version = get_runtime_version()
 
     buildpackutil.mkdir_p('/tmp/mxbuild')
 
