@@ -276,21 +276,23 @@ def run_mx_build():
         ),
         '/tmp/mono/etc/mono/config',
     ])
+    java_locations = [
+        '/usr/lib/jvm/jdk-%s-oracle-x64' % _get_java_version(),
+        '/tmp/javasdk/usr/lib/jvm/jdk-%s-oracle-x64' % _get_java_version(),
+    ]
+    java_location = None
+    for possible_java_location in java_locations:
+        if os.path.isdir(possible_java_location):
+            java_location = possible_java_location
+    if java_location is None:
+        raise Exception('Java not found!')
     args = [
         '/tmp/mono/bin/mono',
         '--config', '/tmp/mono/etc/mono/config',
         '/tmp/mxbuild/modeler/mxbuild.exe',
         '--output=/tmp/model.mda',
-        '--java-home=/tmp/javasdk/usr/lib/jvm'
-        '/jdk-{java_version}-oracle-x64'.format(
-            build_dir=BUILD_DIR,
-            java_version=_get_java_version()
-        ),
-        '--java-exe-path=/tmp/javasdk/usr/lib/jvm'
-        '/jdk-{java_version}-oracle-x64/bin/java'.format(
-            build_dir=BUILD_DIR,
-            java_version=_get_java_version()
-        ),
+        '--java-home=%s' % java_location,
+        '--java-exe-path=%s/bin/java' % java_location,
     ]
     if os.environ.get('FORCED_MXBUILD_URL'):
         args.append('--loose-version-check')
