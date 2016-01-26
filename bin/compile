@@ -276,6 +276,14 @@ def run_mx_build():
         ),
         '/tmp/mono/etc/mono/config',
     ])
+    subprocess.check_call([
+        'sed',
+        '-i',
+        's|/usr/lib/libMonoPosixHelper.so|%s|g' % os.path.join(
+            BUILDPACK_DIR, 'lib', 'mono-lib', 'libMonoPosixHelper.so'
+        ),
+        '/tmp/mono/etc/mono/config',
+    ])
     java_locations = [
         '/usr/lib/jvm/jdk-%s-oracle-x64' % _get_java_version(),
         '/tmp/javasdk/usr/lib/jvm/jdk-%s-oracle-x64' % _get_java_version(),
