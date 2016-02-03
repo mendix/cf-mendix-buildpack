@@ -309,6 +309,17 @@ def set_application_name(m2ee, name):
     m2ee.config._conf['m2ee']['app_name'] = name
 
 
+def activate_appdynamics(m2ee, app_name):
+    if os.getenv('APPDYNAMICS', 'false').lower() != 'true':
+        return
+    logger.info('Adding app dynamics')
+    m2ee.config._conf['m2ee']['javaopts'].append(
+        '-javaagent:{path}'.format(
+            path=os.path.abspath('.local/ver4.2.0.2/javaagent.jar')
+        )
+    )
+
+
 def activate_new_relic(m2ee, app_name):
     if buildpackutil.get_new_relic_license_key() is None:
         logger.debug(
@@ -371,6 +382,7 @@ def set_up_m2ee_client(vcap_data):
     )
     set_heap_size(m2ee.config._conf['m2ee']['javaopts'])
     activate_new_relic(m2ee, vcap_data['application_name'])
+    activate_appdynamics(m2ee, vcap_data['application_name'])
     set_application_name(m2ee, vcap_data['application_name'])
 
     return m2ee
