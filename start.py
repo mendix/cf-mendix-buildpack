@@ -505,7 +505,8 @@ def create_admin_user(m2ee):
     })
     if m2eeresponse.has_error():
         m2eeresponse.display_error()
-        sys.exit(1)
+        if not is_development_mode():
+            sys.exit(1)
 
 
 def configure_debugger(m2ee):
