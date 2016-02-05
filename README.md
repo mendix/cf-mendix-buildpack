@@ -229,8 +229,10 @@ To enable AppDynamics, configure the following environment variables:
     APPDYNAMICS_AGENT_APPLICATION_NAME
     APPDYNAMICS_AGENT_ACCOUNT_NAME
     APPDYNAMICS_AGENT_ACCOUNT_ACCESS_KEY
-    APPDYNAMICS_AGENT_NODE_NAME
+    APPDYNAMICS_AGENT_NODE_NAME *
     APPDYNAMICS_AGENT_TIER_NAME
+
+\* The `APPDYNAMICS_AGENT_NODE_NAME` environment variable will be appended with the value of the `CF_INSTANCE_ID` variable. If you use `my-app` for `APPDYNAMICS_AGENT_NODE_NAME`, the AppDynamics agent will be configured as `my-app-0` for instance `0` and `my-app-1` for instance `1`, etc.
 
 If you have any environment variable that starts with `APPDYNAMICS_`, the AppDynamics Java Agent will be configured for your application. At the moment only agent version 4.1.7.1 is available. After configuring these environment variables, restage your app for the agent to be enabled.
 

@@ -318,6 +318,16 @@ def activate_appdynamics(m2ee, app_name):
             path=os.path.abspath('.local/ver4.1.7.1/javaagent.jar')
         )
     )
+    APPDYNAMICS_AGENT_NODE_NAME = 'APPDYNAMICS_AGENT_NODE_NAME'
+    if os.getenv(APPDYNAMICS_AGENT_NODE_NAME):
+        m2ee.config._conf['m2ee']['custom_environment'][
+            APPDYNAMICS_AGENT_NODE_NAME
+        ] = (
+            '%s-%s' % (
+                os.getenv(APPDYNAMICS_AGENT_NODE_NAME),
+                os.getenv('CF_INSTANCE_INDEX', '0'),
+            )
+        )
 
 
 def activate_new_relic(m2ee, app_name):
