@@ -68,10 +68,10 @@ def check_environment_variable(variable, explanation):
 
 
 def set_up_appdynamics():
-    if os.getenv('APPDYNAMICS', 'false').lower() == 'true':
+    if buildpackutil.appdynamics_used():
         buildpackutil.download_and_unpack(
             buildpackutil.get_blobstore_url(
-                '/mx-buildpack/appdynamics-agent-4.2.0.2.tar.gz'
+                '/mx-buildpack/appdynamics-agent-4.1.7.1-v2.tar.gz'
             ),
             DOT_LOCAL_LOCATION,
             CACHE_DIR,

@@ -310,12 +310,12 @@ def set_application_name(m2ee, name):
 
 
 def activate_appdynamics(m2ee, app_name):
-    if os.getenv('APPDYNAMICS', 'false').lower() != 'true':
+    if not buildpackutil.appdynamics_used():
         return
     logger.info('Adding app dynamics')
     m2ee.config._conf['m2ee']['javaopts'].append(
         '-javaagent:{path}'.format(
-            path=os.path.abspath('.local/ver4.2.0.2/javaagent.jar')
+            path=os.path.abspath('.local/ver4.1.7.1/javaagent.jar')
         )
     )
 

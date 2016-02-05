@@ -80,6 +80,13 @@ def get_database_uri_from_vcap():
     return None
 
 
+def appdynamics_used():
+    for k, v in os.environ.iteritems():
+        if k.startswith('APPDYNAMICS_'):
+            return True
+    return False
+
+
 def get_new_relic_license_key():
     vcap_services = get_vcap_services_data()
     if vcap_services and 'newrelic' in vcap_services:

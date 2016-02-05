@@ -212,6 +212,30 @@ The contents of this variable should be a concatenated string containing a the a
 Please note, these are two internal Mendix CAs which you should not actually add to your trust store.
 
 
+Monitoring Tools
+====
+
+### New Relic
+
+To enable New Relic, simply bind a New Relic service to this app and settings will be picked up automatically. Afterwards you have to restage your application to enable the New Relic agent.
+
+### App Dynamics
+
+To enable App Dynamics, configure the following environment variables:
+
+    APPDYNAMICS_CONTROLLER_PORT
+    APPDYNAMICS_CONTROLLER_SSL_ENABLED
+    APPDYNAMICS_CONTROLLER_HOST_NAME
+    APPDYNAMICS_AGENT_APPLICATION_NAME
+    APPDYNAMICS_AGENT_ACCOUNT_NAME
+    APPDYNAMICS_AGENT_ACCOUNT_ACCESS_KEY
+    APPDYNAMICS_AGENT_NODE_NAME
+    APPDYNAMICS_AGENT_TIER_NAME
+
+If you have any environment variable that starts with `APPDYNAMICS_`, the AppDynamics Java Agent will be configured for your application. At the moment only agent version 4.1.7.1 is available. After configuring these environment variables, restage your app for the agent to be enabled.
+
+
+
 Data Snapshots
 ====
 
