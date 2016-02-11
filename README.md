@@ -73,6 +73,8 @@ The scheduled events can be configured using environment variable `SCHEDULED_EVE
 
 Possible values are `ALL`, `NONE` or a comma separated list of the scheduled events that you would like to enable. For example: `ModuleA.ScheduledEvent,ModuleB.OtherScheduledEvent`
 
+When scaling to multiple instances, the scheduled events that are enabled via the settings above will only be executed on instance `0`. The other instances will not execute scheduled events at all.
+
 
 ### Configuring External Filestore
 
@@ -110,11 +112,15 @@ The default Java version is 7. If you want to run on Java 8, you can set the env
 You can enable the Mendix Debugger by setting a `DEBUGGER_PASSWORD` environment variable. This will enable and open up the debugger for the lifetime of this process and is to be used with caution. The debugger is reachable on https://DOMAIN/debugger/. You can follow the second half of this [How To](https://world.mendix.com/display/howto50/Debugging+Microflows+Remotely) to connect with the Mendix Business Modeler. To stop the debugger, unset the environment variable and restart the application.
 
 
-### Enabling sticky sessions
+### Horizontal scaling
 
 Mendix apps in version 5.15 and up will automatically set `JSESSIONID` as the session cookie. In most Cloud Foundry configurations this will automatically enable session stickiness, which is required for running Mendix apps with more than one instance. For some distributions you might need to explicitly enable session stickiness in the HTTP router.
 
 If you want to disable the session stickiness, you can set the environment variable `DISABLE_STICKY_SESSIONS` to `true`.
+
+When you make changes to your domain model, the Mendix Runtime will need to synchronize data model changes with the database on startup. This will only happen on instance `0`. The other instances will wait until the database is fully synchronized. This is determined via the `CF_INSTANCE_INDEX` environment variable. If the environment variable is not present (this is the case older Cloud Foundry versions) every instance will attempt to synchronize the database. A warning containing the text `CF_INSTANCE_INDEX environment variable not found` will be printed in the log.
+
+Scheduled events will also only be executed on instance `0`, see the section [Configuring Scheduled Events](#configuring-scheduled-events).
 
 
 ### Configuring Cluster Support (BETA feature for Mendix 6)

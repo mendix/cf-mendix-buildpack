@@ -71,7 +71,13 @@ def activate_license():
 
 def get_scheduled_events(metadata):
     scheduled_events = os.getenv('SCHEDULED_EVENTS', None)
-    if scheduled_events is None or scheduled_events == 'ALL':
+    if not am_i_primary_instance():
+        logger.debug(
+            'Disabling all scheduled events because I am not the primary '
+            'instance'
+        )
+        return ('NONE', None)
+    elif scheduled_events is None or scheduled_events == 'ALL':
         logger.debug('Enabling all scheduled events')
         return ('ALL', None)
     elif scheduled_events == 'NONE':
@@ -473,8 +479,15 @@ def start_app(m2ee):
                 logger.warning('DB does not exists')
                 abort = True
             elif result == 3:
-                m2eeresponse = m2ee.client.execute_ddl_commands()
-                m2eeresponse.display_error()
+                if am_i_primary_instance():
+                    m2eeresponse = m2ee.client.execute_ddl_commands()
+                    m2eeresponse.display_error()
+                else:
+                    logger.info(
+                        'waiting 10 seconds before primary instance '
+                        'synchronizes database'
+                    )
+                    time.sleep(10)
             elif result == 4:
                 logger.warning('Not enough constants!')
                 abort = True
@@ -558,7 +571,17 @@ def loop_until_process_dies(m2ee):
     sys.exit(1)
 
 
+def am_i_primary_instance():
+    return os.getenv('CF_INSTANCE_INDEX', '0') == '0'
+
+
 if __name__ == '__main__':
+    if os.getenv('CF_INSTANCE_INDEX') is None:
+        logger.warning(
+            'CF_INSTANCE_INDEX environment variable not found. Assuming '
+            'responsibility for scheduled events execution and database '
+            'synchronization commands.'
+        )
     pre_process_m2ee_yaml()
     activate_license()
     set_up_logging_file()
