@@ -102,7 +102,7 @@ The default java heap size is set to the total available memory divided by two. 
 
 ### Configuring the Java version
 
-The default Java version is 7. If you want to run on Java 8, you can set the environment variable `JAVA_VERSION` to `8`.
+The default Java version is 8 for Mendix 5.18 and higher. If you want to force Java 7 or 8, you can set the environment variable `JAVA_VERSION` to `7` or `8`.
 
     cf set-env <YOUR_APP> JAVA_VERSION 8
 
