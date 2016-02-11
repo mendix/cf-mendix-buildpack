@@ -256,6 +256,10 @@ If you want to enable initializing your database and files from an existing data
 Configuring Logging
 ====
 
+To debug the code of the buildpack itself, set the `BUILDPACK_XTRACE` environment variable to `true`.
+
+### App log levels
+
 From Mendix 6 onwards it is possible to configure log levels using environment variables. This allows getting a better insight in the behavior of your Mendix app. Configuring environment variables happens by adding one or more environment variables starting with the name `LOGGING_CONFIG` (the part of the name after that is not relevant and only used to distinguish between multiple entries if necessary). Its value should be valid JSON, in the format:
 
     {

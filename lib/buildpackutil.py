@@ -144,6 +144,13 @@ def mkdir_p(path):
             raise
 
 
+def get_buildpack_loglevel():
+    if os.getenv('BUILDPACK_XTRACE', 'false') == 'true':
+        return logging.DEBUG
+    else:
+        return logging.INFO
+
+
 def download(url, destination):
     logging.debug('downloading {url}'.format(url=url))
     with open(destination, 'w') as file_handle:

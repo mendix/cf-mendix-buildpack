@@ -7,12 +7,6 @@ import logging
 import zipfile
 import subprocess
 
-logging.basicConfig(
-    level=logging.INFO,
-    stream=sys.stdout,
-    format='%(levelname)s: %(message)s',
-)
-
 BUILD_DIR = sys.argv[1]
 CACHE_DIR = os.path.join(sys.argv[2], 'bust')
 DOT_LOCAL_LOCATION = os.path.join(BUILD_DIR, '.local')
@@ -21,6 +15,13 @@ BUILDPACK_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, os.path.join(BUILDPACK_DIR, 'lib'))
 import buildpackutil
 from m2ee.version import MXVersion
+
+
+logging.basicConfig(
+    level=buildpackutil.get_buildpack_loglevel(),
+    stream=sys.stdout,
+    format='%(levelname)s: %(message)s',
+)
 
 logging.getLogger("requests").setLevel(logging.WARNING)
 
