@@ -107,11 +107,6 @@ The default Java version is 8 for Mendix 5.18 and higher. If you want to force J
     cf set-env <YOUR_APP> JAVA_VERSION 8
 
 
-### Enabling the Mendix Debugger
-
-You can enable the Mendix Debugger by setting a `DEBUGGER_PASSWORD` environment variable. This will enable and open up the debugger for the lifetime of this process and is to be used with caution. The debugger is reachable on https://DOMAIN/debugger/. You can follow the second half of this [How To](https://world.mendix.com/display/howto50/Debugging+Microflows+Remotely) to connect with the Mendix Business Modeler. To stop the debugger, unset the environment variable and restart the application.
-
-
 ### Horizontal Scaling
 
 There are two ways for horizontal scaling in Mendix. In Mendix 5.15+ you can use sticky sessions or starting with Mendix 6 you can start Cluster Support (BETA). See below on how to activate both these settings.
@@ -253,7 +248,9 @@ Data Snapshots
 If you want to enable initializing your database and files from an existing data snapshot included in the MDA, set `USE_DATA_SNAPSHOT` to `true`.
 
 
-Configuring Logging
+
+
+Logging and Debugging
 ====
 
 To debug the code of the buildpack itself, set the `BUILDPACK_XTRACE` environment variable to `true`.
@@ -275,6 +272,12 @@ You can see the available Log Nodes in your application in the Mendix Modeler. T
  * `INFO`
  * `DEBUG`
  * `TRACE`
+
+To see all that is going on in your app, set an environment variable `LOGGING_CONFIG` to `{"*": "TRACE"}`.
+
+### Enabling the Mendix Debugger
+
+You can enable the Mendix Debugger by setting a `DEBUGGER_PASSWORD` environment variable. This will enable and open up the debugger for the lifetime of this process and is to be used with caution. The debugger is reachable on https://DOMAIN/debugger/. You can follow the second half of this [How To](https://world.mendix.com/display/howto50/Debugging+Microflows+Remotely) to connect with the Mendix Business Modeler. To stop the debugger, unset the environment variable and restart the application.
 
 
 Contributing
