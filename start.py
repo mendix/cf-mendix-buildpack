@@ -558,6 +558,47 @@ def configure_debugger(m2ee):
         )
 
 
+def _transform_logging(nodes):
+    res = []
+    for k,v in nodes:
+        res.append({
+            "name": k,
+            "level": v
+        })
+    return res
+
+def configure_logging(m2ee):
+    # checks environment variables that start with 'LOGGING_CONFIG_'. Those
+    # should contain a JSON in the following format:
+    # {
+    #   "subscriber": "mysub" | "*" | ["mysub1", "mysub2"],  (default: "*")
+    #   "nodes": {
+    #     "M2EE": "TRACE",
+    #     "Jetty": "DEBUG"
+    #   }
+    # }
+    # or in case subscriber is omitted:
+    # {
+    #   "M2EE": "TRACE",
+    #   "Jetty": "DEBUG"
+    # }
+    for k,v in os.environ.iteritems():
+        if k.startswith('LOGGING_CONFIG_'):
+            logJson = json.loads(v)
+
+            nodes = logJson["nodes"]
+            if nodes is None:
+                # shortcut for the case subscriber is omitted, value can be
+                # directly the list of nodes to configure
+                m2ee.set_log_levels("*", nodes=_transform_logging(logJson),
+                                    force=True)
+            else:
+                subscriber = logJson.get("subscriber", "*")
+                m2ee.set_log_levels(subscriber, \
+                                    nodes=_transform_logging(nodes), 
+                                    force=True)
+
+
 def display_running_version(m2ee):
     if m2ee.config.get_runtime_version() >= 4.4:
         feedback = m2ee.client.about().get_feedback()
@@ -597,6 +638,7 @@ if __name__ == '__main__':
     service_backups()
     start_app(m2ee)
     create_admin_user(m2ee)
+    configure_logging(m2ee)
     display_running_version(m2ee)
     configure_debugger(m2ee)
     loop_until_process_dies(m2ee)
