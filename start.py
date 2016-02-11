@@ -291,8 +291,9 @@ def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
         app_config['DTAPMode'] = 'D'
 
     if (m2ee.config.get_runtime_version() >= 5.15 and
-            os.getenv('DISABLE_STICKY_SESSIONS', '').lower() != 'true' and
+            os.getenv('ENABLE_STICKY_SESSIONS', 'false').lower() == 'true' and
             not is_cluster_enabled()):
+        logger.info('Enabling sticky sessions')
         app_config['com.mendix.core.SessionIdCookieName'] = 'JSESSIONID'
 
     mxruntime_config.update(app_config)
