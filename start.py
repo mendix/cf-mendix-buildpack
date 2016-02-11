@@ -560,43 +560,24 @@ def configure_debugger(m2ee):
 
 def _transform_logging(nodes):
     res = []
-    for k,v in nodes:
+    for k, v in nodes:
         res.append({
             "name": k,
             "level": v
         })
     return res
 
-def configure_logging(m2ee):
-    # checks environment variables that start with 'LOGGING_CONFIG_'. Those
-    # should contain a JSON in the following format:
-    # {
-    #   "subscriber": "mysub" | "*" | ["mysub1", "mysub2"],  (default: "*")
-    #   "nodes": {
-    #     "M2EE": "TRACE",
-    #     "Jetty": "DEBUG"
-    #   }
-    # }
-    # or in case subscriber is omitted:
-    # {
-    #   "M2EE": "TRACE",
-    #   "Jetty": "DEBUG"
-    # }
-    for k,v in os.environ.iteritems():
-        if k.startswith('LOGGING_CONFIG_'):
-            logJson = json.loads(v)
 
-            nodes = logJson["nodes"]
-            if nodes is None:
-                # shortcut for the case subscriber is omitted, value can be
-                # directly the list of nodes to configure
-                m2ee.set_log_levels("*", nodes=_transform_logging(logJson),
-                                    force=True)
-            else:
-                subscriber = logJson.get("subscriber", "*")
-                m2ee.set_log_levels(subscriber, \
-                                    nodes=_transform_logging(nodes), 
-                                    force=True)
+def configure_logging(m2ee):
+    for k, v in os.environ.iteritems():
+        if k.startswith('LOGGING_CONFIG'):
+            m2ee.set_log_levels(
+                '*',
+                nodes=_transform_logging(
+                    json.loads(v)
+                ),
+                force=True,
+            )
 
 
 def display_running_version(m2ee):

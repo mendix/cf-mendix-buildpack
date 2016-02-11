@@ -256,13 +256,15 @@ If you want to enable initializing your database and files from an existing data
 Configuring Logging
 ====
 
-From Mendix 6 onwards it is possible to configure log levels using environment variables. This allows getting a better insight in the behavior of your Mendix app. Configuring environment variables happens by adding one or more environment variables starting with the name `LOGGING_CONFIG_` (the part of the name after that is not relevant and only used to distinguish between multiple entries if necessary). It's value is a JSON, in the format:
-```
-{ 
-  "ConnectionBus": "TRACE"
-}
-```
-As key is specified the log-node name. It's value is one of:
+From Mendix 6 onwards it is possible to configure log levels using environment variables. This allows getting a better insight in the behavior of your Mendix app. Configuring environment variables happens by adding one or more environment variables starting with the name `LOGGING_CONFIG` (the part of the name after that is not relevant and only used to distinguish between multiple entries if necessary). Its value should be valid JSON, in the format:
+
+    {
+      "LOGNODE": "LEVEL",
+      "*": "LEVEL",
+      "PREFIX*": "LEVEL",
+    }
+
+You can see the available Log Nodes in your application in the Mendix Modeler. The level should be one of:
  * `CRITICAL`
  * `ERROR`
  * `WARNING`
@@ -270,19 +272,6 @@ As key is specified the log-node name. It's value is one of:
  * `DEBUG`
  * `TRACE`
 
-Alternatively it is also possible to specify a subscriber when necessary using the following JSON:
-```
-{
-  "subscriber": "MySubscriber",
-  "nodes": { 
-    "ConnectionBus": "TRACE"
-  }    
-}
-```
-The key `subscriber` can have the value `*` (all subscribers), a specific subscriber (see above example) or a list of subscribers. In the latter case the value looks like:
-```
-  "subscriber": [ "MySubscriber", "SomeOtherSubscriber" ]
-```
 
 Contributing
 ====
