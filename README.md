@@ -118,7 +118,7 @@ Mendix apps in version 5.15 and up will automatically set `JSESSIONID` as the se
 
 If you want to disable the session stickiness, you can set the environment variable `DISABLE_STICKY_SESSIONS` to `true`.
 
-When you make changes to your domain model, the Mendix Runtime will need to synchronize data model changes with the database on startup. This will only happen on instance `0`. The other instances will wait until the database is fully synchronized. This is determined via the `CF_INSTANCE_INDEX` environment variable. If the environment variable is not present (this is the case older Cloud Foundry versions) every instance will attempt to synchronize the database. A warning containing the text `CF_INSTANCE_INDEX environment variable not found` will be printed in the log.
+When you make changes to your domain model, the Mendix Runtime will need to synchronize data model changes with the database on startup. This will only happen on instance `0`. The other instances will wait until the database is fully synchronized. This is determined via the `CF_INSTANCE_INDEX` environment variable. This is a built-in variable in Cloud Foundry, you do not need to set it yourself. If the environment variable is not present (this is the case older Cloud Foundry versions) every instance will attempt to synchronize the database. A warning containing the text `CF_INSTANCE_INDEX environment variable not found` will be printed in the log.
 
 Scheduled events will also only be executed on instance `0`, see the section [Configuring Scheduled Events](#configuring-scheduled-events).
 
