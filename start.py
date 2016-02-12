@@ -559,7 +559,7 @@ def configure_debugger(m2ee):
 
 def _transform_logging(nodes):
     res = []
-    for k, v in nodes:
+    for k, v in nodes.iteritems():
         res.append({
             "name": k,
             "level": v
