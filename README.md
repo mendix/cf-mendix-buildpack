@@ -261,8 +261,7 @@ From Mendix 6 onwards it is possible to configure log levels using environment v
 
     {
       "LOGNODE": "LEVEL",
-      "*": "LEVEL",
-      "PREFIX*": "LEVEL",
+      "PREFIX\*": "LEVEL",
     }
 
 You can see the available Log Nodes in your application in the Mendix Modeler. The level should be one of:
@@ -272,8 +271,6 @@ You can see the available Log Nodes in your application in the Mendix Modeler. T
  * `INFO`
  * `DEBUG`
  * `TRACE`
-
-To see all that is going on in your app, set an environment variable `LOGGING_CONFIG` to `{"*": "TRACE"}`.
 
 ### Enabling the Mendix Debugger
 
