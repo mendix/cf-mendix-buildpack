@@ -319,7 +319,7 @@ def run_mx_build():
         's|/app/vendor/mono/lib/libgdiplus.so|%s|g' % os.path.join(
             BUILDPACK_DIR, 'lib', 'mono-lib', 'libgdiplus.so'
         ),
-        get_mono_path() + '/etc/mono/config',
+        os.path.join(get_mono_path(), 'etc/mono/config'),
     ])
     subprocess.check_call([
         'sed',
@@ -327,7 +327,7 @@ def run_mx_build():
         's|/usr/lib/libMonoPosixHelper.so|%s|g' % os.path.join(
             BUILDPACK_DIR, 'lib', 'mono-lib', 'libMonoPosixHelper.so'
         ),
-        get_mono_path() + '/etc/mono/config',
+        os.path.join(get_mono_path(), 'etc/mono/config'),
     ])
     java_locations = [
         '/usr/lib/jvm/jdk-%s-oracle-x64' % _get_java_version(),
