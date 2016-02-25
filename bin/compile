@@ -4,7 +4,6 @@ import sys
 import json
 import shutil
 import logging
-import zipfile
 import subprocess
 
 BUILD_DIR = sys.argv[1]
@@ -310,7 +309,7 @@ def run_mx_build():
         '/tmp/mono/bin/mono',
         '--config', '/tmp/mono/etc/mono/config',
         '/tmp/mxbuild/modeler/mxbuild.exe',
-        '--output=/tmp/model.mda',
+        '--target=deploy',
         '--java-home=%s' % java_location,
         '--java-exe-path=%s/bin/java' % java_location,
     ]
@@ -322,19 +321,18 @@ def run_mx_build():
     args.append(get_mpr_file())
     subprocess.check_call(args, env=env)
 
+    for dir_name in ['web', 'model']:
+        path = os.rename(
+            os.path.join(BUILD_DIR, 'deployment', dir_name),
+            os.path.join(BUILD_DIR, dir_name),
+        )
     for file_name in os.listdir(BUILD_DIR):
         path = os.path.join(BUILD_DIR, file_name)
-        if file_name != '.local':
+        if file_name not in ['.local', 'web', 'model']:
             if os.path.isdir(path):
                 shutil.rmtree(path)
             else:
                 os.unlink(path)
-    zf = zipfile.ZipFile('/tmp/model.mda')
-    try:
-        zf.extractall(BUILD_DIR)
-    finally:
-        zf.close()
-
 
 if __name__ == '__main__':
     preflight_check()
