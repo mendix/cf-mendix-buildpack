@@ -1,10 +1,11 @@
 language: sh
 
-script:
+before_script:
   - wget "https://cli.run.pivotal.io/stable?release=debian64&version=6.16.1&source=github-rel" -O cli.deb
   - sudo dpkg -i cli.deb
-  - cf login -a $CF_ENDPOINT -u $CF_USER -p $CF_USER_P -o $CF_ORG -s $CF_SPACE
-  - cf apps
+
+script:
+  - bash tests/run.sh
 
 notifications:
   email: false
