@@ -63,9 +63,6 @@ def start_nginx():
         'nginx/sbin/nginx', '-p', 'nginx', '-c', 'conf/nginx.conf'
     ])
     subprocess.Popen([
-        'tail', '-f', 'nginx/logs/access.log'
-    ])
-    subprocess.Popen([
         'tail', '-f', 'nginx/logs/error.log'
     ])
 
