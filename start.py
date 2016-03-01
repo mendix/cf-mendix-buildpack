@@ -46,7 +46,7 @@ def set_up_nginx_files():
     ).replace(
         'ROOT', os.getcwd()
     )
-    for line in lines:
+    for line in lines.split('\n'):
         logger.debug(line)
     with open('nginx/conf/nginx.conf', 'w') as fh:
         fh.write(lines)
