@@ -5,11 +5,11 @@ m2ee:
  app_name: My Project Name
  app_base: BUILD_PATH/
  admin_port: ADMIN_PORT
- admin_listen_addresses: "127.0.0.1"
+ admin_listen_addresses: "*"
  custom_environment:
   HOME: BUILD_PATH
  javabin: BUILD_PATH/.local/bin/java
- admin_pass: eikeecahngophopeetohweesonohrahphuidaofohhaeghapoo
+ admin_pass: ADMIN_PASSWORD
 
  runtime_port: RUNTIME_PORT
  runtime_listen_addresses: "*"

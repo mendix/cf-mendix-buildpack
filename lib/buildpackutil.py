@@ -120,7 +120,7 @@ def download_and_unpack(url, destination, cache_dir='/tmp/downloads'):
         subprocess.check_call(
             ['dpkg-deb', '-x', cached_location, destination]
         )
-    elif file_name.endswith('.tar.gz'):
+    elif file_name.endswith('.tar.gz') or file_name.endswith('.tgz'):
         subprocess.check_call(
             ['tar', 'xf', cached_location, '-C', destination]
         )

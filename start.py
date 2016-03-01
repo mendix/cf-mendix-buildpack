@@ -9,22 +9,79 @@ import sys
 sys.path.insert(0, 'lib')
 import requests
 import buildpackutil
+import random
+import crypt
 from m2ee import M2EE, logger
+from nginx import get_path_config
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
 logger.info('Started Mendix Cloud Foundry Buildpack')
 
+nginx_port = int(os.environ['PORT'])
+runtime_port = nginx_port + 1
+admin_port = runtime_port + 1
+
 
 def pre_process_m2ee_yaml():
-    runtime_port = int(os.environ['PORT'])
-
     subprocess.check_call([
         'sed',
         '-i',
-        's|BUILD_PATH|%s|g; s|RUNTIME_PORT|%d|; s|ADMIN_PORT|%d|'
-        % (os.getcwd(), runtime_port, runtime_port + 1),
+        's|BUILD_PATH|%s|g; s|RUNTIME_PORT|%d|; s|ADMIN_PORT|%d|; s|ADMIN_PASSWORD|%s|'
+        % (os.getcwd(), runtime_port, admin_port, os.environ.get('ADMIN_PASSWORD')),
         '.local/m2ee.yaml'
+    ])
+
+
+def salt():
+    """Returns a string of 2 random letters"""
+    letters = 'abcdefghijklmnopqrstuvwxyz' \
+              'ABCDEFGHIJKLMNOPQRSTUVWXYZ' \
+              '0123456789/.'
+    return random.choice(letters) + random.choice(letters)
+
+
+def set_up_nginx_files():
+    lines = ''
+    with open('nginx/conf/nginx.conf') as fh:
+        lines = ''.join(fh.readlines())
+    lines = lines.replace(
+        'ROOT', os.getcwd()
+    ).replace(
+        'NGINX_PORT', str(nginx_port)
+    ).replace(
+        'RUNTIME_PORT', str(runtime_port)
+    ).replace(
+        'ADMIN_PORT', str(admin_port)
+    ).replace(
+        'CONFIG', get_path_config()
+    )
+    with open('nginx/conf/nginx.conf', 'w') as fh:
+        fh.write(lines)
+
+    htpasswd_filename = '%s/nginx/.htpasswd' % (os.getcwd())
+    with open(htpasswd_filename, 'w') as fh:
+        fh.write(
+            "%s:%s\n" % (
+                'MxAdmin',
+                crypt.crypt(os.environ.get('ADMIN_PASSWORD'), salt())
+            )
+        )
+
+    buildpackutil.mkdir_p('nginx/logs')
+    subprocess.check_call(['touch', 'nginx/logs/access.log'])
+    subprocess.check_call(['touch', 'nginx/logs/error.log'])
+
+
+def start_nginx():
+    subprocess.Popen([
+        'nginx/sbin/nginx', '-p', 'nginx', '-c', 'conf/nginx.conf'
+    ])
+    subprocess.Popen([
+        'tail', '-f', 'nginx/logs/access.log'
+    ])
+    subprocess.Popen([
+        'tail', '-f', 'nginx/logs/error.log'
     ])
 
 
@@ -616,9 +673,11 @@ if __name__ == '__main__':
     signal.signal(signal.SIGTERM, sigterm_handler)
 
     service_backups()
+    set_up_nginx_files()
     start_app(m2ee)
     create_admin_user(m2ee)
     configure_logging(m2ee)
     display_running_version(m2ee)
     configure_debugger(m2ee)
+    start_nginx()
     loop_until_process_dies(m2ee)

@@ -223,6 +223,10 @@ def copy_buildpack_resources():
         os.path.join(BUILD_DIR, 'start.py'),
     )
     shutil.copytree(
+        os.path.join(BUILDPACK_DIR, 'nginx'),
+        os.path.join(BUILD_DIR, 'nginx'),
+    )
+    shutil.copytree(
         os.path.join(BUILDPACK_DIR, 'lib'),
         os.path.join(BUILD_DIR, 'lib'),
     )
@@ -368,6 +372,15 @@ def run_mx_build():
             else:
                 os.unlink(path)
 
+
+def set_up_nginx():
+    buildpackutil.download_and_unpack(
+        'https://pivotal-buildpacks.s3.amazonaws.com/concourse-binaries/nginx/'
+        'nginx-1.9.10-linux-x64.tgz',
+        BUILD_DIR,
+    )
+
+
 if __name__ == '__main__':
     preflight_check()
     if is_source_push():
@@ -381,4 +394,5 @@ if __name__ == '__main__':
     set_up_appdynamics()
     download_mendix_version()
     copy_buildpack_resources()
+    set_up_nginx()
     logging.info('buildpack compile completed')
