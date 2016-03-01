@@ -37,6 +37,8 @@ cf create-service amazon-s3 basic "$APP_NAME"-storage
 cf bind-service "$APP_NAME" "$APP_NAME"-schnapps
 cf bind-service "$APP_NAME" "$APP_NAME"-storage
 cf bind-service "$APP_NAME" "$APP_NAME"-database
+cf set-env "$APP_NAME" ADMIN_PASSWORD "$MX_PASSWORD"
+cf set-env "$APP_NAME" DEBUGGER_PASSWORD "$MX_PASSWORD"
 cf start "$APP_NAME"
 nosetests
 cf stop "$APP_NAME"
