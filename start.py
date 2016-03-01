@@ -68,6 +68,7 @@ def set_up_nginx_files():
             )
         )
 
+    buildpackutil.mkdir_p('nginx/logs')
     subprocess.check_call(['touch', 'nginx/logs/access.log'])
     subprocess.check_call(['touch', 'nginx/logs/error.log'])
 
