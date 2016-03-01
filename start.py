@@ -9,10 +9,8 @@ import sys
 sys.path.insert(0, 'lib')
 import requests
 import buildpackutil
-import random
-import crypt
 from m2ee import M2EE, logger
-from nginx import get_path_config
+from nginx import get_path_config, gen_htpasswd
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
@@ -33,14 +31,6 @@ def pre_process_m2ee_yaml():
     ])
 
 
-def salt():
-    """Returns a string of 2 random letters"""
-    letters = 'abcdefghijklmnopqrstuvwxyz' \
-              'ABCDEFGHIJKLMNOPQRSTUVWXYZ' \
-              '0123456789/.'
-    return random.choice(letters) + random.choice(letters)
-
-
 def set_up_nginx_files():
     lines = ''
     with open('nginx/conf/nginx.conf') as fh:
@@ -59,14 +49,7 @@ def set_up_nginx_files():
     with open('nginx/conf/nginx.conf', 'w') as fh:
         fh.write(lines)
 
-    htpasswd_filename = '%s/nginx/.htpasswd' % (os.getcwd())
-    with open(htpasswd_filename, 'w') as fh:
-        fh.write(
-            "%s:%s\n" % (
-                'MxAdmin',
-                crypt.crypt(os.environ.get('ADMIN_PASSWORD'), salt())
-            )
-        )
+    gen_htpasswd({'MxAdmin': os.environ.get('ADMIN_PASSWORD')})
 
     buildpackutil.mkdir_p('nginx/logs')
     subprocess.check_call(['touch', 'nginx/logs/access.log'])
