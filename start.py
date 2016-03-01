@@ -36,7 +36,7 @@ def set_up_nginx_files():
     with open('nginx/conf/nginx.conf') as fh:
         lines = ''.join(fh.readlines())
     lines = lines.replace(
-        'ROOT', os.getcwd()
+        'CONFIG', get_path_config()
     ).replace(
         'NGINX_PORT', str(nginx_port)
     ).replace(
@@ -44,7 +44,7 @@ def set_up_nginx_files():
     ).replace(
         'ADMIN_PORT', str(admin_port)
     ).replace(
-        'CONFIG', get_path_config()
+        'ROOT', os.getcwd()
     )
     with open('nginx/conf/nginx.conf', 'w') as fh:
         fh.write(lines)
