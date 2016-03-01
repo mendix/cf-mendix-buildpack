@@ -394,4 +394,5 @@ if __name__ == '__main__':
     set_up_appdynamics()
     download_mendix_version()
     copy_buildpack_resources()
+    set_up_nginx()
     logging.info('buildpack compile completed')
