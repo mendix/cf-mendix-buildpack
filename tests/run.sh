@@ -3,7 +3,6 @@
 export APP_NAME="sample-mda"
 
 set -e
-set -x
 
 ls *.py
 
@@ -15,7 +14,12 @@ else
     exit 1
 fi
 
-cf login -a $CF_ENDPOINT -u $CF_USER -p $CF_USER_P -o $CF_ORG -s $CF_SPACE
+if [ -z "${TRAVIS_BRANCH}" ]
+then
+    export TRAVIS_BRANCH=$(git rev-parse --symbolic-full-name --abbrev-ref HEAD)
+fi
+
+cf login -a $CF_ENDPOINT -u $CF_USER -p $CF_PASSWORD -o $CF_ORG -s $CF_SPACE
 
 virtualenv venv
 source venv/bin/activate
@@ -23,7 +27,7 @@ pip install -r requirements.txt
 
 bash cleanup.sh
 
-cf push -f manifest.yml --no-start $APP_NAME
+cf push -f manifest.yml --no-start $APP_NAME -b https://github.com/mendix/cf-mendix-buildpack.git#$TRAVIS_BRANCH
 cf create-service schnapps basic $APP_NAME-schnapps
 cf create-service PostgreSQL "Basic PostgreSQL Plan" $APP_NAME-database
 cf create-service amazon-s3 basic $APP_NAME-storage
