@@ -5,13 +5,25 @@ export APP_NAME="sample-mda"
 set -e
 set -x
 
+ls *.py
+
+if [ -f run.sh ]
+then
+    echo "correct dir."
+else
+    echo "wrong dir to run tests from."
+    exit 1
+fi
+
 cf login -a $CF_ENDPOINT -u $CF_USER -p $CF_USER_P -o $CF_ORG -s $CF_SPACE
 
-pip install nosetest requests
+virtualenv venv
+source venv/bin/activate
+pip install -r requirements.txt
 
-bash tests/cleanup.sh
+bash cleanup.sh
 
-cf push -f tests/manifest.yml --no-start $APP_NAME
+cf push -f manifest.yml --no-start $APP_NAME
 cf create-service schnapps basic $APP_NAME-schnapps
 cf create-service PostgreSQL "Basic PostgreSQL Plan" $APP_NAME-database
 cf create-service amazon-s3 basic $APP_NAME-storage
@@ -19,6 +31,5 @@ cf bind-service $APP_NAME $APP_NAME-schnapps
 cf bind-service $APP_NAME $APP_NAME-storage
 cf bind-service $APP_NAME $APP_NAME-database
 cf start $APP_NAME
-nosetests tests/
+nosetests
 cf stop $APP_NAME
-
