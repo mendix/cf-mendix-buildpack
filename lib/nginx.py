@@ -53,6 +53,7 @@ def get_path_config():
                 raise Exception(
                     'invalid satisfy value: %s' % config['satisfy']
                 )
+
         ipfilter = []
         if 'ipfilter' in config:
             for ip in config['ipfilter']:
