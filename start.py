@@ -13,7 +13,6 @@ import random
 import crypt
 from m2ee import M2EE, logger
 from nginx import get_path_config
-import logging
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
