@@ -4,6 +4,4 @@ applications:
     memory: 512M
     path: sample-6.2.0.mda
     env:
-      ADMIN_PASSWORD: sebaiNgooyiyoh9cheuquueghoongo@!
-      DEBUGGER_PASSWORD: sebaiNgooyiyoh9cheuquueghoongo@!
       DEVELOPMENT_MODE: true
