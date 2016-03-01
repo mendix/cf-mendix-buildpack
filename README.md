@@ -1,5 +1,6 @@
 Run Mendix in Cloud Foundry
 =====
+[![Build Status](https://travis-ci.org/mendix/cf-mendix-buildpack.svg?branch=master)](https://travis-ci.org/mendix/cf-mendix-buildpack)
 
 There are specific guides for deploying Mendix apps to the [Pivotal Web Services](https://world.mendix.com/display/howto50/Deploying+a+Mendix+App+to+Pivotal) and [HP Helion Development Platform](https://world.mendix.com/display/howto50/Deploying+a+Mendix+App+to+HP+Helion) flavors of Cloud Foundry on our [documentation page](https://world.mendix.com/display/howto50/Deploying+a+Mendix+App+to+Cloud+Foundry). This page will document the more low-level details and CLI instructions.
 
@@ -146,7 +147,7 @@ Alternatively you can make the required mendix runtime files `mendix-VERSION.tar
 
 To import Certificate Authorities (CAs) into the Java truststore, use the `CERTIFICATE_AUTHORITIES` environment variable.
 
-The contents of this variable should be a concatenated string containing a the additional CAs in PEM format that are trusted. Example: 
+The contents of this variable should be a concatenated string containing a the additional CAs in PEM format that are trusted. Example:
 
     -----BEGIN CERTIFICATE-----
     MIIGejCCBGKgAwIBAgIJANuKwREDEb4sMA0GCSqGSIb3DQEBCwUAMIGEMQswCQYD
