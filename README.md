@@ -261,8 +261,7 @@ To debug the code of the buildpack itself, set the `BUILDPACK_XTRACE` environmen
 From Mendix 6 onwards it is possible to configure log levels using environment variables. This allows getting a better insight in the behavior of your Mendix app. Configuring environment variables happens by adding one or more environment variables starting with the name `LOGGING_CONFIG` (the part of the name after that is not relevant and only used to distinguish between multiple entries if necessary). Its value should be valid JSON, in the format:
 
     {
-      "LOGNODE": "LEVEL",
-      "PREFIX\*": "LEVEL",
+      "LOGNODE": "LEVEL"
     }
 
 You can see the available Log Nodes in your application in the Mendix Modeler. The level should be one of:
