@@ -3,30 +3,22 @@ import os
 
 
 def get_path_config():
+    '''
+    Example for ACCESS_RESTRICTIONS
+    {
+        "/": {'ipfilter': ['10.0.0.0/8'], 'client_cert': true, 'satisfy': 'any'},
+        "/ws/MyWebService/": {'ipfilter': ['10.0.0.0/8'], 'client_cert': true, 'satisfy': 'all'},
+        "/CustomRequestHandler/": {'ipfilter': ['10.0.0.0/8']},
+    }
+    Default for satisfy is all
+    '''
     restrictions = json.loads(os.environ.get('ACCESS_RESTRICTIONS', '{}'))
     result = ''
     if '/' not in restrictions:
         restrictions['/'] = {}
 
-    client_cert_used = any(map(
-        lambda config: 'client-cert' in config,
-        restrictions.values()
-    ))
-
-    if client_cert_used:
-        result += """
-location /client-cert-check-internal {
-    internal;
-    if ($http_x_client_certificate) {
-        return 200;
-    }
-    return 403;
-}
-
-"""
-
     for path, config in restrictions.iteritems():
-        if path in ['/_mxadmin/']:
+        if path in ['/_mxadmin/', '/client-cert-check-internal']:
             raise Exception(
                 'Can not override access restrictions on system path %s' % path
             )
