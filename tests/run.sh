@@ -4,7 +4,7 @@ export APP_NAME="sample-mda"
 
 set -e
 
-ls *.py
+ls usecase/*.py
 
 if [ -f run.sh ]
 then
@@ -41,5 +41,5 @@ cf bind-service "$APP_NAME" "$APP_NAME"-database
 cf set-env "$APP_NAME" ADMIN_PASSWORD "$MX_PASSWORD"
 cf set-env "$APP_NAME" DEBUGGER_PASSWORD "$MX_PASSWORD"
 cf start "$APP_NAME"
-python venv/bin/nosetests -vv
+python venv/bin/nosetests -vv usecase/
 cf stop "$APP_NAME"
