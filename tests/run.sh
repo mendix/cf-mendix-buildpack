@@ -24,8 +24,9 @@ cf login -a "$CF_ENDPOINT" -u "$CF_USER" -p "$CF_PASSWORD" -o "$CF_ORG" -s "$CF_
 # cf login command above exposes the vars if set -x is on top.
 set -x
 
-virtualenv venv
-source venv/bin/activate
+[ -d "venv" ] && rm -rf "venv"
+virtualenv -p python2 venv
+. venv/bin/activate
 pip install -r requirements.txt
 
 bash cleanup.sh
@@ -40,5 +41,5 @@ cf bind-service "$APP_NAME" "$APP_NAME"-database
 cf set-env "$APP_NAME" ADMIN_PASSWORD "$MX_PASSWORD"
 cf set-env "$APP_NAME" DEBUGGER_PASSWORD "$MX_PASSWORD"
 cf start "$APP_NAME"
-nosetests -vv
+python venv/bin/nosetests -vv
 cf stop "$APP_NAME"
