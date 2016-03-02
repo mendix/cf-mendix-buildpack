@@ -5,3 +5,5 @@ applications:
     path: sample-6.2.0.mda
     env:
       DEVELOPMENT_MODE: true
+      S3_USE_SSE: true
+      USE_DATA_SNAPSHOT: true
