@@ -519,6 +519,11 @@ def start_app(m2ee):
                 abort = True
             elif result == 3:
                 if am_i_primary_instance():
+                    if os.getenv('SHOW_DDL_COMMANDS', '').lower() == 'true':
+                        for line in m2ee.client.get_ddl_commands({
+                            "verbose": True
+                        }).get_feedback()['ddl_commands']:
+                            logger.info(line)
                     m2eeresponse = m2ee.client.execute_ddl_commands()
                     m2eeresponse.display_error()
                 else:
