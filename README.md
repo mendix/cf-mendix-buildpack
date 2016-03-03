@@ -108,6 +108,19 @@ The default Java version is 8 for Mendix 5.18 and higher. If you want to force J
     cf set-env <YOUR_APP> JAVA_VERSION 8
 
 
+### Configuring Custom Runtime Settings
+
+To configure any of the advanced [Custom Runtime Settings](https://world.mendix.com/display/refguide6/Custom+Settings) you can use setting name prefixed with `MXRUNTIME_` as an environment variable.
+
+For example, to configure the `ConnectionPoolingMinIdle` setting to value `10`, you can set the following environment variable:
+
+    cf set-env <YOUR_APP> MXRUNTIME_ConnectionPoolingMinIdle 10
+
+If the setting contains a dot `.` you can use an underscore `_` in the environment variable. So to set `com.mendix.storage.s3.EndPoint` to `foo` you can use:
+
+    cf set-env <YOUR_APP> MXRUNTIME_com_mendix_storage_s3_EndPoint foo
+
+
 ### Horizontal Scaling
 
 There are two ways for horizontal scaling in Mendix. In Mendix 5.15+ you can use sticky sessions or starting with Mendix 6 you can start Cluster Support (BETA). See below on how to activate both these settings.
