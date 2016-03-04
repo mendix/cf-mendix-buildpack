@@ -1,6 +1,6 @@
 ---
 applications:
-  - name: sample-mda
+  - name: sample-app
     memory: 512M
     path: sample-6.2.0.mda
     env:

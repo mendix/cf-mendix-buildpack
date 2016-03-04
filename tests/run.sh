@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export APP_NAME="sample-mda"
+export APP_NAME="sample-app"
 
 set -e
 
@@ -31,7 +31,26 @@ pip install -r requirements.txt
 
 bash cleanup.sh
 
-cf push -f manifest.yml --no-start -b https://github.com/mendix/cf-mendix-buildpack.git#$TRAVIS_BRANCH "$APP_NAME"
+# MDA
+wget -O sample-6.2.0.mda https://s3-eu-west-1.amazonaws.com/mx-ci-binaries/sample-6.2.0.mda
+cf push -f manifest-mda.yml --no-start -b https://github.com/mendix/cf-mendix-buildpack.git#$TRAVIS_BRANCH "$APP_NAME"
+cf create-service schnapps basic "$APP_NAME"-schnapps
+cf create-service PostgreSQL "Basic PostgreSQL Plan" "$APP_NAME"-database
+cf create-service amazon-s3 basic "$APP_NAME"-storage
+cf bind-service "$APP_NAME" "$APP_NAME"-schnapps
+cf bind-service "$APP_NAME" "$APP_NAME"-storage
+cf bind-service "$APP_NAME" "$APP_NAME"-database
+cf set-env "$APP_NAME" ADMIN_PASSWORD "$MX_PASSWORD"
+cf set-env "$APP_NAME" DEBUGGER_PASSWORD "$MX_PASSWORD"
+cf start "$APP_NAME"
+python venv/bin/nosetests -vv usecase/
+cf stop "$APP_NAME"
+
+bash cleanup.sh
+
+# MPK
+wget -O sample-6.2.0.mpk https://s3-eu-west-1.amazonaws.com/mx-ci-binaries/sample-6.2.0.mpk
+cf push -f manifest-mpk.yml --no-start -b https://github.com/mendix/cf-mendix-buildpack.git#$TRAVIS_BRANCH "$APP_NAME"
 cf create-service schnapps basic "$APP_NAME"-schnapps
 cf create-service PostgreSQL "Basic PostgreSQL Plan" "$APP_NAME"-database
 cf create-service amazon-s3 basic "$APP_NAME"-storage
