@@ -2,7 +2,7 @@
 applications:
   - name: sample-app
     memory: 512M
-    path: sample-6.2.0.mda
+    path: sample-6.2.0.mpk
     env:
       DEVELOPMENT_MODE: true
       S3_USE_SSE: true
