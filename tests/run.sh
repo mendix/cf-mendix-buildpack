@@ -32,7 +32,7 @@ pip install -r requirements.txt
 bash cleanup.sh
 
 wget -O sample-6.2.0.mda https://s3-eu-west-1.amazonaws.com/mx-ci-binaries/sample-6.2.0.mda
-cf push -f manifest.yml --no-start -b https://github.com/mendix/cf-mendix-buildpack.git#$TRAVIS_BRANCH "$APP_NAME"
+cf push -f manifest-mda.yml --no-start -b https://github.com/mendix/cf-mendix-buildpack.git#$TRAVIS_BRANCH "$APP_NAME"
 cf create-service schnapps basic "$APP_NAME"-schnapps
 cf create-service PostgreSQL "Basic PostgreSQL Plan" "$APP_NAME"-database
 cf create-service amazon-s3 basic "$APP_NAME"-storage
