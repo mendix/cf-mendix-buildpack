@@ -288,6 +288,7 @@ def get_certificate_authorities():
                 files.append(location)
                 n += 1
         config['CACertificates'] = ','.join(files)
+        buildpackutil.mkdir_p(os.path.join(os.getcwd(), 'model', 'resources'))
     return config
 
 
