@@ -12,6 +12,7 @@ DOT_LOCAL_LOCATION = os.path.join(BUILD_DIR, '.local')
 BUILDPACK_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 sys.path.insert(0, os.path.join(BUILDPACK_DIR, 'lib'))
+import requests
 import buildpackutil
 from m2ee.version import MXVersion
 
@@ -337,6 +338,9 @@ def run_mx_build():
         '/usr/lib/jvm/jdk-%s-oracle-x64' % _get_java_version(),
         '/tmp/javasdk/usr/lib/jvm/jdk-%s-oracle-x64' % _get_java_version(),
     ]
+    build_errors_json = '/tmp/builderrors.json'
+    if os.path.exists(build_errors_json):
+        os.remove(build_errors_json)
     java_location = None
     for possible_java_location in java_locations:
         if os.path.isdir(possible_java_location):
@@ -350,6 +354,7 @@ def run_mx_build():
         '--target=deploy',
         '--java-home=%s' % java_location,
         '--java-exe-path=%s/bin/java' % java_location,
+        '--write-errors=%s' % build_errors_json
     ]
     if os.environ.get('FORCED_MXBUILD_URL'):
         args.append('--loose-version-check')
@@ -357,7 +362,26 @@ def run_mx_build():
             'Using forced mxbuild version, the model will be converted'
         )
     args.append(get_mpr_file())
-    subprocess.check_call(args, env=env)
+    generic_build_failure = {"problems": [
+        {
+            "severity": "Error",
+            "message": "Failed to build the model, please check application logs for details.",
+            "locations": []
+        }
+    ]}
+    try:
+        subprocess.check_call(args, env=env)
+    except subprocess.CalledProcessError as e:
+        if os.path.exists(build_errors_json):
+            with open(build_errors_json, 'r') as b:
+                builddata = b.read()
+        else:
+            builddata = json.dumps(generic_build_failure)
+        buildstatus_callback = os.environ.get('BUILD_STATUS_CALLBACK_URL')
+        if buildstatus_callback:
+            logging.info('Submitting build status')
+            requests.put(buildstatus_callback, builddata)
+        raise e
 
     for dir_name in ['web', 'model']:
         path = os.rename(
