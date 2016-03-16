@@ -341,6 +341,7 @@ def run_mx_build():
     build_errors_json = '/tmp/builderrors.json'
     if os.path.exists(build_errors_json):
         os.remove(build_errors_json)
+
     java_location = None
     for possible_java_location in java_locations:
         if os.path.isdir(possible_java_location):
@@ -354,8 +355,11 @@ def run_mx_build():
         '--target=deploy',
         '--java-home=%s' % java_location,
         '--java-exe-path=%s/bin/java' % java_location,
-        '--write-errors=%s' % build_errors_json
     ]
+    if os.environ.get('FORCE_WRITE_BUILD_ERRORS') or get_runtime_version() >= 6.4:
+        logging.debug('Will write build errors to %s' % build_errors_json)
+        args.append('--write-errors=%s' % build_errors_json)
+
     if os.environ.get('FORCED_MXBUILD_URL'):
         args.append('--loose-version-check')
         logging.warning(
