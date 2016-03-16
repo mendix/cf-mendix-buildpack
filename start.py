@@ -223,6 +223,7 @@ def get_filestore_config(m2ee):
         'com.mendix.storage.s3.BucketName': bucket,
     }
     if not perform_deletes:
+        logger.debug('disabling perform deletes for runtime')
         config['com.mendix.storage.s3.PerformDeleteFromStorage'] = False
     if key_suffix:
         config['com.mendix.storage.s3.ResourceNameSuffix'] = key_suffix
