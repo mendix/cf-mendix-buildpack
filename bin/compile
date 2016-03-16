@@ -357,8 +357,8 @@ def run_mx_build():
         '--java-exe-path=%s/bin/java' % java_location,
     ]
     if os.environ.get('FORCE_WRITE_BUILD_ERRORS') or get_runtime_version() >= 6.4:
-        logging.debug('Will write build errors to %s' % build_errors_json)
         args.append('--write-errors=%s' % build_errors_json)
+        logging.debug('Will write build errors to %s' % build_errors_json)
 
     if os.environ.get('FORCED_MXBUILD_URL'):
         args.append('--loose-version-check')
@@ -366,25 +366,10 @@ def run_mx_build():
             'Using forced mxbuild version, the model will be converted'
         )
     args.append(get_mpr_file())
-    generic_build_failure = {"problems": [
-        {
-            "severity": "Error",
-            "message": "Failed to build the model, please check application logs for details.",
-            "locations": []
-        }
-    ]}
     try:
         subprocess.check_call(args, env=env)
     except subprocess.CalledProcessError as e:
-        if os.path.exists(build_errors_json):
-            with open(build_errors_json, 'r') as b:
-                builddata = b.read()
-        else:
-            builddata = json.dumps(generic_build_failure)
-        buildstatus_callback = os.environ.get('BUILD_STATUS_CALLBACK_URL')
-        if buildstatus_callback:
-            logging.info('Submitting build status')
-            requests.put(buildstatus_callback, builddata)
+        buildstatus_callback(build_errors_json)
         raise e
 
     for dir_name in ['web', 'model']:
@@ -399,6 +384,27 @@ def run_mx_build():
                 shutil.rmtree(path)
             else:
                 os.unlink(path)
+
+
+def buildstatus_callback(error_file):
+    generic_build_failure = {"problems": [
+        {
+            "severity": "Error",
+            "message": "Failed to build the model, please check application logs for details.",
+            "locations": []
+        }
+    ]}
+    if os.path.exists(error_file):
+        with open(error_file, 'r') as b:
+            builddata = b.read()
+    else:
+        builddata = json.dumps(generic_build_failure)
+    callback_url = os.environ.get('BUILD_STATUS_CALLBACK_URL')
+    if callback_url:
+        logging.info('Submitting build status')
+        requests.put(callback_url, builddata)
+    else:
+        logging.warning('No build status callback url set, so not going to submit the status')
 
 
 def set_up_nginx():
