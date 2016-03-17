@@ -5,6 +5,7 @@ import json
 import shutil
 import logging
 import subprocess
+import errno
 
 BUILD_DIR = sys.argv[1]
 CACHE_DIR = os.path.join(sys.argv[2], 'bust')
@@ -12,6 +13,7 @@ DOT_LOCAL_LOCATION = os.path.join(BUILD_DIR, '.local')
 BUILDPACK_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 sys.path.insert(0, os.path.join(BUILDPACK_DIR, 'lib'))
+import requests
 import buildpackutil
 from m2ee.version import MXVersion
 
@@ -337,6 +339,13 @@ def run_mx_build():
         '/usr/lib/jvm/jdk-%s-oracle-x64' % _get_java_version(),
         '/tmp/javasdk/usr/lib/jvm/jdk-%s-oracle-x64' % _get_java_version(),
     ]
+    build_errors_json = '/tmp/builderrors.json'
+    try:
+        os.remove(build_errors_json)
+    except OSError as e:
+        if e.errno != errno.ENOENT:
+            raise
+
     java_location = None
     for possible_java_location in java_locations:
         if os.path.isdir(possible_java_location):
@@ -351,13 +360,21 @@ def run_mx_build():
         '--java-home=%s' % java_location,
         '--java-exe-path=%s/bin/java' % java_location,
     ]
+    if get_runtime_version() >= 6.4 or os.environ.get('FORCE_WRITE_BUILD_ERRORS'):
+        args.append('--write-errors=%s' % build_errors_json)
+        logging.debug('Will write build errors to %s' % build_errors_json)
+
     if os.environ.get('FORCED_MXBUILD_URL'):
         args.append('--loose-version-check')
         logging.warning(
             'Using forced mxbuild version, the model will be converted'
         )
     args.append(get_mpr_file())
-    subprocess.check_call(args, env=env)
+    try:
+        subprocess.check_call(args, env=env)
+    except subprocess.CalledProcessError as e:
+        buildstatus_callback(build_errors_json)
+        raise e
 
     for dir_name in ['web', 'model']:
         path = os.rename(
@@ -371,6 +388,27 @@ def run_mx_build():
                 shutil.rmtree(path)
             else:
                 os.unlink(path)
+
+
+def buildstatus_callback(error_file):
+    generic_build_failure = {"problems": [
+        {
+            "severity": "Error",
+            "message": "Failed to build the model, please check application logs for details.",
+            "locations": []
+        }
+    ]}
+    if os.path.exists(error_file):
+        with open(error_file, 'r') as b:
+            builddata = b.read()
+    else:
+        builddata = json.dumps(generic_build_failure)
+    callback_url = os.environ.get('BUILD_STATUS_CALLBACK_URL')
+    if callback_url:
+        logging.info('Submitting build status')
+        requests.put(callback_url, builddata)
+    else:
+        logging.warning('No build status callback url set, so not going to submit the status')
 
 
 def set_up_nginx():

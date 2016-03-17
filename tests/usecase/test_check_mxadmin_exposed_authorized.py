@@ -1,22 +1,24 @@
-import unittest
 import requests
 import os
+import subprocess
+import basetest
 
 
-class TestCaseMxAdminExposed(unittest.TestCase):
+class TestCaseMxAdminExposed(basetest.BaseTest):
+    def setUp(self):
+        package_name = "sample-6.2.0.mpk"
+        self.setUpCF(package_name)
+        subprocess.check_call("cf start \"%s\"" % self.app_name, shell=True)
+
     def test_mxadmin_exposed_unauthorized(self):
         # assumes the app route is coming from env var
-        app_name = os.environ.get("APP_NAME")
-        full_uri = "https://" + app_name + "." + os.environ.get("CF_DOMAIN") + "/_mxadmin/"
-
+        full_uri = "https://" + self.app_name+ "/_mxadmin/"
         r = requests.get(full_uri)
         assert r.status_code == 401
 
 
     def test_mxadmin_exposed_authorized(self):
         # assumes the app route is coming from env var
-        app_name = os.environ.get("APP_NAME")
-        full_uri = "https://" + app_name + "." + os.environ.get("CF_DOMAIN") + "/_mxadmin/"
-
-        r = requests.get(full_uri, auth=('MxAdmin', os.environ.get("MX_PASSWORD")))
+        full_uri = "https://" + self.app_name + "/_mxadmin/"
+        r = requests.get(full_uri, auth=('MxAdmin', self.mx_password))
         assert r.status_code == 200
