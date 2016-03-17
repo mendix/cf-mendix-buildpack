@@ -5,6 +5,7 @@ import json
 import shutil
 import logging
 import subprocess
+import errno
 
 BUILD_DIR = sys.argv[1]
 CACHE_DIR = os.path.join(sys.argv[2], 'bust')
@@ -339,8 +340,11 @@ def run_mx_build():
         '/tmp/javasdk/usr/lib/jvm/jdk-%s-oracle-x64' % _get_java_version(),
     ]
     build_errors_json = '/tmp/builderrors.json'
-    if os.path.exists(build_errors_json):
+    try:
         os.remove(build_errors_json)
+    except OSError as e:
+        if e.errno != errno.ENOENT:
+            raise
 
     java_location = None
     for possible_java_location in java_locations:
@@ -356,7 +360,7 @@ def run_mx_build():
         '--java-home=%s' % java_location,
         '--java-exe-path=%s/bin/java' % java_location,
     ]
-    if os.environ.get('FORCE_WRITE_BUILD_ERRORS') or get_runtime_version() >= 6.4:
+    if get_runtime_version() >= 6.4 or os.environ.get('FORCE_WRITE_BUILD_ERRORS'):
         args.append('--write-errors=%s' % build_errors_json)
         logging.debug('Will write build errors to %s' % build_errors_json)
 
