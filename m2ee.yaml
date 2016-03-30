@@ -16,7 +16,7 @@ m2ee:
 
  pidfile: BUILD_PATH/process.pid
 
- runtime_blocking_connector: true
+ runtime_blocking_connector: false
  preserve_environment: true
 
  javaopts: [

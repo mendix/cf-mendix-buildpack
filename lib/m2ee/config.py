@@ -421,7 +421,7 @@ class M2EEConfig:
         return dotm2ee
 
     def get_runtime_blocking_connector(self):
-        return self._conf['m2ee'].get('runtime_blocking_connector', True)
+        return self._conf['m2ee'].get('runtime_blocking_connector', False)
 
     def get_symlink_mxclientsystem(self):
         return self._conf['m2ee'].get('symlink_mxclientsystem', True)
