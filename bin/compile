@@ -413,9 +413,11 @@ def buildstatus_callback(error_file):
 
 def set_up_nginx():
     buildpackutil.download_and_unpack(
-        'https://pivotal-buildpacks.s3.amazonaws.com/concourse-binaries/nginx/'
-        'nginx-1.9.10-linux-x64.tgz',
+        buildpackutil.get_blobstore_url(
+            '/mx-buildpack/nginx-1.9.13-linux-x64.tgz',
+        ),
         BUILD_DIR,
+        cache_dir=CACHE_DIR,
     )
 
 
