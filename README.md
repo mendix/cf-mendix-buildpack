@@ -262,6 +262,10 @@ Data Snapshots
 If you want to enable initializing your database and files from an existing data snapshot included in the MDA, set `USE_DATA_SNAPSHOT` to `true`.
 
 
+License Activation
+====
+
+To activate a license on your application, please contact Mendix Support.
 
 
 Logging and Debugging
