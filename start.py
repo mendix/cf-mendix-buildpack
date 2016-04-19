@@ -19,7 +19,32 @@ logger.info('Started Mendix Cloud Foundry Buildpack')
 nginx_port = int(os.environ['PORT'])
 runtime_port = nginx_port + 1
 admin_port = runtime_port + 1
-x_frame_opt = os.getenv('xFrameOptions', "SAMEORIGIN")
+
+
+def x_frame_opt_headers_handler(x_frame_opt, x_frame_opt_uri):
+    base = "add_header X-Frame-Options "
+
+    if x_frame_opt_uri:
+        return base + "\"ALLOW-FROM " + x_frame_opt_uri + "\";"
+
+    if x_frame_opt:
+        if x_frame_opt == "Never allow":
+            return base + "\"DENY\";"
+        elif x_frame_opt == "Allow":
+            # if it is Allow, than there shouldn't be a
+            # X-Frame-Options header in the first place,
+            # so replace line with empty string
+            return ""
+        elif x_frame_opt == "Allow on same domain":
+            return base + "\"SAMEORIGIN\";"
+    else:
+        # defaulting to allow all
+        return ""
+
+x_frame_opt = os.environ.get('X_FRAME_OPTIONS')
+x_frame_opt_uri = os.environ.get('X_FRAME_OPTIONS_URI')
+x_frame_options = x_frame_opt_headers_handler(x_frame_opt, x_frame_opt_uri)
+
 
 def pre_process_m2ee_yaml():
     subprocess.check_call([
@@ -45,8 +70,7 @@ def set_up_nginx_files():
         'ADMIN_PORT', str(admin_port)
     ).replace(
         'ROOT', os.getcwd()
-    ).replace('XFRAMEOPTIONS', "add_header X-Frame-Options " +
-              x_frame_opt + ";")
+    ).replace('XFRAMEOPTIONS', x_frame_options)
     for line in lines.split('\n'):
         logger.debug(line)
     with open('nginx/conf/nginx.conf', 'w') as fh:
@@ -642,7 +666,6 @@ def loop_until_process_dies(m2ee):
 
 def am_i_primary_instance():
     return os.getenv('CF_INSTANCE_INDEX', '0') == '0'
-
 
 if __name__ == '__main__':
     if os.getenv('CF_INSTANCE_INDEX') is None:
