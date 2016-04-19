@@ -19,7 +19,7 @@ logger.info('Started Mendix Cloud Foundry Buildpack')
 nginx_port = int(os.environ['PORT'])
 runtime_port = nginx_port + 1
 admin_port = runtime_port + 1
-
+x_frame_opt = os.getenv('xFrameOptions', "SAMEORIGIN")
 
 def pre_process_m2ee_yaml():
     subprocess.check_call([
@@ -45,7 +45,8 @@ def set_up_nginx_files():
         'ADMIN_PORT', str(admin_port)
     ).replace(
         'ROOT', os.getcwd()
-    )
+    ).replace('XFRAMEOPTIONS', "add_header X-Frame-Options " +
+              x_frame_opt + ";")
     for line in lines.split('\n'):
         logger.debug(line)
     with open('nginx/conf/nginx.conf', 'w') as fh:
