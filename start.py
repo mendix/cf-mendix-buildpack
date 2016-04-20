@@ -37,7 +37,7 @@ def set_up_nginx_files():
     if x_frame_options == 'ALLOW':
         x_frame_options = ''
     else:
-        x_frame_options = 'add_header X-Frame-Options %s;' % x_frame_options
+        x_frame_options = "add_header X-Frame-Options '%s';" % x_frame_options
     with open('nginx/conf/nginx.conf') as fh:
         lines = ''.join(fh.readlines())
     lines = lines.replace(
