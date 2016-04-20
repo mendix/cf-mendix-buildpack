@@ -21,16 +21,6 @@ runtime_port = nginx_port + 1
 admin_port = runtime_port + 1
 
 
-def x_frame_opt_headers_handler(x_frame_opt):
-    if not x_frame_opt or x_frame_opt == "ALLOW":
-        return ""
-    else:
-        return x_frame_opt
-
-
-x_frame_options = x_frame_opt_headers_handler(os.environ.get('X_FRAME_OPTIONS'))
-
-
 def pre_process_m2ee_yaml():
     subprocess.check_call([
         'sed',
@@ -43,6 +33,11 @@ def pre_process_m2ee_yaml():
 
 def set_up_nginx_files():
     lines = ''
+    x_frame_options = os.environ.get('X_FRAME_OPTIONS', 'ALLOW')
+    if x_frame_options == 'ALLOW':
+        x_frame_options = ''
+    else:
+        x_frame_options = 'add_header X-Frame-Options %s;' % x_frame_options
     with open('nginx/conf/nginx.conf') as fh:
         lines = ''.join(fh.readlines())
     lines = lines.replace(
@@ -56,7 +51,8 @@ def set_up_nginx_files():
     ).replace(
         'ROOT', os.getcwd()
     ).replace(
-        'XFRAMEOPTIONS', x_frame_options)
+        'XFRAMEOPTIONS', x_frame_options
+    )
     for line in lines.split('\n'):
         logger.debug(line)
     with open('nginx/conf/nginx.conf', 'w') as fh:
