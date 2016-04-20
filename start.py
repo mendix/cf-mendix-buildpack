@@ -33,6 +33,11 @@ def pre_process_m2ee_yaml():
 
 def set_up_nginx_files():
     lines = ''
+    x_frame_options = os.environ.get('X_FRAME_OPTIONS', 'ALLOW')
+    if x_frame_options == 'ALLOW':
+        x_frame_options = ''
+    else:
+        x_frame_options = "add_header X-Frame-Options '%s';" % x_frame_options
     with open('nginx/conf/nginx.conf') as fh:
         lines = ''.join(fh.readlines())
     lines = lines.replace(
@@ -45,6 +50,8 @@ def set_up_nginx_files():
         'ADMIN_PORT', str(admin_port)
     ).replace(
         'ROOT', os.getcwd()
+    ).replace(
+        'XFRAMEOPTIONS', x_frame_options
     )
     for line in lines.split('\n'):
         logger.debug(line)
@@ -641,7 +648,6 @@ def loop_until_process_dies(m2ee):
 
 def am_i_primary_instance():
     return os.getenv('CF_INSTANCE_INDEX', '0') == '0'
-
 
 if __name__ == '__main__':
     if os.getenv('CF_INSTANCE_INDEX') is None:
