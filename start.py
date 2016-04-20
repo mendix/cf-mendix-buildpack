@@ -21,29 +21,14 @@ runtime_port = nginx_port + 1
 admin_port = runtime_port + 1
 
 
-def x_frame_opt_headers_handler(x_frame_opt, x_frame_opt_uri):
-    base = "add_header X-Frame-Options "
-
-    if x_frame_opt_uri:
-        return base + "\"ALLOW-FROM " + x_frame_opt_uri + "\";"
-
-    if x_frame_opt:
-        if x_frame_opt == "Never allow":
-            return base + "\"DENY\";"
-        elif x_frame_opt == "Allow":
-            # if it is Allow, than there shouldn't be a
-            # X-Frame-Options header in the first place,
-            # so replace line with empty string
-            return ""
-        elif x_frame_opt == "Allow on same domain":
-            return base + "\"SAMEORIGIN\";"
-    else:
-        # defaulting to allow all
+def x_frame_opt_headers_handler(x_frame_opt):
+    if not x_frame_opt or x_frame_opt == "ALLOW":
         return ""
+    else:
+        return x_frame_opt
 
-x_frame_opt = os.environ.get('X_FRAME_OPTIONS')
-x_frame_opt_uri = os.environ.get('X_FRAME_OPTIONS_URI')
-x_frame_options = x_frame_opt_headers_handler(x_frame_opt, x_frame_opt_uri)
+
+x_frame_options = x_frame_opt_headers_handler(os.environ.get('X_FRAME_OPTIONS'))
 
 
 def pre_process_m2ee_yaml():
@@ -70,7 +55,8 @@ def set_up_nginx_files():
         'ADMIN_PORT', str(admin_port)
     ).replace(
         'ROOT', os.getcwd()
-    ).replace('XFRAMEOPTIONS', x_frame_options)
+    ).replace(
+        'XFRAMEOPTIONS', x_frame_options)
     for line in lines.split('\n'):
         logger.debug(line)
     with open('nginx/conf/nginx.conf', 'w') as fh:
