@@ -332,9 +332,10 @@ def get_client_certificates():
             for ws in client_certificate['pin_to']:
                 pins[ws] = location
         num += 1
-    config['ClientCertificates'] = ','.join(files)
-    config['ClientCertificatePasswords'] = ','.join(passwords)
-    config['WebServiceClientCertificates'] = pins
+    if len(files) > 0:
+        config['ClientCertificates'] = ','.join(files)
+        config['ClientCertificatePasswords'] = ','.join(passwords)
+        config['WebServiceClientCertificates'] = pins
     return config
 
 
