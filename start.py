@@ -6,6 +6,7 @@ import signal
 import subprocess
 import time
 import sys
+import base64
 sys.path.insert(0, 'lib')
 import requests
 import buildpackutil
@@ -300,6 +301,44 @@ def get_certificate_authorities():
     return config
 
 
+def get_client_certificates():
+    config = {}
+    client_certificates_json = os.getenv('CLIENT_CERTIFICATES', '[]')
+    '''
+    [
+        {
+        'pfx': 'base64...', # required
+        'password': '',
+        'pin_to': ['Module.WS1', 'Module2.WS2'] # optional
+        },
+        {...}
+    ]
+    '''
+    client_certificates = json.loads(client_certificates_json)
+    num = 0
+    files = []
+    passwords = []
+    pins = {}
+    for client_certificate in client_certificates:
+        pfx = base64.b64decode(client_certificate['pfx'])
+        location = os.path.abspath(
+            '.local/client_certificate.%d.crt' % num
+        )
+        with open(location, 'w') as f:
+            f.write(pfx)
+        passwords.append(client_certificate['password'])
+        files.append(location)
+        if 'pin_to' in client_certificate:
+            for ws in client_certificate['pin_to']:
+                pins[ws] = location
+        num += 1
+    if len(files) > 0:
+        config['ClientCertificates'] = ','.join(files)
+        config['ClientCertificatePasswords'] = ','.join(passwords)
+        config['WebServiceClientCertificates'] = pins
+    return config
+
+
 def get_custom_settings(metadata, existing_config):
     if os.getenv('USE_DATA_SNAPSHOT', 'false').lower() == 'true':
         custom_settings_key = 'Configuration'
@@ -350,6 +389,7 @@ def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
     mxruntime_config.update(get_filestore_config(m2ee))
     mxruntime_config.update(get_cluster_config())
     mxruntime_config.update(get_certificate_authorities())
+    mxruntime_config.update(get_client_certificates())
     mxruntime_config.update(get_custom_settings(metadata, mxruntime_config))
     for k, v in os.environ.iteritems():
         if k.startswith('MXRUNTIME_'):
