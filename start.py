@@ -303,7 +303,7 @@ def get_certificate_authorities():
 
 def get_client_certificates():
     config = {}
-    client_certificates_json = os.getenv('CLIENT_CERTIFICATES', None)
+    client_certificates_json = os.getenv('CLIENT_CERTIFICATES', '[]')
     '''
     [
         {
@@ -314,29 +314,27 @@ def get_client_certificates():
         {...}
     ]
     '''
-    if client_certificates_json:
-        client_certificates = json.loads(client_certificates_json)
-        num = 0
-
-        files = []
-        passwords = []
-        pins = {}
-        for client_certificate in client_certificates:
-            pfx = base64.b64decode(client_certificate['pfx'])
-            location = os.path.abspath(
-                '.local/client_certificate.%d.crt' % num
-            )
-            with open(location, 'w') as f:
-                f.write(pfx)
-            passwords.append(client_certificate['password'])
-            files.append(location)
-            if 'pin_to' in client_certificate:
-                for ws in client_certificate['pin_to']:
-                    pins[ws] = location
-            num += 1
-        config['ClientCertificates'] = ','.join(files)
-        config['ClientCertificatePasswords'] = ','.join(passwords)
-        config['WebServiceClientCertificates'] = pins
+    client_certificates = json.loads(client_certificates_json)
+    num = 0
+    files = []
+    passwords = []
+    pins = {}
+    for client_certificate in client_certificates:
+        pfx = base64.b64decode(client_certificate['pfx'])
+        location = os.path.abspath(
+            '.local/client_certificate.%d.crt' % num
+        )
+        with open(location, 'w') as f:
+            f.write(pfx)
+        passwords.append(client_certificate['password'])
+        files.append(location)
+        if 'pin_to' in client_certificate:
+            for ws in client_certificate['pin_to']:
+                pins[ws] = location
+        num += 1
+    config['ClientCertificates'] = ','.join(files)
+    config['ClientCertificatePasswords'] = ','.join(passwords)
+    config['WebServiceClientCertificates'] = pins
     return config
 
 
