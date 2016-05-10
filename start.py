@@ -17,9 +17,20 @@ logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
 logger.info('Started Mendix Cloud Foundry Buildpack')
 
-nginx_port = int(os.environ['PORT'])
-runtime_port = nginx_port + 1
-admin_port = runtime_port + 1
+def get_nginx_port():
+    return int(os.environ['PORT'])
+
+
+def get_runtime_port():
+    return get_nginx_port() + 1
+
+
+def get_admin_port():
+    return get_runtime_port() + 1
+
+
+def get_deploy_port():
+    return get_admin_port() + 1
 
 
 def pre_process_m2ee_yaml():
@@ -27,7 +38,7 @@ def pre_process_m2ee_yaml():
         'sed',
         '-i',
         's|BUILD_PATH|%s|g; s|RUNTIME_PORT|%d|; s|ADMIN_PORT|%d|; s|ADMIN_PASSWORD|%s|'
-        % (os.getcwd(), runtime_port, admin_port, os.environ.get('ADMIN_PASSWORD')),
+        % (os.getcwd(), get_runtime_port(), get_admin_port(), os.environ.get('ADMIN_PASSWORD')),
         '.local/m2ee.yaml'
     ])
 
@@ -44,11 +55,13 @@ def set_up_nginx_files():
     lines = lines.replace(
         'CONFIG', get_path_config()
     ).replace(
-        'NGINX_PORT', str(nginx_port)
+        'NGINX_PORT', str(get_nginx_port())
     ).replace(
-        'RUNTIME_PORT', str(runtime_port)
+        'RUNTIME_PORT', str(get_runtime_port())
     ).replace(
-        'ADMIN_PORT', str(admin_port)
+        'ADMIN_PORT', str(get_admin_port())
+    ).replace(
+        'DEPLOY_PORT', str(get_deploy_port())
     ).replace(
         'ROOT', os.getcwd()
     ).replace(
@@ -60,6 +73,10 @@ def set_up_nginx_files():
         fh.write(lines)
 
     gen_htpasswd({'MxAdmin': os.environ.get('ADMIN_PASSWORD')})
+    gen_htpasswd(
+        {'deploy': os.getenv('DEPLOY_PASSWORD')},
+        file_name_suffix='-mxbuild'
+    )
 
     buildpackutil.mkdir_p('nginx/logs')
     subprocess.check_call(['touch', 'nginx/logs/access.log'])
@@ -689,6 +706,13 @@ def loop_until_process_dies(m2ee):
 def am_i_primary_instance():
     return os.getenv('CF_INSTANCE_INDEX', '0') == '0'
 
+
+def start_mxbuild_service():
+    if os.getenv('DEPLOY_PASSWORD') is not None:
+        logger.info("MxBuild service is enabled")
+        subprocess.Popen(["python", "instadeploy.py", str(get_deploy_port())])
+
+
 if __name__ == '__main__':
     if os.getenv('CF_INSTANCE_INDEX') is None:
         logger.warning(
@@ -715,4 +739,5 @@ if __name__ == '__main__':
     display_running_version(m2ee)
     configure_debugger(m2ee)
     start_nginx()
+    start_mxbuild_service()
     loop_until_process_dies(m2ee)

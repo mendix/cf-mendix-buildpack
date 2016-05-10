@@ -217,6 +217,10 @@ def download_mendix_version():
 
 def copy_buildpack_resources():
     shutil.copy(
+        os.path.join(BUILDPACK_DIR, 'instadeploy.py'),
+        os.path.join(BUILD_DIR, 'instadeploy.py'),
+    )
+    shutil.copy(
         os.path.join(BUILDPACK_DIR, 'm2ee.yaml'),
         os.path.join(DOT_LOCAL_LOCATION, 'm2ee.yaml'),
     )

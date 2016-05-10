@@ -15,12 +15,15 @@ def _salt():
 def gen_htpasswd(users_passwords, file_name_suffix=''):
     with open('nginx/.htpasswd' + file_name_suffix, 'w') as fh:
         for user, password in users_passwords.items():
-            fh.write(
-                "%s:%s\n" % (
-                    user,
-                    crypt.crypt(password, _salt())
+            if not password:
+                fh.write("\n")
+            else:
+                fh.write(
+                    "%s:%s\n" % (
+                        user,
+                        crypt.crypt(password, _salt())
+                    )
                 )
-            )
 
 
 def get_path_config():
