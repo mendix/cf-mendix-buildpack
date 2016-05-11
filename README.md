@@ -141,6 +141,8 @@ If you want to enable sticky sessions, the only change that is needed is to set 
 
 When using sticky sessions, clients need to support http cookies. Webservice integrations typically don't do this, so each request can end up on a different instance.
 
+With sticky sessions there is an increase in resiliency. If one instance crashes, only 1/n-th of the users will be affected. These users will lose their session state and will have to sign in again.
+
 #### Configuring Cluster Support (BETA feature for Mendix 6)
 
 From Mendix 6 onwards it is possible to configure clustering support. With clustering support it is possible to run multiple instances of your application to achieve High Availability. Clustering support can be enabled by setting the environment variable `CLUSTER_ENABLED` to `true`.
