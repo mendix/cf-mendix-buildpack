@@ -129,10 +129,17 @@ There are two ways for horizontal scaling in Mendix. In Mendix 5.15+ you can use
 
 When you make changes to your domain model, the Mendix Runtime will need to synchronize data model changes with the database on startup. This will only happen on instance `0`. The other instances will wait until the database is fully synchronized. This is determined via the `CF_INSTANCE_INDEX` environment variable. This is a built-in variable in Cloud Foundry, you do not need to set it yourself. If the environment variable is not present (this is the case older Cloud Foundry versions) every instance will attempt to synchronize the database. A warning containing the text `CF_INSTANCE_INDEX environment variable not found` will be printed in the log.
 
+Scheduled events will also only be executed on instance `0`, see the section [Configuring Scheduled Events](#configuring-scheduled-events).
+
+In all horizontal scaling scenarios, extra care needs to be taken when programming Java actions. Examples of things to be avoided are:
+* relying on singleton variables to keep global application state
+* relying on scheduled events to make changes in memory, scheduled events will only run on the primary instance
+
 #### Enabling Sticky Sessions
 
-Scheduled events will also only be executed on instance `0`, see the section [Configuring Scheduled Events](#configuring-scheduled-events).
 If you want to enable sticky sessions, the only change that is needed is to set the environment variable `ENABLE_STICKY_SESSIONS` to `true`. This will replace the Mendix session cookie name from `XASSESSIONID` to `JSESSIONID` which will trigger sticky session detection in the Cloud Foundry http router. Watch out: custom login code might break if it still injects the `XASSESSIONID` cookie.
+
+When using sticky sessions, clients need to support http cookies. Webservice integrations typically don't do this, so each request can end up on a different instance.
 
 #### Configuring Cluster Support (BETA feature for Mendix 6)
 
