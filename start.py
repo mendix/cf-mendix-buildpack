@@ -27,11 +27,11 @@ def get_runtime_port():
 
 
 def get_admin_port():
-    return get_runtime_port() + 1
+    return get_nginx_port() + 2
 
 
 def get_deploy_port():
-    return get_admin_port() + 1
+    return get_nginx_port() + 3
 
 
 def pre_process_m2ee_yaml():
