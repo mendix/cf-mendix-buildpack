@@ -17,6 +17,7 @@ logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
 logger.info('Started Mendix Cloud Foundry Buildpack')
 
+
 def get_nginx_port():
     return int(os.environ['PORT'])
 
@@ -709,8 +710,8 @@ def am_i_primary_instance():
 
 def start_mxbuild_service():
     if os.getenv('DEPLOY_PASSWORD') is not None:
-        logger.info("MxBuild service is enabled")
-        subprocess.Popen(["python", "instadeploy.py", str(get_deploy_port())])
+        logger.info('MxBuild service is enabled')
+        subprocess.Popen(['python', 'instadeploy.py', str(get_deploy_port())])
 
 
 if __name__ == '__main__':
