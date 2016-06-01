@@ -95,7 +95,7 @@ def patch_mxbuild(location):
     subprocess.check_call((
         'wget',
         '-q',
-        'https://cdn.mendix.com/mx-buildpack/mxbuild-server3.zip',
+        'https://cdn.mendix.com/mx-buildpack/mxbuild-server4.zip',
         '-O', MXBUILD_FOLDER + 'patch.zip',
     ))
     subprocess.check_call((
