@@ -218,7 +218,8 @@ def start_mxbuild_server():
         'mono/bin/mono',
         '--config', 'mono/etc/mono/config',
         'mxbuild/%s/modeler/mxbuild.exe' % runtime_version,
-        '--serve'], env=env)
+        '--serve',
+        '--port 6666'], env=env)
 
 
 if __name__ == '__main__':
