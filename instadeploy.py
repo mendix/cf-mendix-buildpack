@@ -73,10 +73,12 @@ def ensure_mxbuild_version(version):
     if os.path.isdir(MXBUILD_FOLDER + version):
         return
     else:
+        default_mxbuild_url = 'https://cdn.mendix.com/runtime/mxbuild-%s.tar.gz' % version
+        mxbuild_url = os.environ.get('FORCED_MXBUILD_URL', default_mxbuild_url)
         subprocess.check_call((
             'wget',
             '-q',
-            'https://cdn.mendix.com/runtime/mxbuild-%s.tar.gz' % version,
+            mxbuild_url,
             '-O', MXBUILD_FOLDER + version + '.tar.gz',
         ))
         subprocess.check_call(('mkdir', '-p', MXBUILD_FOLDER + version))
@@ -87,7 +89,7 @@ def ensure_mxbuild_version(version):
             '-C', MXBUILD_FOLDER + version,
         ))
         subprocess.call(('rm', MXBUILD_FOLDER + version + '.tar.gz'))
-        patch_mxbuild(MXBUILD_FOLDER + version)
+#        patch_mxbuild(MXBUILD_FOLDER + version)
 
 
 def patch_mxbuild(location):
