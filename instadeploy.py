@@ -52,15 +52,23 @@ class StoreHandler(BaseHTTPRequestHandler):
             if 'file' in form:
                 data = form['file'].file.read()
                 open(mpk_file, "wb").write(data)
-                build(mpk_file, ticker())
-                return self._terminate(200, {'state': 'STARTED'})
+                mxbuild_response = build(mpk_file, ticker())
+                return self._terminate(200, {'state': 'STARTED'}, mxbuild_response)
             else:
                 return self._terminate(401, {'state': 'FAILED', 'errordetails': 'No MPK found'})
         except Exception as e:
             details = traceback.format_exc()
             return self._terminate(500, {'state': 'FAILED', 'errordetails': details})
 
-    def _terminate(self, status_code, data):
+    def _terminate(self, status_code, data, mxbuild_response=None):
+        if mxbuild_response:
+            mxbuild_json = json.loads(mxbuild_response.read())
+            data['buildstatus'] = mxbuild_json['problems']
+            status = mxbuild_json['status']
+            if status == 'success':
+                status_code = 200
+            else:
+                status_code = 400
         self.send_response(status_code)
         self.send_header('Content-type','application/json')
         self.end_headers()
@@ -73,10 +81,12 @@ def ensure_mxbuild_version(version):
     if os.path.isdir(MXBUILD_FOLDER + version):
         return
     else:
+        default_mxbuild_url = 'https://cdn.mendix.com/runtime/mxbuild-%s.tar.gz' % version
+        mxbuild_url = os.environ.get('FORCED_MXBUILD_URL', default_mxbuild_url)
         subprocess.check_call((
             'wget',
             '-q',
-            'https://cdn.mendix.com/runtime/mxbuild-%s.tar.gz' % version,
+            mxbuild_url,
             '-O', MXBUILD_FOLDER + version + '.tar.gz',
         ))
         subprocess.check_call(('mkdir', '-p', MXBUILD_FOLDER + version))
@@ -87,25 +97,6 @@ def ensure_mxbuild_version(version):
             '-C', MXBUILD_FOLDER + version,
         ))
         subprocess.call(('rm', MXBUILD_FOLDER + version + '.tar.gz'))
-        patch_mxbuild(MXBUILD_FOLDER + version)
-
-
-def patch_mxbuild(location):
-    print 'patching mxbuild'
-    subprocess.check_call((
-        'wget',
-        '-q',
-        'https://cdn.mendix.com/mx-buildpack/mxbuild-server3.zip',
-        '-O', MXBUILD_FOLDER + 'patch.zip',
-    ))
-    subprocess.check_call((
-        'unzip',
-        '-oqq',
-        MXBUILD_FOLDER + 'patch.zip',
-        '-d', os.path.join(location, 'modeler'),
-    ))
-    subprocess.check_call(('chmod', '+x', os.path.join(location, 'modeler', 'mxbuild.exe')))
-#    subprocess.call(('rm', MXBUILD_FOLDER + 'patch.zip'))
 
 
 def apply_changes():
@@ -151,18 +142,20 @@ def runmxbuild(project_dir, runtime_version):
         raise Exception('http error' + str(response.getcode()))
     print 'MxBuild compilation succeeded'
     print 'MxBuild took', time.time() - before, 'seconds'
+    return response
 
 
 def build(mpk_file, ticker):
     subprocess.check_call(('unzip', '-oqq', mpk_file, '-d', project_dir))
     print 'unzip', ticker.next()
     print 'runtime_version', ticker.next()
-    runmxbuild(project_dir, runtime_version)
+    response = runmxbuild(project_dir, runtime_version)
     print 'mxbuild', ticker.next()
     apply_changes()
     print 'apply new changes', ticker.next()
     reload_model()
     print 'reload model', ticker.next()
+    return response
 
 
 def reload_model():
@@ -218,7 +211,8 @@ def start_mxbuild_server():
         'mono/bin/mono',
         '--config', 'mono/etc/mono/config',
         'mxbuild/%s/modeler/mxbuild.exe' % runtime_version,
-        '--serve'], env=env)
+        '--serve',
+        '--port 6666'], env=env)
 
 
 if __name__ == '__main__':
