@@ -89,25 +89,6 @@ def ensure_mxbuild_version(version):
             '-C', MXBUILD_FOLDER + version,
         ))
         subprocess.call(('rm', MXBUILD_FOLDER + version + '.tar.gz'))
-#        patch_mxbuild(MXBUILD_FOLDER + version)
-
-
-def patch_mxbuild(location):
-    print 'patching mxbuild'
-    subprocess.check_call((
-        'wget',
-        '-q',
-        'https://cdn.mendix.com/mx-buildpack/mxbuild-server4.zip',
-        '-O', MXBUILD_FOLDER + 'patch.zip',
-    ))
-    subprocess.check_call((
-        'unzip',
-        '-oqq',
-        MXBUILD_FOLDER + 'patch.zip',
-        '-d', os.path.join(location, 'modeler'),
-    ))
-    subprocess.check_call(('chmod', '+x', os.path.join(location, 'modeler', 'mxbuild.exe')))
-#    subprocess.call(('rm', MXBUILD_FOLDER + 'patch.zip'))
 
 
 def apply_changes():
