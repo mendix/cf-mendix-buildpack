@@ -411,6 +411,7 @@ def buildstatus_callback(error_file):
     if callback_url:
         logging.info('Submitting build status')
         requests.put(callback_url, builddata)
+        logging.info('Submitted build status')
     else:
         logging.warning('No build status callback url set, so not going to submit the status')
 
