@@ -65,10 +65,6 @@ class StoreHandler(BaseHTTPRequestHandler):
             mxbuild_json = json.loads(mxbuild_response.read())
             data['buildstatus'] = mxbuild_json['problems']
             status = mxbuild_json['status']
-            if status == 'success':
-                status_code = 200
-            else:
-                status_code = 400
         self.send_response(status_code)
         self.send_header('Content-type','application/json')
         self.end_headers()
