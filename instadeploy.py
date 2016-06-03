@@ -63,8 +63,7 @@ class StoreHandler(BaseHTTPRequestHandler):
     def _terminate(self, status_code, data, mxbuild_response=None):
         if mxbuild_response:
             mxbuild_json = json.loads(mxbuild_response.read())
-            data['buildstatus'] = mxbuild_json['problems']
-            status = mxbuild_json['status']
+            data['buildstatus'] = json.dumps(mxbuild_json['problems'])
         self.send_response(status_code)
         self.send_header('Content-type','application/json')
         self.end_headers()
