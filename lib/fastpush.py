@@ -67,8 +67,7 @@ class MPKUploadHandler(BaseHTTPRequestHandler):
                 if mxbuild_response['restartRequired'] is True:
                     logger.info(str(mxbuild_response))
                     logger.info('Restarting app, reloading for now')
-#                    self.server.restart_callback()
-                    self.server.reload_callback()
+                    self.server.restart_callback()
                 else:
                     logger.info(str(mxbuild_response))
                     logger.info('Reloading model')
