@@ -9,13 +9,17 @@ import sys
 import base64
 sys.path.insert(0, 'lib')
 import requests
-import buildpackutil
 from m2ee import M2EE, logger
+import buildpackutil
+import logging
+import fastdeploy
 from nginx import get_path_config, gen_htpasswd
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
 logger.info('Started Mendix Cloud Foundry Buildpack')
+
+logging.getLogger('m2ee').propagate = False
 
 
 def get_nginx_port():
@@ -511,6 +515,7 @@ def set_up_m2ee_client(vcap_data):
 
 
 def set_up_logging_file():
+    buildpackutil.lazy_remove_file('log/out.log')
     os.mkfifo('log/out.log')
     subprocess.Popen([
         'sed',
@@ -523,7 +528,7 @@ def set_up_logging_file():
 def service_backups():
     vcap_services = buildpackutil.get_vcap_services_data()
     if not vcap_services or 'schnapps' not in vcap_services:
-        logger.info("No backup service detected")
+        logger.debug("No backup service detected")
         return
 
     backup_service = {}
@@ -592,7 +597,8 @@ def start_app(m2ee):
                         }).get_feedback()['ddl_commands']:
                             logger.info(line)
                     m2eeresponse = m2ee.client.execute_ddl_commands()
-                    m2eeresponse.display_error()
+                    if m2eeresponse.has_error():
+                        logger.info(m2eeresponse.get_error())
                 else:
                     logger.info(
                         'waiting 10 seconds before primary instance '
@@ -708,10 +714,30 @@ def am_i_primary_instance():
     return os.getenv('CF_INSTANCE_INDEX', '0') == '0'
 
 
-def start_mxbuild_service():
-    if os.getenv('DEPLOY_PASSWORD') is not None:
-        logger.info('MxBuild service is enabled')
-        subprocess.Popen(['python', 'instadeploy.py', str(get_deploy_port())])
+def set_up_fastdeploy_if_deploy_password_is_set(m2ee):
+    if os.getenv('DEPLOY_PASSWORD'):
+        mx_version = m2ee.config.get_runtime_version()
+        if mx_version >= 6.7 or str(mx_version) is '6-build10037':
+            def reload_callback():
+                m2ee.client.request('reload_model')
+
+            def restart_callback():
+                if not m2ee.stop():
+                    m2ee.terminate()
+                set_up_logging_file()
+                start_app(m2ee)
+
+            fastdeploy.FastDeployThread(
+                get_deploy_port(),
+                restart_callback,
+                reload_callback,
+                mx_version,
+            ).start()
+        else:
+            logger.warning(
+                'Not setting up FastDeploy because this mendix '
+                ' runtime version %s does not support it' % mx_version
+            )
 
 
 if __name__ == '__main__':
@@ -739,6 +765,6 @@ if __name__ == '__main__':
     configure_logging(m2ee)
     display_running_version(m2ee)
     configure_debugger(m2ee)
+    set_up_fastdeploy_if_deploy_password_is_set(m2ee)
     start_nginx()
-    start_mxbuild_service()
     loop_until_process_dies(m2ee)
