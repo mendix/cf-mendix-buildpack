@@ -110,7 +110,7 @@ def set_up_java():
             java_version=_get_java_version()
         )
     ):
-        logging.info('rootfs without java sdk detected, downloading and unpacking it now')
+        logging.debug('rootfs without java sdk detected, downloading and unpacking it now')
         buildpackutil.download_and_unpack(
             buildpackutil.get_blobstore_url(
                 '/mx-buildpack/'
@@ -129,7 +129,7 @@ def set_up_java():
             os.path.join(DOT_LOCAL_LOCATION, 'bin', 'java')
         )
     else:
-        logging.info('rootfs with java sdk detected, not downloading and unpacking it myself')
+        logging.debug('rootfs with java sdk detected, not downloading and unpacking it myself')
         os.symlink(
             '/usr/lib/jvm/jdk-{java_version}-oracle-x64/bin/java'.format(
                 java_version=_get_java_version()
