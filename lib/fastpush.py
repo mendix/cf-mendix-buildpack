@@ -8,6 +8,7 @@ import traceback
 import threading
 import buildpackutil
 import requests
+import subprocess
 
 
 ROOT_DIR = os.getcwd() + '/'
@@ -63,15 +64,15 @@ class MPKUploadHandler(BaseHTTPRequestHandler):
                 data = form['file'].file.read()
                 open(MPK_FILE, 'wb').write(data)
                 mxbuild_response = build()
-                if 'restartRequired' in str(mxbuild_response):
+                if mxbuild_response['restartRequired'] is True:
                     logger.info(str(mxbuild_response))
                     logger.info('Restarting app, reloading for now')
-#                    self.server.mxbuild_restart_callback()
-                    self.server.mxbuild_reload_callback()
+#                    self.server.restart_callback()
+                    self.server.reload_callback()
                 else:
                     logger.info(str(mxbuild_response))
                     logger.info('Reloading model')
-                    self.server.mxbuild_reload_callback()
+                    self.server.reload_callback()
                 return self._terminate(200, {
                     'state': 'STARTED',
                 }, mxbuild_response)
@@ -97,6 +98,45 @@ class MPKUploadHandler(BaseHTTPRequestHandler):
         self.wfile.write(json.dumps(data))
 
 
+def build():
+    logger.debug('unzipping ' + MPK_FILE + ' to ' + TMP_PROJECT_DIR)
+    subprocess.check_call(('unzip', '-oqq', MPK_FILE, '-d', TMP_PROJECT_DIR))
+    logger.debug('rsync to intermediate')
+    subprocess.call((
+        'rsync', '--recursive', '--checksum',
+        TMP_PROJECT_DIR + '/',
+        TMP2_PROJECT_DIR + '/',
+    ))
+    subprocess.call((
+        'rsync', '--recursive', '--update',
+        TMP2_PROJECT_DIR + '/',
+        PROJECT_DIR + '/',
+    ))
+    mpr = os.path.abspath(buildpackutil.get_mpr_file_from_dir(PROJECT_DIR))
+    response = requests.post(
+        'http://localhost:6666/build',
+        data=json.dumps({
+            'target': 'Deploy',
+            'projectFilePath': mpr,
+            'forceFullDeployment': False
+        }),
+        headers={
+            'Content-Type': 'application/json',
+        },
+        timeout=120,
+    )
+    response.raise_for_status()
+
+    for name in ('web', 'model'):
+        subprocess.call((
+            'rsync', '-a',
+            os.path.join(DEPLOYMENT_DIR, name) + '/',
+            os.path.join(ROOT_DIR, name) + '/',
+        ))
+
+    return response.json()
+
+
 def do_run(port, restart_callback, reload_callback, mx_version):
     mxbuild.start_mxbuild_server(
         os.path.join(os.getcwd(), '.local'),
@@ -106,6 +146,6 @@ def do_run(port, restart_callback, reload_callback, mx_version):
 
     print('Going to listen on port ', port)
     server = HTTPServer(('', port), MPKUploadHandler)
-    server.mxbuild_restart_callback = restart_callback
-    server.mxbuild_reload_callback = reload_callback
+    server.restart_callback = restart_callback
+    server.reload_callback = reload_callback
     server.serve_forever()
