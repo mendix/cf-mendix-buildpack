@@ -18,9 +18,6 @@ logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
 logger.info('Started Mendix Cloud Foundry Buildpack')
 
-logging_tree.printout()
-
-
 def get_nginx_port():
     return int(os.environ['PORT'])
 
@@ -736,4 +733,5 @@ if __name__ == '__main__':
     display_running_version(m2ee)
     configure_debugger(m2ee)
     start_nginx()
+    logging_tree.printout()
     loop_until_process_dies(m2ee)
