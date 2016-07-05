@@ -18,6 +18,9 @@ logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
 logger.info('Started Mendix Cloud Foundry Buildpack')
 
+logging.getLogger('m2ee').propagate = False
+
+
 def get_nginx_port():
     return int(os.environ['PORT'])
 
