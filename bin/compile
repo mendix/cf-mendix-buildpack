@@ -213,7 +213,7 @@ def run_mx_build():
         os.path.join(BUILD_DIR, 'lib', 'mono-lib')
     )
 
-    mxbuild_location = os.path.join(DOT_LOCAL_LOCATION, 'mxbuild'),
+    mxbuild_location = os.path.join(DOT_LOCAL_LOCATION, 'mxbuild')
 
     buildpackutil.ensure_mxbuild_in_directory(
         mxbuild_location, get_runtime_version(), CACHE_DIR
