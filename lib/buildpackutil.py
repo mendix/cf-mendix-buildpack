@@ -269,7 +269,7 @@ def _checkout_from_git_rootfs(directory, mx_version):
     )
 
 
-def fix_mono_config_and_get_env(mono_lib_dir):
+def fix_mono_config_and_get_env(dot_local_location, mono_lib_dir):
     env = dict(os.environ)
     env['LD_LIBRARY_PATH'] = mono_lib_dir
     subprocess.check_call([
@@ -286,7 +286,7 @@ def fix_mono_config_and_get_env(mono_lib_dir):
         's|/usr/lib/libMonoPosixHelper.so|%s|g' % os.path.join(
             mono_lib_dir, 'libMonoPosixHelper.so'
         ),
-        os.path.join(get_mono_path(), 'etc/mono/config'),
+        os.path.join(get_mono_path(dot_local_location), 'etc/mono/config'),
     ])
     return env
 
