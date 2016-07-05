@@ -6,6 +6,7 @@ import subprocess
 import logging
 import sys
 sys.path.insert(0, 'lib')
+from m2ee.version import MXVersion
 import requests
 
 
@@ -172,3 +173,25 @@ def get_existing_directory_or_raise(dirs, error):
 
 class NotFoundException(Exception):
     pass
+
+
+def get_java_version(mx_version):
+    if type(mx_version) is not MXVersion:
+        raise Exception('Type should be MXVersion')
+
+    versions = {
+        '7': '7u80',
+        '8': '8u45',
+    }
+    if mx_version >= 5.18:
+        default = '8'
+    else:
+        default = '7'
+    main_java_version = os.getenv('JAVA_VERSION', default)
+
+    if main_java_version not in versions.keys():
+        raise Exception(
+            'Invalid Java version specified: %s'
+            % main_java_version
+        )
+    return versions[main_java_version]

@@ -27,25 +27,6 @@ logging.basicConfig(
 logging.getLogger("requests").setLevel(logging.WARNING)
 
 
-def _get_java_version():
-    versions = {
-        '7': '7u80',
-        '8': '8u45',
-    }
-    if get_runtime_version() >= 5.18:
-        default = '8'
-    else:
-        default = '7'
-    main_java_version = os.getenv('JAVA_VERSION', default)
-
-    if main_java_version not in versions.keys():
-        raise Exception(
-            'Invalid Java version specified: %s'
-            % main_java_version
-        )
-    return versions[main_java_version]
-
-
 def get_runtime_version():
     file_name = os.path.join(BUILD_DIR, 'model', 'metadata.json')
     try:
@@ -104,10 +85,11 @@ def check_admin_password_environment_variable():
 def set_up_java():
     logging.debug('begin download and install java')
     buildpackutil.mkdir_p(os.path.join(DOT_LOCAL_LOCATION, 'bin'))
+    java_version = buildpackutil.get_java_version(get_runtime_version())
 
     if not os.path.isdir(
         '/usr/lib/jvm/jdk-{java_version}-oracle-x64'.format(
-            java_version=_get_java_version()
+            java_version=java_version,
         )
     ):
         logging.debug('rootfs without java sdk detected, downloading and unpacking it now')
@@ -115,7 +97,7 @@ def set_up_java():
             buildpackutil.get_blobstore_url(
                 '/mx-buildpack/'
                 'oracle-java{java_version}-jre_{java_version}_amd64.deb'.format(
-                    java_version=_get_java_version()
+                    java_version=java_version,
                 ),
             ),
             DOT_LOCAL_LOCATION,
@@ -124,7 +106,7 @@ def set_up_java():
         #  use ../ because path is different at staging, so final abspath unknown
         os.symlink(
             '../usr/lib/jvm/jre-{java_version}-oracle-x64/bin/java'.format(
-                java_version=_get_java_version()
+                java_version=java_version,
             ),
             os.path.join(DOT_LOCAL_LOCATION, 'bin', 'java')
         )
@@ -132,7 +114,7 @@ def set_up_java():
         logging.debug('rootfs with java sdk detected, not downloading and unpacking it myself')
         os.symlink(
             '/usr/lib/jvm/jdk-{java_version}-oracle-x64/bin/java'.format(
-                java_version=_get_java_version()
+                java_version=java_version,
             ),
             os.path.join(DOT_LOCAL_LOCATION, 'bin', 'java')
         )
@@ -143,29 +125,30 @@ def set_up_java():
 def set_up_java_sdk():
     logging.debug('begin download and install java sdk')
     destination = '/tmp/javasdk'
+    java_version = buildpackutil.get_java_version(get_runtime_version())
 
     if not os.path.isdir(
             '/usr/lib/jvm/jdk-{java_version}-oracle-x64'.format(
-                java_version=_get_java_version()
+                java_version=java_version,
             )
     ):
-        logging.info('rootfs without java sdk detected, downloading and unpacking it now')
+        logging.debug('rootfs without java sdk detected, downloading and unpacking it now')
         buildpackutil.mkdir_p(destination)
         buildpackutil.download_and_unpack(
             buildpackutil.get_blobstore_url(
                 '/mx-buildpack/'
                 'oracle-java{java_version}-jdk_{java_version}_amd64.deb'.format(
-                    java_version=_get_java_version()
+                    java_version=java_version,
                 ),
             ),
             destination,
             CACHE_DIR,
         )
     else:
-        logging.info('rootfs with java sdk detected, not downloading and unpacking it myself')
+        logging.debug('rootfs with java sdk detected, not downloading and unpacking it myself')
         os.symlink(
             '/usr/lib/jvm/jdk-{java_version}-oracle-x64/bin/java'.format(
-                java_version=_get_java_version()
+                java_version=java_version,
             ),
             destination,
         )
@@ -317,6 +300,7 @@ def set_up_mx_build():
 
 def run_mx_build():
     env = dict(os.environ)
+    java_version = buildpackutil.get_java_version(get_runtime_version())
     env['LD_LIBRARY_PATH'] = os.path.join(BUILDPACK_DIR, 'lib', 'mono-lib')
     subprocess.check_call([
         'sed',
@@ -336,8 +320,8 @@ def run_mx_build():
     ])
 
     jdk_location = buildpackutil.get_existing_directory_or_raise([
-        '/usr/lib/jvm/jdk-%s-oracle-x64' % _get_java_version(),
-        '/tmp/javasdk/usr/lib/jvm/jdk-%s-oracle-x64' % _get_java_version(),
+        '/usr/lib/jvm/jdk-%s-oracle-x64' % java_version,
+        '/tmp/javasdk/usr/lib/jvm/jdk-%s-oracle-x64' % java_version,
     ], 'Java not found')
     build_errors_json = '/tmp/builderrors.json'
     try:
