@@ -11,11 +11,14 @@ sys.path.insert(0, 'lib')
 import requests
 from m2ee import M2EE, logger
 import buildpackutil
+import logging_tree
 from nginx import get_path_config, gen_htpasswd
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
 logger.info('Started Mendix Cloud Foundry Buildpack')
+
+logging_tree.printout()
 
 
 def get_nginx_port():
