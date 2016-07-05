@@ -9,8 +9,8 @@ import sys
 import base64
 sys.path.insert(0, 'lib')
 import requests
-import buildpackutil
 from m2ee import M2EE, logger
+import buildpackutil
 from nginx import get_path_config, gen_htpasswd
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
