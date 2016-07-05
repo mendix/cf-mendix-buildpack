@@ -108,5 +108,4 @@ def do_run(port, restart_callback, reload_callback, mx_version):
     server = HTTPServer(('', port), MPKUploadHandler)
     server.mxbuild_restart_callback = restart_callback
     server.mxbuild_reload_callback = reload_callback
-    mxbuild.start_mxbuild_server()
     server.serve_forever()
