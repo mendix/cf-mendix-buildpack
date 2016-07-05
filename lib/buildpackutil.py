@@ -205,6 +205,8 @@ def get_mpr_file_from_dir(directory):
 
 
 def ensure_mxbuild_in_directory(directory, mx_version, cache_dir):
+    if os.path.isdir(os.path.join(directory, 'modeler')):
+        return
     mkdir_p(directory)
 
     url = os.environ.get('FORCED_MXBUILD_URL')
