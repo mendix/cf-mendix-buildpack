@@ -252,7 +252,7 @@ def _checkout_from_git_rootfs(directory, mx_version):
     except:
         try:
             subprocess.check_call(
-                ('git', 'fetch', '--depth=1', 'origin', str(mx_version)),
+                ('git', 'fetch', '--tags'),
                 cwd=mendix_runtimes_path, env=env
             )
             subprocess.check_call(
