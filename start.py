@@ -12,7 +12,6 @@ import requests
 from m2ee import M2EE, logger
 import buildpackutil
 import logging
-import logging_tree
 from nginx import get_path_config, gen_htpasswd
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
@@ -736,6 +735,5 @@ if __name__ == '__main__':
     configure_logging(m2ee)
     display_running_version(m2ee)
     configure_debugger(m2ee)
-    logging_tree.printout()
     start_nginx()
     loop_until_process_dies(m2ee)
