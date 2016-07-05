@@ -291,8 +291,9 @@ def fix_mono_config_and_get_env(mono_lib_dir):
     return env
 
 
-def get_mono_path():
+def get_mono_path(dot_local_location):
     return get_existing_directory_or_raise([
+        os.path.join(dot_local_location, 'mono'),
         '/usr/local/share/mono-3.10.0',
         '/tmp/mono',
     ], 'Mono not found')
@@ -306,14 +307,14 @@ def lazy_remove_file(filename):
             raise
 
 
-def ensure_mono(directory, cache_dir):
-    if os.path.isdir('/usr/local/share/mono-3.10.0'):
-        return
-    download_and_unpack(
-        get_blobstore_url('/mx-buildpack/mono-3.10.0.tar.gz'),
-        directory,
-        cache_dir,
-    )
+def ensure_and_get_mono(directory, cache_dir):
+    if not os.path.isdir('/usr/local/share/mono-3.10.0'):
+        download_and_unpack(
+            get_blobstore_url('/mx-buildpack/mono-3.10.0.tar.gz'),
+            directory,
+            cache_dir,
+        )
+    return get_mono_path(directory)
 
 
 def ensure_and_return_java_sdk(mx_version, cache_dir):
