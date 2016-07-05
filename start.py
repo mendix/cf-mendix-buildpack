@@ -732,6 +732,6 @@ if __name__ == '__main__':
     configure_logging(m2ee)
     display_running_version(m2ee)
     configure_debugger(m2ee)
-    start_nginx()
     logging_tree.printout()
+    start_nginx()
     loop_until_process_dies(m2ee)
