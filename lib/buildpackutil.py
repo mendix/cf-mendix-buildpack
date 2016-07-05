@@ -195,3 +195,13 @@ def get_java_version(mx_version):
             % main_java_version
         )
     return versions[main_java_version]
+
+
+def get_mpr_file_from_dir(directory):
+    mprs = filter(lambda x: x.endswith('.mpr'), os.listdir(directory))
+    if len(mprs) == 1:
+        return os.path.join(directory, mprs[0])
+    elif len(mprs) > 1:
+        raise Exception('More than one .mpr file found, can not continue')
+    else:
+        return None
