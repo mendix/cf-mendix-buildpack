@@ -272,6 +272,10 @@ def _checkout_from_git_rootfs(directory, mx_version):
 def fix_mono_config_and_get_env(dot_local_location, mono_lib_dir):
     env = dict(os.environ)
     env['LD_LIBRARY_PATH'] = mono_lib_dir
+
+    if not os.path.isfile(os.path.join(mono_lib_dir, 'libgdiplus.so')):
+        raise Exception('libgdiplus.so not found in dir %s' % mono_lib_dir)
+
     subprocess.check_call([
         'sed',
         '-i',

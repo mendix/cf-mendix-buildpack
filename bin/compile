@@ -210,7 +210,7 @@ def run_mx_build():
     logging.info(mono_location)
     mono_env = buildpackutil.fix_mono_config_and_get_env(
         DOT_LOCAL_LOCATION,
-        os.path.join(BUILD_DIR, 'lib', 'mono-lib')
+        os.path.join(BUILDPACK_DIR, 'lib', 'mono-lib')
     )
 
     mxbuild_location = os.path.join(DOT_LOCAL_LOCATION, 'mxbuild')
