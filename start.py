@@ -515,6 +515,7 @@ def set_up_m2ee_client(vcap_data):
 
 
 def set_up_logging_file():
+    buildpackutil.lazy_remove_file('log/out.log')
     os.mkfifo('log/out.log')
     subprocess.Popen([
         'sed',
@@ -720,6 +721,7 @@ def set_up_fastpush_if_deploy_password_is_set(m2ee):
         def restart_callback():
             if not m2ee.stop():
                 m2ee.terminate()
+            set_up_logging_file()
             start_app(m2ee)
         fastpush.FastPushThread(
             get_deploy_port(),
