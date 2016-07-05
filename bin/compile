@@ -176,26 +176,32 @@ def set_up_directory_structure():
 
 def download_mendix_version():
     logging.debug('downloading mendix version')
+
+    git_repo_found = os.path.isdir('/usr/local/share/mendix-runtimes.git')
+
+    if git_repo_found and not os.environ.get('FORCED_MXRUNTIME_URL'):
+        logging.debug('rootfs with mendix runtime detected, skipping download')
+        return
+
     url = os.environ.get('FORCED_MXRUNTIME_URL')
-    if url is None:
+    if url is not None:
+        cache_dir = '/tmp/downloads'
+    else:
         cache_dir = CACHE_DIR
         url = buildpackutil.get_blobstore_url(
             '/runtime/mendix-%s.tar.gz' % str(
                 get_runtime_version()
             )
         )
-    else:
-        cache_dir = '/tmp/downloads'
-    mendix_runtimes_path = '/usr/local/share/mendix-runtimes.git'
-    if os.path.isdir(mendix_runtimes_path) and not os.environ.get('FORCED_MXRUNTIME_URL'):
-        logging.info('rootfs with mendix runtimes detected, not downloading it myself')
-    else:
-        logging.info('rootfs without mendix runtimes detected, downloading and unpacking it now')
-        buildpackutil.download_and_unpack(
-            url,
-            os.path.join(BUILD_DIR, 'runtimes'),
-            cache_dir=cache_dir,
-        )
+    logging.debug(
+        'rootfs without mendix runtimes detected, '
+        'downloading and unpacking mendix runtime now'
+    )
+    buildpackutil.download_and_unpack(
+        url,
+        os.path.join(BUILD_DIR, 'runtimes'),
+        cache_dir=cache_dir,
+    )
 
 
 def copy_buildpack_resources():
