@@ -268,11 +268,10 @@ def set_up_mono():
 
 
 def get_mono_path():
-    p = '/usr/local/share/mono-3.10.0'
-    if os.path.isdir(p):
-        return p
-    else:
-        return '/tmp/mono'
+    return buildpackutil.get_existing_directory_or_raise([
+        '/usr/local/share/mono-3.10.0',
+        '/tmp/mono',
+    ], 'Mono not found')
 
 
 def set_up_mx_build():
@@ -335,10 +334,11 @@ def run_mx_build():
         ),
         os.path.join(get_mono_path(), 'etc/mono/config'),
     ])
-    java_locations = [
+
+    jdk_location = buildpackutil.get_existing_directory_or_raise([
         '/usr/lib/jvm/jdk-%s-oracle-x64' % _get_java_version(),
         '/tmp/javasdk/usr/lib/jvm/jdk-%s-oracle-x64' % _get_java_version(),
-    ]
+    ], 'Java not found')
     build_errors_json = '/tmp/builderrors.json'
     try:
         os.remove(build_errors_json)
@@ -346,19 +346,13 @@ def run_mx_build():
         if e.errno != errno.ENOENT:
             raise
 
-    java_location = None
-    for possible_java_location in java_locations:
-        if os.path.isdir(possible_java_location):
-            java_location = possible_java_location
-    if java_location is None:
-        raise Exception('Java not found!')
     args = [
         get_mono_path() + '/bin/mono',
         '--config', get_mono_path() + '/etc/mono/config',
         '/tmp/mxbuild/modeler/mxbuild.exe',
         '--target=deploy',
-        '--java-home=%s' % java_location,
-        '--java-exe-path=%s/bin/java' % java_location,
+        '--java-home=%s' % jdk_location,
+        '--java-exe-path=%s/bin/java' % jdk_location,
     ]
     if get_runtime_version() >= 6.4 or os.environ.get('FORCE_WRITE_BUILD_ERRORS'):
         args.append('--write-errors=%s' % build_errors_json)

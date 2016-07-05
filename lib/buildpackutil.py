@@ -161,3 +161,14 @@ def download(url, destination):
             if not block:
                 break
             file_handle.write(block)
+
+
+def get_existing_directory_or_raise(dirs, error):
+    for directory in dirs:
+        if os.path.isdir(directory):
+            return directory
+    raise NotFoundException(error)
+
+
+class NotFoundException(Exception):
+    pass
