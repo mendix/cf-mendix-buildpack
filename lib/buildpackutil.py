@@ -6,7 +6,8 @@ import subprocess
 import logging
 import sys
 sys.path.insert(0, 'lib')
-from m2ee.version import MXVersion
+sys.path.insert(0, 'lib/m2ee/')
+from version import MXVersion
 import requests
 
 
