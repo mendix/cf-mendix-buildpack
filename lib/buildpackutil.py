@@ -177,7 +177,7 @@ class NotFoundException(Exception):
 
 
 def get_java_version(mx_version):
-    if type(mx_version) is not MXVersion:
+    if not isinstance(mx_version, MXVersion):
         raise Exception('Type should be MXVersion')
 
     versions = {
@@ -209,7 +209,7 @@ def get_mpr_file_from_dir(directory):
 
 
 def ensure_mxbuild_in_directory(directory, mx_version, cache_dir):
-    if type(mx_version) is not MXVersion:
+    if not isinstance(mx_version, MXVersion):
         raise Exception('Type should be MXVersion')
 
     mkdir_p(directory)
@@ -232,7 +232,7 @@ def ensure_mxbuild_in_directory(directory, mx_version, cache_dir):
 
 
 def _checkout_from_git_rootfs(directory, mx_version):
-    if type(mx_version) is not MXVersion:
+    if not isinstance(mx_version, MXVersion):
         raise Exception('Type should be MXVersion')
 
     mendix_runtimes_path = '/usr/local/share/mendix-runtimes.git'
@@ -320,7 +320,7 @@ def ensure_and_get_mono(directory, cache_dir):
 
 
 def ensure_and_return_java_sdk(mx_version, cache_dir):
-    if type(mx_version) is not MXVersion:
+    if not isinstance(mx_version, MXVersion):
         raise Exception('Type should be MXVersion')
     logging.debug('begin download and install java sdk')
     destination = '/tmp/javasdk'
