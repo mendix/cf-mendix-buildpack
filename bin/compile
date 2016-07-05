@@ -227,7 +227,7 @@ def run_mx_build():
 
     args = [
         os.path.join(mono_location, 'bin/mono'),
-        '--config', os.path.join(mono_location, '/etc/mono/config'),
+        '--config', os.path.join(mono_location, 'etc/mono/config'),
         os.path.join(mxbuild_location, 'modeler/mxbuild.exe'),
         '--target=deploy',
         '--java-home=%s' % jdk_location,
