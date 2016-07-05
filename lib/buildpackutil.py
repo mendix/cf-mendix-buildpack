@@ -278,7 +278,7 @@ def fix_mono_config_and_get_env(dot_local_location, mono_lib_dir):
         's|/app/vendor/mono/lib/libgdiplus.so|%s|g' % os.path.join(
             mono_lib_dir, 'libgdiplus.so'
         ),
-        os.path.join(get_mono_path(), 'etc/mono/config'),
+        os.path.join(_get_mono_path(dot_local_location), 'etc/mono/config'),
     ])
     subprocess.check_call([
         'sed',
@@ -286,12 +286,12 @@ def fix_mono_config_and_get_env(dot_local_location, mono_lib_dir):
         's|/usr/lib/libMonoPosixHelper.so|%s|g' % os.path.join(
             mono_lib_dir, 'libMonoPosixHelper.so'
         ),
-        os.path.join(get_mono_path(dot_local_location), 'etc/mono/config'),
+        os.path.join(_get_mono_path(dot_local_location), 'etc/mono/config'),
     ])
     return env
 
 
-def get_mono_path(dot_local_location):
+def _get_mono_path(dot_local_location):
     return get_existing_directory_or_raise([
         os.path.join(dot_local_location, 'mono'),
         '/usr/local/share/mono-3.10.0',
@@ -308,13 +308,15 @@ def lazy_remove_file(filename):
 
 
 def ensure_and_get_mono(directory, cache_dir):
-    if not os.path.isdir('/usr/local/share/mono-3.10.0'):
+    try:
+        return _get_mono_path(directory)
+    except NotFoundException:
         download_and_unpack(
             get_blobstore_url('/mx-buildpack/mono-3.10.0.tar.gz'),
             directory,
             cache_dir,
         )
-    return get_mono_path(directory)
+    return _get_mono_path(directory)
 
 
 def ensure_and_return_java_sdk(mx_version, cache_dir):
