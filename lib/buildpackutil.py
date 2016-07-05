@@ -259,6 +259,7 @@ def _checkout_from_git_rootfs(directory, mx_version):
                 ('git', 'checkout', str(mx_version), '-f'),
                 cwd=mendix_runtimes_path, env=env
             )
+            logging.debug('found mx version after updating runtimes.git')
             return
         except:
             logging.debug('tried updating git repo, also failed')
