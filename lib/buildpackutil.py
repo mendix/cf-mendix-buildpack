@@ -105,6 +105,7 @@ def get_blobstore_url(filename):
 def download_and_unpack(url, destination, cache_dir='/tmp/downloads'):
     file_name = url.split('/')[-1]
     mkdir_p(cache_dir)
+    mkdir_p(destination)
     cached_location = os.path.join(cache_dir, file_name)
 
     logging.info('preparing {file_name}'.format(file_name=file_name))
@@ -303,3 +304,43 @@ def lazy_remove_file(filename):
     except OSError as e:
         if e.errno != errno.ENOENT:
             raise
+
+
+def ensure_mono(directory, cache_dir):
+    if os.path.isdir('/usr/local/share/mono-3.10.0'):
+        return
+    download_and_unpack(
+        get_blobstore_url('/mx-buildpack/mono-3.10.0.tar.gz'),
+        directory,
+        cache_dir,
+    )
+
+
+def ensure_and_return_java_sdk(mx_version, cache_dir):
+    if type(mx_version) is not MXVersion:
+        raise Exception('Type should be MXVersion')
+    logging.debug('begin download and install java sdk')
+    destination = '/tmp/javasdk'
+    java_version = get_java_version(mx_version)
+
+    rootfs_java_path = '/usr/lib/jvm/jdk-%s-oracle-x64' % java_version
+
+    if os.path.isdir(rootfs_java_path):
+        os.symlink(os.path.join(rootfs_java_path, 'bin/java'), destination)
+    else:
+        download_and_unpack(
+            get_blobstore_url(
+                '/mx-buildpack/'
+                'oracle-java{java_version}-jdk_{java_version}_amd64.deb'.format(
+                    java_version=java_version,
+                ),
+            ),
+            destination,
+            cache_dir,
+        )
+    logging.debug('end download and install java sdk')
+
+    return get_existing_directory_or_raise([
+        '/usr/lib/jvm/jdk-%s-oracle-x64' % java_version,
+        '/tmp/javasdk/usr/lib/jvm/jdk-%s-oracle-x64' % java_version,
+    ], 'Java not found')

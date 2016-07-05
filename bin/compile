@@ -11,6 +11,7 @@ BUILD_DIR = sys.argv[1]
 CACHE_DIR = os.path.join(sys.argv[2], 'bust')
 DOT_LOCAL_LOCATION = os.path.join(BUILD_DIR, '.local')
 BUILDPACK_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+BUILD_ERRORS_JSON = '/tmp/builderrors.json'
 
 sys.path.insert(0, os.path.join(BUILDPACK_DIR, 'lib'))
 import requests
@@ -122,40 +123,6 @@ def set_up_java():
     logging.debug('end download and install java')
 
 
-def set_up_java_sdk():
-    logging.debug('begin download and install java sdk')
-    destination = '/tmp/javasdk'
-    java_version = buildpackutil.get_java_version(get_runtime_version())
-
-    if not os.path.isdir(
-            '/usr/lib/jvm/jdk-{java_version}-oracle-x64'.format(
-                java_version=java_version,
-            )
-    ):
-        logging.debug('rootfs without java sdk detected, downloading and unpacking it now')
-        buildpackutil.mkdir_p(destination)
-        buildpackutil.download_and_unpack(
-            buildpackutil.get_blobstore_url(
-                '/mx-buildpack/'
-                'oracle-java{java_version}-jdk_{java_version}_amd64.deb'.format(
-                    java_version=java_version,
-                ),
-            ),
-            destination,
-            CACHE_DIR,
-        )
-    else:
-        logging.debug('rootfs with java sdk detected, not downloading and unpacking it myself')
-        os.symlink(
-            '/usr/lib/jvm/jdk-{java_version}-oracle-x64/bin/java'.format(
-                java_version=java_version,
-            ),
-            destination,
-        )
-
-    logging.debug('end download and install java sdk')
-
-
 def preflight_check():
     logging.debug('pre-flight-check')
     if not all([
@@ -239,35 +206,19 @@ def is_source_push():
         return False
 
 
-def set_up_mono():
-    if os.path.isdir('/usr/local/share/mono-3.10.0'):
-        return
-    buildpackutil.mkdir_p('/tmp/mono')
-    buildpackutil.download_and_unpack(
-        buildpackutil.get_blobstore_url('/mx-buildpack/mono-3.10.0.tar.gz'),
-        '/tmp/',
-        CACHE_DIR,
-    )
-
-
 def run_mx_build():
-    build_errors_json = '/tmp/builderrors.json'
-
+    buildpackutil.ensure_mono('/tmp', CACHE_DIR)
     buildpackutil.ensure_mxbuild_in_directory(
         '/tmp/mxbuild', get_runtime_version(), CACHE_DIR
     )
 
-    java_version = buildpackutil.get_java_version(get_runtime_version())
-    jdk_location = buildpackutil.get_existing_directory_or_raise([
-        '/usr/lib/jvm/jdk-%s-oracle-x64' % java_version,
-        '/tmp/javasdk/usr/lib/jvm/jdk-%s-oracle-x64' % java_version,
-    ], 'Java not found')
-
-    buildpackutil.lazy_remove_file(build_errors_json)
-
-    env = buildpackutil.fix_mono_config_and_get_env()
-
+    mono_env = buildpackutil.fix_mono_config_and_get_env()
     mono_path = buildpackutil.get_mono_path()
+    jdk_location = buildpackutil.ensure_java_sdk(
+        get_runtime_version(), CACHE_DIR
+    )
+
+    buildpackutil.lazy_remove_file(BUILD_ERRORS_JSON)
 
     args = [
         os.path.join(mono_path, 'bin/mono'),
@@ -279,8 +230,8 @@ def run_mx_build():
     ]
 
     if get_runtime_version() >= 6.4 or os.environ.get('FORCE_WRITE_BUILD_ERRORS'):
-        args.append('--write-errors=%s' % build_errors_json)
-        logging.debug('Will write build errors to %s' % build_errors_json)
+        args.append('--write-errors=%s' % BUILD_ERRORS_JSON)
+        logging.debug('Will write build errors to %s' % BUILD_ERRORS_JSON)
 
     if os.environ.get('FORCED_MXBUILD_URL'):
         args.append('--loose-version-check')
@@ -291,9 +242,9 @@ def run_mx_build():
     args.append(get_mpr_file())
 
     try:
-        subprocess.check_call(args, env=env)
+        subprocess.check_call(args, env=mono_env)
     except subprocess.CalledProcessError as e:
-        buildstatus_callback(build_errors_json)
+        buildstatus_callback(BUILD_ERRORS_JSON)
         raise e
 
     for dir_name in ['web', 'model']:
@@ -346,8 +297,6 @@ if __name__ == '__main__':
     preflight_check()
     if is_source_push():
         logging.info('source push detected')
-        set_up_java_sdk()
-        set_up_mono()
         run_mx_build()
     set_up_directory_structure()
     set_up_java()
