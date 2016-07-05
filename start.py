@@ -12,6 +12,7 @@ import requests
 from m2ee import M2EE, logger
 import buildpackutil
 import logging
+import fastpush
 from nginx import get_path_config, gen_htpasswd
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
@@ -710,6 +711,24 @@ def loop_until_process_dies(m2ee):
 def am_i_primary_instance():
     return os.getenv('CF_INSTANCE_INDEX', '0') == '0'
 
+
+def set_up_fastpush_if_deploy_password_is_set(m2ee):
+    if os.getenv('DEPLOY_PASSWORD'):
+        def reload_callback():
+            m2ee.client.request('reload_model')
+
+        def restart_callback():
+            if not m2ee.stop():
+                m2ee.terminate()
+            start_app(m2ee)
+        fastpush.FastPushThread(
+            get_deploy_port(),
+            restart_callback,
+            reload_callback,
+            m2ee.config.get_runtime_version(),
+        ).start()
+
+
 if __name__ == '__main__':
     if os.getenv('CF_INSTANCE_INDEX') is None:
         logger.warning(
@@ -735,5 +754,6 @@ if __name__ == '__main__':
     configure_logging(m2ee)
     display_running_version(m2ee)
     configure_debugger(m2ee)
+    set_up_fastpush_if_deploy_password_is_set(m2ee)
     start_nginx()
     loop_until_process_dies(m2ee)
