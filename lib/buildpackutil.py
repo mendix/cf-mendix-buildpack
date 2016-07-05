@@ -205,3 +205,64 @@ def get_mpr_file_from_dir(directory):
         raise Exception('More than one .mpr file found, can not continue')
     else:
         return None
+
+
+def ensure_mxbuild_in_directory(directory, mx_version, cache_dir):
+    if type(mx_version) is not MXVersion:
+        raise Exception('Type should be MXVersion')
+
+    mkdir_p(directory)
+
+    url = os.environ.get('FORCED_MXBUILD_URL')
+    if url:
+        # don't ever cache with a FORCED_MXBUILD_URL
+        download_and_unpack(url, directory, cache_dir='/tmp/downloads')
+    else:
+        try:
+            _checkout_from_git_rootfs(directory, mx_version)
+        except NotFoundException as e:
+            logging.debug(str(e))
+            download_and_unpack(
+                get_blobstore_url(
+                    '/runtime/mxbuild-%s.tar.gz' % str(mx_version)
+                ),
+                directory, cache_dir=cache_dir
+            )
+
+
+def _checkout_from_git_rootfs(directory, mx_version):
+    if type(mx_version) is not MXVersion:
+        raise Exception('Type should be MXVersion')
+
+    mendix_runtimes_path = '/usr/local/share/mendix-runtimes.git'
+    if not os.path.isdir(mendix_runtimes_path):
+        raise NotFoundException()
+
+    env = dict(os.environ)
+    env['GIT_WORK_TREE'] = directory
+
+    # checkout the runtime version
+    try:
+        subprocess.check_call(
+            ('git', 'checkout', str(mx_version), '-f'),
+            cwd=mendix_runtimes_path, env=env,
+        )
+        return
+    except:
+        try:
+            subprocess.check_call(
+                ('git', 'fetch', '--tags'),
+                cwd=mendix_runtimes_path, env=env
+            )
+            subprocess.check_call(
+                ('git', 'checkout', str(mx_version), '-f'),
+                cwd=mendix_runtimes_path, env=env
+            )
+            return
+        except:
+            logging.debug('tried updating git repo, also failed')
+    raise NotFoundException(
+        'Could not download mxbuild ' +
+        str(mx_version) +
+        ' from updated git repo'
+    )

@@ -257,48 +257,11 @@ def get_mono_path():
     ], 'Mono not found')
 
 
-def set_up_mx_build():
-    mendix_version = get_runtime_version()
-
-    buildpackutil.mkdir_p('/tmp/mxbuild')
-
-    mendix_runtimes_path = '/usr/local/share/mendix-runtimes.git'
-    url = os.environ.get('FORCED_MXBUILD_URL')
-    if url is None and os.path.isdir(mendix_runtimes_path):
-        env = dict(os.environ)
-        env['GIT_WORK_TREE'] = '/tmp/mxbuild'
-
-        # checkout the runtime version
-        process = subprocess.Popen(
-            ['git', 'checkout', str(mendix_version), '-f'],
-            cwd=mendix_runtimes_path, env=env,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-        process.communicate()
-        if process.returncode != 0:
-            process = subprocess.Popen(
-                ['git', 'fetch', '--tags',
-                 '&&', 'git', 'checkout', str(mendix_version), '-f'],
-                cwd=mendix_runtimes_path, env=env, stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            )
-            process.communicate()
-            if process.returncode != 0:
-                # download the mendix runtime version from our blobstore
-                url = buildpackutil.get_blobstore_url(
-                    '/runtime/mxbuild-%s.tar.gz' % mendix_version
-                )
-                buildpackutil.download_and_unpack(url, '/tmp/mxbuild', cache_dir='/tmp/downloads')
-    elif url is None:
-        url = buildpackutil.get_blobstore_url(
-            '/runtime/mxbuild-%s.tar.gz' % mendix_version
-        )
-        buildpackutil.download_and_unpack(url, '/tmp/mxbuild', cache_dir=CACHE_DIR)
-    else:
-        buildpackutil.download_and_unpack(url, '/tmp/mxbuild', cache_dir='/tmp/downloads')
-
-
 def run_mx_build():
+    buildpackutil.ensure_mxbuild_in_directory(
+        '/tmp/mxbuild', get_runtime_version(), CACHE_DIR
+    )
+
     env = dict(os.environ)
     java_version = buildpackutil.get_java_version(get_runtime_version())
     env['LD_LIBRARY_PATH'] = os.path.join(BUILDPACK_DIR, 'lib', 'mono-lib')
@@ -406,7 +369,6 @@ if __name__ == '__main__':
         logging.info('source push detected')
         set_up_java_sdk()
         set_up_mono()
-        set_up_mx_build()
         run_mx_build()
     set_up_directory_structure()
     set_up_java()
