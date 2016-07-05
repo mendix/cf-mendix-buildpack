@@ -207,7 +207,9 @@ def is_source_push():
 
 def run_mx_build():
     mono_location = buildpackutil.ensure_and_get_mono(DOT_LOCAL_LOCATION, CACHE_DIR)
-    mono_env = buildpackutil.fix_mono_config_and_get_env()
+    mono_env = buildpackutil.fix_mono_config_and_get_env(
+        os.path.join(BUILD_DIR, 'lib', 'mono-lib')
+    )
 
     mxbuild_location = os.path.join(DOT_LOCAL_LOCATION, 'mxbuild'),
 
