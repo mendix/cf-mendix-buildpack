@@ -250,57 +250,34 @@ def set_up_mono():
     )
 
 
-def get_mono_path():
-    return buildpackutil.get_existing_directory_or_raise([
-        '/usr/local/share/mono-3.10.0',
-        '/tmp/mono',
-    ], 'Mono not found')
-
-
 def run_mx_build():
+    build_errors_json = '/tmp/builderrors.json'
+
     buildpackutil.ensure_mxbuild_in_directory(
         '/tmp/mxbuild', get_runtime_version(), CACHE_DIR
     )
 
-    env = dict(os.environ)
     java_version = buildpackutil.get_java_version(get_runtime_version())
-    env['LD_LIBRARY_PATH'] = os.path.join(BUILDPACK_DIR, 'lib', 'mono-lib')
-    subprocess.check_call([
-        'sed',
-        '-i',
-        's|/app/vendor/mono/lib/libgdiplus.so|%s|g' % os.path.join(
-            BUILDPACK_DIR, 'lib', 'mono-lib', 'libgdiplus.so'
-        ),
-        os.path.join(get_mono_path(), 'etc/mono/config'),
-    ])
-    subprocess.check_call([
-        'sed',
-        '-i',
-        's|/usr/lib/libMonoPosixHelper.so|%s|g' % os.path.join(
-            BUILDPACK_DIR, 'lib', 'mono-lib', 'libMonoPosixHelper.so'
-        ),
-        os.path.join(get_mono_path(), 'etc/mono/config'),
-    ])
-
     jdk_location = buildpackutil.get_existing_directory_or_raise([
         '/usr/lib/jvm/jdk-%s-oracle-x64' % java_version,
         '/tmp/javasdk/usr/lib/jvm/jdk-%s-oracle-x64' % java_version,
     ], 'Java not found')
-    build_errors_json = '/tmp/builderrors.json'
-    try:
-        os.remove(build_errors_json)
-    except OSError as e:
-        if e.errno != errno.ENOENT:
-            raise
+
+    buildpackutil.lazy_remove_file(build_errors_json)
+
+    env = buildpackutil.fix_mono_config_and_get_env()
+
+    mono_path = buildpackutil.get_mono_path()
 
     args = [
-        get_mono_path() + '/bin/mono',
-        '--config', get_mono_path() + '/etc/mono/config',
+        os.path.join(mono_path, 'bin/mono'),
+        '--config', os.path.join(mono_path, '/etc/mono/config'),
         '/tmp/mxbuild/modeler/mxbuild.exe',
         '--target=deploy',
         '--java-home=%s' % jdk_location,
         '--java-exe-path=%s/bin/java' % jdk_location,
     ]
+
     if get_runtime_version() >= 6.4 or os.environ.get('FORCE_WRITE_BUILD_ERRORS'):
         args.append('--write-errors=%s' % build_errors_json)
         logging.debug('Will write build errors to %s' % build_errors_json)
@@ -310,7 +287,9 @@ def run_mx_build():
         logging.warning(
             'Using forced mxbuild version, the model will be converted'
         )
+
     args.append(get_mpr_file())
+
     try:
         subprocess.check_call(args, env=env)
     except subprocess.CalledProcessError as e:

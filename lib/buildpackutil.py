@@ -266,3 +266,40 @@ def _checkout_from_git_rootfs(directory, mx_version):
         str(mx_version) +
         ' from updated git repo'
     )
+
+
+def fix_mono_config_and_get_env(mono_lib_dir):
+    env = dict(os.environ)
+    env['LD_LIBRARY_PATH'] = mono_lib_dir
+    subprocess.check_call([
+        'sed',
+        '-i',
+        's|/app/vendor/mono/lib/libgdiplus.so|%s|g' % os.path.join(
+            mono_lib_dir, 'libgdiplus.so'
+        ),
+        os.path.join(get_mono_path(), 'etc/mono/config'),
+    ])
+    subprocess.check_call([
+        'sed',
+        '-i',
+        's|/usr/lib/libMonoPosixHelper.so|%s|g' % os.path.join(
+            mono_lib_dir, 'libMonoPosixHelper.so'
+        ),
+        os.path.join(get_mono_path(), 'etc/mono/config'),
+    ])
+    return env
+
+
+def get_mono_path():
+    return get_existing_directory_or_raise([
+        '/usr/local/share/mono-3.10.0',
+        '/tmp/mono',
+    ], 'Mono not found')
+
+
+def lazy_remove_file(filename):
+    try:
+        os.remove(filename)
+    except OSError as e:
+        if e.errno != errno.ENOENT:
+            raise
