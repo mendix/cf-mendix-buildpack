@@ -707,13 +707,6 @@ def loop_until_process_dies(m2ee):
 def am_i_primary_instance():
     return os.getenv('CF_INSTANCE_INDEX', '0') == '0'
 
-
-def start_mxbuild_service():
-    if os.getenv('DEPLOY_PASSWORD') is not None:
-        logger.info('MxBuild service is enabled')
-        subprocess.Popen(['python', 'instadeploy.py', str(get_deploy_port())])
-
-
 if __name__ == '__main__':
     if os.getenv('CF_INSTANCE_INDEX') is None:
         logger.warning(
@@ -740,5 +733,4 @@ if __name__ == '__main__':
     display_running_version(m2ee)
     configure_debugger(m2ee)
     start_nginx()
-    start_mxbuild_service()
     loop_until_process_dies(m2ee)
