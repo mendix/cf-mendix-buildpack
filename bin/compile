@@ -5,12 +5,12 @@ import json
 import shutil
 import logging
 import subprocess
-import errno
 
 BUILD_DIR = sys.argv[1]
 CACHE_DIR = os.path.join(sys.argv[2], 'bust')
 DOT_LOCAL_LOCATION = os.path.join(BUILD_DIR, '.local')
 BUILDPACK_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+BUILD_ERRORS_JSON = '/tmp/builderrors.json'
 
 sys.path.insert(0, os.path.join(BUILDPACK_DIR, 'lib'))
 import requests
@@ -25,25 +25,6 @@ logging.basicConfig(
 )
 
 logging.getLogger("requests").setLevel(logging.WARNING)
-
-
-def _get_java_version():
-    versions = {
-        '7': '7u80',
-        '8': '8u45',
-    }
-    if get_runtime_version() >= 5.18:
-        default = '8'
-    else:
-        default = '7'
-    main_java_version = os.getenv('JAVA_VERSION', default)
-
-    if main_java_version not in versions.keys():
-        raise Exception(
-            'Invalid Java version specified: %s'
-            % main_java_version
-        )
-    return versions[main_java_version]
 
 
 def get_runtime_version():
@@ -104,18 +85,19 @@ def check_admin_password_environment_variable():
 def set_up_java():
     logging.debug('begin download and install java')
     buildpackutil.mkdir_p(os.path.join(DOT_LOCAL_LOCATION, 'bin'))
+    java_version = buildpackutil.get_java_version(get_runtime_version())
 
     if not os.path.isdir(
         '/usr/lib/jvm/jdk-{java_version}-oracle-x64'.format(
-            java_version=_get_java_version()
+            java_version=java_version,
         )
     ):
-        logging.info('rootfs without java sdk detected, downloading and unpacking it now')
+        logging.debug('rootfs without java sdk detected, downloading and unpacking it now')
         buildpackutil.download_and_unpack(
             buildpackutil.get_blobstore_url(
                 '/mx-buildpack/'
                 'oracle-java{java_version}-jre_{java_version}_amd64.deb'.format(
-                    java_version=_get_java_version()
+                    java_version=java_version,
                 ),
             ),
             DOT_LOCAL_LOCATION,
@@ -124,53 +106,20 @@ def set_up_java():
         #  use ../ because path is different at staging, so final abspath unknown
         os.symlink(
             '../usr/lib/jvm/jre-{java_version}-oracle-x64/bin/java'.format(
-                java_version=_get_java_version()
+                java_version=java_version,
             ),
             os.path.join(DOT_LOCAL_LOCATION, 'bin', 'java')
         )
     else:
-        logging.info('rootfs with java sdk detected, not downloading and unpacking it myself')
+        logging.debug('rootfs with java sdk detected, not downloading and unpacking it myself')
         os.symlink(
             '/usr/lib/jvm/jdk-{java_version}-oracle-x64/bin/java'.format(
-                java_version=_get_java_version()
+                java_version=java_version,
             ),
             os.path.join(DOT_LOCAL_LOCATION, 'bin', 'java')
         )
 
     logging.debug('end download and install java')
-
-
-def set_up_java_sdk():
-    logging.debug('begin download and install java sdk')
-    destination = '/tmp/javasdk'
-
-    if not os.path.isdir(
-            '/usr/lib/jvm/jdk-{java_version}-oracle-x64'.format(
-                java_version=_get_java_version()
-            )
-    ):
-        logging.info('rootfs without java sdk detected, downloading and unpacking it now')
-        buildpackutil.mkdir_p(destination)
-        buildpackutil.download_and_unpack(
-            buildpackutil.get_blobstore_url(
-                '/mx-buildpack/'
-                'oracle-java{java_version}-jdk_{java_version}_amd64.deb'.format(
-                    java_version=_get_java_version()
-                ),
-            ),
-            destination,
-            CACHE_DIR,
-        )
-    else:
-        logging.info('rootfs with java sdk detected, not downloading and unpacking it myself')
-        os.symlink(
-            '/usr/lib/jvm/jdk-{java_version}-oracle-x64/bin/java'.format(
-                java_version=_get_java_version()
-            ),
-            destination,
-        )
-
-    logging.debug('end download and install java sdk')
 
 
 def preflight_check():
@@ -193,33 +142,35 @@ def set_up_directory_structure():
 
 def download_mendix_version():
     logging.debug('downloading mendix version')
+
+    git_repo_found = os.path.isdir('/usr/local/share/mendix-runtimes.git')
+
+    if git_repo_found and not os.environ.get('FORCED_MXRUNTIME_URL'):
+        logging.debug('rootfs with mendix runtime detected, skipping download')
+        return
+
     url = os.environ.get('FORCED_MXRUNTIME_URL')
-    if url is None:
+    if url is not None:
+        cache_dir = '/tmp/downloads'
+    else:
         cache_dir = CACHE_DIR
         url = buildpackutil.get_blobstore_url(
             '/runtime/mendix-%s.tar.gz' % str(
                 get_runtime_version()
             )
         )
-    else:
-        cache_dir = '/tmp/downloads'
-    mendix_runtimes_path = '/usr/local/share/mendix-runtimes.git'
-    if os.path.isdir(mendix_runtimes_path) and not os.environ.get('FORCED_MXRUNTIME_URL'):
-        logging.info('rootfs with mendix runtimes detected, not downloading it myself')
-    else:
-        logging.info('rootfs without mendix runtimes detected, downloading and unpacking it now')
-        buildpackutil.download_and_unpack(
-            url,
-            os.path.join(BUILD_DIR, 'runtimes'),
-            cache_dir=cache_dir,
-        )
+    logging.debug(
+        'rootfs without mendix runtimes detected, '
+        'downloading and unpacking mendix runtime now'
+    )
+    buildpackutil.download_and_unpack(
+        url,
+        os.path.join(BUILD_DIR, 'runtimes'),
+        cache_dir=cache_dir,
+    )
 
 
 def copy_buildpack_resources():
-    shutil.copy(
-        os.path.join(BUILDPACK_DIR, 'instadeploy.py'),
-        os.path.join(BUILD_DIR, 'instadeploy.py'),
-    )
     shutil.copy(
         os.path.join(BUILDPACK_DIR, 'm2ee.yaml'),
         os.path.join(DOT_LOCAL_LOCATION, 'm2ee.yaml'),
@@ -244,13 +195,7 @@ def copy_buildpack_resources():
 
 
 def get_mpr_file():
-    mprs = filter(lambda x: x.endswith('.mpr'), os.listdir(BUILD_DIR))
-    if len(mprs) == 1:
-        return os.path.join(BUILD_DIR, mprs[0])
-    elif len(mprs) > 1:
-        raise Exception('More than one .mpr file found, can not continue')
-    else:
-        return None
+    return buildpackutil.get_mpr_file_from_dir(BUILD_DIR)
 
 
 def is_source_push():
@@ -260,124 +205,50 @@ def is_source_push():
         return False
 
 
-def set_up_mono():
-    if os.path.isdir('/usr/local/share/mono-3.10.0'):
-        return
-    buildpackutil.mkdir_p('/tmp/mono')
-    buildpackutil.download_and_unpack(
-        buildpackutil.get_blobstore_url('/mx-buildpack/mono-3.10.0.tar.gz'),
-        '/tmp/',
-        CACHE_DIR,
+def run_mx_build():
+    mono_location = buildpackutil.ensure_and_get_mono(DOT_LOCAL_LOCATION, CACHE_DIR)
+    mono_env = buildpackutil.fix_mono_config_and_get_env(
+        DOT_LOCAL_LOCATION,
+        os.path.join(BUILDPACK_DIR, 'lib', 'mono-lib')
     )
 
+    mxbuild_location = os.path.join(DOT_LOCAL_LOCATION, 'mxbuild')
 
-def get_mono_path():
-    p = '/usr/local/share/mono-3.10.0'
-    if os.path.isdir(p):
-        return p
-    else:
-        return '/tmp/mono'
+    buildpackutil.ensure_mxbuild_in_directory(
+        mxbuild_location, get_runtime_version(), CACHE_DIR
+    )
 
+    jdk_location = buildpackutil.ensure_and_return_java_sdk(
+        get_runtime_version(), CACHE_DIR
+    )
 
-def set_up_mx_build():
-    mendix_version = get_runtime_version()
+    buildpackutil.lazy_remove_file(BUILD_ERRORS_JSON)
 
-    buildpackutil.mkdir_p('/tmp/mxbuild')
-
-    mendix_runtimes_path = '/usr/local/share/mendix-runtimes.git'
-    url = os.environ.get('FORCED_MXBUILD_URL')
-    if url is None and os.path.isdir(mendix_runtimes_path):
-        env = dict(os.environ)
-        env['GIT_WORK_TREE'] = '/tmp/mxbuild'
-
-        # checkout the runtime version
-        process = subprocess.Popen(
-            ['git', 'checkout', str(mendix_version), '-f'],
-            cwd=mendix_runtimes_path, env=env,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-        process.communicate()
-        if process.returncode != 0:
-            process = subprocess.Popen(
-                ['git', 'fetch', '--tags',
-                 '&&', 'git', 'checkout', str(mendix_version), '-f'],
-                cwd=mendix_runtimes_path, env=env, stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            )
-            process.communicate()
-            if process.returncode != 0:
-                # download the mendix runtime version from our blobstore
-                url = buildpackutil.get_blobstore_url(
-                    '/runtime/mxbuild-%s.tar.gz' % mendix_version
-                )
-                buildpackutil.download_and_unpack(url, '/tmp/mxbuild', cache_dir='/tmp/downloads')
-    elif url is None:
-        url = buildpackutil.get_blobstore_url(
-            '/runtime/mxbuild-%s.tar.gz' % mendix_version
-        )
-        buildpackutil.download_and_unpack(url, '/tmp/mxbuild', cache_dir=CACHE_DIR)
-    else:
-        buildpackutil.download_and_unpack(url, '/tmp/mxbuild', cache_dir='/tmp/downloads')
-
-
-def run_mx_build():
-    env = dict(os.environ)
-    env['LD_LIBRARY_PATH'] = os.path.join(BUILDPACK_DIR, 'lib', 'mono-lib')
-    subprocess.check_call([
-        'sed',
-        '-i',
-        's|/app/vendor/mono/lib/libgdiplus.so|%s|g' % os.path.join(
-            BUILDPACK_DIR, 'lib', 'mono-lib', 'libgdiplus.so'
-        ),
-        os.path.join(get_mono_path(), 'etc/mono/config'),
-    ])
-    subprocess.check_call([
-        'sed',
-        '-i',
-        's|/usr/lib/libMonoPosixHelper.so|%s|g' % os.path.join(
-            BUILDPACK_DIR, 'lib', 'mono-lib', 'libMonoPosixHelper.so'
-        ),
-        os.path.join(get_mono_path(), 'etc/mono/config'),
-    ])
-    java_locations = [
-        '/usr/lib/jvm/jdk-%s-oracle-x64' % _get_java_version(),
-        '/tmp/javasdk/usr/lib/jvm/jdk-%s-oracle-x64' % _get_java_version(),
-    ]
-    build_errors_json = '/tmp/builderrors.json'
-    try:
-        os.remove(build_errors_json)
-    except OSError as e:
-        if e.errno != errno.ENOENT:
-            raise
-
-    java_location = None
-    for possible_java_location in java_locations:
-        if os.path.isdir(possible_java_location):
-            java_location = possible_java_location
-    if java_location is None:
-        raise Exception('Java not found!')
     args = [
-        get_mono_path() + '/bin/mono',
-        '--config', get_mono_path() + '/etc/mono/config',
-        '/tmp/mxbuild/modeler/mxbuild.exe',
+        os.path.join(mono_location, 'bin/mono'),
+        '--config', os.path.join(mono_location, 'etc/mono/config'),
+        os.path.join(mxbuild_location, 'modeler/mxbuild.exe'),
         '--target=deploy',
-        '--java-home=%s' % java_location,
-        '--java-exe-path=%s/bin/java' % java_location,
+        '--java-home=%s' % jdk_location,
+        '--java-exe-path=%s' % os.path.join(jdk_location, 'bin/java'),
     ]
+
     if get_runtime_version() >= 6.4 or os.environ.get('FORCE_WRITE_BUILD_ERRORS'):
-        args.append('--write-errors=%s' % build_errors_json)
-        logging.debug('Will write build errors to %s' % build_errors_json)
+        args.append('--write-errors=%s' % BUILD_ERRORS_JSON)
+        logging.debug('Will write build errors to %s' % BUILD_ERRORS_JSON)
 
     if os.environ.get('FORCED_MXBUILD_URL'):
         args.append('--loose-version-check')
         logging.warning(
             'Using forced mxbuild version, the model will be converted'
         )
+
     args.append(get_mpr_file())
+
     try:
-        subprocess.check_call(args, env=env)
+        subprocess.check_call(args, env=mono_env)
     except subprocess.CalledProcessError as e:
-        buildstatus_callback(build_errors_json)
+        buildstatus_callback(BUILD_ERRORS_JSON)
         raise e
 
     for dir_name in ['web', 'model']:
@@ -430,10 +301,11 @@ if __name__ == '__main__':
     preflight_check()
     if is_source_push():
         logging.info('source push detected')
-        set_up_java_sdk()
-        set_up_mono()
-        set_up_mx_build()
         run_mx_build()
+        if not os.getenv('DEPLOY_PASSWORD'):
+            for folder in ('mxbuild', 'mono'):
+                path = os.path.join(DOT_LOCAL_LOCATION, folder)
+                shutil.rmtree(path, ignore_errors=True)
     set_up_directory_structure()
     set_up_java()
     set_up_appdynamics()

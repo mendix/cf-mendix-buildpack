@@ -23,8 +23,8 @@ class TestCaseBuildStatusCallback(basetest.BaseTest):
 
     def _test_helper(self, package_name):
         runtimes_base_url = os.environ.get("RUNTIMES_BASE_URL")
-        runtime_url = "{base}/mendix-6-build7751.tar.gz".format(base=runtimes_base_url)
-        mxbuild_url = "{base}/mxbuild-6-build7751.tar.gz".format(base=runtimes_base_url)
+        runtime_url = "{base}/mendix-6-build10037.tar.gz".format(base=runtimes_base_url)
+        mxbuild_url = "{base}/mxbuild-6-build10037.tar.gz".format(base=runtimes_base_url)
         self.setUpCF(package_name)
 
         cmds = [
