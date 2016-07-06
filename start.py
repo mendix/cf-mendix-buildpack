@@ -528,7 +528,7 @@ def set_up_logging_file():
 def service_backups():
     vcap_services = buildpackutil.get_vcap_services_data()
     if not vcap_services or 'schnapps' not in vcap_services:
-        logger.info("No backup service detected")
+        logger.debug("No backup service detected")
         return
 
     backup_service = {}
