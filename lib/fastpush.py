@@ -1,6 +1,7 @@
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import cgi
 import json
+import shutil
 import mxbuild
 import os
 from m2ee import logger
@@ -66,8 +67,8 @@ class MPKUploadHandler(BaseHTTPRequestHandler):
                     'CONTENT_TYPE': self.headers['Content-Type'],
                 })
             if 'file' in form:
-                data = form['file'].file.read()
-                open(MPK_FILE, 'wb').write(data)
+                with open(MPK_FILE, 'wb') as output:
+                    shutil.copyfileobj(form['file'].file, output)
                 mxbuild_response = build()
                 if mxbuild_response['restartRequired'] is True:
                     logger.info(str(mxbuild_response))
