@@ -597,7 +597,8 @@ def start_app(m2ee):
                         }).get_feedback()['ddl_commands']:
                             logger.info(line)
                     m2eeresponse = m2ee.client.execute_ddl_commands()
-                    m2eeresponse.display_error()
+                    if m2eeresponse.has_error():
+                        logger.info(m2eeresponse.get_error())
                 else:
                     logger.info(
                         'waiting 10 seconds before primary instance '
