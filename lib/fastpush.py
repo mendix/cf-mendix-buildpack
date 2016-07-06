@@ -42,12 +42,17 @@ class FastPushThread(threading.Thread):
         self.mx_version = mx_version
 
     def run(self):
-        do_run(
-            self.port,
-            self.restart_callback,
-            self.reload_callback,
+        logger.debug('Going to start mxbuild in serve mode')
+        mxbuild.start_mxbuild_server(
+            os.path.join(os.getcwd(), '.local'),
+            os.path.join(os.getcwd(), 'lib', 'mono-lib'),
             self.mx_version,
         )
+        logger.debug('Listening on port %d for MPK uploads' % int(self.port))
+        server = HTTPServer(('', self.port), MPKUploadHandler)
+        server.restart_callback = self.restart_callback
+        server.reload_callback = self.reload_callback
+        server.serve_forever()
 
 
 class MPKUploadHandler(BaseHTTPRequestHandler):
@@ -134,17 +139,3 @@ def build():
         ))
 
     return response.json()
-
-
-def do_run(port, restart_callback, reload_callback, mx_version):
-    mxbuild.start_mxbuild_server(
-        os.path.join(os.getcwd(), '.local'),
-        os.path.join(os.getcwd(), 'lib', 'mono-lib'),
-        mx_version,
-    )
-
-    print('Going to listen on port ', port)
-    server = HTTPServer(('', port), MPKUploadHandler)
-    server.restart_callback = restart_callback
-    server.reload_callback = reload_callback
-    server.serve_forever()
