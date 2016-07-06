@@ -739,7 +739,7 @@ def set_up_fastdeploy_if_deploy_password_is_set(m2ee):
         else:
             logger.warning(
                 'Not setting up FastDeploy because this mendix '
-                ' runtime version %s does not support it' % mx_version
+                'runtime version %s does not support it' % mx_version
             )
 
 
