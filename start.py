@@ -510,7 +510,10 @@ def set_up_m2ee_client(vcap_data):
     activate_new_relic(m2ee, vcap_data['application_name'])
     activate_appdynamics(m2ee, vcap_data['application_name'])
     set_application_name(m2ee, vcap_data['application_name'])
-
+    if buildpackutil.get_java_version(
+        m2ee.config.get_runtime_version()
+    ).startswith('7'):
+        m2ee.config._conf['m2ee']['javaopts'].append('-XX:MaxPermSize=128M')
     return m2ee
 
 

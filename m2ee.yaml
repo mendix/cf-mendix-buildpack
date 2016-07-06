@@ -21,7 +21,6 @@ m2ee:
 
  javaopts: [
     "-Dfile.encoding=UTF-8",
-    "-XX:MaxPermSize=128M",
     "-Djava.io.tmpdir=BUILD_PATH/data/tmp",
  ]
 
