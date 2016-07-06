@@ -37,7 +37,7 @@ logging:
    name: FileSubscriber
    autosubscribe: INFO
    filename: BUILD_PATH/log/out.log
-   max_size: 2097152
+   max_size: 1048576000
    max_rotation: 10
 
 mxruntime:
