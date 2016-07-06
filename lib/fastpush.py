@@ -71,12 +71,10 @@ class MPKUploadHandler(BaseHTTPRequestHandler):
                     shutil.copyfileobj(form['file'].file, output)
                 mxbuild_response = build()
                 if mxbuild_response['restartRequired'] is True:
-                    logger.info(str(mxbuild_response))
-                    logger.info('Restarting app, reloading for now')
+                    logger.info('Restarting app after MPK push')
                     self.server.restart_callback()
                 else:
-                    logger.info(str(mxbuild_response))
-                    logger.info('Reloading model')
+                    logger.info('Reloading model after MPK push')
                     self.server.reload_callback()
                 return self._terminate(200, {
                     'state': 'STARTED',
@@ -87,10 +85,9 @@ class MPKUploadHandler(BaseHTTPRequestHandler):
                     'errordetails': 'No MPK found',
                 })
         except Exception:
-            details = traceback.format_exc()
             return self._terminate(500, {
                 'state': 'FAILED',
-                'errordetails': details,
+                'errordetails': traceback.format_exc(),
             })
 
     def _terminate(self, status_code, data, mxbuild_response=None):
@@ -125,9 +122,7 @@ def build():
             'projectFilePath': mpr,
             'forceFullDeployment': False
         }),
-        headers={
-            'Content-Type': 'application/json',
-        },
+        headers={'Content-Type': 'application/json'},
         timeout=120,
     )
     response.raise_for_status()
