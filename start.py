@@ -22,6 +22,9 @@ logger.info('Started Mendix Cloud Foundry Buildpack')
 logging.getLogger('m2ee').propagate = False
 
 
+app_is_restarting = False
+
+
 def get_nginx_port():
     return int(os.environ['PORT'])
 
@@ -717,8 +720,11 @@ def display_running_version(m2ee):
 
 
 def loop_until_process_dies(m2ee):
-    while m2ee.runner.check_pid():
-        time.sleep(10)
+    while True:
+        if app_is_restarting or m2ee.runner.check_pid():
+            time.sleep(10)
+        else:
+            break
     logger.info('process died, stopping')
     sys.exit(1)
 
@@ -735,9 +741,12 @@ def set_up_fastdeploy_if_deploy_password_is_set(m2ee):
                 m2ee.client.request('reload_model')
 
             def restart_callback():
+                global app_is_restarting
+                app_is_restarting = True
                 if not m2ee.stop():
                     m2ee.terminate()
                 complete_start_procedure_safe_to_use_for_restart(m2ee)
+                app_is_restarting = False
 
             fastdeploy.FastDeployThread(
                 get_deploy_port(),
