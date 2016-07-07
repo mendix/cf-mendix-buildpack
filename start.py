@@ -48,13 +48,21 @@ def pre_process_m2ee_yaml():
     ])
 
 
-def set_up_nginx_files():
+def use_fastdeploy(mx_version):
+    return mx_version >= 6.7 or str(mx_version) == '6-build10037'
+
+
+def set_up_nginx_files(m2ee):
     lines = ''
     x_frame_options = os.environ.get('X_FRAME_OPTIONS', 'ALLOW')
     if x_frame_options == 'ALLOW':
         x_frame_options = ''
     else:
         x_frame_options = "add_header X-Frame-Options '%s';" % x_frame_options
+    if use_fastdeploy(m2ee.config.get_runtime_version()):
+        mxbuild_upstream = 'proxy_pass http://mendix_mxbuild'
+    else:
+        mxbuild_upstream = 'return 501'
     with open('nginx/conf/nginx.conf') as fh:
         lines = ''.join(fh.readlines())
     lines = lines.replace(
@@ -71,6 +79,8 @@ def set_up_nginx_files():
         'ROOT', os.getcwd()
     ).replace(
         'XFRAMEOPTIONS', x_frame_options
+    ).replace(
+        'MXBUILD_UPSTREAM', mxbuild_upstream
     )
     for line in lines.split('\n'):
         logger.debug(line)
@@ -720,7 +730,7 @@ def am_i_primary_instance():
 def set_up_fastdeploy_if_deploy_password_is_set(m2ee):
     if os.getenv('DEPLOY_PASSWORD'):
         mx_version = m2ee.config.get_runtime_version()
-        if mx_version >= 6.7 or str(mx_version) is '6-build10037':
+        if use_fastdeploy(mx_version):
             def reload_callback():
                 m2ee.client.request('reload_model')
 
@@ -762,7 +772,7 @@ if __name__ == '__main__':
     signal.signal(signal.SIGTERM, sigterm_handler)
 
     service_backups()
-    set_up_nginx_files()
+    set_up_nginx_files(m2ee)
     start_app(m2ee)
     create_admin_user(m2ee)
     configure_logging(m2ee)
