@@ -737,8 +737,7 @@ def set_up_fastdeploy_if_deploy_password_is_set(m2ee):
             def restart_callback():
                 if not m2ee.stop():
                     m2ee.terminate()
-                set_up_logging_file()
-                start_app(m2ee)
+                complete_start_procedure_safe_to_use_for_restart(m2ee)
 
             fastdeploy.FastDeployThread(
                 get_deploy_port(),
@@ -753,6 +752,15 @@ def set_up_fastdeploy_if_deploy_password_is_set(m2ee):
             )
 
 
+def complete_start_procedure_safe_to_use_for_restart(m2ee):
+    set_up_logging_file()
+    start_app(m2ee)
+    create_admin_user(m2ee)
+    configure_logging(m2ee)
+    display_running_version(m2ee)
+    configure_debugger(m2ee)
+
+
 if __name__ == '__main__':
     if os.getenv('CF_INSTANCE_INDEX') is None:
         logger.warning(
@@ -762,7 +770,6 @@ if __name__ == '__main__':
         )
     pre_process_m2ee_yaml()
     activate_license()
-    set_up_logging_file()
     m2ee = set_up_m2ee_client(get_vcap_data())
 
     def sigterm_handler(_signo, _stack_frame):
@@ -773,11 +780,7 @@ if __name__ == '__main__':
 
     service_backups()
     set_up_nginx_files(m2ee)
-    start_app(m2ee)
-    create_admin_user(m2ee)
-    configure_logging(m2ee)
-    display_running_version(m2ee)
-    configure_debugger(m2ee)
+    complete_start_procedure_safe_to_use_for_restart(m2ee)
     set_up_fastdeploy_if_deploy_password_is_set(m2ee)
     start_nginx()
     loop_until_process_dies(m2ee)
