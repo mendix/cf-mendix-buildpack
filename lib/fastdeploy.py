@@ -2,6 +2,7 @@ from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import cgi
 import json
 import shutil
+import time
 import mxbuild
 import os
 from m2ee import logger
@@ -49,6 +50,7 @@ class FastDeployThread(threading.Thread):
             os.path.join(os.getcwd(), 'lib', 'mono-lib'),
             self.mx_version,
         )
+        time.sleep(10)
         logger.debug('Listening on port %d for MPK uploads' % int(self.port))
         server = HTTPServer(('', self.port), MPKUploadHandler)
         server.restart_callback = self.restart_callback
