@@ -194,13 +194,12 @@ def set_heap_size(javaopts):
     logger.debug('Java heap size set to %s' % max_memory)
 
 
-def get_filestore_config(m2ee):
+def _get_s3_specific_config(vcap_services, m2ee):
     access_key = secret = bucket = encryption_keys = key_suffix = None
-
-    vcap_services = buildpackutil.get_vcap_services_data()
     endpoint = None
     v2_auth = ''
-    if vcap_services and 'amazon-s3' in vcap_services:
+
+    if 'amazon-s3' in vcap_services:
         _conf = vcap_services['amazon-s3'][0]['credentials']
         access_key = _conf['access_key_id']
         secret = _conf['secret_access_key']
@@ -209,7 +208,7 @@ def get_filestore_config(m2ee):
             encryption_keys = _conf['encryption_keys']
         if 'key_suffix' in _conf:
             key_suffix = _conf['key_suffix']
-    elif vcap_services and 'p-riakcs' in vcap_services:
+    elif 'p-riakcs' in vcap_services:
         _conf = vcap_services['p-riakcs'][0]['credentials']
         access_key = _conf['access_key_id']
         secret = _conf['secret_access_key']
@@ -232,12 +231,7 @@ def get_filestore_config(m2ee):
     sse = os.getenv('S3_USE_SSE', '').lower() == 'true'
 
     if not (access_key and secret and bucket):
-        logger.warning(
-            'External file store not configured, uploaded files in the app '
-            'will not persist across restarts. See https://github.com/mendix/'
-            'cf-mendix-buildpack for file store configuration details.'
-        )
-        return {}
+        return None
 
     logger.info(
         'S3 config detected, activating external file store'
@@ -262,6 +256,48 @@ def get_filestore_config(m2ee):
     if m2ee.config.get_runtime_version() >= 6 and sse:
         config['com.mendix.storage.s3.UseSSE'] = sse
     return config
+
+
+def _get_swift_specific_config(vcap_services, m2ee):
+    if 'Object-Storage' not in vcap_services:
+        return None
+
+    if m2ee.config.get_runtime_version() < 6.7:
+        logger.warning('Can not configure Object Storage with Mendix < 6.7')
+        return None
+
+    _conf = vcap_services['Object-Storage'][0]
+    creds = _conf['credentials']
+
+    return {
+        'com.mendix.core.StorageService': 'com.mendix.storage.swift',
+        'com.mendix.storage.swift.Container': _conf['name'],
+        'com.mendix.storage.swift.credentials.DomainId': creds['domainId'],
+        'com.mendix.storage.swift.credentials.Authurl': creds['auth_url'],
+        'com.mendix.storage.swift.credentials.Username': creds['username'],
+        'com.mendix.storage.swift.credentials.Password': creds['password'],
+    }
+
+
+def get_filestore_config(m2ee):
+    vcap_services = buildpackutil.get_vcap_services_data()
+    if vcap_services is None:
+        vcap_services = {}
+
+    config = _get_s3_specific_config(vcap_services, m2ee)
+
+    if config is None:
+        config = _get_swift_specific_config(vcap_services, m2ee)
+
+    if config is None:
+        logger.warning(
+            'External file store not configured, uploaded files in the app '
+            'will not persist across restarts. See https://github.com/mendix/'
+            'cf-mendix-buildpack for file store configuration details.'
+        )
+        return {}
+    else:
+        return config
 
 
 def determine_cluster_redis_credentials():
