@@ -79,6 +79,14 @@ When scaling to multiple instances, the scheduled events that are enabled via th
 
 ### Configuring External Filestore
 
+Mendix supports three external file stores: AWS S3 compatible file stores (5.15+), Azure Blob Storage (6.6+) and Swift, used in Bluemix Object Storage (6.7+). All of these can be configured manually via [Custom Runtime Settings](#configuring-custom-runtime-settings), but S3 and Swift (Bluemix Object Storage) can be configured in easier ways:
+
+#### Swift (Bluemix Object Storage) Settings
+
+When deploying Mendix 6.7 or higher to Bluemix, you can simply create an [Object Storage service](https://console.ng.bluemix.net/catalog/services/object-storage) and attach it to your app. By default, a container will be created for you called `mendix`. If you want to use a different container name (for example if you are sharing the Object Storage service between multiple apps), you can configure the container name with the environment variable `SWIFT_CONTAINER_NAME`.
+
+#### S3 Settings
+
 Mendix 5.15 and up can use external file stores with an S3 api. Use the following environment variables to enable this.
 
 * `S3_ACCESS_KEY_ID`: credentials access key
