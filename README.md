@@ -83,7 +83,7 @@ Mendix supports three external file stores: AWS S3 compatible file stores (5.15+
 
 #### Swift (Bluemix Object Storage) Settings
 
-When deploying Mendix 6.7 or higher to Bluemix, you can simply create an [Object Storage service](https://console.ng.bluemix.net/catalog/services/object-storage) and attach it to your app. By default, a container will be created for you called `mendix`. If you want to use a different container name (for example if you are sharing the Object Storage service between multiple apps), you can configure the container name with the environment variable `SWIFT_CONTAINER_NAME`.
+When deploying Mendix 6.7 or higher to Bluemix, you can simply create an [Object Storage service](https://console.ng.bluemix.net/catalog/services/object-storage) and attach it to your app. No further configuration in necessary, you just need to restart your app. By default, a storage container will be created for you called `mendix`. If you want to use a different container name (for example if you are sharing the Object Storage service between multiple apps), you can configure the container name with the environment variable `SWIFT_CONTAINER_NAME`.
 
 #### S3 Settings
 
