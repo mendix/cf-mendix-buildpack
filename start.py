@@ -104,6 +104,9 @@ def get_vcap_data():
 
 
 def activate_license():
+    prefs_dir = os.path.expanduser('~/../.java/.userPrefs/com/mendix/core')
+    buildpackutil.mkdir_p(prefs_dir)
+
     prefs_template = """<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE map SYSTEM "http://java.sun.com/dtd/preferences.dtd">
 <map MAP_XML_VERSION="1.0">
@@ -126,9 +129,6 @@ def activate_license():
             ).replace(
             '{{LICENSE_KEY}}', license
             )
-        prefs_dir = os.path.expanduser('~/../.java/.userPrefs/com/mendix/core')
-        if not os.path.isdir(prefs_dir):
-            os.makedirs(prefs_dir)
         with open(os.path.join(prefs_dir, 'prefs.xml'), 'w') as prefs_file:
             prefs_file.write(prefs_body)
 
