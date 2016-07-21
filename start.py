@@ -266,12 +266,13 @@ def _get_swift_specific_config(vcap_services, m2ee):
         logger.warning('Can not configure Object Storage with Mendix < 6.7')
         return None
 
-    _conf = vcap_services['Object-Storage'][0]
-    creds = _conf['credentials']
+    creds = vcap_services['Object-Storage'][0]['credentials']
+
+    container_name = os.getenv('SWIFT_CONTAINER_NAME', 'mendix')
 
     return {
         'com.mendix.core.StorageService': 'com.mendix.storage.swift',
-        'com.mendix.storage.swift.Container': _conf['name'],
+        'com.mendix.storage.swift.Container': container_name,
         'com.mendix.storage.swift.Container.AutoCreate': True,
         'com.mendix.storage.swift.credentials.DomainId': creds['domainId'],
         'com.mendix.storage.swift.credentials.Authurl': creds['auth_url'],
