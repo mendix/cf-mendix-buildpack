@@ -7,6 +7,7 @@ import logging
 import sys
 sys.path.insert(0, 'lib')
 import requests
+from distutils.version import LooseVersion
 
 
 def get_database_config(development_mode=False):
@@ -125,9 +126,11 @@ def download_and_unpack(url, destination, cache_dir='/tmp/downloads'):
             ['dpkg-deb', '-x', cached_location, destination]
         )
     elif file_name.endswith('.tar.gz') or file_name.endswith('.tgz'):
-        subprocess.check_call(
-            ['tar', 'xf', cached_location, '-C', destination]
-        )
+        unpack_cmd = ['tar', 'xf', cached_location, '-C', destination]
+        if file_name.startswith('mono-'):
+            unpack_cmd.extend(('--strip', '1'))
+
+        subprocess.check_call(unpack_cmd)
     else:
         raise Exception('do not know how to unpack {file_name}'.format(
             file_name=file_name
@@ -265,7 +268,7 @@ def _checkout_from_git_rootfs(directory, mx_version):
     )
 
 
-def fix_mono_config_and_get_env(dot_local_location, mono_lib_dir):
+def fix_mono_config_and_get_env(dot_local_location, mono_lib_dir, mendix_version):
     env = dict(os.environ)
     env['LD_LIBRARY_PATH'] = mono_lib_dir
 
@@ -278,7 +281,7 @@ def fix_mono_config_and_get_env(dot_local_location, mono_lib_dir):
         's|/app/vendor/mono/lib/libgdiplus.so|%s|g' % os.path.join(
             mono_lib_dir, 'libgdiplus.so'
         ),
-        os.path.join(_get_mono_path(dot_local_location), 'etc/mono/config'),
+        os.path.join(_get_mono_path(dot_local_location, mendix_version), 'etc/mono/config'),
     ])
     subprocess.check_call([
         'sed',
@@ -286,17 +289,26 @@ def fix_mono_config_and_get_env(dot_local_location, mono_lib_dir):
         's|/usr/lib/libMonoPosixHelper.so|%s|g' % os.path.join(
             mono_lib_dir, 'libMonoPosixHelper.so'
         ),
-        os.path.join(_get_mono_path(dot_local_location), 'etc/mono/config'),
+        os.path.join(_get_mono_path(dot_local_location, mendix_version), 'etc/mono/config'),
     ])
     return env
 
 
-def _get_mono_path(dot_local_location):
+def _get_mono_version(mendix_version):
+    if LooseVersion(mendix_version) < LooseVersion('6.8'):
+        target = 'mono-3.10.0'
+    else:
+        target = 'mono-4.4.1.0'
+    logging.info('Targeting Mono Runtime: ' + target)
+    return target
+
+
+def _get_mono_path(dot_local_location, mendix_version):
+    mono_version = _get_mono_version(mendix_version)
     return get_existing_directory_or_raise([
-        os.path.join(dot_local_location, 'mono'),
-        '/opt/mono-3.10.0',
-        '/usr/local/share/mono-3.10.0',
-        '/tmp/mono',
+        os.path.join(dot_local_location, mono_version),
+        '/opt/' + mono_version,
+        '/tmp/' + mono_version,
     ], 'Mono not found')
 
 
@@ -308,16 +320,18 @@ def lazy_remove_file(filename):
             raise
 
 
-def ensure_and_get_mono(directory, cache_dir):
+def ensure_and_get_mono(directory, cache_dir, mendix_version):
     try:
-        return _get_mono_path(directory)
+        return _get_mono_path(directory, mendix_version)
     except NotFoundException:
+        mono_version = _get_mono_version(mendix_version)
         download_and_unpack(
-            get_blobstore_url('/mx-buildpack/mono-3.10.0.tar.gz'),
+            get_blobstore_url('/mx-buildpack/' + mono_version + '.tar.gz'),
             directory,
             cache_dir,
         )
-    return _get_mono_path(directory)
+
+    return _get_mono_path(directory, mendix_version)
 
 
 def ensure_and_return_java_sdk(mx_version, cache_dir):

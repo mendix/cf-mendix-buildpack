@@ -206,10 +206,13 @@ def is_source_push():
 
 
 def run_mx_build():
-    mono_location = buildpackutil.ensure_and_get_mono(DOT_LOCAL_LOCATION, CACHE_DIR)
+    mendix_version = str(get_runtime_version())
+    mono_version = buildpackutil._get_mono_version(mendix_version)
+    mono_location = buildpackutil.ensure_and_get_mono('/tmp/' + mono_version, CACHE_DIR, mendix_version)
     mono_env = buildpackutil.fix_mono_config_and_get_env(
-        DOT_LOCAL_LOCATION,
-        os.path.join(BUILDPACK_DIR, 'lib', 'mono-lib')
+        '/tmp/' + mono_version,
+        os.path.join(BUILDPACK_DIR, 'lib', 'mono-lib'),
+        mendix_version
     )
 
     mxbuild_location = os.path.join(DOT_LOCAL_LOCATION, 'mxbuild')
