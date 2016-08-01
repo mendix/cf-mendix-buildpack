@@ -104,6 +104,7 @@ def get_blobstore_url(filename):
 def download_and_unpack(url, destination, cache_dir='/tmp/downloads'):
     file_name = url.split('/')[-1]
     mkdir_p(cache_dir)
+    mkdir_p(destination)
     cached_location = os.path.join(cache_dir, file_name)
 
     logging.info('preparing {file_name}'.format(file_name=file_name))
@@ -161,3 +162,183 @@ def download(url, destination):
             if not block:
                 break
             file_handle.write(block)
+
+
+def get_existing_directory_or_raise(dirs, error):
+    for directory in dirs:
+        if os.path.isdir(directory):
+            return directory
+    raise NotFoundException(error)
+
+
+class NotFoundException(Exception):
+    pass
+
+
+def get_java_version(mx_version):
+    versions = {
+        '7': '7u80',
+        '8': '8u45',
+    }
+    if mx_version >= 5.18:
+        default = '8'
+    else:
+        default = '7'
+    main_java_version = os.getenv('JAVA_VERSION', default)
+
+    if main_java_version not in versions.keys():
+        raise Exception(
+            'Invalid Java version specified: %s'
+            % main_java_version
+        )
+    return versions[main_java_version]
+
+
+def get_mpr_file_from_dir(directory):
+    mprs = filter(lambda x: x.endswith('.mpr'), os.listdir(directory))
+    if len(mprs) == 1:
+        return os.path.join(directory, mprs[0])
+    elif len(mprs) > 1:
+        raise Exception('More than one .mpr file found, can not continue')
+    else:
+        return None
+
+
+def ensure_mxbuild_in_directory(directory, mx_version, cache_dir):
+    if os.path.isdir(os.path.join(directory, 'modeler')):
+        return
+    mkdir_p(directory)
+
+    url = os.environ.get('FORCED_MXBUILD_URL')
+    if url:
+        # don't ever cache with a FORCED_MXBUILD_URL
+        download_and_unpack(url, directory, cache_dir='/tmp/downloads')
+    else:
+        try:
+            _checkout_from_git_rootfs(directory, mx_version)
+        except NotFoundException as e:
+            logging.debug(str(e))
+            download_and_unpack(
+                get_blobstore_url(
+                    '/runtime/mxbuild-%s.tar.gz' % str(mx_version)
+                ),
+                directory, cache_dir=cache_dir
+            )
+
+
+def _checkout_from_git_rootfs(directory, mx_version):
+    mendix_runtimes_path = '/usr/local/share/mendix-runtimes.git'
+    if not os.path.isdir(mendix_runtimes_path):
+        raise NotFoundException()
+
+    env = dict(os.environ)
+    env['GIT_WORK_TREE'] = directory
+
+    # checkout the runtime version
+    try:
+        subprocess.check_call(
+            ('git', 'checkout', str(mx_version), '-f'),
+            cwd=mendix_runtimes_path, env=env,
+        )
+        return
+    except:
+        try:
+            subprocess.check_call(
+                ('git', 'fetch', '--tags'),
+                cwd=mendix_runtimes_path, env=env
+            )
+            subprocess.check_call(
+                ('git', 'checkout', str(mx_version), '-f'),
+                cwd=mendix_runtimes_path, env=env
+            )
+            logging.debug('found mx version after updating runtimes.git')
+            return
+        except:
+            logging.debug('tried updating git repo, also failed')
+    raise NotFoundException(
+        'Could not download mxbuild ' +
+        str(mx_version) +
+        ' from updated git repo'
+    )
+
+
+def fix_mono_config_and_get_env(dot_local_location, mono_lib_dir):
+    env = dict(os.environ)
+    env['LD_LIBRARY_PATH'] = mono_lib_dir
+
+    if not os.path.isfile(os.path.join(mono_lib_dir, 'libgdiplus.so')):
+        raise Exception('libgdiplus.so not found in dir %s' % mono_lib_dir)
+
+    subprocess.check_call([
+        'sed',
+        '-i',
+        's|/app/vendor/mono/lib/libgdiplus.so|%s|g' % os.path.join(
+            mono_lib_dir, 'libgdiplus.so'
+        ),
+        os.path.join(_get_mono_path(dot_local_location), 'etc/mono/config'),
+    ])
+    subprocess.check_call([
+        'sed',
+        '-i',
+        's|/usr/lib/libMonoPosixHelper.so|%s|g' % os.path.join(
+            mono_lib_dir, 'libMonoPosixHelper.so'
+        ),
+        os.path.join(_get_mono_path(dot_local_location), 'etc/mono/config'),
+    ])
+    return env
+
+
+def _get_mono_path(dot_local_location):
+    return get_existing_directory_or_raise([
+        os.path.join(dot_local_location, 'mono'),
+        '/usr/local/share/mono-3.10.0',
+        '/tmp/mono',
+    ], 'Mono not found')
+
+
+def lazy_remove_file(filename):
+    try:
+        os.remove(filename)
+    except OSError as e:
+        if e.errno != errno.ENOENT:
+            raise
+
+
+def ensure_and_get_mono(directory, cache_dir):
+    try:
+        return _get_mono_path(directory)
+    except NotFoundException:
+        download_and_unpack(
+            get_blobstore_url('/mx-buildpack/mono-3.10.0.tar.gz'),
+            directory,
+            cache_dir,
+        )
+    return _get_mono_path(directory)
+
+
+def ensure_and_return_java_sdk(mx_version, cache_dir):
+    logging.debug('begin download and install java sdk')
+    destination = '/tmp/javasdk'
+    java_version = get_java_version(mx_version)
+
+    rootfs_java_path = '/usr/lib/jvm/jdk-%s-oracle-x64' % java_version
+
+    if os.path.isdir(rootfs_java_path):
+        os.symlink(os.path.join(rootfs_java_path, 'bin/java'), destination)
+    else:
+        download_and_unpack(
+            get_blobstore_url(
+                '/mx-buildpack/'
+                'oracle-java{java_version}-jdk_{java_version}_amd64.deb'.format(
+                    java_version=java_version,
+                ),
+            ),
+            destination,
+            cache_dir,
+        )
+    logging.debug('end download and install java sdk')
+
+    return get_existing_directory_or_raise([
+        '/usr/lib/jvm/jdk-%s-oracle-x64' % java_version,
+        '/tmp/javasdk/usr/lib/jvm/jdk-%s-oracle-x64' % java_version,
+    ], 'Java not found')
