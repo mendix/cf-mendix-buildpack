@@ -19,12 +19,13 @@ def get_database_config(development_mode=False):
     url = get_database_uri_from_vcap()
     if url is None:
         url = os.environ['DATABASE_URL']
-    pattern = r'([a-zA-Z]+)://([^:]+):([^@]+)@([^/]+)/([^?]*)(\?.*)?'
+    pattern = r'([a-zA-Z0-9]+)://([^:]+):([^@]+)@([^/]+)/([^?]*)(\?.*)?'
 
     match = re.search(pattern, url)
     supported_databases = {
         'postgres':  'PostgreSQL',
         'mysql': 'MySQL',
+        'db2': 'Db2',
     }
 
     if match is None:
