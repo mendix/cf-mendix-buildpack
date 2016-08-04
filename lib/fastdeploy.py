@@ -72,6 +72,7 @@ class MPKUploadHandler(BaseHTTPRequestHandler):
                 with open(MPK_FILE, 'wb') as output:
                     shutil.copyfileobj(form['file'].file, output)
                 mxbuild_response = build()
+                logger.debug(mxbuild_response)
                 if mxbuild_response['restartRequired'] is True:
                     logger.info('Restarting app after MPK push')
                     self.server.restart_callback()
