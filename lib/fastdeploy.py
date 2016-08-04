@@ -3,6 +3,7 @@ import cgi
 import json
 import shutil
 import time
+import logging
 import mxbuild
 import os
 from m2ee import logger
@@ -107,14 +108,18 @@ def build():
     logger.debug('unzipping ' + MPK_FILE + ' to ' + INCOMING_MPK_DIR)
     subprocess.check_call(('unzip', '-oqq', MPK_FILE, '-d', INCOMING_MPK_DIR))
     logger.debug('rsync from incoming to intermediate')
+    if buildpackutil.get_buildpack_loglevel() < logging.INFO:
+        quiet_or_verbose = '--verbose'
+    else:
+        quiet_or_verbose = '--quiet'
     subprocess.call((
-        'rsync', '--recursive', '--checksum',
+        'rsync', '--recursive', '--checksum', quiet_or_verbose,
         INCOMING_MPK_DIR + '/',
         INTERMEDIATE_MPK_DIR + '/',
     ))
     logger.debug('rsync from intermediate to project')
     subprocess.call((
-        'rsync', '--recursive', '--update',
+        'rsync', '--recursive', '--update', quiet_or_verbose,
         INTERMEDIATE_MPK_DIR + '/',
         PROJECT_DIR + '/',
     ))
