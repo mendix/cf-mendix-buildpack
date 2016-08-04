@@ -106,6 +106,8 @@ class MPKUploadHandler(BaseHTTPRequestHandler):
 
 def build():
     logger.debug('unzipping ' + MPK_FILE + ' to ' + INCOMING_MPK_DIR)
+    subprocess.check_call(('rm', '-rf', INCOMING_MPK_DIR))
+    buildpackutil.mkdir_p(INCOMING_MPK_DIR)
     subprocess.check_call(('unzip', '-oqq', MPK_FILE, '-d', INCOMING_MPK_DIR))
     logger.debug('rsync from incoming to intermediate')
     if buildpackutil.get_buildpack_loglevel() < logging.INFO:
@@ -113,7 +115,7 @@ def build():
     else:
         quiet_or_verbose = '--quiet'
     subprocess.call((
-        'rsync', '--recursive', '--checksum', quiet_or_verbose,
+        'rsync', '--recursive', '--checksum', '--delete',
         INCOMING_MPK_DIR + '/',
         INTERMEDIATE_MPK_DIR + '/',
     ))
