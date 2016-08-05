@@ -294,6 +294,7 @@ def fix_mono_config_and_get_env(dot_local_location, mono_lib_dir):
 def _get_mono_path(dot_local_location):
     return get_existing_directory_or_raise([
         os.path.join(dot_local_location, 'mono'),
+        '/opt/mono-3.10.0',
         '/usr/local/share/mono-3.10.0',
         '/tmp/mono',
     ], 'Mono not found')
