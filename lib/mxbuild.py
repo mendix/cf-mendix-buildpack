@@ -3,16 +3,10 @@ import subprocess
 import os
 
 
-def start_mxbuild_server(dot_local_location, mono_lib_dir, mx_version):
+def start_mxbuild_server(dot_local_location, mx_version):
     cache = '/tmp/downloads'  # disable caching here, not in compile step
-    mono_location = buildpackutil.ensure_and_get_mono(
-        dot_local_location, cache
-    )
-    mono_env = buildpackutil.fix_mono_config_and_get_env(
-        dot_local_location,
-        mono_lib_dir,
-        str(mx_version)
-    )
+    mono_location = buildpackutil.ensure_and_get_mono(mx_version, cache)
+    mono_env = buildpackutil._get_env_with_monolib(mono_location)
     buildpackutil.ensure_mxbuild_in_directory(
         os.path.join(dot_local_location, 'mxbuild'), mx_version, cache
     )

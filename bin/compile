@@ -206,14 +206,10 @@ def is_source_push():
 
 
 def run_mx_build():
-    mendix_version = str(get_runtime_version())
-    mono_version = buildpackutil._get_mono_version(mendix_version)
-    mono_location = buildpackutil.ensure_and_get_mono('/tmp/' + mono_version, CACHE_DIR, mendix_version)
-    mono_env = buildpackutil.fix_mono_config_and_get_env(
-        '/tmp/' + mono_version,
-        os.path.join(BUILDPACK_DIR, 'lib', 'mono-lib'),
-        mendix_version
-    )
+    mx_version = str(get_runtime_version())
+    mono_location = buildpackutil.ensure_and_get_mono(mx_version, CACHE_DIR)
+    logging.debug('Mono available: {mono_location}'.format(mono_location=mono_location))
+    mono_env = buildpackutil._get_env_with_monolib(mono_location)
 
     mxbuild_location = os.path.join(DOT_LOCAL_LOCATION, 'mxbuild')
 
@@ -249,6 +245,7 @@ def run_mx_build():
     args.append(get_mpr_file())
 
     try:
+        logging.debug('subprocess call {args}'.format(args=args))
         subprocess.check_call(args, env=mono_env)
     except subprocess.CalledProcessError as e:
         buildstatus_callback(BUILD_ERRORS_JSON)
