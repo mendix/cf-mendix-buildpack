@@ -7,6 +7,7 @@ import logging
 import sys
 sys.path.insert(0, 'lib')
 import requests
+from distutils.version import LooseVersion
 
 
 def get_database_config(development_mode=False):
@@ -110,31 +111,38 @@ def download_and_unpack(url, destination, cache_dir='/tmp/downloads'):
     mkdir_p(destination)
     cached_location = os.path.join(cache_dir, file_name)
 
-    logging.info('preparing {file_name}'.format(file_name=file_name))
+    logging.debug('Looking for {cached_location}'.format(
+        cached_location=cached_location
+    ))
 
     if not os.path.isfile(cached_location):
-        logging.info('downloading {file_name}'.format(file_name=file_name))
         download(url, cached_location)
+        logging.debug('downloaded to {cached_location}'.format(
+            cached_location=cached_location
+        ))
     else:
-        logging.debug('already present in cache {file_name}'.format(
-            file_name=file_name
+        logging.debug('found in cache: {cached_location}'.format(
+            cached_location=cached_location
         ))
 
+    logging.debug('extracting: {cached_location} to {dest}'.format(
+        cached_location=cached_location,dest=destination ))
     if file_name.endswith('.deb'):
         subprocess.check_call(
             ['dpkg-deb', '-x', cached_location, destination]
         )
     elif file_name.endswith('.tar.gz') or file_name.endswith('.tgz'):
-        subprocess.check_call(
-            ['tar', 'xf', cached_location, '-C', destination]
-        )
+        unpack_cmd = ['tar', 'xf', cached_location, '-C', destination]
+        if file_name.startswith('mono-'):
+            unpack_cmd.extend(('--strip', '1'))
+        subprocess.check_call(unpack_cmd)
     else:
-        raise Exception('do not know how to unpack {file_name}'.format(
-            file_name=file_name
+        raise Exception('do not know how to unpack {cached_location}'.format(
+            cached_location=cached_location
         ))
 
-    logging.debug('source {file_name} retrieved & unpacked'.format(
-        file_name=file_name
+    logging.debug('source {file_name} retrieved & unpacked in {destination}'.format(
+        file_name=file_name, destination=destination
     ))
 
 
@@ -156,7 +164,9 @@ def get_buildpack_loglevel():
 
 
 def download(url, destination):
-    logging.debug('downloading {url}'.format(url=url))
+    logging.debug('downloading {url} to {destination}'.format(
+        url=url, destination=destination
+    ))
     with open(destination, 'w') as file_handle:
         response = requests.get(url, stream=True)
         if not response.ok:
@@ -265,38 +275,29 @@ def _checkout_from_git_rootfs(directory, mx_version):
     )
 
 
-def fix_mono_config_and_get_env(dot_local_location, mono_lib_dir):
+def _get_env_with_monolib(mono_lib_dir):
     env = dict(os.environ)
-    env['LD_LIBRARY_PATH'] = mono_lib_dir
-
-    if not os.path.isfile(os.path.join(mono_lib_dir, 'libgdiplus.so')):
+    env['LD_LIBRARY_PATH'] = mono_lib_dir + '/lib'
+    if not os.path.isfile(os.path.join(mono_lib_dir + '/lib/', 'libgdiplus.so')):
         raise Exception('libgdiplus.so not found in dir %s' % mono_lib_dir)
-
-    subprocess.check_call([
-        'sed',
-        '-i',
-        's|/app/vendor/mono/lib/libgdiplus.so|%s|g' % os.path.join(
-            mono_lib_dir, 'libgdiplus.so'
-        ),
-        os.path.join(_get_mono_path(dot_local_location), 'etc/mono/config'),
-    ])
-    subprocess.check_call([
-        'sed',
-        '-i',
-        's|/usr/lib/libMonoPosixHelper.so|%s|g' % os.path.join(
-            mono_lib_dir, 'libMonoPosixHelper.so'
-        ),
-        os.path.join(_get_mono_path(dot_local_location), 'etc/mono/config'),
-    ])
     return env
 
 
-def _get_mono_path(dot_local_location):
+def _detect_mono_version():
+    if os.environ.get('FORCED_MONO4_VERSION'):
+        logging.warning('Using forced mono version')
+        target = 'mono-4.4.1.0'
+    else:
+        target = 'mono-3.10.0'
+    logging.info('Selecting Mono Runtime: ' + target)
+    return target
+
+
+def _get_mono_path(directory, mono_version):
     return get_existing_directory_or_raise([
-        os.path.join(dot_local_location, 'mono'),
-        '/opt/mono-3.10.0',
-        '/usr/local/share/mono-3.10.0',
-        '/tmp/mono',
+        os.path.join(directory, mono_version),
+        '/opt/' + mono_version,
+        '/tmp/' + mono_version,
     ], 'Mono not found')
 
 
@@ -308,20 +309,28 @@ def lazy_remove_file(filename):
             raise
 
 
-def ensure_and_get_mono(directory, cache_dir):
+def ensure_and_get_mono(mx_version, cache_dir):
+    logging.debug('ensuring mono for mendix {mx_version}'.format(
+        mx_version=mx_version
+    ))
+    mono_version = _detect_mono_version()
+    fallback_location = '/tmp/opt'
     try:
-        return _get_mono_path(directory)
+        mono_location = _get_mono_path('/tmp/opt', mono_version)
     except NotFoundException:
+        logging.debug('Mono not found in default locations')
         download_and_unpack(
-            get_blobstore_url('/mx-buildpack/mono-3.10.0.tar.gz'),
-            directory,
-            cache_dir,
+            get_blobstore_url('/mx-buildpack/' + mono_version + '-mx.tar.gz'),
+            os.path.join(fallback_location, mono_version),
+            cache_dir
         )
-    return _get_mono_path(directory)
+        mono_location = _get_mono_path(fallback_location, mono_version)
+    logging.debug('Using {mono_location}'.format(mono_location=mono_location))
+    return mono_location
 
 
 def ensure_and_return_java_sdk(mx_version, cache_dir):
-    logging.debug('begin download and install java sdk')
+    logging.debug('Begin download and install java sdk')
     destination = '/tmp/javasdk'
     java_version = get_java_version(mx_version)
 
