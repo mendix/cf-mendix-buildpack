@@ -48,7 +48,6 @@ class FastDeployThread(threading.Thread):
         logger.debug('Going to start mxbuild in serve mode')
         mxbuild.start_mxbuild_server(
             os.path.join(os.getcwd(), '.local'),
-            os.path.join(os.getcwd(), 'lib', 'mono-lib'),
             self.mx_version,
         )
         time.sleep(10)
