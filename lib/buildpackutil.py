@@ -275,11 +275,11 @@ def _checkout_from_git_rootfs(directory, mx_version):
     )
 
 
-def _get_env_with_monolib(mono_lib_dir):
+def _get_env_with_monolib(mono_dir):
     env = dict(os.environ)
-    env['LD_LIBRARY_PATH'] = mono_lib_dir + '/lib'
-    if not os.path.isfile(os.path.join(mono_lib_dir + '/lib/', 'libgdiplus.so')):
-        raise Exception('libgdiplus.so not found in dir %s' % mono_lib_dir)
+    env['LD_LIBRARY_PATH'] = mono_dir + '/lib'
+    if not os.path.isfile(os.path.join(mono_dir, 'lib', 'libgdiplus.so')):
+        raise Exception('libgdiplus.so not found in dir %s' % mono_dir)
     return env
 
 
