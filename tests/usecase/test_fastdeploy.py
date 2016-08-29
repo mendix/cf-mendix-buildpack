@@ -18,7 +18,6 @@ class TestCaseFastdeploy(basetest.BaseTest):
         subprocess.check_call("cf set-env \"%s\" DEPLOY_PASSWORD \"%s\"" % (self.app_name, self.mx_password), shell=True)
         subprocess.check_call("cf start \"%s\"" % self.app_name, shell=True)
 
-
     def test_fast_deploy(self):
         full_uri = "https://" + self.app_name + "/_mxbuild/"
         files = {'file': open('MontBlancApp671b.mpk', 'rb')}
