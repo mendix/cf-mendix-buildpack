@@ -4,6 +4,7 @@ import sys
 import json
 import shutil
 import logging
+import zipfile
 import subprocess
 
 BUILD_DIR = sys.argv[1]
@@ -227,7 +228,8 @@ def run_mx_build():
         os.path.join(mono_location, 'bin/mono'),
         '--config', os.path.join(mono_location, 'etc/mono/config'),
         os.path.join(mxbuild_location, 'modeler/mxbuild.exe'),
-        '--target=deploy',
+        '--target=package',
+        '--output=/tmp/model.mda',
         '--java-home=%s' % jdk_location,
         '--java-exe-path=%s' % os.path.join(jdk_location, 'bin/java'),
     ]
@@ -251,18 +253,18 @@ def run_mx_build():
         buildstatus_callback(BUILD_ERRORS_JSON)
         raise e
 
-    for dir_name in ['web', 'model']:
-        path = os.rename(
-            os.path.join(BUILD_DIR, 'deployment', dir_name),
-            os.path.join(BUILD_DIR, dir_name),
-        )
     for file_name in os.listdir(BUILD_DIR):
         path = os.path.join(BUILD_DIR, file_name)
-        if file_name not in ['.local', 'web', 'model']:
+        if file_name != '.local':
             if os.path.isdir(path):
                 shutil.rmtree(path)
             else:
                 os.unlink(path)
+    zf = zipfile.ZipFile('/tmp/model.mda')
+    try:
+        zf.extractall(BUILD_DIR)
+    finally:
+        zf.close()
 
 
 def buildstatus_callback(error_file):
