@@ -23,4 +23,4 @@ virtualenv -p python2 venv
 pip install -r requirements.txt
 
 
-python venv/bin/nosetests -vv usecase/
+python venv/bin/nosetests -vv --processes=10 usecase/

@@ -5,6 +5,8 @@ import basetest
 
 
 class TestCaseMxAdminExposed(basetest.BaseTest):
+    _multiprocess_can_split_ = True
+
     def setUp(self):
         package_name = "sample-6.2.0.mpk"
         self.setUpCF(package_name)

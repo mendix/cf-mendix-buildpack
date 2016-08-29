@@ -5,6 +5,7 @@ import time
 
 
 class TestCaseFastdeploy(basetest.BaseTest):
+    _multiprocess_can_split_ = True
 
     def setUp(self):
         package_name_b = "MontBlancApp671b.mpk"

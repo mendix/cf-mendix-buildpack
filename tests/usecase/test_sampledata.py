@@ -5,6 +5,7 @@ import json
 
 
 class TestCaseSampleData(basetest.BaseTest):
+    _multiprocess_can_split_ = True
 
     def setUp(self):
         self.setUpCF('MontBlancApp671WithSampleData.mpk')

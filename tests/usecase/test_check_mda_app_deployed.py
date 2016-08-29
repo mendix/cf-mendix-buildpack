@@ -3,6 +3,7 @@ import subprocess
 
 
 class TestCaseMdaAppDeployed(basetest.BaseTest):
+    _multiprocess_can_split_ = True
 
     def setUp(self):
         package_name = "sample-6.2.0.mda"
