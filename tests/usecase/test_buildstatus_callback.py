@@ -4,6 +4,7 @@ import basetest
 
 
 class TestCaseBuildStatusCallback(basetest.BaseTest):
+    _multiprocess_can_split_ = True
 
     def test_model_has_inconsistency_errors(self):
         package_name = "broken-6-build7751.mpk"
