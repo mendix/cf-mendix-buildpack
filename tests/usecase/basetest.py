@@ -6,6 +6,8 @@ import requests
 
 
 class BaseTest(unittest.TestCase):
+    _multiprocess_can_split_ = True
+
     '''
     BaseTest class provides initialization and teardown functionality
     for mendix buildpack tests that utilize cloudfoundry
@@ -21,6 +23,9 @@ class BaseTest(unittest.TestCase):
         assert self.cf_domain
         self.branch_name = os.environ.get("TRAVIS_BRANCH", current_branch)
         self.mx_password = os.environ.get("MX_PASSWORD", "Y0l0lop13#123")
+
+    def startApp(self):
+        subprocess.check_call(('cf', 'start', self.app_name))
 
     def setUpCF(self, package_name):
         subdomain = "ops-" + str(uuid.uuid4()).split("-")[0]

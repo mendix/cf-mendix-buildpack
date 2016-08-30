@@ -4,22 +4,19 @@ import basetest
 
 
 class TestCaseBuildStatusCallback(basetest.BaseTest):
-    _multiprocess_can_split_ = True
 
     def test_model_has_inconsistency_errors(self):
-        package_name = "broken-6-build7751.mpk"
-        self._test_helper(package_name)
+        self._test_helper('broken-6-build7751.mpk')
         try:
-            subprocess.check_call("cf start \"%s\"" % self.app_name, shell=True)
+            self.startApp()
         except subprocess.CalledProcessError:
-            logs_out = subprocess.check_output("cf logs \"%s\" --recent" % self.app_name, shell=True)
+            logs_out = subprocess.check_output(('cf', 'logs', self.app_name, '--recent'))
             print(logs_out)
             assert 'Submitting build status' in logs_out
 
     def test_model_has_no_inconsistency_errors(self):
-        package_name = "sample-6.2.0.mpk"
-        self._test_helper(package_name)
-        subprocess.check_call("cf start \"%s\"" % self.app_name, shell=True)
+        self._test_helper('sample-6.2.0.mpk')
+        self.startApp()
         self.assert_app_running(self.app_name)
 
     def _test_helper(self, package_name):
