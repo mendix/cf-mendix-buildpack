@@ -13,6 +13,7 @@ from m2ee import M2EE, logger
 import buildpackutil
 import logging
 import fastdeploy
+import metrics
 from nginx import get_path_config, gen_htpasswd
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
@@ -803,6 +804,11 @@ def set_up_fastdeploy_if_deploy_password_is_set(m2ee):
                 'runtime version %s does not support it' % mx_version
             )
 
+def start_metrics(m2ee):
+    metrics_interval = os.getenv('METRICS_INTERVAL')
+    if metrics_interval:
+        metrics.MetricsEmitterThread(int(metrics_interval), m2ee).start()
+
 
 def complete_start_procedure_safe_to_use_for_restart(m2ee):
     set_up_logging_file()
@@ -834,5 +840,6 @@ if __name__ == '__main__':
     set_up_nginx_files(m2ee)
     complete_start_procedure_safe_to_use_for_restart(m2ee)
     set_up_fastdeploy_if_deploy_password_is_set(m2ee)
+    start_metrics(m2ee)
     start_nginx()
     loop_until_process_dies(m2ee)
