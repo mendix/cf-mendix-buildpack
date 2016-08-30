@@ -8,7 +8,7 @@ class TestCaseFastdeploy(basetest.BaseTest):
 
     def setUp(self):
         self.setUpCF('MontBlancApp671.mpk')
-        subprocess.check_call(('cf', 'set-env', self.app_name, 'DEPLOY_PASSWORD'))
+        subprocess.check_call(('cf', 'set-env', self.app_name, 'DEPLOY_PASSWORD', self.mx_password))
         self.startApp()
 
     def test_fast_deploy(self):
