@@ -82,6 +82,10 @@ class M2EEConfig:
                 self._runtime_path = self.lookup_in_mxjar_repo(
                     str(self.runtime_version))
                 if self._runtime_path is None:
+                    logger.warn("Mendix Runtime not found for version %s. "
+                                "You can try downloading it using the "
+                                "download_runtime command." %
+                                str(self.runtime_version))
                     self._all_systems_are_go = False
 
         self._setup_classpath()
@@ -91,6 +95,8 @@ class M2EEConfig:
             logger.debug("Setting RuntimePath runtime config option to %s"
                          % runtimePath)
             self._conf['mxruntime']['RuntimePath'] = runtimePath
+
+        self._warn_constants()
 
     def _setup_classpath(self):
         logger.debug("Determining classpath to be used...")

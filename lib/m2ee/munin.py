@@ -88,7 +88,7 @@ default_stats = {
 
 
 def print_config(m2ee, name):
-    stats = get_stats('config', m2ee.client, m2ee.config)
+    stats, java_version = get_stats('config', m2ee.client, m2ee.config)
     if stats is None:
         return
     options = m2ee.config.get_munin_options()
@@ -104,7 +104,7 @@ def print_config(m2ee, name):
 
 
 def print_values(m2ee, name):
-    stats = get_stats('values', m2ee.client, m2ee.config)
+    stats, java_version = get_stats('values', m2ee.client, m2ee.config)
     if stats is None:
         return
     options = m2ee.config.get_munin_options()
@@ -116,7 +116,25 @@ def print_values(m2ee, name):
     print_threadpool_values(name, stats)
     print_cache_values(name, stats)
     print_jvm_threads_values(name, stats)
-    print_jvm_process_memory_values(name, stats, m2ee.runner.get_pid())
+    print_jvm_process_memory_values(name, stats, m2ee.runner.get_pid(), m2ee.client, java_version)
+
+
+def guess_java_version(client, runtime_version, stats):
+    m2eeresponse = client.about()
+    if not m2eeresponse.has_error():
+        about = m2eeresponse.get_feedback()
+        if 'java_version' in about:
+            java_version = about['java_version']
+            java_major, java_minor, _ = java_version.split('.')
+            return int(java_minor)
+    if runtime_version // 6:
+        return 8
+    if runtime_version // 5:
+        m = stats['memory']
+        if m['used_nonheap'] - m['code'] - m['permanent'] == 0:
+            return 7
+        return 8
+    return None
 
 
 def get_stats(action, client, config):
@@ -129,8 +147,9 @@ def get_stats(action, client, config):
 
     # TODO: even better error/exception handling
     stats = None
+    java_version = None
     try:
-        stats = get_stats_from_runtime(client, config)
+        stats, java_version = get_stats_from_runtime(client, config)
         write_last_known_good_stats_cache(stats, config_cache)
     except Exception, e:
         if action == 'config':
@@ -142,7 +161,7 @@ def get_stats(action, client, config):
             # assume something bad happened, like
             # socket.error: [Errno 111] Connection refused
             logger.error("Error fetching runtime/server statstics: %s", e)
-    return stats
+    return stats, java_version
 
 
 def get_stats_from_runtime(client, config):
@@ -167,7 +186,32 @@ def get_stats_from_runtime(client, config):
         if not m2eeresponse.has_error():
             stats['threads'] = len(m2eeresponse.get_feedback())
 
-    return stats
+    java_version = guess_java_version(client, runtime_version, stats)
+    if 'memorypools' in stats['memory']:
+        memorypools = stats['memory']['memorypools']
+        if java_version == 7:
+            stats['memory']['code'] = memorypools[0]['usage']
+            stats['memory']['permanent'] = memorypools[4]['usage']
+            stats['memory']['eden'] = memorypools[1]['usage']
+            stats['memory']['survivor'] = memorypools[2]['usage']
+            stats['memory']['tenured'] = memorypools[3]['usage']
+        else:
+            stats['memory']['code'] = memorypools[0]['usage']
+            stats['memory']['permanent'] = memorypools[2]['usage']
+            stats['memory']['eden'] = memorypools[3]['usage']
+            stats['memory']['survivor'] = memorypools[4]['usage']
+            stats['memory']['tenured'] = memorypools[5]['usage']
+    elif java_version >= 8:
+        memory = stats['memory']
+        metaspace = memory['eden']
+        eden = memory['tenured']
+        survivor = memory['permanent']
+        old = memory['used_heap'] - eden - survivor
+        memory['permanent'] = metaspace
+        memory['eden'] = eden
+        memory['survivor'] = survivor
+        memory['tenured'] = old
+    return stats, java_version
 
 
 def write_last_known_good_stats_cache(stats, config_cache):
@@ -497,7 +541,7 @@ def print_jvm_process_memory_config(name):
     print("")
 
 
-def print_jvm_process_memory_values(name, stats, pid):
+def print_jvm_process_memory_values(name, stats, pid, client, java_version):
     if pid is None:
         return
     totals = smaps.get_smaps_rss_by_category(pid)
@@ -511,14 +555,23 @@ def print_jvm_process_memory_values(name, stats, pid):
     javaheap = totals[smaps.CATEGORY_JVM_HEAP] * 1024
     for k in ['tenured', 'survivor', 'eden']:
         print('%s.value %s' % (k, memory[k]))
-    print("javaheap.value %s" % (javaheap - memory['used_heap'] - memory['used_nonheap']))
-    print("permanent.value %s" % memory['permanent'])
-    print("codecache.value %s" % memory['code'])
+    if java_version is not None and java_version >= 8:
+        print("javaheap.value %s" % (javaheap - memory['used_heap'] - memory['code']))
+    else:
+        print("javaheap.value %s" %
+              (javaheap - memory['used_heap'] - memory['code'] - memory['permanent']))
 
     nativemem = totals[smaps.CATEGORY_NATIVE_HEAP_ARENA] * 1024
-    print("nativemem.value %s" % nativemem)
+    othermem = totals[smaps.CATEGORY_OTHER] * 1024
+    print("permanent.value %s" % memory['permanent'])
+    print("codecache.value %s" % memory['code'])
+    if java_version is not None and java_version >= 8:
+        print("nativemem.value %s" % (nativemem + othermem - memory['permanent']))
+        print("other.value 0")
+    else:
+        print("nativemem.value %s" % nativemem)
+        print("other.value %s" % othermem)
 
     print("stacks.value %s" % (totals[smaps.CATEGORY_THREAD_STACK] * 1024))
-    print("other.value %s" % (totals[smaps.CATEGORY_OTHER] * 1024))
     print("total.value %s" % (sum(totals.values()) * 1024))
     print("")
