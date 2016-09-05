@@ -107,6 +107,7 @@ def print_values(m2ee, name):
     stats, java_version = get_stats('values', m2ee.client, m2ee.config)
     if stats is None:
         return
+    stats = augment_and_fix_stats(stats, m2ee.runner.get_pid(), java_version)
     options = m2ee.config.get_munin_options()
 
     print_requests_values(name, stats)
@@ -153,14 +154,14 @@ def get_stats(action, client, config):
         write_last_known_good_stats_cache(stats, config_cache)
     except Exception, e:
         if action == 'config':
-            logger.debug("Error fetching runtime/server statstics: %s", e)
+            logger.debug("Error fetching runtime/server statistics: %s", e)
             stats = read_stats_from_last_known_good_stats_cache(config_cache)
             if stats is None:
                 stats = default_stats
         else:
             # assume something bad happened, like
             # socket.error: [Errno 111] Connection refused
-            logger.error("Error fetching runtime/server statstics: %s", e)
+            logger.error("Error fetching runtime/server statistics: %s", e)
     return stats, java_version
 
 
@@ -433,17 +434,11 @@ def print_threadpool_values(name, stats):
     if "threadpool" not in stats:
         return
 
-    min_threads = stats['threadpool']['min_threads']
-    max_threads = stats['threadpool']['max_threads']
-    threadpool_size = stats['threadpool']['threads']
-    idle_threads = stats['threadpool']['idle_threads']
-    active_threads = threadpool_size - idle_threads
+    threadpool = stats['threadpool']
 
     print("multigraph m2eeserver_threadpool_%s" % name)
-    print("min_threads.value %s" % min_threads)
-    print("max_threads.value %s" % max_threads)
-    print("active_threads.value %s" % active_threads)
-    print("threadpool_size.value %s" % threadpool_size)
+    for k in ['min_threads', 'max_threads', 'active_threads', 'threadpool_size']:
+        print('%s.value %s' % (k, threadpool[k]))
     print("")
 
 
@@ -549,29 +544,47 @@ def print_jvm_process_memory_values(name, stats, pid, client, java_version):
         return
     memory = stats['memory']
     print("multigraph mxruntime_jvm_process_memory_%s" % name)
-    print("nativecode.value %s" % (totals[smaps.CATEGORY_CODE] * 1024))
-    print("jar.value %s" % (totals[smaps.CATEGORY_JAR] * 1024))
 
-    javaheap = totals[smaps.CATEGORY_JVM_HEAP] * 1024
-    for k in ['tenured', 'survivor', 'eden']:
+    for k in ['tenured', 'survivor', 'eden', 'javaheap', 'permanent',
+        'nativemem', 'stacks', 'total', 'jar', 'nativecode', 'code',
+        'codecache']:
         print('%s.value %s' % (k, memory[k]))
+    print("")
+
+
+def augment_and_fix_stats(stats, pid, java_version):
+    if pid is None:
+        return
+    totals = smaps.get_smaps_rss_by_category(pid)
+    if totals is None:
+        return
+    memory = stats['memory']
+    memory['nativecode'] = (totals[smaps.CATEGORY_CODE] * 1024)
+    memory['jar'] = (totals[smaps.CATEGORY_JAR] * 1024)
+
+    javaheap_raw = totals[smaps.CATEGORY_JVM_HEAP] * 1024
     if java_version is not None and java_version >= 8:
-        print("javaheap.value %s" % (javaheap - memory['used_heap'] - memory['code']))
+        javaheap = (javaheap_raw - memory['used_heap'] - memory['code'])
     else:
-        print("javaheap.value %s" %
-              (javaheap - memory['used_heap'] - memory['code'] - memory['permanent']))
+        javaheap = (javaheap_raw - memory['used_heap'] - memory['code'] - memory['permanent'])
+    memory['javaheap'] = javaheap
 
     nativemem = totals[smaps.CATEGORY_NATIVE_HEAP_ARENA] * 1024
     othermem = totals[smaps.CATEGORY_OTHER] * 1024
-    print("permanent.value %s" % memory['permanent'])
-    print("codecache.value %s" % memory['code'])
     if java_version is not None and java_version >= 8:
-        print("nativemem.value %s" % (nativemem + othermem - memory['permanent']))
-        print("other.value 0")
-    else:
-        print("nativemem.value %s" % nativemem)
-        print("other.value %s" % othermem)
+        nativemem = (nativemem + othermem - memory['permanent'])
+        othermem = 0
 
-    print("stacks.value %s" % (totals[smaps.CATEGORY_THREAD_STACK] * 1024))
-    print("total.value %s" % (sum(totals.values()) * 1024))
-    print("")
+    memory['codecache'] = memory['code']
+    memory['nativemem'] = nativemem
+    memory['other'] = othermem
+    memory['stacks'] = (totals[smaps.CATEGORY_THREAD_STACK] * 1024)
+    memory['total'] = (sum(totals.values()) * 1024)
+
+    threadpool = stats['threadpool']
+    threadpool_size = threadpool['threads']
+    threadpool['threadpool_size'] = threadpool_size
+    idle_threads = threadpool['idle_threads']
+    threadpool['active_threads'] = threadpool_size - idle_threads
+
+    return stats
