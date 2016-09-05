@@ -186,13 +186,7 @@ class M2EEClient:
         return self.request("stop_profiler")
 
     def set_log_level(self, params):
-        try:
-            return self.request("set_log_level", params)
-        except M2EEAdminException:
-            runtime_version = MXVersion(self.about()['version'])
-            if runtime_version < 6 and "nodes" in params:
-                raise ValueError("API only available from Mendix 6 onwards")
-            raise
+        return self.request("set_log_level", params)
 
     def get_log_settings(self, params):
         return self.request("get_log_settings", params)

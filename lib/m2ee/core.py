@@ -196,9 +196,8 @@ class M2EE():
         if len(logging_config) == 0:
             logger.warn("No logging settings found, this is probably not what "
                         "you want.")
-            return
-        for log_subscriber in logging_config:
-            if log_subscriber["name"] != "*":
+        else:
+            for log_subscriber in logging_config:
                 m2eeresponse = self.client.create_log_subscriber(
                     log_subscriber)
                 result = m2eeresponse.get_result()
@@ -206,10 +205,7 @@ class M2EE():
                     pass
                 elif result != 0:
                     m2eeresponse.display_error()
-            if "nodes" in log_subscriber:
-                self.set_log_levels(log_subscriber["name"],
-                                    log_subscriber["nodes"], force=True)
-        self.client.start_logging()
+            self.client.start_logging()
 
     def _send_jetty_config(self):
         # send jetty configuration
@@ -290,13 +286,6 @@ class M2EE():
 
     def set_log_level(self, subscriber, node, level):
         params = {"subscriber": subscriber, "node": node, "level": level}
-        return self.client.set_log_level(params)
-
-    def set_log_levels(self, subscriber, nodes, force=False):
-        params = {"subscriber": subscriber, "nodes": nodes}
-        if force:
-            params["force"] = "true"
-
         return self.client.set_log_level(params)
 
     def get_log_levels(self):
