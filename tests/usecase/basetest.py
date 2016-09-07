@@ -68,3 +68,10 @@ class BaseTest(unittest.TestCase):
         full_uri = "https://" + app_name + path
         r = requests.get(full_uri)
         assert r.status_code == code
+
+    def assert_string_in_recent_logs(self, app_name, substring):
+        output = subprocess.check_output(('cf', 'logs', app_name, '--recent'))
+        if output.find(substring) > 0:
+            pass
+        else:
+            self.fail('Failed to find substring in recent logs: ' + substring)
