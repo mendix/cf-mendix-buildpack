@@ -57,8 +57,23 @@ class MetricsEmitterThread(threading.Thread):
     def _get_s3_stats(self):
         resulting_stats = {
             'number_of_files': 0,
-            'total_size': 0
+            'total_size': -1
         }
+        conn = self._get_pg_conn()
+        if not conn:
+            return None
+
+        cur = conn.cursor()
+        cur.execute("""SELECT COUNT(id) from system$filedocument WHERE hascontents=true;""")
+        rows = cur.fetchall()
+
+        if len(rows) == 0:
+            return None
+
+        resulting_stats['number_of_files'] = rows[0][0]
+        return resulting_stats
+
+    def _get_pg_conn(self):
         vcap_services = buildpackutil.get_vcap_services_data()
         try:
             uri = vcap_services['PostgreSQL'][0]['credentials']['uri']
@@ -67,7 +82,7 @@ class MetricsEmitterThread(threading.Thread):
             password = result.password
             database = result.path[1:]
             hostname = result.hostname
-            conn = psycopg2.connect(
+            return psycopg2.connect(
                 database=database,
                 user=username,
                 password=password,
@@ -76,15 +91,3 @@ class MetricsEmitterThread(threading.Thread):
         except Exception as e:
             logger.error('MENDIX-METRICS: ' + e.message)
             return None
-        cur = conn.cursor()
-        # SELECT COUNT(id) from system$filedocument WHERE hascontents=true;
-        # SELECT sum(size) from system$filedocument;
-        cur.execute("""SELECT * from system$filedocument""")
-        colnames = [desc[0] for desc in cur.description]
-        rows = cur.fetchall()
-
-        if len(rows) == 0:
-            return None
-        logger.info('MENDIX-METRICS: ' + str(colnames))
-        logger.info('MENDIX-METRICS: ' + str(rows))
-        return resulting_stats
