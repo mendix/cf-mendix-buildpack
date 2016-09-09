@@ -805,6 +805,7 @@ def set_up_fastdeploy_if_deploy_password_is_set(m2ee):
                 'runtime version %s does not support it' % mx_version
             )
 
+
 def start_metrics(m2ee):
     metrics_interval = os.getenv('METRICS_INTERVAL')
     if metrics_interval:
