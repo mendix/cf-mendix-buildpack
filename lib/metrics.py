@@ -24,6 +24,7 @@ class MetricsEmitterThread(threading.Thread):
     def run(self):
         logger.debug('Starting metrics emitter with interval %d' % self.interval)
         while True:
+
             try:
                 m2ee_stats = self._get_m2ee_stats()
                 s3_stats = self._get_s3_stats()
@@ -34,7 +35,7 @@ class MetricsEmitterThread(threading.Thread):
                 }
 
                 if s3_stats:
-                    stats["mendix_storage"] = s3_stats
+                    stats["storage"] = s3_stats
 
                 logger.info('MENDIX-METRICS: ' + json.dumps(stats))
             except Exception as e:
@@ -56,8 +57,7 @@ class MetricsEmitterThread(threading.Thread):
 
     def _get_s3_stats(self):
         resulting_stats = {
-            'number_of_files': 0,
-            'total_size': -1
+            'number_of_files': 0
         }
         conn = self._get_pg_conn()
         if not conn:
