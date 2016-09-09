@@ -640,6 +640,7 @@ def start_app(m2ee):
     success = False
     while not (success or abort):
         startresponse = m2ee.client.start({'autocreatedb': True})
+        logger.debug('startresponse received')
         result = startresponse.get_result()
         if result == 0:
             success = True
