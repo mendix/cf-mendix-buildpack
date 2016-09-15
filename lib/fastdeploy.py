@@ -73,14 +73,22 @@ class MPKUploadHandler(BaseHTTPRequestHandler):
                     shutil.copyfileobj(form['file'].file, output)
                 mxbuild_response = build()
                 logger.debug(mxbuild_response)
-                if mxbuild_response['restartRequired'] is True:
+                if mxbuild_response['status'] != 'Success':
+                    logger.warning(
+                        'Failed to build project, '
+                        'keeping previous model running'
+                    )
+                    state = 'FAILED'
+                elif mxbuild_response['restartRequired'] is True:
                     logger.info('Restarting app after MPK push')
                     self.server.restart_callback()
+                    state = 'STARTED'
                 else:
                     logger.info('Reloading model after MPK push')
                     self.server.reload_callback()
+                    state = 'STARTED'
                 return self._terminate(200, {
-                    'state': 'STARTED',
+                    'state': state,
                 }, mxbuild_response)
             else:
                 return self._terminate(401, {
