@@ -19,6 +19,8 @@ class MetricsEmitterThread(threading.Thread):
                 m2ee_stats,
                 self.m2ee.runner.get_pid(),
                 java_version)
+            critical_logs_count = len(self.m2ee.client.get_critical_log_messages())
+            m2ee_stats['critical_logs_count'] = critical_logs_count
             stats = {
                 'version': '1.0',
                 'timestamp': datetime.datetime.now().isoformat(),
