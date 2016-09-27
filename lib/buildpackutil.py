@@ -80,6 +80,8 @@ def get_database_uri_from_vcap():
         return vcap_services['PostgreSQL'][0]['credentials']['uri']
     elif 'dashDB' in vcap_services:
         return vcap_services['dashDB'][0]['credentials']['uri']
+    elif 'mariadb' in vcap_services:
+        return vcap_services['mariadb'][0]['credentials']['uri']
     return None
 
 
