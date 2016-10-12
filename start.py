@@ -615,14 +615,19 @@ def service_backups():
     schnapps_url = vcap_services['schnapps'][0]['credentials']['url']
     schnapps_api_key = vcap_services['schnapps'][0]['credentials']['apiKey']
 
-    result = requests.put(
-        schnapps_url,
-        headers={
-            'Content-Type': 'application/json',
-            'apiKey': schnapps_api_key
-        },
-        data=json.dumps(backup_service),
-    )
+    try:
+        result = requests.put(
+            schnapps_url,
+            headers={
+                'Content-Type': 'application/json',
+                'apiKey': schnapps_api_key
+            },
+            data=json.dumps(backup_service),
+        )
+    except Exception as e:
+        logger.warning('Failed to contact backup service: ' + e)
+        return
+
     if result.status_code == 200:
         logger.info("Successfully updated backup service")
     else:
