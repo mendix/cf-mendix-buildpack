@@ -76,7 +76,10 @@ class MetricsEmitterThread(threading.Thread):
     def _get_pg_conn(self):
         vcap_services = buildpackutil.get_vcap_services_data()
         try:
-            uri = vcap_services['PostgreSQL'][0]['credentials']['uri']
+            if 'rds' in vcap_services:
+                uri = vcap_services['rds'][0]['credentials']['uri']
+            else:
+                uri = vcap_services['PostgreSQL'][0]['credentials']['uri']
             result = urlparse.urlparse(uri)
             username = result.username
             password = result.password
