@@ -602,8 +602,13 @@ def service_backups():
         if 'key_suffix' in s3_credentials:  # Not all s3 plans have this field
             backup_service['filesCredentials']['keySuffix'] = s3_credentials['key_suffix']
 
-    if 'PostgreSQL' in vcap_services:
+    try:
         db_config = buildpackutil.get_database_config()
+        if db_config['DatabaseType'] != 'PostgreSQL':
+            raise Exception(
+                'Schnapps only supports postgresql, not %s'
+                % db_config['DatabaseType']
+            )
         host_and_port = db_config['DatabaseHost'].split(':')
         backup_service['databaseCredentials'] = {
             'host': host_and_port[0],
@@ -612,6 +617,12 @@ def service_backups():
             'dbname': db_config['DatabaseName'],
             'port': int(host_and_port[1]) if len(host_and_port) > 1 else 5432,
         }
+    except Exception as e:
+        logger.exception(
+            'Schnapps will not be activated because error occurred with '
+            'parsing the database credentials'
+        )
+        return
     schnapps_url = vcap_services['schnapps'][0]['credentials']['url']
     schnapps_api_key = vcap_services['schnapps'][0]['credentials']['apiKey']
 
