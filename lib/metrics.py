@@ -76,10 +76,10 @@ class MetricsEmitterThread(threading.Thread):
         database_stats = {}
         index_size = self._get_database_index_size()
         if index_size:
-            database_stats['index_size'] = index_size
-        data_size = self._get_database_data_size()
-        if data_size:
-            database_stats['data_size'] = data_size
+            database_stats['indexes_size'] = index_size
+        table_size = self._get_database_table_size()
+        if table_size:
+            database_stats['tables_size'] = table_size
         mutations_stats = self._get_database_mutations()
         if mutations_stats:
             database_stats.update(mutations_stats)
@@ -110,7 +110,7 @@ class MetricsEmitterThread(threading.Thread):
             )
         return None
 
-    def _get_database_data_size(self):
+    def _get_database_table_size(self):
         conn = self._get_db_conn()
         try:
             db_config = buildpackutil.get_database_config()
