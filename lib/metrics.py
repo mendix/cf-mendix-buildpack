@@ -80,8 +80,35 @@ class MetricsEmitterThread(threading.Thread):
         data_size = self._get_database_data_size()
         if data_size:
             database_stats['data_size'] = data_size
+        mutations_stats = self._get_database_mutations()
+        if mutations_stats:
+            database_stats.update(mutations_stats)
         stats["database"] = database_stats
         return stats
+
+    def _get_database_mutations(self):
+        conn = self._get_db_conn()
+        try:
+            db_config = buildpackutil.get_database_config()
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "select xact_commit, xact_rollback, tup_inserted, tup_updated, tup_deleted from pg_stat_database where datname = '%s';" % (
+                        db_config['DatabaseName'],
+                    )
+                )
+                rows = cursor.fetchall()
+                return {
+                    'xact_commit': int(rows[0][0]),
+                    'xact_rollback': int(rows[0][1]),
+                    'tup_inserted': int(rows[0][2]),
+                    'tup_updated': int(rows[0][3]),
+                    'tup_deleted': int(rows[0][4]),
+                }
+        except Exception as e:
+            logger.warn(
+                'Metrics: Failed to get database mutation stats, ' + str(e)
+            )
+        return None
 
     def _get_database_data_size(self):
         conn = self._get_db_conn()
