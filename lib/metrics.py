@@ -33,6 +33,7 @@ class MetricsEmitterThread(threading.Thread):
             }
             stats = self._inject_m2ee_stats(stats)
             stats = self._inject_storage_stats(stats)
+            stats = self._inject_database_stats(stats)
 
             logger.info('MENDIX-METRICS: ' + json.dumps(stats))
 
@@ -71,19 +72,74 @@ class MetricsEmitterThread(threading.Thread):
         stats["storage"] = storage_stats
         return stats
 
+    def _inject_database_stats(self, stats):
+        database_stats = {}
+        index_size = self._get_database_index_size()
+        if index_size:
+            database_stats['index_size'] = index_size
+        data_size = self._get_database_data_size()
+        if data_size:
+            database_stats['data_size'] = data_size
+        stats["database"] = database_stats
+        return stats
+
+    def _get_database_data_size(self):
+        conn = self._get_db_conn()
+        try:
+            db_config = buildpackutil.get_database_config()
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "SELECT pg_database_size('%s');" % (
+                        db_config['DatabaseName'],
+                    )
+                )
+                rows = cursor.fetchall()
+                return int(rows[0][0])
+        except Exception as e:
+            logger.warn(
+                'Metrics: Failed to get database data size, ' + str(e)
+            )
+        return None
+
+    def _get_database_index_size(self):
+        conn = self._get_db_conn()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT
+                        SUM(pg_relation_size(quote_ident(indexrelname)::text)) AS index_size
+                    FROM pg_tables t
+                    LEFT OUTER JOIN pg_class c ON t.tablename=c.relname
+                    LEFT OUTER JOIN
+                        ( SELECT c.relname AS ctablename, ipg.relname AS indexname, x.indnatts AS number_of_columns, idx_scan, idx_tup_read, idx_tup_fetch, indexrelname, indisunique FROM pg_index x
+                            JOIN pg_class c ON c.oid = x.indrelid
+                            JOIN pg_class ipg ON ipg.oid = x.indexrelid
+                            JOIN pg_stat_all_indexes psai ON x.indexrelid = psai.indexrelid )
+                        AS foo
+                        ON t.tablename = foo.ctablename
+                    WHERE t.schemaname='public';
+                    """
+                )
+                rows = cursor.fetchall()
+                return int(rows[0][0])
+        except Exception as e:
+            logger.warn(
+                'Metrics: Failed to get database index size, ' + str(e)
+            )
+        return None
+
     def _get_number_of_files(self):
         conn = self._get_db_conn()
 
-        cur = conn.cursor()
-        cur.execute(
-            'SELECT COUNT(id) from system$filedocument WHERE hascontents=true;'
-        )
-        rows = cur.fetchall()
-
-        if len(rows) == 0:
-            raise Exception('Unexpected result from database query')
-
-        return int(rows[0][0])
+        with conn.cursor() as cursor:
+            cursor.execute(
+                'SELECT COUNT(id) from system$filedocument WHERE hascontents=true;'
+            )
+            rows = cursor.fetchall()
+            if len(rows) == 0:
+                raise Exception('Unexpected result from database query')
+            return int(rows[0][0])
 
     def _get_db_conn(self):
         if not self.db:
@@ -107,6 +163,7 @@ class MetricsEmitterThread(threading.Thread):
                     host=host,
                     port=port,
                 )
+                self.db.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
             except Exception as e:
                 logger.warn('METRICS: ' + e.message)
         return self.db
