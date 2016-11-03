@@ -829,6 +829,7 @@ def start_metrics(m2ee):
 
 
 def complete_start_procedure_safe_to_use_for_restart(m2ee):
+    buildpackutil.mkdir_p('model/lib/userlib')
     set_up_logging_file()
     start_app(m2ee)
     create_admin_user(m2ee)

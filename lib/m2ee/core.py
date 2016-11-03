@@ -72,7 +72,7 @@ class M2EE():
 
         version = self.config.get_runtime_version()
 
-        if version >= 5:
+        if version >= 5 and version < 7:
             if not self.config.write_felix_config():
                 return False
 
