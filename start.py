@@ -329,13 +329,14 @@ def determine_cluster_redis_credentials():
     sys.exit(1)
 
 
-def is_cluster_enabled():
-    return os.getenv('CLUSTER_ENABLED', 'false') == 'true'
+def is_cluster_enabled(m2ee):
+    return (os.getenv('CLUSTER_ENABLED', 'false') == 'true' and
+            not m2ee.config.get_runtime_version() >= 7)
 
 
-def get_cluster_config():
+def get_cluster_config(m2ee):
     config = {}
-    if is_cluster_enabled():
+    if is_cluster_enabled(m2ee):
         config['com.mendix.core.IsClustered'] = 'true'
         config['com.mendix.core.state.Implementation'] = (
             os.getenv('CLUSTER_STATE_IMPLEMENTATION', 'mxdb')
@@ -352,6 +353,10 @@ def get_cluster_config():
                 'com.mendix.core.state.redis.MaxConnections': max_conns,
             })
     return config
+
+
+def is_cluster_leader():
+    return os.getenv('CF_INSTANCE_INDEX', '0') == '0'
 
 
 def get_certificate_authorities():
@@ -451,9 +456,12 @@ def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
         )
         app_config['DTAPMode'] = 'D'
 
-    if (m2ee.config.get_runtime_version() >= 5.15 and
+    if (m2ee.config.get_runtime_version() >= 7 and
+            not is_cluster_leader()):
+        app_config['com.mendix.core.isClusterSlave'] = 'true'
+    elif (m2ee.config.get_runtime_version() >= 5.15 and
             os.getenv('ENABLE_STICKY_SESSIONS', 'false').lower() == 'true' and
-            not is_cluster_enabled()):
+            not is_cluster_enabled(m2ee)):
         logger.info('Enabling sticky sessions')
         app_config['com.mendix.core.SessionIdCookieName'] = 'JSESSIONID'
 
@@ -462,7 +470,7 @@ def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
         development_mode=is_development_mode(),
     ))
     mxruntime_config.update(get_filestore_config(m2ee))
-    mxruntime_config.update(get_cluster_config())
+    mxruntime_config.update(get_cluster_config(m2ee))
     mxruntime_config.update(get_certificate_authorities())
     mxruntime_config.update(get_client_certificates())
     mxruntime_config.update(get_custom_settings(metadata, mxruntime_config))
