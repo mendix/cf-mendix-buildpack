@@ -321,40 +321,6 @@ def get_filestore_config(m2ee):
         return config
 
 
-def determine_cluster_redis_credentials():
-    vcap_services = buildpackutil.get_vcap_services_data()
-    if vcap_services and 'rediscloud' in vcap_services:
-        return vcap_services['rediscloud'][0]['credentials']
-    logger.error("Redis Cloud Service should be configured for this app")
-    sys.exit(1)
-
-
-def is_cluster_enabled(m2ee):
-    return (os.getenv('CLUSTER_ENABLED', 'false') == 'true' and
-            not m2ee.config.get_runtime_version() >= 7)
-
-
-def get_cluster_config(m2ee):
-    config = {}
-    if is_cluster_enabled(m2ee):
-        config['com.mendix.core.IsClustered'] = 'true'
-        config['com.mendix.core.state.Implementation'] = (
-            os.getenv('CLUSTER_STATE_IMPLEMENTATION', 'mxdb')
-        )
-
-        if config['com.mendix.core.state.Implementation'].startswith('redis'):
-            redis_creds = determine_cluster_redis_credentials()
-            max_conns = os.getenv('CLUSTER_STATE_REDIS_MAX_CONNECTIONS', '30')
-
-            config.update({
-                'com.mendix.core.state.redis.Host': redis_creds['hostname'],
-                'com.mendix.core.state.redis.Port': redis_creds['port'],
-                'com.mendix.core.state.redis.Secret': redis_creds['password'],
-                'com.mendix.core.state.redis.MaxConnections': max_conns,
-            })
-    return config
-
-
 def is_cluster_leader():
     return os.getenv('CF_INSTANCE_INDEX', '0') == '0'
 
@@ -460,8 +426,7 @@ def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
             not is_cluster_leader()):
         app_config['com.mendix.core.isClusterSlave'] = 'true'
     elif (m2ee.config.get_runtime_version() >= 5.15 and
-            os.getenv('ENABLE_STICKY_SESSIONS', 'false').lower() == 'true' and
-            not is_cluster_enabled(m2ee)):
+            os.getenv('ENABLE_STICKY_SESSIONS', 'false').lower() == 'true'):
         logger.info('Enabling sticky sessions')
         app_config['com.mendix.core.SessionIdCookieName'] = 'JSESSIONID'
 
@@ -470,7 +435,6 @@ def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
         development_mode=is_development_mode(),
     ))
     mxruntime_config.update(get_filestore_config(m2ee))
-    mxruntime_config.update(get_cluster_config(m2ee))
     mxruntime_config.update(get_certificate_authorities())
     mxruntime_config.update(get_client_certificates())
     mxruntime_config.update(get_custom_settings(metadata, mxruntime_config))
