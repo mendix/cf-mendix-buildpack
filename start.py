@@ -153,7 +153,7 @@ def activate_license():
 
 def get_scheduled_events(metadata):
     scheduled_events = os.getenv('SCHEDULED_EVENTS', None)
-    if not am_i_primary_instance():
+    if not i_am_primary_instance():
         logger.debug(
             'Disabling all scheduled events because I am not the primary '
             'instance'
@@ -321,44 +321,6 @@ def get_filestore_config(m2ee):
         return config
 
 
-def determine_cluster_redis_credentials():
-    vcap_services = buildpackutil.get_vcap_services_data()
-    if vcap_services and 'rediscloud' in vcap_services:
-        return vcap_services['rediscloud'][0]['credentials']
-    logger.error("Redis Cloud Service should be configured for this app")
-    sys.exit(1)
-
-
-def is_cluster_enabled(m2ee):
-    return (os.getenv('CLUSTER_ENABLED', 'false') == 'true' and
-            not m2ee.config.get_runtime_version() >= 7)
-
-
-def get_cluster_config(m2ee):
-    config = {}
-    if is_cluster_enabled(m2ee):
-        config['com.mendix.core.IsClustered'] = 'true'
-        config['com.mendix.core.state.Implementation'] = (
-            os.getenv('CLUSTER_STATE_IMPLEMENTATION', 'mxdb')
-        )
-
-        if config['com.mendix.core.state.Implementation'].startswith('redis'):
-            redis_creds = determine_cluster_redis_credentials()
-            max_conns = os.getenv('CLUSTER_STATE_REDIS_MAX_CONNECTIONS', '30')
-
-            config.update({
-                'com.mendix.core.state.redis.Host': redis_creds['hostname'],
-                'com.mendix.core.state.redis.Port': redis_creds['port'],
-                'com.mendix.core.state.redis.Secret': redis_creds['password'],
-                'com.mendix.core.state.redis.MaxConnections': max_conns,
-            })
-    return config
-
-
-def is_cluster_leader():
-    return os.getenv('CF_INSTANCE_INDEX', '0') == '0'
-
-
 def get_certificate_authorities():
     config = {}
     cas = os.getenv('CERTIFICATE_AUTHORITIES', None)
@@ -457,11 +419,10 @@ def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
         app_config['DTAPMode'] = 'D'
 
     if (m2ee.config.get_runtime_version() >= 7 and
-            not is_cluster_leader()):
+            not i_am_primary_instance()):
         app_config['com.mendix.core.isClusterSlave'] = 'true'
     elif (m2ee.config.get_runtime_version() >= 5.15 and
-            os.getenv('ENABLE_STICKY_SESSIONS', 'false').lower() == 'true' and
-            not is_cluster_enabled(m2ee)):
+            os.getenv('ENABLE_STICKY_SESSIONS', 'false').lower() == 'true'):
         logger.info('Enabling sticky sessions')
         app_config['com.mendix.core.SessionIdCookieName'] = 'JSESSIONID'
 
@@ -470,7 +431,6 @@ def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
         development_mode=is_development_mode(),
     ))
     mxruntime_config.update(get_filestore_config(m2ee))
-    mxruntime_config.update(get_cluster_config(m2ee))
     mxruntime_config.update(get_certificate_authorities())
     mxruntime_config.update(get_client_certificates())
     mxruntime_config.update(get_custom_settings(metadata, mxruntime_config))
@@ -675,7 +635,7 @@ def start_app(m2ee):
                 logger.warning('DB does not exists')
                 abort = True
             elif result == 3:
-                if am_i_primary_instance():
+                if i_am_primary_instance():
                     if os.getenv('SHOW_DDL_COMMANDS', '').lower() == 'true':
                         for line in m2ee.client.get_ddl_commands({
                             "verbose": True
@@ -798,7 +758,7 @@ def loop_until_process_dies(m2ee):
     sys.exit(1)
 
 
-def am_i_primary_instance():
+def i_am_primary_instance():
     return os.getenv('CF_INSTANCE_INDEX', '0') == '0'
 
 
