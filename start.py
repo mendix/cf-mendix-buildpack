@@ -153,7 +153,7 @@ def activate_license():
 
 def get_scheduled_events(metadata):
     scheduled_events = os.getenv('SCHEDULED_EVENTS', None)
-    if not am_i_primary_instance():
+    if not i_am_primary_instance():
         logger.debug(
             'Disabling all scheduled events because I am not the primary '
             'instance'
@@ -321,10 +321,6 @@ def get_filestore_config(m2ee):
         return config
 
 
-def is_cluster_leader():
-    return os.getenv('CF_INSTANCE_INDEX', '0') == '0'
-
-
 def get_certificate_authorities():
     config = {}
     cas = os.getenv('CERTIFICATE_AUTHORITIES', None)
@@ -423,7 +419,7 @@ def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
         app_config['DTAPMode'] = 'D'
 
     if (m2ee.config.get_runtime_version() >= 7 and
-            not is_cluster_leader()):
+            not i_am_primary_instance()):
         app_config['com.mendix.core.isClusterSlave'] = 'true'
     elif (m2ee.config.get_runtime_version() >= 5.15 and
             os.getenv('ENABLE_STICKY_SESSIONS', 'false').lower() == 'true'):
@@ -639,7 +635,7 @@ def start_app(m2ee):
                 logger.warning('DB does not exists')
                 abort = True
             elif result == 3:
-                if am_i_primary_instance():
+                if i_am_primary_instance():
                     if os.getenv('SHOW_DDL_COMMANDS', '').lower() == 'true':
                         for line in m2ee.client.get_ddl_commands({
                             "verbose": True
@@ -762,7 +758,7 @@ def loop_until_process_dies(m2ee):
     sys.exit(1)
 
 
-def am_i_primary_instance():
+def i_am_primary_instance():
     return os.getenv('CF_INSTANCE_INDEX', '0') == '0'
 
 
