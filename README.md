@@ -131,7 +131,7 @@ If the setting contains a dot `.` you can use an underscore `_` in the environme
 
 ### Horizontal Scaling
 
-There are two ways for horizontal scaling in Mendix. In Mendix 5.15+ you can use sticky sessions or starting with Mendix 6 you can start Cluster Support (BETA). See below on how to activate both these settings.
+There are two ways for horizontal scaling in Mendix. In Mendix 5.15+ you can use sticky sessions. Mendix 6 has Cluster Support (BETA) using a REDIS instance as state store. Mendix 7 brings this even further by no longer requiring a state store. See below on how to activate these settings, based on the Mendix version you use.
 
 #### Things to keep in mind when scaling horizontally
 
@@ -143,7 +143,7 @@ In all horizontal scaling scenarios, extra care needs to be taken when programmi
 * relying on singleton variables to keep global application state
 * relying on scheduled events to make changes in memory, scheduled events will only run on the primary instance
 
-#### Enabling Sticky Sessions
+#### Enabling Sticky Sessions (Mendix 5.15+)
 
 If you want to enable sticky sessions, the only change that is needed is to set the environment variable `ENABLE_STICKY_SESSIONS` to `true`. This will replace the Mendix session cookie name from `XASSESSIONID` to `JSESSIONID` which will trigger sticky session detection in the Cloud Foundry http router. Watch out: custom login code might break if it still injects the `XASSESSIONID` cookie.
 
@@ -153,7 +153,7 @@ With sticky sessions there is an increase in resiliency. If one instance crashes
 
 #### Configuring Cluster Support (BETA feature for Mendix 6)
 
-From Mendix 6 onwards it is possible to configure clustering support. With clustering support it is possible to run multiple instances of your application to achieve High Availability. Clustering support can be enabled by setting the environment variable `CLUSTER_ENABLED` to `true`.
+With Mendix 6 it is possible to configure clustering support. With clustering support it is possible to run multiple instances of your application to achieve High Availability. Clustering support can be enabled by setting the environment variable `CLUSTER_ENABLED` to `true`.
 
 To optimize performance it is possible to choose for REDIS as State Storage. To use that, add the `RedisCloud` service to your application and configure Mendix to use REDIS for State Storage by setting the environment variable `CLUSTER_STATE_IMPLEMENTATION` to `redis`. In case your selected REDIS service has limited connections available, configure the maximum amount of connections that REDIS can allocate per Mendix Business Server instance by setting the environment variable `CLUSTER_STATE_REDIS_MAX_CONNECTIONS` to the amount of connections available in your plan divided by the amount of instances you want to run.
 
@@ -161,6 +161,11 @@ NOTE: Clustering support is a BETA feature and as such not supported by Mendix f
 
 NOTE: Enabling clustering support will automatically disable sticky sessions
 
+#### Configuring Clustering for Mendix 7
+
+Mendix 7 does no longer require a state store like Mendix 6. This makes it easier to scale out and has better performance compared to Mendix 6. The absence of the need for a state store results in the fact that nothing needs to be configured for running Mendix 7 in clustering mode. Based on the `CF_INSTANCE_INDEX` variable, the runtime starts either in leader or slave mode. The leader mode will do the database synchronization activities (when necessary), while the slaves will automatically wait until that is finished.
+
+NOTE: The setting `CLUSTER_ENABLED` and the REDIS related settings will have no effect anymore in Mendix 7 and are ignored.
 
 ### Offline buildpack settings
 
