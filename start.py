@@ -675,8 +675,12 @@ def start_app(m2ee):
 def create_admin_user(m2ee):
     logger.info('Ensuring admin user credentials')
     logger.debug('Creating admin user')
+    app_admin_password = os.getenv(
+        'APP_ADMIN_PASSWORD',
+        os.getenv('ADMIN_PASSWORD')
+    )
     m2eeresponse = m2ee.client.create_admin_user({
-        'password': os.environ.get('ADMIN_PASSWORD'),
+        'password': app_admin_password
     })
     if m2eeresponse.has_error():
         m2eeresponse.display_error()
@@ -686,7 +690,7 @@ def create_admin_user(m2ee):
     logger.debug('Setting admin user password')
     m2eeresponse = m2ee.client.create_admin_user({
         'username': m2ee.config._model_metadata['AdminUser'],
-        'password': os.environ.get('ADMIN_PASSWORD'),
+        'password': app_admin_password
     })
     if m2eeresponse.has_error():
         m2eeresponse.display_error()
