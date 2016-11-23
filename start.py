@@ -15,6 +15,7 @@ import logging
 import fastdeploy
 import metrics
 from nginx import get_path_config, gen_htpasswd
+from buildpackutil import i_am_primary_instance
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
@@ -760,10 +761,6 @@ def loop_until_process_dies(m2ee):
             break
     logger.info('process died, stopping')
     sys.exit(1)
-
-
-def i_am_primary_instance():
-    return os.getenv('CF_INSTANCE_INDEX', '0') == '0'
 
 
 def set_up_fastdeploy_if_deploy_password_is_set(m2ee):
