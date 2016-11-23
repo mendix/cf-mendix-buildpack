@@ -32,8 +32,9 @@ class MetricsEmitterThread(threading.Thread):
                 'timestamp': datetime.datetime.now().isoformat(),
             }
             stats = self._inject_m2ee_stats(stats)
-            stats = self._inject_storage_stats(stats)
-            stats = self._inject_database_stats(stats)
+            if buildpackutil.i_am_primary_instance():
+                stats = self._inject_storage_stats(stats)
+                stats = self._inject_database_stats(stats)
 
             logger.info('MENDIX-METRICS: ' + json.dumps(stats))
 
