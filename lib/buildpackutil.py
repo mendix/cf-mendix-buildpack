@@ -359,3 +359,7 @@ def ensure_and_return_java_sdk(mx_version, cache_dir):
         '/usr/lib/jvm/jdk-%s-oracle-x64' % java_version,
         '/tmp/javasdk/usr/lib/jvm/jdk-%s-oracle-x64' % java_version,
     ], 'Java not found')
+
+
+def i_am_primary_instance():
+    return os.getenv('CF_INSTANCE_INDEX', '0') == '0'
