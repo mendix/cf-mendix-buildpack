@@ -18,13 +18,15 @@ Install the Cloud Foundry command line executable. You can find this on the [rel
 
 We push an mda (Mendix Deployment Archive) that was built by the Mendix Business Modeler to Cloud Foundry.
 
-    cf push <YOUR_APP> -b https://github.com/mendix/cf-mendix-buildpack -p <YOUR_MDA>.mda
+    cf push <YOUR_APP> -b https://github.com/mendix/cf-mendix-buildpack -p <YOUR_MDA>.mda -t 300
 
 We can also push a project directory. This will move the build process (using mxbuild) to Cloud Foundry:
 
-    cd <PROJECT DIR>; cf push -b https://github.com/mendix/cf-mendix-buildpack
+    cd <PROJECT DIR>; cf push -b https://github.com/mendix/cf-mendix-buildpack -t 300
 
-Note that building the project in Cloud Foundry takes more time and requires enough memory in the compile step.
+Note that you might need to increase the startup timeout to prevent the database from being partially synchronized. This can be done either by specifying the `-t 300` parameter like above, or by using the `CF_STARTUP_TIMEOUT` environment variable (in minutes) from the command line.
+
+Also note that building the project in Cloud Foundry takes more time and requires enough memory in the compile step.
 
 
 ### Configuring admin password
