@@ -203,14 +203,23 @@ def get_constants(metadata):
     return constants
 
 
-def set_heap_size(javaopts):
-    max_memory = os.environ.get('MEMORY_LIMIT', '512m').upper()
-    match = re.search('([0-9]+)([A-Z])', max_memory)
-    max_memory = '%d%s' % (int(match.group(1)) / 2, match.group(2))
-    heap_size = os.environ.get('HEAP_SIZE', max_memory)
+def set_heap_size(javaopts, vcap_max_mem):
+    max_memory = os.environ.get('MEMORY_LIMIT')
+    env_heap_size = os.environ.get('HEAP_SIZE')
+
+    if max_memory:
+        match = re.search('([0-9]+)([A-Z])', max_memory.upper())
+        heap_size = '%d%s' % (int(match.group(1)) / 2, match.group(2))
+    else:
+        heap_size = str(int(vcap_max_mem) / 2) + 'M'
+
+    if env_heap_size:
+        max_memory = max_memory[:-1] if max_memory else vcap_max_mem
+        heap_size = env_heap_size if int(env_heap_size[:-1]) < int(max_memory) else heap_size
+
     javaopts.append('-Xmx%s' % heap_size)
     javaopts.append('-Xms%s' % heap_size)
-    logger.debug('Java heap size set to %s' % max_memory)
+    logger.debug('Java heap size set to %s' % heap_size)
 
 
 def _get_s3_specific_config(vcap_services, m2ee):
@@ -528,7 +537,8 @@ def set_up_m2ee_client(vcap_data):
         vcap_data,
         m2ee,
     )
-    set_heap_size(m2ee.config._conf['m2ee']['javaopts'])
+    set_heap_size(m2ee.config._conf['m2ee']['javaopts'],
+                  vcap_data['limits']['mem'])
     activate_new_relic(m2ee, vcap_data['application_name'])
     activate_appdynamics(m2ee, vcap_data['application_name'])
     set_application_name(m2ee, vcap_data['application_name'])
