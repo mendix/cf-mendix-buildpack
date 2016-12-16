@@ -303,8 +303,6 @@ def _get_swift_specific_config(vcap_services, m2ee):
 
 def get_filestore_config(m2ee):
     vcap_services = buildpackutil.get_vcap_services_data()
-    if vcap_services is None:
-        vcap_services = {}
 
     config = _get_s3_specific_config(vcap_services, m2ee)
 
