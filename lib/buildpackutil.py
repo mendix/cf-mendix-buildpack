@@ -67,7 +67,7 @@ def get_vcap_services_data():
     if os.environ.get('VCAP_SERVICES'):
         return json.loads(os.environ.get('VCAP_SERVICES'))
     else:
-        return None
+        return {}
 
 
 def get_database_uri_from_vcap():
