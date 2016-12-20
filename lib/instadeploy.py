@@ -34,10 +34,10 @@ for directory in (
     buildpackutil.mkdir_p(directory)
 
 
-class FastDeployThread(threading.Thread):
+class InstaDeployThread(threading.Thread):
 
     def __init__(self, port, restart_callback, reload_callback, mx_version):
-        super(FastDeployThread, self).__init__()
+        super(InstaDeployThread, self).__init__()
         self.daemon = True
         self.port = port
         self.restart_callback = restart_callback

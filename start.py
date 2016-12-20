@@ -12,7 +12,7 @@ import requests
 from m2ee import M2EE, logger
 import buildpackutil
 import logging
-import fastdeploy
+import instadeploy
 import metrics
 from nginx import get_path_config, gen_htpasswd
 from buildpackutil import i_am_primary_instance
@@ -53,7 +53,7 @@ def pre_process_m2ee_yaml():
     ])
 
 
-def use_fastdeploy(mx_version):
+def use_instadeploy(mx_version):
     return mx_version >= 6.7 or str(mx_version) == '6-build10037'
 
 
@@ -64,7 +64,7 @@ def set_up_nginx_files(m2ee):
         x_frame_options = ''
     else:
         x_frame_options = "add_header X-Frame-Options '%s';" % x_frame_options
-    if use_fastdeploy(m2ee.config.get_runtime_version()):
+    if use_instadeploy(m2ee.config.get_runtime_version()):
         mxbuild_upstream = 'proxy_pass http://mendix_mxbuild'
     else:
         mxbuild_upstream = 'return 501'
@@ -771,10 +771,10 @@ def loop_until_process_dies(m2ee):
     sys.exit(1)
 
 
-def set_up_fastdeploy_if_deploy_password_is_set(m2ee):
+def set_up_instadeploy_if_deploy_password_is_set(m2ee):
     if os.getenv('DEPLOY_PASSWORD'):
         mx_version = m2ee.config.get_runtime_version()
-        if use_fastdeploy(mx_version):
+        if use_instadeploy(mx_version):
             def reload_callback():
                 m2ee.client.request('reload_model')
 
@@ -786,7 +786,7 @@ def set_up_fastdeploy_if_deploy_password_is_set(m2ee):
                 complete_start_procedure_safe_to_use_for_restart(m2ee)
                 app_is_restarting = False
 
-            fastdeploy.FastDeployThread(
+            instadeploy.InstaDeployThread(
                 get_deploy_port(),
                 restart_callback,
                 reload_callback,
@@ -794,7 +794,7 @@ def set_up_fastdeploy_if_deploy_password_is_set(m2ee):
             ).start()
         else:
             logger.warning(
-                'Not setting up FastDeploy because this mendix '
+                'Not setting up InstaDeploy because this mendix '
                 'runtime version %s does not support it' % mx_version
             )
 
@@ -835,7 +835,7 @@ if __name__ == '__main__':
     service_backups()
     set_up_nginx_files(m2ee)
     complete_start_procedure_safe_to_use_for_restart(m2ee)
-    set_up_fastdeploy_if_deploy_password_is_set(m2ee)
+    set_up_instadeploy_if_deploy_password_is_set(m2ee)
     start_metrics(m2ee)
     start_nginx()
     loop_until_process_dies(m2ee)
