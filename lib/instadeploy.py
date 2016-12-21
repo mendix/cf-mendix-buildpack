@@ -34,10 +34,10 @@ for directory in (
     buildpackutil.mkdir_p(directory)
 
 
-class FastDeployThread(threading.Thread):
+class InstaDeployThread(threading.Thread):
 
     def __init__(self, port, restart_callback, reload_callback, mx_version):
-        super(FastDeployThread, self).__init__()
+        super(InstaDeployThread, self).__init__()
         self.daemon = True
         self.port = port
         self.restart_callback = restart_callback
@@ -71,6 +71,7 @@ class MPKUploadHandler(BaseHTTPRequestHandler):
             if 'file' in form:
                 with open(MPK_FILE, 'wb') as output:
                     shutil.copyfileobj(form['file'].file, output)
+                update_project_dir()
                 mxbuild_response = build()
                 logger.debug(mxbuild_response)
                 if mxbuild_response['status'] != 'Success':
@@ -111,11 +112,18 @@ class MPKUploadHandler(BaseHTTPRequestHandler):
         self.wfile.write(json.dumps(data))
 
 
-def build():
+def update_project_dir():
     logger.debug('unzipping ' + MPK_FILE + ' to ' + INCOMING_MPK_DIR)
     subprocess.check_call(('rm', '-rf', INCOMING_MPK_DIR))
     buildpackutil.mkdir_p(INCOMING_MPK_DIR)
     subprocess.check_call(('unzip', '-oqq', MPK_FILE, '-d', INCOMING_MPK_DIR))
+    new_mpr = os.path.basename(buildpackutil.get_mpr_file_from_dir(
+        INCOMING_MPK_DIR))
+    existing_mpr_path = buildpackutil.get_mpr_file_from_dir(PROJECT_DIR)
+    if existing_mpr_path:
+        existing_mpr = os.path.basename(existing_mpr_path)
+    else:
+        existing_mpr = None
     logger.debug('rsync from incoming to intermediate')
     if buildpackutil.get_buildpack_loglevel() < logging.INFO:
         quiet_or_verbose = '--verbose'
@@ -127,11 +135,19 @@ def build():
         INTERMEDIATE_MPK_DIR + '/',
     ))
     logger.debug('rsync from intermediate to project')
+    if new_mpr == existing_mpr:
+        update_or_delete = '--update'
+    else:
+        update_or_delete = '--delete'
+
     subprocess.call((
-        'rsync', '--recursive', '--update', quiet_or_verbose,
+        'rsync', '--recursive', update_or_delete, quiet_or_verbose,
         INTERMEDIATE_MPK_DIR + '/',
         PROJECT_DIR + '/',
     ))
+
+
+def build():
     mpr = os.path.abspath(buildpackutil.get_mpr_file_from_dir(PROJECT_DIR))
     response = requests.post(
         'http://localhost:6666/build',
