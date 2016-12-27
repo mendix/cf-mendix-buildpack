@@ -31,9 +31,7 @@ Also note that building the project in Cloud Foundry takes more time and require
 
 ### Configuring admin password
 
-The first push generates a new app, but deployment will fail because the buildpack requires an `ADMIN_PASSWORD` variable and a connected PostgreSQL or MySQL service. So go ahead and set this up after the first failed push.
-
-Keep in mind that the admin password should comply with the policy you have set in the Modeler.
+The first push generates a new app. In order to login to your application as admin you can set the password. Keep in mind that the admin password should comply with the policy you have set in the Modeler.
 
     cf set-env <YOUR_APP> ADMIN_PASSWORD "<YOURSECRETPASSWORD>"
 
