@@ -76,13 +76,6 @@ def check_database_environment_variable():
         return False
 
 
-def check_admin_password_environment_variable():
-    return check_environment_variable(
-        'ADMIN_PASSWORD',
-        'You should provide an ADMIN_PASSWORD environment variable'
-    )
-
-
 def set_up_java():
     logging.debug('begin download and install java')
     buildpackutil.mkdir_p(os.path.join(DOT_LOCAL_LOCATION, 'bin'))
@@ -125,11 +118,8 @@ def set_up_java():
 
 def preflight_check():
     logging.debug('pre-flight-check')
-    if not all([
-        check_database_environment_variable(),
-        check_admin_password_environment_variable(),
-    ]):
-        raise Exception('missing environment variables')
+    if not check_database_environment_variable():
+        raise Exception('Missing environment variables')
 
 
 def set_up_directory_structure():

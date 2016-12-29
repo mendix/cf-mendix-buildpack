@@ -7,6 +7,7 @@ import subprocess
 import time
 import sys
 import base64
+import uuid
 sys.path.insert(0, 'lib')
 import requests
 from m2ee import M2EE, logger
@@ -25,6 +26,7 @@ logging.getLogger('m2ee').propagate = False
 
 
 app_is_restarting = False
+default_m2ee_password = str(uuid.uuid4()).replace('-', '@') + 'A1'
 
 
 def get_nginx_port():
@@ -48,13 +50,25 @@ def pre_process_m2ee_yaml():
         'sed',
         '-i',
         's|BUILD_PATH|%s|g; s|RUNTIME_PORT|%d|; s|ADMIN_PORT|%d|; s|ADMIN_PASSWORD|%s|'
-        % (os.getcwd(), get_runtime_port(), get_admin_port(), os.environ.get('ADMIN_PASSWORD')),
+        % (os.getcwd(), get_runtime_port(), get_admin_port(), get_m2ee_password()),
         '.local/m2ee.yaml'
     ])
 
 
 def use_instadeploy(mx_version):
     return mx_version >= 6.7 or str(mx_version) == '6-build10037'
+
+
+def get_admin_password():
+    return os.getenv('ADMIN_PASSWORD')
+
+
+def get_m2ee_password():
+    m2ee_password = os.getenv('M2EE_PASSWORD', get_admin_password())
+    if not m2ee_password:
+        logger.warning('No M2EE_PASSWORD set, generating a random password for protection')
+        m2ee_password = default_m2ee_password
+    return m2ee_password
 
 
 def set_up_nginx_files(m2ee):
@@ -92,7 +106,7 @@ def set_up_nginx_files(m2ee):
     with open('nginx/conf/nginx.conf', 'w') as fh:
         fh.write(lines)
 
-    gen_htpasswd({'MxAdmin': os.environ.get('ADMIN_PASSWORD')})
+    gen_htpasswd({'MxAdmin': get_m2ee_password()})
     gen_htpasswd(
         {'deploy': os.getenv('DEPLOY_PASSWORD')},
         file_name_suffix='-mxbuild'
@@ -683,11 +697,15 @@ def start_app(m2ee):
 
 def create_admin_user(m2ee):
     logger.info('Ensuring admin user credentials')
+    app_admin_password = get_admin_password()
+    if get_m2ee_password():
+        logger.debug('M2EE_PASSWORD is set so skipping creation of application admin password')
+        return
+    if not app_admin_password:
+        logger.warning('ADMIN_PASSWORD not set, so skipping creation of application admin password')
+        return
     logger.debug('Creating admin user')
-    app_admin_password = os.getenv(
-        'APP_ADMIN_PASSWORD',
-        os.getenv('ADMIN_PASSWORD')
-    )
+
     m2eeresponse = m2ee.client.create_admin_user({
         'password': app_admin_password
     })
