@@ -202,18 +202,33 @@ def get_scheduled_events(metadata):
 
 def get_constants(metadata):
     constants = {}
+
+    constants_from_json = {}
+    constants_json = os.environ.get(
+        'CONSTANTS',
+        json.dumps(constants_from_json)
+    )
+    try:
+        constants_from_json = json.loads(constants_json)
+    except Exception as e:
+        logger.warning('Failed to parse CONSTANTS: ' + str(e))
+
     for constant in metadata['Constants']:
-        env = 'MX_%s' % constant['Name'].replace('.', '_')
-        value = os.environ.get(env)
+        constant_name = constant['Name']
+        env_name = 'MX_%s' % constant_name.replace('.', '_')
+        value = os.environ.get(
+            env_name,
+            constants_from_json.get(constant_name)
+        )
         if value is None:
             value = constant['DefaultValue']
             logger.debug(
-                'constant not found in environment, taking default '
-                'value %s' % constant['Name']
+                'Constant not found in environment, taking default '
+                'value %s' % constant_name
             )
         if constant['Type'] == 'Integer':
             value = int(value)
-        constants[constant['Name']] = value
+        constants[constant_name] = value
     return constants
 
 
