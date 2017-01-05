@@ -36,7 +36,7 @@ class BaseTest(unittest.TestCase):
             "https://s3-eu-west-1.amazonaws.com/mx-ci-binaries/" + package_name)
 
         cmds = [
-            "wget -O \"%s\" \"%s\"" % (self.package_name, self.package_url),
+            "wget -c -O \"%s\" \"%s\"" % (self.package_name, self.package_url),
             "cf push -p %s -n %s %s --no-start -k 2G -b https://github.com/mendix/cf-mendix-buildpack.git#%s" % (self.package_name, subdomain, self.app_name, self.branch_name),
             "cf create-service schnapps basic \"%s-schnapps\"" % self.app_name,
             "cf create-service PostgreSQL \"Basic PostgreSQL Plan\" \"%s-database\"" % self.app_name,
@@ -74,4 +74,5 @@ class BaseTest(unittest.TestCase):
         if output.find(substring) > 0:
             pass
         else:
+            print(output)
             self.fail('Failed to find substring in recent logs: ' + substring)
