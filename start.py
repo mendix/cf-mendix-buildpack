@@ -729,7 +729,7 @@ def start_app(m2ee):
 def create_admin_user(m2ee):
     logger.info('Ensuring admin user credentials')
     app_admin_password = get_admin_password()
-    if get_m2ee_password():
+    if os.getenv('M2EE_PASSWORD'):
         logger.debug('M2EE_PASSWORD is set so skipping creation of application admin password')
         return
     if not app_admin_password:
