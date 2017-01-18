@@ -72,18 +72,17 @@ def get_vcap_services_data():
 
 def get_database_uri_from_vcap():
     vcap_services = get_vcap_services_data()
-    if vcap_services and 'p-mysql' in vcap_services:
-        return vcap_services['p-mysql'][0]['credentials']['uri']
-    elif 'elephantsql' in vcap_services:
-        return vcap_services['elephantsql'][0]['credentials']['uri']
-    elif 'cleardb' in vcap_services:
-        return vcap_services['cleardb'][0]['credentials']['uri']
-    elif 'PostgreSQL' in vcap_services:
-        return vcap_services['PostgreSQL'][0]['credentials']['uri']
-    elif 'dashDB' in vcap_services:
-        return vcap_services['dashDB'][0]['credentials']['uri']
-    elif 'mariadb' in vcap_services:
-        return vcap_services['mariadb'][0]['credentials']['uri']
+
+    for service_type_name in (
+        'p-mysql',
+        'elephantsql',
+        'cleardb',
+        'PostgreSQL',
+        'dashDB',
+        'mariadb',
+    ):
+        if vcap_services and service_type_name in vcap_services:
+            return vcap_services[service_type_name][0]['credentials']['uri']
     return None
 
 
