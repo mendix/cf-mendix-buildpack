@@ -19,7 +19,7 @@ def get_database_config(development_mode=False):
     url = get_database_uri_from_vcap()
     if url is None:
         url = os.environ['DATABASE_URL']
-    pattern = r'([a-zA-Z0-9]+)://([^:]+):([^@]+)@([^/]+)/([^?]*)(\?.*)?'
+    pattern = r'(?P<type>[a-zA-Z0-9]+)://(?P<user>[^:]+):(?P<password>[^@]+)@(?P<host>[^/]+)/(?P<dbname>[^?]*)(?P<extra>\?.*)?'
 
     match = re.search(pattern, url)
     supported_databases = {
@@ -33,17 +33,17 @@ def get_database_config(development_mode=False):
             'Could not parse DATABASE_URL environment variable %s' % url
         )
 
-    database_type_input = match.group(1)
+    database_type_input = match.group('type')
     if database_type_input not in supported_databases:
         raise Exception('Unknown database type: %s', database_type_input)
     database_type = supported_databases[database_type_input]
 
     config = {
         'DatabaseType': database_type,
-        'DatabaseUserName': match.group(2),
-        'DatabasePassword': match.group(3),
-        'DatabaseHost': match.group(4),
-        'DatabaseName': match.group(5),
+        'DatabaseUserName': match.group('user'),
+        'DatabasePassword': match.group('password'),
+        'DatabaseHost': match.group('host'),
+        'DatabaseName': match.group('dbname'),
     }
     if development_mode:
         config.update({
