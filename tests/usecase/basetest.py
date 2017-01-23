@@ -69,6 +69,9 @@ class BaseTest(unittest.TestCase):
         r = requests.get(full_uri)
         assert r.status_code == code
 
+    def get_recent_logs(self):
+        return unicode(subprocess.check_output(('cf', 'logs', self.app_name, '--recent')), 'utf-8')
+
     def assert_string_in_recent_logs(self, app_name, substring):
         output = subprocess.check_output(('cf', 'logs', app_name, '--recent'))
         if output.find(substring) > 0:
