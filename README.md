@@ -305,6 +305,12 @@ You can see the available Log Nodes in your application in the Mendix Modeler. T
  * `DEBUG`
  * `TRACE`
 
+
+Example:
+
+    cf set-env <YOUR_APP> LOGGING_CONFIG '{ "<LOG NODE VALUE>": "DEBUG"}'
+
+
 ### Enabling the Mendix Debugger
 
 You can enable the Mendix Debugger by setting a `DEBUGGER_PASSWORD` environment variable. This will enable and open up the debugger for the lifetime of this process and is to be used with caution. The debugger is reachable on https://DOMAIN/debugger/. You can follow the second half of this [How To](https://world.mendix.com/display/howto50/Debugging+Microflows+Remotely) to connect with the Mendix Business Modeler. To stop the debugger, unset the environment variable and restart the application.
