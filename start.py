@@ -339,6 +339,26 @@ def _get_swift_specific_config(vcap_services, m2ee):
     }
 
 
+def _get_azure_storage_specific_config(vcap_services, m2ee):
+    if 'azure-storage' not in vcap_services:
+        return None
+
+    if m2ee.config.get_runtime_version() < 6.7:
+        logger.warning('Can not configure Azure Storage with Mendix < 6.7')
+        return None
+
+    creds = vcap_services['azure-storage'][0]['credentials']
+
+    container_name = os.getenv('AZURE_CONTAINER_NAME', 'mendix')
+
+    return {
+        'com.mendix.core.StorageService': 'com.mendix.storage.azure',
+        'com.mendix.storage.azure.Container': container_name,
+        'com.mendix.storage.azure.AccountName': creds['storage_account_name'],
+        'com.mendix.storage.azure.AccountKey': creds['primary_access_key'],
+    }
+
+
 def get_filestore_config(m2ee):
     vcap_services = buildpackutil.get_vcap_services_data()
 
@@ -346,6 +366,9 @@ def get_filestore_config(m2ee):
 
     if config is None:
         config = _get_swift_specific_config(vcap_services, m2ee)
+
+    if config is None:
+        config = _get_azure_storage_specific_config(vcap_services, m2ee)
 
     if config is None:
         logger.warning(
