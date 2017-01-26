@@ -19,16 +19,22 @@ def get_database_config(development_mode=False):
     url = get_database_uri_from_vcap()
     if url is None:
         url = os.environ['DATABASE_URL']
-    pattern = r'(?P<type>[a-zA-Z0-9]+)://(?P<user>[^:]+):(?P<password>[^@]+)@(?P<host>[^/]+)/(?P<dbname>[^?]*)(?P<extra>\?.*)?'
+    patterns = [
+        r'(?P<type>[a-zA-Z0-9]+)://(?P<user>[^:]+):(?P<password>[^@]+)@(?P<host>[^/]+)/(?P<dbname>[^?]*)(?P<extra>\?.*)?',
+        r'jdbc:(?P<type>[a-zA-Z0-9]+)://@(?P<host>[^;]+);database=(?P<dbname>[^;]*);user=(?P<user>[^;]+);password=(?P<password>.*)$'
+    ]
 
-    match = re.search(pattern, url)
     supported_databases = {
         'postgres':  'PostgreSQL',
         'mysql': 'MySQL',
         'db2': 'Db2',
     }
 
-    if match is None:
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match is not None:
+            break
+    else:
         raise Exception(
             'Could not parse DATABASE_URL environment variable %s' % url
         )
