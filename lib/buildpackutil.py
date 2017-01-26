@@ -19,31 +19,38 @@ def get_database_config(development_mode=False):
     url = get_database_uri_from_vcap()
     if url is None:
         url = os.environ['DATABASE_URL']
-    pattern = r'([a-zA-Z0-9]+)://([^:]+):([^@]+)@([^/]+)/([^?]*)(\?.*)?'
+    patterns = [
+        r'(?P<type>[a-zA-Z0-9]+)://(?P<user>[^:]+):(?P<password>[^@]+)@(?P<host>[^/]+)/(?P<dbname>[^?]*)(?P<extra>\?.*)?',
+        r'jdbc:(?P<type>[a-zA-Z0-9]+)://@(?P<host>[^;]+);database=(?P<dbname>[^;]*);user=(?P<user>[^;]+);password=(?P<password>.*)$'
+    ]
 
-    match = re.search(pattern, url)
     supported_databases = {
         'postgres':  'PostgreSQL',
         'mysql': 'MySQL',
         'db2': 'Db2',
+        'sqlserver': 'SQLSERVER',
     }
 
-    if match is None:
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match is not None:
+            break
+    else:
         raise Exception(
             'Could not parse DATABASE_URL environment variable %s' % url
         )
 
-    database_type_input = match.group(1)
+    database_type_input = match.group('type')
     if database_type_input not in supported_databases:
         raise Exception('Unknown database type: %s', database_type_input)
     database_type = supported_databases[database_type_input]
 
     config = {
         'DatabaseType': database_type,
-        'DatabaseUserName': match.group(2),
-        'DatabasePassword': match.group(3),
-        'DatabaseHost': match.group(4),
-        'DatabaseName': match.group(5),
+        'DatabaseUserName': match.group('user'),
+        'DatabasePassword': match.group('password'),
+        'DatabaseHost': match.group('host'),
+        'DatabaseName': match.group('dbname'),
     }
     if development_mode:
         config.update({
@@ -72,18 +79,19 @@ def get_vcap_services_data():
 
 def get_database_uri_from_vcap():
     vcap_services = get_vcap_services_data()
-    if vcap_services and 'p-mysql' in vcap_services:
-        return vcap_services['p-mysql'][0]['credentials']['uri']
-    elif 'elephantsql' in vcap_services:
-        return vcap_services['elephantsql'][0]['credentials']['uri']
-    elif 'cleardb' in vcap_services:
-        return vcap_services['cleardb'][0]['credentials']['uri']
-    elif 'PostgreSQL' in vcap_services:
-        return vcap_services['PostgreSQL'][0]['credentials']['uri']
-    elif 'dashDB' in vcap_services:
-        return vcap_services['dashDB'][0]['credentials']['uri']
-    elif 'mariadb' in vcap_services:
-        return vcap_services['mariadb'][0]['credentials']['uri']
+
+    for service_type_name in (
+        'p-mysql',
+        'elephantsql',
+        'cleardb',
+        'PostgreSQL',
+        'dashDB',
+        'mariadb',
+    ):
+        if vcap_services and service_type_name in vcap_services:
+            return vcap_services[service_type_name][0]['credentials']['uri']
+    if 'azure-sqldb' in vcap_services:
+        return vcap_services['azure-sqldb'][0]['credentials']['jdbcUrl']
     return None
 
 
