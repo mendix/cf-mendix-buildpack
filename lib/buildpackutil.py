@@ -28,6 +28,7 @@ def get_database_config(development_mode=False):
         'postgres':  'PostgreSQL',
         'mysql': 'MySQL',
         'db2': 'Db2',
+        'sqlserver': 'SQLSERVER',
     }
 
     for pattern in patterns:
@@ -89,6 +90,8 @@ def get_database_uri_from_vcap():
     ):
         if vcap_services and service_type_name in vcap_services:
             return vcap_services[service_type_name][0]['credentials']['uri']
+    if 'azure-sqldb' in vcap_services:
+        return vcap_services['azure-sqldb'][0]['credentials']['jdbcUrl']
     return None
 
 
