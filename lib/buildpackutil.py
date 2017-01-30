@@ -21,7 +21,7 @@ def get_database_config(development_mode=False):
         url = os.environ['DATABASE_URL']
     patterns = [
         r'(?P<type>[a-zA-Z0-9]+)://(?P<user>[^:]+):(?P<password>[^@]+)@(?P<host>[^/]+)/(?P<dbname>[^?]*)(?P<extra>\?.*)?',
-        r'jdbc:(?P<type>[a-zA-Z0-9]+)://@(?P<host>[^;]+);database=(?P<dbname>[^;]*);user=(?P<user>[^;]+);password=(?P<password>.*)$'
+        r'jdbc:(?P<type>[a-zA-Z0-9]+)://(?P<host>[^;]+);database=(?P<dbname>[^;]*);user=(?P<user>[^;]+);password=(?P<password>.*)$'
     ]
 
     supported_databases = {
