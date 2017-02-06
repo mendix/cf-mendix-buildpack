@@ -18,7 +18,9 @@ class TestCaseFastdeploy(basetest.BaseTest):
         r = requests.post(full_uri, auth=('deploy', self.mx_password), files={
             'file': open('MontBlancApp671b.mpk', 'rb'),
         })
+
         if r.status_code != 200:
-            print r.text
+            print(self.get_recent_logs())
+            print(r.text)
         assert r.status_code == 200
         assert "STARTED" in r.text

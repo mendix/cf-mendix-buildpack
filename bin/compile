@@ -197,7 +197,7 @@ def is_source_push():
 
 
 def run_mx_build():
-    mx_version = str(get_runtime_version())
+    mx_version = get_runtime_version()
     mono_location = buildpackutil.ensure_and_get_mono(mx_version, CACHE_DIR)
     logging.debug('Mono available: {mono_location}'.format(mono_location=mono_location))
     mono_env = buildpackutil._get_env_with_monolib(mono_location)
@@ -205,11 +205,11 @@ def run_mx_build():
     mxbuild_location = os.path.join(DOT_LOCAL_LOCATION, 'mxbuild')
 
     buildpackutil.ensure_mxbuild_in_directory(
-        mxbuild_location, get_runtime_version(), CACHE_DIR
+        mxbuild_location, mx_version, CACHE_DIR
     )
 
     jdk_location = buildpackutil.ensure_and_return_java_sdk(
-        get_runtime_version(), CACHE_DIR
+        mx_version, CACHE_DIR
     )
 
     buildpackutil.lazy_remove_file(BUILD_ERRORS_JSON)
@@ -224,7 +224,7 @@ def run_mx_build():
         '--java-exe-path=%s' % os.path.join(jdk_location, 'bin/java'),
     ]
 
-    if get_runtime_version() >= 6.4 or os.environ.get('FORCE_WRITE_BUILD_ERRORS'):
+    if mx_version >= 6.4 or os.environ.get('FORCE_WRITE_BUILD_ERRORS'):
         args.append('--write-errors=%s' % BUILD_ERRORS_JSON)
         logging.debug('Will write build errors to %s' % BUILD_ERRORS_JSON)
 

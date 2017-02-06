@@ -25,7 +25,11 @@ class BaseTest(unittest.TestCase):
         self.mx_password = os.environ.get("MX_PASSWORD", "Y0l0lop13#123")
 
     def startApp(self):
-        subprocess.check_call(('cf', 'start', self.app_name))
+        try:
+            subprocess.check_call(('cf', 'start', self.app_name))
+        except subprocess.CalledProcessError as e:
+            print(self.get_recent_logs())
+            raise e
 
     def setUpCF(self, package_name):
         subdomain = "ops-" + str(uuid.uuid4()).split("-")[0]
@@ -68,6 +72,9 @@ class BaseTest(unittest.TestCase):
         full_uri = "https://" + app_name + path
         r = requests.get(full_uri)
         assert r.status_code == code
+
+    def get_recent_logs(self):
+        return unicode(subprocess.check_output(('cf', 'logs', self.app_name, '--recent')), 'utf-8')
 
     def assert_string_in_recent_logs(self, app_name, substring):
         output = subprocess.check_output(('cf', 'logs', app_name, '--recent'))
