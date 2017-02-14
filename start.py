@@ -143,11 +143,11 @@ def activate_license():
     prefs_template = """<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE map SYSTEM "http://java.sun.com/dtd/preferences.dtd">
 <map MAP_XML_VERSION="1.0">
-  <entry key="id" value="{{SERVER_ID}}"/>
+  <entry key="id" value="{{LICENSE_ID}}"/>
   <entry key="license_key" value="{{LICENSE_KEY}}"/>
 </map>"""
 
-    license = os.environ.get(
+    license_key = os.environ.get(
         'FORCED_LICENSE_KEY',
         os.environ.get('LICENSE_KEY', None)
     )
@@ -155,12 +155,22 @@ def activate_license():
         'FORCED_SERVER_ID',
         os.environ.get('SERVER_ID', None)
     )
-    if license is not None and server_id is not None:
+    license_id = os.environ.get(
+        'FORCED_LICENSE_ID',
+        os.environ.get('LICENSE_ID', None)
+    )
+    if server_id:
+        logger.warning('SERVER_ID is deprecated, please use LICENSE_ID instead')
+
+    if not license_id:
+        license_id = server_id
+
+    if license_key is not None and license_id is not None:
         logger.debug('A license was supplied so going to activate it')
         prefs_body = prefs_template.replace(
-            '{{SERVER_ID}}', server_id
+            '{{LICENSE_ID}}', license_id
             ).replace(
-            '{{LICENSE_KEY}}', license
+            '{{LICENSE_KEY}}', license_key
             )
         with open(os.path.join(prefs_dir, 'prefs.xml'), 'w') as prefs_file:
             prefs_file.write(prefs_body)
