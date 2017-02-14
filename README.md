@@ -281,8 +281,14 @@ If you want to enable initializing your database and files from an existing data
 License Activation
 ====
 
-To activate a license on your application, please contact Mendix Support.
+To activate a license on your application you need license credentials. These credentials can be obtained by contacting Mendix Support.
 
+```
+cf set-env <YOUR_APP> SERVER_ID <UUID>
+cf set-env <YOUR_APP> LICENSE_KEY <LicenseKey>
+```
+
+An example `UUID` is `aab8a0a1-1370-467e-918d-3a243b0ae160` and `LicenseKey` is a very long base64 string. The app needs to be restarted for the license to be effective.
 
 Logging and Debugging
 ====
