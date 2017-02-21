@@ -7,7 +7,7 @@ import time
 class TestCaseMono4(basetest.BaseTest):
 
     def setUp(self):
-        self.setUpCF('mono4-7-build20010.mpk')
+        self.setUpCF('mono4-mx7.mpk')
         subprocess.check_call(('cf', 'set-env', self.app_name, 'DEPLOY_PASSWORD', self.mx_password))
         self.startApp()
 

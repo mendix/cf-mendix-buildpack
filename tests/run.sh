@@ -22,5 +22,9 @@ virtualenv -p python2 venv
 . venv/bin/activate
 pip install -r requirements.txt
 
+echo "Begin clean up of environment"
+cf apps | grep ops- | awk '{print $1}' | xargs -n 1 cf delete -r -f | true
+cf s | grep ops- | awk '{print $1}' | xargs -n 1 cf ds -f | true
+echo "Completed environment clean up"
 
 python venv/bin/nosetests -vv --processes=3 --process-timeout=600 usecase/

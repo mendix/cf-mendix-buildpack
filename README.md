@@ -284,7 +284,7 @@ License Activation
 To activate a license on your application you need license credentials. These credentials can be obtained by contacting Mendix Support.
 
 ```
-cf set-env <YOUR_APP> SERVER_ID <UUID>
+cf set-env <YOUR_APP> LICENSE_ID <UUID>
 cf set-env <YOUR_APP> LICENSE_KEY <LicenseKey>
 ```
 
