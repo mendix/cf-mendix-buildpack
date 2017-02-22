@@ -25,5 +25,5 @@ class TestCaseConstants(basetest.BaseTest):
     def test_constant_is_set(self):
         self.assert_string_in_recent_logs(
             self.app_name,
-            'java.net.ConnectException: Connection refused'
+            'Connection to http://localhost refused'
         )
