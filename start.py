@@ -137,7 +137,7 @@ def get_vcap_data():
 
 
 def activate_license():
-    prefs_dir = os.path.expanduser('~/../.java/.userPrefs/com/mendix/core')
+    prefs_dir = '/home/vcap/.java/.userPrefs/com/mendix/core'
     buildpackutil.mkdir_p(prefs_dir)
 
     prefs_template = """<?xml version="1.0" encoding="UTF-8" standalone="no"?>
@@ -160,19 +160,24 @@ def activate_license():
         os.environ.get('LICENSE_ID', None)
     )
     if server_id:
-        logger.warning('SERVER_ID is deprecated, please use LICENSE_ID instead')
+        logger.warning(
+            'SERVER_ID is deprecated, please use LICENSE_ID instead'
+        )
 
     if not license_id:
         license_id = server_id
 
     if license_key is not None and license_id is not None:
-        logger.debug('A license was supplied so going to activate it')
+        prefs_xml_path = os.path.join(prefs_dir, 'prefs.xml')
+        logger.debug(
+            'A license was supplied so going to activate it at: %s',
+            prefs_xml_path)
         prefs_body = prefs_template.replace(
             '{{LICENSE_ID}}', license_id
             ).replace(
             '{{LICENSE_KEY}}', license_key
             )
-        with open(os.path.join(prefs_dir, 'prefs.xml'), 'w') as prefs_file:
+        with open(prefs_xml_path, 'w') as prefs_file:
             prefs_file.write(prefs_body)
 
 
