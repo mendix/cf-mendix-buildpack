@@ -10,6 +10,14 @@ m2ee:
   HOME: BUILD_PATH
  javabin: BUILD_PATH/.local/bin/java
  admin_pass: ADMIN_PASSWORD
+ M2EE_ADMIN_PASS: 26f37604-962e-4dff-9b63-d80ecb90f6e3
+ APMAGENT_COMPANY: Mansystems
+ APMAGENT_APP: Task Manager Demo
+ APMAGENT_ENVIRONMENT: Production
+ APMAGENT_MANAGERURL: https://apmmanager.mxapps.io
+ APMAGENT_MANAGERUSER: Agent
+ APMAGENT_MANAGERPASSWORD: 4@-Only!
+ APMAGENT_SYSOUTLEVEL: TRACE
 
  runtime_port: RUNTIME_PORT
  runtime_listen_addresses: "*"
@@ -22,6 +30,7 @@ m2ee:
  javaopts: [
     "-Dfile.encoding=UTF-8",
     "-Djava.io.tmpdir=BUILD_PATH/data/tmp",
+    "-javaagent:apm/apmagent_0.1.jar"
  ]
 
  allow_destroy_db: true

@@ -183,6 +183,9 @@ def copy_buildpack_resources():
             os.path.join(BUILDPACK_DIR, 'newrelic'),
             os.path.join(BUILD_DIR, 'newrelic'),
         )
+    shutil.copytree(
+        os.path.join(BUILDPACK_DIR, 'apm'),
+        os.path.join(BUILD_DIR, 'apm'),
 
 
 def get_mpr_file():
