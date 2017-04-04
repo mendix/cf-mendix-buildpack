@@ -30,7 +30,7 @@ m2ee:
  javaopts: [
     "-Dfile.encoding=UTF-8",
     "-Djava.io.tmpdir=BUILD_PATH/data/tmp",
-    "-javaagent:apm/apmagent_0.1.jar",
+    "-javaagent:BUILD_PATH/apm/apmagent_0.1.jar",
  ]
 
  allow_destroy_db: true
