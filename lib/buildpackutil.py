@@ -26,6 +26,7 @@ def get_database_config(development_mode=False):
 
     supported_databases = {
         'postgres':  'PostgreSQL',
+        'postgresql':  'PostgreSQL',
         'mysql': 'MySQL',
         'db2': 'Db2',
         'sqlserver': 'SQLSERVER',
