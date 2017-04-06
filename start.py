@@ -275,6 +275,8 @@ def _get_s3_specific_config(vcap_services, m2ee):
             encryption_keys = _conf['encryption_keys']
         if 'key_suffix' in _conf:
             key_suffix = _conf['key_suffix']
+        if 'endpoint' in _conf:
+            endpoint = _conf['endpoint']
     elif 'p-riakcs' in vcap_services:
         _conf = vcap_services['p-riakcs'][0]['credentials']
         access_key = _conf['access_key_id']
@@ -308,6 +310,8 @@ def _get_s3_specific_config(vcap_services, m2ee):
         'com.mendix.storage.s3.AccessKeyId': access_key,
         'com.mendix.storage.s3.SecretAccessKey': secret,
         'com.mendix.storage.s3.BucketName': bucket,
+        'com.amazonaws.services.s3.enableV4': 'true',
+        'com.amazonaws.services.s3.enforceV4': 'true',
     }
     if dont_perform_deletes:
         logger.debug('disabling perform deletes for runtime')
