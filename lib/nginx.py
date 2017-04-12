@@ -37,7 +37,11 @@ def get_path_config():
     }
     Default for satisfy is all
     '''
-    restrictions = json.loads(os.environ.get('ACCESS_RESTRICTIONS', '{}'))
+    forced_restrictions = os.environ.get('FORCED_ACCESS_RESTRICTIONS')
+    if forced_restrictions:
+        restrictons = json.loads(forced_restrictions)
+    else:
+        restrictions = json.loads(os.environ.get('ACCESS_RESTRICTIONS', '{}'))
     result = ''
     if '/' not in restrictions:
         restrictions['/'] = {}
