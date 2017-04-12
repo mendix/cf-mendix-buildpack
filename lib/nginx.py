@@ -39,7 +39,7 @@ def get_path_config():
     '''
     forced_restrictions = os.environ.get('FORCED_ACCESS_RESTRICTIONS')
     if forced_restrictions:
-        restrictons = json.loads(forced_restrictions)
+        restrictions = json.loads(forced_restrictions)
     else:
         restrictions = json.loads(os.environ.get('ACCESS_RESTRICTIONS', '{}'))
     result = ''
