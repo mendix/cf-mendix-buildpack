@@ -694,6 +694,9 @@ def service_backups():
             },
             data=json.dumps(backup_service),
         )
+    except requests.exceptions.SSLError as e:
+        logger.warning('Failed to contact backup service. SSLError: ' + str(e))
+        return
     except Exception as e:
         logger.warning('Failed to contact backup service: ' + e)
         return
