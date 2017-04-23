@@ -13,6 +13,7 @@ import requests
 from m2ee import M2EE, logger
 import buildpackutil
 import logging
+import boto3
 import instadeploy
 import metrics
 from nginx import get_path_config, gen_htpasswd
@@ -261,6 +262,39 @@ def set_heap_size(javaopts, vcap_max_mem):
     logger.debug('Java heap size set to %s' % heap_size)
 
 
+def _determine_s3_endpoint(access_key, secret, bucket):
+    '''
+    # Before the s3 configuration is done we have to determine
+    # S3_ENDPOINT if possible from bucket name
+    # this is because in some regions V2 API is not supported
+    # through generic url s3.amazonaws.com
+    '''
+    bucket_location = None
+
+    s3 = boto3.client(
+        's3',
+        aws_access_key_id=access_key,
+        aws_secret_access_key=secret
+    )
+    try:
+        response = s3.get_bucket_location(
+            Bucket=bucket
+        )
+        bucket_location = response['LocationConstraint']
+    except:
+        logger.debug('bucket location cannot be retrieved falling back!')
+
+    if bucket_location:
+        # All the locations support endpoint url with dashes EXCEPT:
+        # US East (N. Virginia) so we handle that edge case
+        if bucket_location == 'us-east-1':
+            return 's3.amazonaws.com'
+        else:
+            return 's3-{}.amazonaws.com'.format(bucket_location)
+
+    return None
+
+
 def _get_s3_specific_config(vcap_services, m2ee):
     access_key = secret = bucket = encryption_keys = key_suffix = None
     endpoint = None
@@ -271,6 +305,7 @@ def _get_s3_specific_config(vcap_services, m2ee):
         access_key = _conf['access_key_id']
         secret = _conf['secret_access_key']
         bucket = _conf['bucket']
+        endpoint = _determine_s3_endpoint(access_key, secret, bucket)
         if 'encryption_keys' in _conf:
             encryption_keys = _conf['encryption_keys']
         if 'key_suffix' in _conf:
@@ -311,6 +346,8 @@ def _get_s3_specific_config(vcap_services, m2ee):
         'com.mendix.storage.s3.AccessKeyId': access_key,
         'com.mendix.storage.s3.SecretAccessKey': secret,
         'com.mendix.storage.s3.BucketName': bucket,
+        'com.amazonaws.services.s3.enableV4': 'true',
+        'com.amazonaws.services.s3.enforceV4': 'true',
     }
 
     if dont_perform_deletes:
@@ -375,7 +412,6 @@ def _get_azure_storage_specific_config(vcap_services, m2ee):
 
 def get_filestore_config(m2ee):
     vcap_services = buildpackutil.get_vcap_services_data()
-
     config = _get_s3_specific_config(vcap_services, m2ee)
 
     if config is None:
