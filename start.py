@@ -20,7 +20,7 @@ from buildpackutil import i_am_primary_instance
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
-logger.info('Started Mendix Cloud Foundry Buildpack v1.2.4')
+logger.info('Started Mendix Cloud Foundry Buildpack v1.3.0')
 
 logging.getLogger('m2ee').propagate = False
 
@@ -263,13 +263,19 @@ def _get_s3_specific_config(vcap_services, m2ee):
         _conf = vcap_services['amazon-s3'][0]['credentials']
         access_key = _conf['access_key_id']
         secret = _conf['secret_access_key']
-        bucket = _conf['bucket']
+        bucket = _conf['bucket']  # see below at hacky for actual conf
         if 'encryption_keys' in _conf:
             encryption_keys = _conf['encryption_keys']
         if 'key_suffix' in _conf:
             key_suffix = _conf['key_suffix']
         if 'endpoint' in _conf:
             endpoint = _conf['endpoint']
+
+        # hacky way to switch from suffix to prefix configuration
+        if 'key_prefix' in _conf and 'endpoint' in _conf:
+            bucket = _conf['key_prefix'].replace('/', '')
+            endpoint = _conf['endpoint'] + '/' + _conf['bucket']
+            key_suffix = None
 
     elif 'p-riakcs' in vcap_services:
         _conf = vcap_services['p-riakcs'][0]['credentials']
