@@ -20,7 +20,7 @@ from buildpackutil import i_am_primary_instance
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
-logger.info('Started Mendix Cloud Foundry Buildpack v1.2.3')
+logger.info('Started Mendix Cloud Foundry Buildpack v1.2.4')
 
 logging.getLogger('m2ee').propagate = False
 
@@ -112,17 +112,10 @@ def set_up_nginx_files(m2ee):
         file_name_suffix='-mxbuild'
     )
 
-    buildpackutil.mkdir_p('nginx/logs')
-    subprocess.check_call(['touch', 'nginx/logs/access.log'])
-    subprocess.check_call(['touch', 'nginx/logs/error.log'])
-
 
 def start_nginx():
     subprocess.Popen([
         'nginx/sbin/nginx', '-p', 'nginx', '-c', 'conf/nginx.conf'
-    ])
-    subprocess.Popen([
-        'tail', '-f', 'nginx/logs/error.log'
     ])
 
 
