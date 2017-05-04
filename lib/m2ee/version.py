@@ -1,4 +1,5 @@
 import re
+from m2ee.exceptions import M2EEException
 
 
 def __to_mx_version__(version):
@@ -12,14 +13,16 @@ def __to_mx_version__(version):
 class MXVersion:
 
     def __init__(self, version):
-        if isinstance(version, (int, long, float)):
+        if isinstance(version, (int, long, float, MXVersion)):
             version = str(version)
         parsed = re.match(
             "(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:\.(\d+))?(?:-(.*))?",
             version
         )
         if parsed is None:
-            raise Exception("Could not parse version string '%s'" % version)
+            raise M2EEException("The provided runtime version string, '%s' is not a "
+                                "valid Mendix Runtime version number. Try using "
+                                "the format x.y.z, e.g. 4.7.1" % version)
         groups = parsed.groups()
         self.major, self.minor, self.patch, self.hotfix = map(
             lambda x: int(x) if x else None,

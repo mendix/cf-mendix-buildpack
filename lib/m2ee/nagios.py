@@ -5,145 +5,172 @@
 # http://www.mendix.com/
 #
 
+import datetime
+import logging
+import time
+from m2ee.client import M2EEAdminException, M2EEAdminNotAvailable
+
+logger = logging.getLogger(__name__)
+
 STATE_OK = 0
 STATE_WARNING = 1
 STATE_CRITICAL = 2
 STATE_UNKNOWN = 3
 STATE_DEPENDENT = 4
 
-DUNNO = -1
-
 
 def check(runner, client):
-    (runtime_state, message) = _check_process(runner, client)
-    if runtime_state != DUNNO:
-        print message
-        return runtime_state
+    process_state, process_message = check_process(runner, client)
+    logger.trace("check_process: %s, %s" % (process_state, process_message))
 
-    (runtime_health, message) = _check_health(client)
-    if runtime_health != STATE_OK:
-        print message
-        return runtime_health
+    state = process_state
+    message = process_message
 
-    (critical_log_status, message) = _check_critical_logs(client)
-    if critical_log_status != STATE_OK:
-        print message
-        return critical_log_status
+    health_state, health_message = check_health(client)
+    logger.trace("check_health: %s, %s" % (health_state, health_message))
 
-    # everything seems to be fine, print version info and exit
-    about_feedback = client.about().get_feedback()
-    print("MxRuntime OK: healthy, using version %s" %
-          about_feedback['version'])
-    return STATE_OK
+    if health_state in (STATE_WARNING, STATE_CRITICAL):
+        message = "%s; %s" % (message, health_message)
+        if state != STATE_CRITICAL:
+            state = health_state
+
+    critical_log_state, critical_log_message, loglines = check_critical_logs(client)
+    logger.trace("check_critical_logs: %s, %s" % (critical_log_state, critical_log_message))
+
+    if critical_log_state in (STATE_WARNING, STATE_CRITICAL):
+        message = "%s; %s" % (message, critical_log_message)
+        if state != STATE_CRITICAL:
+            state = critical_log_state
+
+    license_state, license_message = check_license(client)
+    logger.trace("check_license: %s, %s" % (license_state, license_message))
+
+    if license_state in (STATE_WARNING, STATE_CRITICAL):
+        message = "%s; %s" % (message, license_message)
+        if state != STATE_CRITICAL:
+            state = license_state
+
+    print message
+    if loglines is not None:
+        print '\n'.join(loglines)
+    return state
 
 
 def check_process(runner, client):
-    (status, message) = _check_process(runner, client)
-    print message
-    if status is DUNNO:
-        return 0
-    return status
-
-
-def check_health(runner, client):
-    if client.ping():
-        (health_status, health_message) = _check_health(client)
-        print health_message
-        return health_status
-    print "Runtime not running. Health could not be determined"
-    return STATE_UNKNOWN
-
-
-def check_critical_logs(runner, client):
-    if client.ping():
-        (critical_logs_status,
-         critical_logs_message) = _check_critical_logs(client)
-        print critical_logs_message
-        return critical_logs_status
-    print "Runtime not running. Critical Logs could not be determined"
-    return STATE_UNKNOWN
-
-
-def _check_process(runner, client):
     pid = runner.get_pid()
-
-    if pid is None:
-        message = "MxRuntime OK: Not running."
-        return (STATE_OK, message)
     pid_alive = runner.check_pid()
     m2ee_alive = client.ping()
 
-    if pid_alive and not m2ee_alive:
-        message = ("MxRuntime CRITICAL: pid %s is alive, but m2ee does not "
-                   "respond." % runner.get_pid())
-        return (STATE_CRITICAL, message)
+    if m2ee_alive is False:
+        if pid is None:
+            return STATE_OK, "Application is not running."
+        elif pid_alive is True:
+            return STATE_CRITICAL, \
+                "Application process is running, but Admin API is not available."
+        elif pid_alive is False:
+            return STATE_CRITICAL, \
+                "Application should be running, but the application process has disappeared!"
+        else:
+            return STATE_CRITICAL, "Plugin code has broken logic!"
 
-    if not pid_alive and not m2ee_alive:
-        message = ("MxRuntime CRITICAL: pid %s is not available, m2ee does "
-                   "not respond." % runner.get_pid())
-        return (STATE_CRITICAL, message)
+    pid_message = ""
+    if pid is None:
+        pid_message = "Pidfile is missing or corrupt"
+    elif pid_alive is False:
+        pid_message = "Process with pid %s cannot receive signals" % runner.get_pid()
 
-    if not pid_alive and m2ee_alive:
-        message = ("MxRuntime WARNING: pid %s is not available, but m2ee "
-                   "responds." % runner.get_pid())
-        return (STATE_WARNING, message)
+    try:
+        version_message = "Using Runtime %s" % client.about()['version']
+    except (M2EEAdminException, M2EEAdminNotAvailable) as e:
+        version_message = ""
 
-    if not m2ee_alive:
-        message = ("MxRuntime WARNING: plugin has broken logic, m2ee should "
-                   "be alive")
-        return (STATE_WARNING, message)
+    state = STATE_OK
+    m2ee_message = "Application is running"
+    try:
+        runtime_status = client.runtime_status()['status']
+        if runtime_status == 'starting':
+            state = STATE_WARNING
+            m2ee_message = "Application is still starting up..."
+        elif runtime_status != 'running':
+            state = STATE_CRITICAL
+            m2ee_message = "Application is in state %s" % runtime_status
+    except (M2EEAdminException, M2EEAdminNotAvailable) as e:
+        state = STATE_CRITICAL
+        m2ee_message = str(e)
 
-    status_feedback = client.runtime_status().get_feedback()
-    if status_feedback['status'] == 'starting':
-        message = "MxRuntime WARNING: application is still starting up..."
-        return (STATE_WARNING, message)
-    elif status_feedback['status'] != 'running':
-        message = ("MxRuntime CRITICAL: application is in state %s" %
-                   status_feedback['status'])
-        return (STATE_CRITICAL, message)
+    message = '; '.join([x for x in [m2ee_message, version_message, pid_message]
+                        if x != ""])
+    if state == STATE_OK and pid_message != "":
+        state = STATE_WARNING
 
-    return (DUNNO, "MxRuntime OK")
+    return (state, message)
 
 
-def _check_health(client):
-    health_response = client.check_health()
-    if not health_response.has_error():
-        feedback = health_response.get_feedback()
+def check_health(client):
+    try:
+        feedback = client.check_health()
         if feedback['health'] == 'healthy':
-            pass
+            return STATE_OK, "Healty"
         elif feedback['health'] == 'sick':
-            message = "MxRuntime WARNING: Health: %s" % feedback['diagnosis']
-            return (STATE_WARNING, message)
+            message = "Health: %s" % feedback['diagnosis']
+            return STATE_WARNING, message
         elif feedback['health'] == 'unknown':
-            # no health check action was configured
-            pass
+            return STATE_UNKNOWN, "Health check not available, health could not be determined"
         else:
-            message = ("MxRuntime WARNING: Unexpected health check status: %s"
-                       % feedback['health'])
-            return (STATE_WARNING, message)
-    else:
-        if (health_response.get_result() == 3 and
-                health_response.get_cause() == "java.lang.IllegalArgument"
-                "Exception: Action should not be null"):
-            # Because of an incomplete implementation, in Mendix 2.5.4 or
-            # 2.5.5 this means that the runtime is health-check
-            # capable, but no health check microflow is defined.
-            pass
-        elif (health_response.get_result() ==
-                health_response.ERR_ACTION_NOT_FOUND):
-            # Admin action 'check_health' does not exist.
-            pass
+            return STATE_WARNING, "Unexpected health check status: %s" % feedback['health']
+    except M2EEAdminException as e:
+        if e.result == e.ERR_ACTION_NOT_FOUND:
+            return STATE_UNKNOWN, "Health check not available, health could not be determined"
         else:
-            message = ("MxRuntime WARNING: Health check failed unexpectedly: "
-                       "%s" % health_response.get_error())
-            return (STATE_WARNING, message)
-    return (STATE_OK, "Health check OK")
+            return STATE_CRITICAL, "Health check failed unexpectedly: %s" % e
+    except M2EEAdminNotAvailable as e:
+        return STATE_UNKNOWN, "Admin API not available, health could not be determined"
 
 
-def _check_critical_logs(client):
-    errors = client.get_critical_log_messages()
-    if len(errors) != 0:
-        message = '\n'.join(["MxRuntime CRITICAL: %d critical error(s) were "
-                             "logged" % len(errors)] + errors)
-        return (STATE_CRITICAL, message)
-    return (STATE_OK, "No critical log messages")
+def check_critical_logs(client):
+    try:
+        errors = client.get_critical_log_messages()
+        if len(errors) != 0:
+            return STATE_CRITICAL, "%d critical error(s) were logged" % len(errors), errors
+        return STATE_OK, "No critical log messages", None
+    except M2EEAdminException as e:
+        return STATE_CRITICAL, "Checking critical log messages failed unexpectedly: %s" % e, None
+    except M2EEAdminNotAvailable as e:
+        return STATE_UNKNOWN, \
+            "Admin API not available, critical log messages could not be checked", None
+
+
+def check_license(client):
+    try:
+        feedback = client.get_license_information()
+        if 'license' not in feedback:
+            return STATE_OK, "No license activated"
+        expiry = feedback['license'].get('ExpirationDate', None)
+        if expiry is None:
+            return STATE_OK, "License has no expiry date"
+        expiry = expiry / 1000
+        now = time.time()
+        expires_in_days = int((expiry - now) / 86400) + 1
+        if expires_in_days == 1:
+            expires_in_days_txt = "within a day"
+        else:
+            expires_in_days_txt = "within %s days" % expires_in_days
+        warning = 30 * 86400
+        critical = 7 * 86400
+        expiry_txt = ("License expires at %s" %
+                      datetime.datetime.fromtimestamp(expiry)
+                      .strftime("%a, %d %b %Y %H:%M:%S %z")
+                      .rstrip())
+        if now + critical > expiry:
+            return STATE_CRITICAL, "%s (%s)" % (expiry_txt, expires_in_days_txt)
+        elif now + warning > expiry:
+            return STATE_WARNING, "%s (%s)" % (expiry_txt, expires_in_days_txt)
+        else:
+            return STATE_OK, expiry_txt
+    except M2EEAdminException as e:
+        if e.result == M2EEAdminException.ERR_ACTION_NOT_FOUND:
+            return STATE_UNKNOWN, "No license info available"
+        else:
+            return STATE_CRITICAL, "Checking license expiration failed unexpectedly: %s" % e
+    except M2EEAdminNotAvailable as e:
+        return STATE_UNKNOWN, "Admin API not available, license expiration could not be checked"
