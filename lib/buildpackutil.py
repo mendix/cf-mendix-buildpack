@@ -104,6 +104,12 @@ def appdynamics_used():
             return True
     return False
 
+def apm_used():
+    for k, v in os.environ.iteritems():
+        if k.startswith('APMAGENT_'):
+            return True
+    return False
+
 
 def get_new_relic_license_key():
     vcap_services = get_vcap_services_data()

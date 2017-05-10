@@ -183,7 +183,11 @@ def copy_buildpack_resources():
             os.path.join(BUILDPACK_DIR, 'newrelic'),
             os.path.join(BUILD_DIR, 'newrelic'),
         )
-
+    if buildpackutil.apm_used():
+    shutil.copytree(
+            os.path.join(BUILDPACK_DIR, 'apm'),
+            os.path.join(BUILD_DIR, 'apm'),
+        )
 
 def get_mpr_file():
     return buildpackutil.get_mpr_file_from_dir(BUILD_DIR)
