@@ -30,6 +30,7 @@ class MetricsEmitterThread(threading.Thread):
             stats = {
                 'version': '1.0',
                 'timestamp': datetime.datetime.now().isoformat(),
+                'instance_index': os.getenv('CF_INSTANCE_INDEX'),
             }
             stats = self._inject_m2ee_stats(stats)
             if buildpackutil.i_am_primary_instance():
