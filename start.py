@@ -607,9 +607,10 @@ def set_up_m2ee_client(vcap_data):
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         process.communicate()
         if process.returncode != 0:
-            # do a 'git fetch --tags' to refresh the bare repo, then retry to checkout the runtime version
+            # 'git fetch' the version we want to the bare repo, then retry to checkout the runtime version
             logger.info('mendix runtime version {mx_version} is missing in this rootfs'.format(mx_version=version))
-            process = subprocess.Popen(['git', 'fetch', '--tags', '&&', 'git', 'checkout', str(version), '-f'],
+            process = subprocess.Popen(['git', 'fetch', 'origin', 'refs/tags/{0}:refs/tags/{0}'.format(str(version)),
+                                        '&&', 'git', 'checkout', str(version), '-f'],
                                        cwd=mendix_runtimes_path, env=env, stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE)
             process.communicate()
