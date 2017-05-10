@@ -8,6 +8,7 @@ import time
 import sys
 import base64
 import uuid
+import atexit
 sys.path.insert(0, 'lib')
 import requests
 from m2ee import M2EE, logger
@@ -20,13 +21,14 @@ from buildpackutil import i_am_primary_instance
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
-logger.info('Started Mendix Cloud Foundry Buildpack v1.3.0')
+logger.info('Started Mendix Cloud Foundry Buildpack v1.4.0')
 
 logging.getLogger('m2ee').propagate = False
 
 
 app_is_restarting = False
 default_m2ee_password = str(uuid.uuid4()).replace('-', '@') + 'A1'
+nginx_process = None
 
 
 def get_nginx_port():
@@ -114,9 +116,17 @@ def set_up_nginx_files(m2ee):
 
 
 def start_nginx():
-    subprocess.Popen([
+    global nginx_process
+    nginx_process = subprocess.Popen([
         'nginx/sbin/nginx', '-p', 'nginx', '-c', 'conf/nginx.conf'
     ])
+    atexit.register(stop_nginx)
+
+
+def stop_nginx():
+    if nginx_process:
+        logger.warning('Stopping nginx')
+        nginx_process.terminate()
 
 
 def get_vcap_data():
