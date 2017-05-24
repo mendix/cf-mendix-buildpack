@@ -190,6 +190,10 @@ class MetricsEmitterThread(threading.Thread):
             return int(rows[0][0])
 
     def _get_db_conn(self):
+        if self.db and self.db.closed != 0:
+            self.db.close()
+            self.db = None
+
         if not self.db:
             try:
                 db_config = buildpackutil.get_database_config()
