@@ -25,7 +25,6 @@ class MetricsEmitterThread(threading.Thread):
         logger.debug(
             'Starting metrics emitter with interval %d' % self.interval
         )
-        previous_requests_stats = {}
         while True:
 
             stats = {
@@ -36,25 +35,6 @@ class MetricsEmitterThread(threading.Thread):
             if buildpackutil.i_am_primary_instance():
                 stats = self._inject_storage_stats(stats)
                 stats = self._inject_database_stats(stats)
-
-            try:
-                new_request_stats = stats['mendix_runtime']['requests']
-                diff_request_stats = {}
-
-                for key, new in new_request_stats.iteritems():
-                    if key in previous_requests_stats:
-                        prev = previous_requests_stats[key]
-                        delta = max(0, (new - prev) / float(self.interval))
-                        diff_request_stats[key] = delta
-                    else:
-                        # can't calculate req/sec
-                        pass
-
-                stats['mendix_runtime']['requests'] = diff_request_stats
-                previous_requests_stats = new_request_stats
-
-            except KeyError:
-                pass
 
             logger.info('MENDIX-METRICS: ' + json.dumps(stats))
 
