@@ -21,7 +21,7 @@ from buildpackutil import i_am_primary_instance
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
-logger.info('Started Mendix Cloud Foundry Buildpack v1.4.5')
+logger.info('Started Mendix Cloud Foundry Buildpack v1.4.6')
 
 logging.getLogger('m2ee').propagate = False
 
@@ -250,10 +250,21 @@ def set_heap_size(javaopts, vcap_max_mem):
     env_heap_size = os.environ.get('HEAP_SIZE')
 
     if max_memory:
-        match = re.search('([0-9]+)([A-Z])', max_memory.upper())
-        heap_size = '%d%s' % (int(match.group(1)) / 2, match.group(2))
+        match = re.search('([0-9]+)M', max_memory.upper())
+        limit = int(match.group(1))
     else:
-        heap_size = str(int(vcap_max_mem) / 2) + 'M'
+        limit = int(vcap_max_mem)
+
+    if limit >= 8192:
+        heap_size = limit - 2048
+    elif limit >= 4096:
+        heap_size = limit - 1536
+    elif limit >= 2048:
+        heap_size = limit - 1024
+    else:
+        heap_size = int(limit / 2)
+
+    heap_size = str(heap_size) + 'M'
 
     if env_heap_size:
         max_memory = max_memory[:-1] if max_memory else vcap_max_mem
