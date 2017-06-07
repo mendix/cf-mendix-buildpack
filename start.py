@@ -21,7 +21,7 @@ from buildpackutil import i_am_primary_instance
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
-logger.info('Started Mendix Cloud Foundry Buildpack v1.4.6')
+logger.info('Started Mendix Cloud Foundry Buildpack v1.4.7')
 
 logging.getLogger('m2ee').propagate = False
 
@@ -758,7 +758,8 @@ def start_app(m2ee):
                             logger.info(line)
                     m2eeresponse = m2ee.client.execute_ddl_commands()
                     if m2eeresponse.has_error():
-                        logger.info(m2eeresponse.get_error())
+                        m2eeresponse.display_error()
+                        abort = True
                 else:
                     logger.info(
                         'waiting 10 seconds before primary instance '
