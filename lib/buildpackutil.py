@@ -95,6 +95,11 @@ def get_database_uri_from_vcap():
             return vcap_services[service_type_name][0]['credentials']['uri']
     if 'azure-sqldb' in vcap_services:
         return vcap_services['azure-sqldb'][0]['credentials']['jdbcUrl']
+
+    for key in vcap_services:
+        if key.startswith("rds"):
+            return vcap_services[key][0]['credentials']['uri']
+
     return None
 
 

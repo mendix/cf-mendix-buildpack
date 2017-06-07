@@ -21,7 +21,7 @@ from buildpackutil import i_am_primary_instance
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
-logger.info('Started Mendix Cloud Foundry Buildpack v1.4.7')
+logger.info('Started Mendix Cloud Foundry Buildpack v1.4.8')
 
 logging.getLogger('m2ee').propagate = False
 
@@ -279,9 +279,14 @@ def _get_s3_specific_config(vcap_services, m2ee):
     access_key = secret = bucket = encryption_keys = key_suffix = None
     endpoint = None
     v2_auth = ''
+    amazon_s3 = None
 
-    if 'amazon-s3' in vcap_services:
-        _conf = vcap_services['amazon-s3'][0]['credentials']
+    for key in vcap_services:
+        if key.startswith("amazon-s3"):
+            amazon_s3 = key
+
+    if amazon_s3:
+        _conf = vcap_services[amazon_s3][0]['credentials']
         access_key = _conf['access_key_id']
         secret = _conf['secret_access_key']
         bucket = _conf['bucket']  # see below at hacky for actual conf
@@ -667,13 +672,21 @@ def set_up_logging_file():
 
 def service_backups():
     vcap_services = buildpackutil.get_vcap_services_data()
-    if not vcap_services or 'schnapps' not in vcap_services:
+    schnapps = None
+    amazon_s3 = None
+    for key in vcap_services:
+        if key.startswith("amazon-s3"):
+            amazon_s3 = key
+        if key.startswith("schnapps"):
+            schnapps = key
+
+    if not vcap_services or schnapps not in vcap_services:
         logger.debug("No backup service detected")
         return
 
     backup_service = {}
-    if 'amazon-s3' in vcap_services:
-        s3_credentials = vcap_services['amazon-s3'][0]['credentials']
+    if amazon_s3 in vcap_services:
+        s3_credentials = vcap_services[amazon_s3][0]['credentials']
         backup_service['filesCredentials'] = {
             'accessKey': s3_credentials['access_key_id'],
             'secretKey': s3_credentials['secret_access_key'],
@@ -703,8 +716,8 @@ def service_backups():
             'parsing the database credentials'
         )
         return
-    schnapps_url = vcap_services['schnapps'][0]['credentials']['url']
-    schnapps_api_key = vcap_services['schnapps'][0]['credentials']['apiKey']
+    schnapps_url = vcap_services[schnapps][0]['credentials']['url']
+    schnapps_api_key = vcap_services[schnapps][0]['credentials']['apiKey']
 
     try:
         result = requests.put(
