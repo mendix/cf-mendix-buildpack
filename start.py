@@ -21,7 +21,7 @@ from buildpackutil import i_am_primary_instance
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
-logger.info('Started Mendix Cloud Foundry Buildpack v1.4.8')
+logger.info('Started Mendix Cloud Foundry Buildpack v1.4.9')
 
 logging.getLogger('m2ee').propagate = False
 
@@ -438,7 +438,6 @@ def get_certificate_authorities():
                 files.append(location)
                 n += 1
         config['CACertificates'] = ','.join(files)
-        buildpackutil.mkdir_p(os.path.join(os.getcwd(), 'model', 'resources'))
     return config
 
 
@@ -545,6 +544,7 @@ def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
         logger.info('Enabling sticky sessions')
         app_config['com.mendix.core.SessionIdCookieName'] = 'JSESSIONID'
 
+    buildpackutil.mkdir_p(os.getcwd(), 'model', 'resources')
     mxruntime_config.update(app_config)
     mxruntime_config.update(buildpackutil.get_database_config(
         development_mode=is_development_mode(),
