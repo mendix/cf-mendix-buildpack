@@ -34,6 +34,16 @@ for directory in (
     buildpackutil.mkdir_p(directory)
 
 
+class MxBuildFailure(Exception):
+    '''
+    Represents any 4xx 5xx issues retrieved from MxBuild HTTP Server
+    '''
+    def __init__(self, message, status_code, mxbuild_response):
+        super(MxBuildFailure, self).__init__(message)
+        self.status_code = status_code
+        self.mxbuild_response = mxbuild_response
+
+
 class InstaDeployThread(threading.Thread):
 
     def __init__(self, port, restart_callback, reload_callback, mx_version):
@@ -96,6 +106,11 @@ class MPKUploadHandler(BaseHTTPRequestHandler):
                     'state': 'FAILED',
                     'errordetails': 'No MPK found',
                 })
+
+        except MxBuildFailure as mbf:
+            logger.warning('InstaDeploy terminating with MxBuildFailure: {}'.format(mbf.message))
+            return self._terminate(mbf.status_code, {}, mbf.mxbuild_response)
+
         except Exception:
             return self._terminate(500, {
                 'state': 'FAILED',
@@ -103,8 +118,8 @@ class MPKUploadHandler(BaseHTTPRequestHandler):
             })
 
     def _terminate(self, status_code, data, mxbuild_response=None):
-        if mxbuild_response and 'problems' in mxbuild_response:
-            data['buildstatus'] = json.dumps(mxbuild_response['problems'])
+        if mxbuild_response:
+            data.update(mxbuild_response)
         self.send_response(status_code)
         self.send_header('Content-type', 'application/json')
         self.end_headers()
@@ -159,7 +174,11 @@ def build():
         headers={'Content-Type': 'application/json'},
         timeout=120,
     )
-    response.raise_for_status()
+
+    if response.status_code != requests.codes.ok:
+        r_response = extract_mxbuild_response(response.json())
+        raise MxBuildFailure("MxBuild failure: {}".format(r_response['message']),
+                             response.status_code, r_response)
 
     for name in ('web', 'model'):
         subprocess.call((
@@ -169,3 +188,13 @@ def build():
         ))
 
     return response.json()
+
+
+def extract_mxbuild_response(mxbuild_response):
+    r = {}
+    if 'problems' in mxbuild_response:
+        r['buildstatus'] = mxbuild_response['problems']
+    if 'message' in mxbuild_response:
+        r['message'] = mxbuild_response['message']
+
+    return r
