@@ -109,7 +109,7 @@ class MPKUploadHandler(BaseHTTPRequestHandler):
 
         except MxBuildFailure as mbf:
             logger.warning('InstaDeploy terminating with MxBuildFailure: {}'.format(mbf.message))
-            return self._terminate(mbf.status_code, {}, mbf.mxbuild_response)
+            return self._terminate(200, {'state': 'FAILED'}, mbf.mxbuild_response)
 
         except Exception:
             return self._terminate(500, {
