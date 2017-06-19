@@ -965,9 +965,10 @@ if __name__ == '__main__':
         start_metrics(m2ee)
         start_nginx()
         loop_until_process_dies(m2ee)
-    except Exception:
+    except Exception as e:
         x = traceback.format_exc()
         logger.error('Starting app container failed: %s' % x)
         callback_url = os.environ.get('BUILD_STATUS_CALLBACK_URL')
         if callback_url:
             requests.put(callback_url, x)
+        raise e
