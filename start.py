@@ -21,7 +21,7 @@ from buildpackutil import i_am_primary_instance
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
-logger.info('Started Mendix Cloud Foundry Buildpack v1.4.11')
+logger.info('Started Mendix Cloud Foundry Buildpack v1.4.12')
 
 logging.getLogger('m2ee').propagate = False
 
