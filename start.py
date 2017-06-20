@@ -282,7 +282,7 @@ def _get_s3_specific_config(vcap_services, m2ee):
     amazon_s3 = None
 
     for key in vcap_services:
-        if key.startswith("amazon-s3"):
+        if key.startswith("amazon-s3") or key == "objectstore":
             amazon_s3 = key
 
     if amazon_s3:
@@ -294,6 +294,8 @@ def _get_s3_specific_config(vcap_services, m2ee):
             encryption_keys = _conf['encryption_keys']
         if 'key_suffix' in _conf:
             key_suffix = _conf['key_suffix']
+        if 'host' in _conf:
+            endpoint = _conf['host']
         if 'endpoint' in _conf:
             endpoint = _conf['endpoint']
 
