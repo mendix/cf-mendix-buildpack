@@ -45,6 +45,10 @@ class MxBuildFailure(Exception):
 
 
 class InstaDeployThread(threading.Thread):
+    """
+    The reference for this implementation can be found at
+    'https://docs.mendix.com/refguide/mxbuild'
+    """
 
     def __init__(self, port, restart_callback, reload_callback, mx_version):
         super(InstaDeployThread, self).__init__()
@@ -85,6 +89,7 @@ class MPKUploadHandler(BaseHTTPRequestHandler):
                 mxbuild_response = build()
                 logger.debug(mxbuild_response)
                 if mxbuild_response['status'] != 'Success':
+                    # possible 'status': Success, Failure, Busy
                     logger.warning(
                         'Failed to build project, '
                         'keeping previous model running'
@@ -193,4 +198,9 @@ def extract_mxbuild_response(mxbuild_response):
     r = {}
     if 'problems' in mxbuild_response:
         r['buildstatus'] = json.dumps(mxbuild_response['problems'])
+    # When there're consistency errors, the problems field
+    # does not necessarily include details and there is only
+    # a high-level message
+    if 'message' in mxbuild_response:
+        r['message'] = mxbuild_response['message']
     return r
