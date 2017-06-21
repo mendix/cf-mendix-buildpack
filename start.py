@@ -22,7 +22,7 @@ import traceback
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
-logger.info('Started Mendix Cloud Foundry Buildpack v1.4.11')
+logger.info('Started Mendix Cloud Foundry Buildpack v1.4.14')
 
 logging.getLogger('m2ee').propagate = False
 
