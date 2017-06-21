@@ -18,10 +18,12 @@ import instadeploy
 import metrics
 from nginx import get_path_config, gen_htpasswd
 from buildpackutil import i_am_primary_instance
+import traceback
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
-logger.info('Started Mendix Cloud Foundry Buildpack v1.4.13')
+
+logger.info('Started Mendix Cloud Foundry Buildpack v1.4.14')
 
 logging.getLogger('m2ee').propagate = False
 
@@ -958,10 +960,18 @@ if __name__ == '__main__':
 
     signal.signal(signal.SIGTERM, sigterm_handler)
 
-    service_backups()
-    set_up_nginx_files(m2ee)
-    complete_start_procedure_safe_to_use_for_restart(m2ee)
-    set_up_instadeploy_if_deploy_password_is_set(m2ee)
-    start_metrics(m2ee)
-    start_nginx()
-    loop_until_process_dies(m2ee)
+    try:
+        service_backups()
+        set_up_nginx_files(m2ee)
+        complete_start_procedure_safe_to_use_for_restart(m2ee)
+        set_up_instadeploy_if_deploy_password_is_set(m2ee)
+        start_metrics(m2ee)
+        start_nginx()
+        loop_until_process_dies(m2ee)
+    except Exception:
+        x = traceback.format_exc()
+        logger.error('Starting app container failed: %s' % x)
+        callback_url = os.environ.get('BUILD_STATUS_CALLBACK_URL')
+        if callback_url:
+            requests.put(callback_url, x)
+        raise
