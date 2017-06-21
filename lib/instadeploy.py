@@ -45,6 +45,10 @@ class MxBuildFailure(Exception):
 
 
 class InstaDeployThread(threading.Thread):
+    """
+    The reference for this implementation can be found at
+    'https://docs.mendix.com/refguide/mxbuild'
+    """
 
     def __init__(self, port, restart_callback, reload_callback, mx_version):
         super(InstaDeployThread, self).__init__()
@@ -85,6 +89,7 @@ class MPKUploadHandler(BaseHTTPRequestHandler):
                 mxbuild_response = build()
                 logger.debug(mxbuild_response)
                 if mxbuild_response['status'] != 'Success':
+                    # possible 'status': Success, Failure, Busy
                     logger.warning(
                         'Failed to build project, '
                         'keeping previous model running'
@@ -119,7 +124,8 @@ class MPKUploadHandler(BaseHTTPRequestHandler):
 
     def _terminate(self, status_code, data, mxbuild_response=None):
         if mxbuild_response:
-            data.update(mxbuild_response)
+            flat_response = extract_mxbuild_response(mxbuild_response)
+            data.update(flat_response)
         self.send_response(status_code)
         self.send_header('Content-type', 'application/json')
         self.end_headers()
@@ -176,9 +182,7 @@ def build():
     )
 
     if response.status_code != requests.codes.ok:
-        r_response = extract_mxbuild_response(response.json())
-        raise MxBuildFailure("MxBuild failure: {}".format(r_response['message']),
-                             response.status_code, r_response)
+        raise MxBuildFailure("MxBuild failure", response.status_code, response.json())
 
     for name in ('web', 'model'):
         subprocess.call((
@@ -193,8 +197,10 @@ def build():
 def extract_mxbuild_response(mxbuild_response):
     r = {}
     if 'problems' in mxbuild_response:
-        r['buildstatus'] = mxbuild_response['problems']
+        r['buildstatus'] = json.dumps(mxbuild_response['problems'])
+    # When there're consistency errors, the problems field
+    # does not necessarily include details and there is only
+    # a high-level message
     if 'message' in mxbuild_response:
         r['message'] = mxbuild_response['message']
-
     return r
