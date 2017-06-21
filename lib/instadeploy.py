@@ -88,6 +88,8 @@ class MPKUploadHandler(BaseHTTPRequestHandler):
                 update_project_dir()
                 mxbuild_response = build()
                 logger.debug(mxbuild_response)
+                if mxbuild_response['status'] == 'Busy':
+                    return self._terminate(200, {'state': 'BUSY'}, mxbuild_response)
                 if mxbuild_response['status'] != 'Success':
                     # possible 'status': Success, Failure, Busy
                     logger.warning(
@@ -184,15 +186,26 @@ def build():
     if response.status_code != requests.codes.ok:
         raise MxBuildFailure("MxBuild failure", response.status_code, response.json())
 
+    result = response.json()
+    if result['status'] == 'Success':
+        try:
+            sync_project_files()
+            logger.info("Syncing project files ...")
+        except:
+            logger.warning("Syncing project files failed: %s", traceback.format_exc())
+            raise
+    else:
+        logger.warning("Not syncing project files. MxBuild result: %s", result)
+
+    return result
+
+def sync_project_files():
     for name in ('web', 'model'):
-        subprocess.call((
+        subprocess.check_call((
             'rsync', '-a',
             os.path.join(DEPLOYMENT_DIR, name) + '/',
             os.path.join(ROOT_DIR, name) + '/',
         ))
-
-    return response.json()
-
 
 def extract_mxbuild_response(mxbuild_response):
     r = {}
