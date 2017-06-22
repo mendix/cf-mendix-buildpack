@@ -23,7 +23,7 @@ import traceback
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
 
-logger.info('Started Mendix Cloud Foundry Buildpack v1.4.16')
+logger.info('Started Mendix Cloud Foundry Buildpack v1.4.17')
 
 logging.getLogger('m2ee').propagate = False
 
@@ -438,7 +438,7 @@ def get_certificate_authorities():
                     '.local/certificate_authorities.%d.crt' % n
                 )
                 with open(location, 'w') as output_file:
-                    output_file.write(cas)
+                    output_file.write(ca)
                 files.append(location)
                 n += 1
         config['CACertificates'] = ','.join(files)
