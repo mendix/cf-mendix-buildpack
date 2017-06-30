@@ -99,6 +99,8 @@ def get_database_uri_from_vcap():
     for key in vcap_services:
         if key.startswith("rds"):
             return vcap_services[key][0]['credentials']['uri']
+        if key.startswith("dashDB"):
+            return vcap_services[key][0]['credentials']['uri']
 
     return None
 
