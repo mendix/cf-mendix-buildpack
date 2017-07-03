@@ -78,15 +78,7 @@ class BaseTest(unittest.TestCase):
         ))
 
     def tearDown(self):
-        cmds = [
-            "cf stop \"%s\"" % self.app_name,
-            "cf delete \"%s\" -f -r" % self.app_name,
-            "cf delete-service \"%s-database\" -f" % self.app_name,
-            "cf delete-service \"%s-storage\" -f" % self.app_name,
-            "cf delete-service \"%s-schnapps\" -f" % self.app_name
-        ]
-        for cmd in cmds:
-            subprocess.check_call(cmd, shell=True)
+        subprocess.check_call(('./delete-app.sh', self.app_name))
 
     def assert_app_running(self, app_name, path="/xas/", code=401):
         full_uri = "https://" + app_name + path
