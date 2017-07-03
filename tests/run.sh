@@ -17,10 +17,6 @@ cf apps 2>&1 | grep ops- | awk '{print $1}' | xargs -n 1 -P 5 --no-run-if-empty 
 cf s 2>&1 | grep ops- | awk '{print $1}' | xargs -n 1 -P 5 --no-run-if-empty cf ds -f $service | grep -v 'OK'
 echo "Completed environment clean up"
 
-[ -d "venv" ] && rm -rf "venv"
-virtualenv -p python2 venv >/dev/null
-. venv/bin/activate >/dev/null
-pip install -r requirements.txt -qq
 
 echo 'starting test run'
-python venv/bin/nosetests -vv --processes=10 --process-timeout=600 usecase/
+python ~/.local/bin/nosetests -vv --processes=10 --process-timeout=600 usecase/
