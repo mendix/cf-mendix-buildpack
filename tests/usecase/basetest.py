@@ -46,16 +46,24 @@ class BaseTest(unittest.TestCase):
             '-O', self.package_name,
             self.package_url,
         ))
-        self.cmd((
-            'cf', 'push', self.app_name,
-            '-d', self.cf_domain,
-            '-p', self.package_name,
-            '-n', subdomain,
-            '--no-start',
-            '-k', '3G',
-            '-m', '2G',
-            '-b', 'https://github.com/mendix/cf-mendix-buildpack.git#%s' % self.branch_name,
-        ))
+        try:
+            subprocess.check_output((
+                'cf', 'push', self.app_name,
+                '-d', self.cf_domain,
+                '-p', self.package_name,
+                '-n', subdomain,
+                '--no-start',
+                '-k', '3G',
+                '-m', '2G',
+                '-b', (
+                    'https://github.com/mendix/cf-mendix-buildpack.git#%s'
+                    % self.branch_name
+                ),
+            ), stderr=subprocess.PIPE)
+        except subprocess.CalledProcessError as e:
+            print(e.output)
+            raise
+
         self.cmd((
             './create-app-services.sh', self.app_name
         ))
