@@ -29,7 +29,7 @@ class BaseTest(unittest.TestCase):
         try:
             subprocess.check_call((
                 'cf', 'start', self.app_name,
-            ), stdout=subprocess.PIPE)
+            ), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         except subprocess.CalledProcessError as e:
             print(self.get_recent_logs())
             raise e
@@ -47,7 +47,7 @@ class BaseTest(unittest.TestCase):
             'wget', '--quiet', '-c',
             '-O', self.package_name,
             self.package_url,
-        ), stdout=subprocess.PIPE)
+        ), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         subprocess.check_call((
             'cf', 'push', self.app_name,
             '-d', self.cf_domain,
@@ -57,10 +57,10 @@ class BaseTest(unittest.TestCase):
             '-k', '3G',
             '-m', '2G',
             '-b', 'https://github.com/mendix/cf-mendix-buildpack.git#%s' % self.branch_name,
-        ), stdout=subprocess.PIPE)
+        ), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         subprocess.check_call((
             './create-app-services.sh', self.app_name
-        ), stdout=subprocess.PIPE)
+        ), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         app_guid = subprocess.check_output(('cf', 'app', self.app_name, '--guid')).strip()
 
@@ -84,7 +84,7 @@ class BaseTest(unittest.TestCase):
     def tearDown(self):
         subprocess.check_call((
             './delete-app.sh', self.app_name,
-        ), stdout=subprocess.PIPE)
+        ), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     def assert_app_running(self, app_name, path="/xas/", code=401):
         full_uri = "https://" + app_name + path

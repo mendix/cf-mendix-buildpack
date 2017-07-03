@@ -17,7 +17,7 @@ class TestCaseJavaCrashRestartsProcess(basetest.BaseTest):
         print('killing java to see if app will actually restart')
         subprocess.check_call((
             'cf', 'ssh', self.app_name, '-c', 'killall java'
-        ), stdout=subprocess.PIPE)
+        ), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         time.sleep(10)
         cf_events = subprocess.check_output(
             ('cf', 'events', self.app_name)
