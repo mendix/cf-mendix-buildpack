@@ -1,4 +1,3 @@
-import subprocess
 import basetest
 import time
 
@@ -6,8 +5,9 @@ import time
 class TestCaseEmitMetrics(basetest.BaseTest):
 
     def setUp(self):
-        self.setUpCF('sample-6.2.0.mda')
-        subprocess.check_call(('cf', 'set-env', self.app_name, 'METRICS_INTERVAL', '10'))
+        self.setUpCF('sample-6.2.0.mda', env_vars={
+            'METRICS_INTERVAL': '10',
+        })
         self.startApp()
 
     def test_read_metrics_in_logs(self):

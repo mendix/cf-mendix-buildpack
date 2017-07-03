@@ -19,10 +19,7 @@ class TestCaseBuildStatusCallback(basetest.BaseTest):
         self.assert_app_running(self.app_name)
 
     def _test_helper(self, package_name):
-        self.setUpCF(package_name)
-        cmds = [
-            "cf set-env \"%s\" FORCE_WRITE_BUILD_ERRORS \"true\"" % self.app_name,
-            "cf set-env \"%s\" BUILD_STATUS_CALLBACK_URL \"http://localhost/buildstatus\"" % self.app_name
-        ]
-        for cmd in cmds:
-            subprocess.check_call(cmd, shell=True)
+        self.setUpCF(package_name, env_vars={
+            'FORCE_WRITE_BUILD_ERRORS': 'true',
+            'BUILD_STATUS_CALLBACK_URL': 'http://localhost/buildstatus',
+        })

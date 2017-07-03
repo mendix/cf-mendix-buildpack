@@ -1,18 +1,13 @@
 import basetest
-import subprocess
 import json
 
 
 class TestCaseLogging(basetest.BaseTest):
 
     def setUp(self):
-        self.setUpCF('sample-6.2.0.mda')
-        logging_config = {
-            "Jetty": "TRACE",
-        }
-        subprocess.check_call(('cf', 'set-env', self.app_name,
-            'LOGGING_CONFIG', json.dumps(logging_config),
-        ))
+        self.setUpCF('sample-6.2.0.mda', env_vars={
+            'LOGGING_CONFIG': json.dumps({'Jetty': 'TRACE'}),
+        })
         self.startApp()
 
     def test_logging_config(self):
