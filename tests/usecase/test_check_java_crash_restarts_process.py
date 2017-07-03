@@ -8,6 +8,7 @@ class TestCaseJavaCrashRestartsProcess(basetest.BaseTest):
     def setUp(self):
         self.setUpCF('sample-6.2.0.mda')
         subprocess.check_call(('cf', 'set-env', self.app_name, 'DEPLOY_PASSWORD', self.mx_password))
+        subprocess.check_call(('cf', 'set-env', self.app_name, 'METRICS_INTERVAL', '10'))
         self.startApp()
 
     def test_check_java_crash_restarts_process(self):
