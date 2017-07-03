@@ -914,12 +914,14 @@ def set_up_instadeploy_if_deploy_password_is_set(m2ee):
                 complete_start_procedure_safe_to_use_for_restart(m2ee)
                 app_is_restarting = False
 
-            instadeploy.InstaDeployThread(
+            thread = instadeploy.InstaDeployThread(
                 get_deploy_port(),
                 restart_callback,
                 reload_callback,
                 mx_version,
-            ).start()
+            )
+            thread.setDaemon(True)
+            thread.start()
         else:
             logger.warning(
                 'Not setting up InstaDeploy because this mendix '
@@ -930,7 +932,9 @@ def set_up_instadeploy_if_deploy_password_is_set(m2ee):
 def start_metrics(m2ee):
     metrics_interval = os.getenv('METRICS_INTERVAL')
     if metrics_interval:
-        metrics.MetricsEmitterThread(int(metrics_interval), m2ee).start()
+        thread = metrics.MetricsEmitterThread(int(metrics_interval), m2ee)
+        thread.setDaemon(True)
+        thread.start()
 
 
 def complete_start_procedure_safe_to_use_for_restart(m2ee):
