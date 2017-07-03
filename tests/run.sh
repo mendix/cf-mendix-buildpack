@@ -17,12 +17,8 @@ fi
 cf login -a "$CF_ENDPOINT" -u "$CF_USER" -p "$CF_PASSWORD" -o "$CF_ORG" -s "$CF_SPACE" > /dev/null
 
 echo "Begin clean up of environment"
-for app in $(cf apps 2>&1 | grep ops- | awk '{print $1}'); do
-    cf delete -r -f $app || true
-done
-for service in $(cf s 2>&1 | grep ops- | awk '{print $1}'); do
-    cf ds -f $service || true
-done
+cf apps 2>&1 | grep ops- | awk '{print $1}' | xargs -n 1 -P 5 --no-run-if-empty cf delete -r -f
+cf s 2>&1 | grep ops- | awk '{print $1}' | xargs -n 1 -P 5 --no-run-if-empty cf ds -f $service
 echo "Completed environment clean up"
 
 # cf login command above exposes the vars if set -x is on top.
