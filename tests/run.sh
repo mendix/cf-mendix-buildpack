@@ -23,4 +23,4 @@ virtualenv -p python2 venv >/dev/null
 pip install -r requirements.txt -qq
 
 echo 'starting test run'
-python venv/bin/nosetests -vv --processes=5 --process-timeout=600 usecase/
+python venv/bin/nosetests -vv --processes=10 --process-timeout=600 usecase/
