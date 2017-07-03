@@ -24,6 +24,9 @@ class BaseTest(unittest.TestCase):
         assert self.cf_domain
         self.branch_name = os.environ.get("TRAVIS_BRANCH", current_branch)
         self.mx_password = os.environ.get("MX_PASSWORD", "Y0l0lop13#123")
+        self.app_id = str(uuid.uuid4()).split("-")[0]
+        self.subdomain = "ops-" + self.app_id
+        self.app_name = "%s.%s" % (self.subdomain, self.cf_domain)
 
     def startApp(self):
         try:
@@ -33,9 +36,13 @@ class BaseTest(unittest.TestCase):
             raise e
 
     def setUpCF(self, package_name, env_vars=None):
-        app_id = str(uuid.uuid4()).split("-")[0]
-        subdomain = "ops-" + app_id
-        self.app_name = "%s.%s" % (subdomain, self.cf_domain)
+        try:
+            self._setUpCF(package_name, env_vars=env_vars)
+        except:
+            self.tearDown()
+            raise
+
+    def _setUpCF(self, package_name, env_vars=None):
         self.package_name = package_name
         self.package_url = os.environ.get(
             "PACKAGE_URL",
@@ -44,15 +51,15 @@ class BaseTest(unittest.TestCase):
 
         self.cmd((
             'wget', '--quiet', '-c',
-            '-O', app_id + self.package_name,
+            '-O', self.app_id + self.package_name,
             self.package_url,
         ))
         try:
             subprocess.check_output((
                 'cf', 'push', self.app_name,
                 '-d', self.cf_domain,
-                '-p', app_id + self.package_name,
-                '-n', subdomain,
+                '-p', self.app_id + self.package_name,
+                '-n', self.subdomain,
                 '--no-start',
                 '-k', '3G',
                 '-m', '2G',

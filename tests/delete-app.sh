@@ -17,8 +17,3 @@ pids="$pids $!"
 for pid in $pids; do
     wait $pid || let "RESULT=1"
 done
-
-if [ "$RESULT" == "1" ];
-    then
-       exit 1
-fi
