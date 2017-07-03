@@ -71,7 +71,7 @@ class BaseTest(unittest.TestCase):
         if env_vars is not None:
             environment.update(env_vars)
 
-        subprocess.check_call((
+        subprocess.check_output((  # check_call prints the output, no thanks
             'cf', 'curl', '-X', 'PUT',
             '/v2/apps/%s' % app_guid,
             '-d', json.dumps({"environment_json": environment})
@@ -86,7 +86,9 @@ class BaseTest(unittest.TestCase):
         assert r.status_code == code
 
     def get_recent_logs(self):
-        return unicode(subprocess.check_output(('cf', 'logs', self.app_name, '--recent')), 'utf-8')
+        return unicode(subprocess.check_output((
+            'cf', 'logs', self.app_name, '--recent',
+        )), 'utf-8')
 
     def assert_string_in_recent_logs(self, app_name, substring):
         output = subprocess.check_output(('cf', 'logs', app_name, '--recent'))
