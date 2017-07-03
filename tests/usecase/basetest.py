@@ -27,9 +27,7 @@ class BaseTest(unittest.TestCase):
 
     def startApp(self):
         try:
-            subprocess.check_call((
-                'cf', 'start', self.app_name,
-            ), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            self.cmd(('cf', 'start', self.app_name))
         except subprocess.CalledProcessError as e:
             print(self.get_recent_logs())
             raise e
@@ -43,12 +41,12 @@ class BaseTest(unittest.TestCase):
             "https://s3-eu-west-1.amazonaws.com/mx-ci-binaries/" + package_name
         )
 
-        subprocess.check_call((
+        self.cmd((
             'wget', '--quiet', '-c',
             '-O', self.package_name,
             self.package_url,
-        ), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        subprocess.check_call((
+        ))
+        self.cmd((
             'cf', 'push', self.app_name,
             '-d', self.cf_domain,
             '-p', self.package_name,
@@ -57,10 +55,10 @@ class BaseTest(unittest.TestCase):
             '-k', '3G',
             '-m', '2G',
             '-b', 'https://github.com/mendix/cf-mendix-buildpack.git#%s' % self.branch_name,
-        ), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        subprocess.check_call((
+        ))
+        self.cmd((
             './create-app-services.sh', self.app_name
-        ), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        ))
 
         app_guid = subprocess.check_output(('cf', 'app', self.app_name, '--guid')).strip()
 
@@ -82,9 +80,7 @@ class BaseTest(unittest.TestCase):
         ))
 
     def tearDown(self):
-        subprocess.check_call((
-            './delete-app.sh', self.app_name,
-        ), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.cmd(('./delete-app.sh', self.app_name))
 
     def assert_app_running(self, app_name, path="/xas/", code=401):
         full_uri = "https://" + app_name + path
@@ -103,3 +99,10 @@ class BaseTest(unittest.TestCase):
         else:
             print(output)
             self.fail('Failed to find substring in recent logs: ' + substring)
+
+    def cmd(self, command):
+        subprocess.check_call(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
