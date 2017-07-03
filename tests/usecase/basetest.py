@@ -36,7 +36,7 @@ class BaseTest(unittest.TestCase):
 
     def setUpCF(self, package_name, env_vars=None):
         subdomain = "ops-" + str(uuid.uuid4()).split("-")[0]
-        self.app_name = "{name}.{domain}".format(name=subdomain, domain=self.cf_domain)
+        self.app_name = "%s.%s" % (subdomain, self.cf_domain)
         self.package_name = package_name
         self.package_url = os.environ.get(
             "PACKAGE_URL",
