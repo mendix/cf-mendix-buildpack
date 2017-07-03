@@ -1,4 +1,5 @@
 import os
+import json
 import subprocess
 import unittest
 import uuid
@@ -31,7 +32,7 @@ class BaseTest(unittest.TestCase):
             print(self.get_recent_logs())
             raise e
 
-    def setUpCF(self, package_name):
+    def setUpCF(self, package_name, env_vars=None):
         subdomain = "ops-" + str(uuid.uuid4()).split("-")[0]
         self.app_name = "{name}.{domain}".format(name=subdomain, domain=self.cf_domain)
         self.package_name = package_name
@@ -48,14 +49,29 @@ class BaseTest(unittest.TestCase):
             "cf bind-service \"%s\" \"%s-schnapps\"" % (self.app_name, self.app_name),
             "cf bind-service \"%s\" \"%s-storage\"" % (self.app_name, self.app_name),
             "cf bind-service \"%s\" \"%s-database\"" % (self.app_name, self.app_name),
-            "cf set-env \"%s\" ADMIN_PASSWORD \"%s\"" % (self.app_name, self.mx_password),
-            "cf set-env \"%s\" DEBUGGER_PASSWORD \"%s\"" % (self.app_name, self.mx_password),
-            "cf set-env \"%s\" DEVELOPMENT_MODE \"true\"" % self.app_name,
-            "cf set-env \"%s\" S3_USE_SSE \"true\"" % self.app_name,
-            "cf set-env \"%s\" USE_DATA_SNAPSHOT \"true\"" % self.app_name,
         ]
+
         for cmd in cmds:
             subprocess.check_call(cmd, shell=True)
+
+        app_guid = subprocess.check_output(('cf', 'app', self.app_name, '--guid')).strip()
+
+        environment = {
+            "ADMIN_PASSWORD": self.mx_password,
+            "DEBUGGER_PASSWORD": self.mx_password,
+            "DEVELOPMENT_MODE": "true",
+            "S3_USE_SSE": "true",
+            "USE_DATA_SNAPSHOT": "true",
+        }
+
+        if env_vars is not None:
+            environment.update(env_vars)
+
+        subprocess.check_call((
+            'cf', 'curl', '-X', 'PUT',
+            '/v2/apps/%s' % app_guid,
+            '-d', json.dumps({"environment_json": environment})
+        ))
 
     def tearDown(self):
         cmds = [
