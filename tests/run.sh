@@ -18,7 +18,7 @@ cf s 2>&1 | grep ops- | awk '{print $1}' | xargs -n 1 -P 5 --no-run-if-empty cf 
 echo "Completed environment clean up"
 
 [ -d "venv" ] && rm -rf "venv"
-virtualenv -p python2 venv
+virtualenv -p python2 venv >/dev/null
 . venv/bin/activate >/dev/null
 pip install -r requirements.txt -qq
 
