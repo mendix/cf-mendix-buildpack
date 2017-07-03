@@ -56,7 +56,7 @@ class BaseTest(unittest.TestCase):
             '-m', '2G',
             '-b', 'https://github.com/mendix/cf-mendix-buildpack.git#%s' % self.branch_name,
         ))
-        subprocess.check_call(('./create-app.sh', self.app_name))
+        subprocess.check_call(('./create-app-services.sh', self.app_name))
 
         app_guid = subprocess.check_output(('cf', 'app', self.app_name, '--guid')).strip()
 
