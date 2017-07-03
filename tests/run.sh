@@ -1,5 +1,8 @@
 #!/bin/bash
 
+set -e
+
+# See more pre-setup scripts in ../.travis.yml
 
 ls usecase/*.py
 
@@ -11,15 +14,14 @@ else
     exit 1
 fi
 
-cf login --skip-ssl-validation -a "$CF_ENDPOINT" -u "$CF_USER" -p "$CF_PASSWORD" -o "$CF_ORG" -s "$CF_SPACE" || exit 1
+cf login -a "$CF_ENDPOINT" -u "$CF_USER" -p "$CF_PASSWORD" -o "$CF_ORG" -s "$CF_SPACE" || exit 1
 
 echo "Begin clean up of environment"
-cf apps | grep ops- | awk '{print $1}' | xargs -n 1 cf delete -r -f
-cf s | grep ops- | awk '{print $1}' | xargs -n 1 cf ds -f
+cf apps | grep ops- | awk '{print $1}' | xargs -n 1 cf delete -r -f || true
+cf s | grep ops- | awk '{print $1}' | xargs -n 1 cf ds -f || true
 echo "Completed environment clean up"
 
 # cf login command above exposes the vars if set -x is on top.
-set -e
 set -x
 
 [ -d "venv" ] && rm -rf "venv"

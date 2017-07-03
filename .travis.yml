@@ -1,9 +1,12 @@
 language: sh
 
 before_script:
-  - wget "https://cli.run.pivotal.io/stable?release=debian64&version=6.16.1&source=github-rel" -O cli.deb
+  - wget "https://cli.run.pivotal.io/stable?release=debian64&version=6.28.0&source=github-rel" -O cli.deb
   - sudo dpkg -i cli.deb
   - sudo apt-get install -y python-virtualenv
+  - sudo curl https://download.mendix.com/Mendix-CA-G2.crt -o /usr/local/share/ca-certificates/ca.crt
+  - sudo update-ca-certificates
+
 
 script:
   - cd tests && bash run.sh
