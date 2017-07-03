@@ -11,7 +11,7 @@ else
     exit 1
 fi
 
-cf login -a "$CF_ENDPOINT" -u "$CF_USER" -p "$CF_PASSWORD" -o "$CF_ORG" -s "$CF_SPACE" || exit 1
+cf login --skip-ssl-validation -a "$CF_ENDPOINT" -u "$CF_USER" -p "$CF_PASSWORD" -o "$CF_ORG" -s "$CF_SPACE" || exit 1
 
 echo "Begin clean up of environment"
 cf apps | grep ops- | awk '{print $1}' | xargs -n 1 cf delete -r -f
