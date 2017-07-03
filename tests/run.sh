@@ -14,7 +14,7 @@ else
     exit 1
 fi
 
-cf login -a "$CF_ENDPOINT" -u "$CF_USER" -p "$CF_PASSWORD" -o "$CF_ORG" -s "$CF_SPACE" || exit 1
+cf login -a "$CF_ENDPOINT" -u "$CF_USER" -p "$CF_PASSWORD" -o "$CF_ORG" -s "$CF_SPACE" > /dev/null
 
 echo "Begin clean up of environment"
 for app in $(cf apps 2>&1 | grep ops- | awk '{print $1}'); do
@@ -31,6 +31,6 @@ set -x
 [ -d "venv" ] && rm -rf "venv"
 virtualenv -p python2 venv
 . venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements.txt --quiet
 
 python venv/bin/nosetests -vv --processes=3 --process-timeout=600 usecase/
