@@ -13,7 +13,9 @@ class TestCaseFastdeploy(basetest.BaseTest):
         self.startApp()
 
     def test_fast_deploy(self):
-        subprocess.check_call(('wget', 'https://s3-eu-west-1.amazonaws.com/mx-ci-binaries/MontBlancApp671b.mpk'))
+        subprocess.check_call((
+            'wget', 'https://s3-eu-west-1.amazonaws.com/mx-ci-binaries/MontBlancApp671b.mpk',
+        ), stdout=subprocess.PIPE)
         full_uri = "https://" + self.app_name + "/_mxbuild/"
         time.sleep(10)
         r = requests.post(full_uri, auth=('deploy', self.mx_password), files={
