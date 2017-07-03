@@ -41,14 +41,22 @@ class BaseTest(unittest.TestCase):
             "https://s3-eu-west-1.amazonaws.com/mx-ci-binaries/" + package_name
         )
 
-        cmds = [
-            "wget --quiet -c -O \"%s\" \"%s\"" % (self.package_name, self.package_url),
-            "cf push -d %s -p %s -n %s %s --no-start -k 3G -m 2G -b https://github.com/mendix/cf-mendix-buildpack.git#%s" % (self.cf_domain, self.package_name, subdomain, self.app_name, self.branch_name),
-            './create-app.sh %s' % self.app_name,
-        ]
-
-        for cmd in cmds:
-            subprocess.check_call(cmd, shell=True)
+        subprocess.check_call((
+            'wget', '--quiet', '-c',
+            '-O', self.package_name,
+            self.package_url,
+        ))
+        subprocess.check_call((
+            'cf', 'push', self.app_name,
+            '-d', self.cf_domain,
+            '-p', self.package_name,
+            '-n', subdomain,
+            '--no-start',
+            '-k', '3G',
+            '-m', '2G',
+            '-b', 'https://github.com/mendix/cf-mendix-buildpack.git#%s' % self.branch_name,
+        ))
+        subprocess.check_call(('./create-app.sh', self.app_name))
 
         app_guid = subprocess.check_output(('cf', 'app', self.app_name, '--guid')).strip()
 
