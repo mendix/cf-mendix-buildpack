@@ -42,9 +42,9 @@ class BaseTest(unittest.TestCase):
         cmds = [
             "wget --quiet -c -O \"%s\" \"%s\"" % (self.package_name, self.package_url),
             "cf push -p %s -n %s %s --no-start -k 3G -m 2G -b https://github.com/mendix/cf-mendix-buildpack.git#%s" % (self.package_name, subdomain, self.app_name, self.branch_name),
-            "cf create-service schnapps basic \"%s-schnapps\"" % self.app_name,
-            "cf create-service PostgreSQL \"Basic PostgreSQL Plan\" \"%s-database\"" % self.app_name,
-            "cf create-service amazon-s3 shared \"%s-storage\"" % self.app_name,
+            "cf create-service schnapps-testfree basic-testfree \"%s-schnapps\"" % self.app_name,
+            "cf create-service rds-testfree \"shared-psql-testfree\" \"%s-database\"" % self.app_name,
+            "cf create-service amazon-s3-testfree shared-testfree \"%s-storage\"" % self.app_name,
             "cf bind-service \"%s\" \"%s-schnapps\"" % (self.app_name, self.app_name),
             "cf bind-service \"%s\" \"%s-storage\"" % (self.app_name, self.app_name),
             "cf bind-service \"%s\" \"%s-database\"" % (self.app_name, self.app_name),
