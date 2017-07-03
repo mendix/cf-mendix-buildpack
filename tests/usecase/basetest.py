@@ -33,7 +33,8 @@ class BaseTest(unittest.TestCase):
             raise e
 
     def setUpCF(self, package_name, env_vars=None):
-        subdomain = "ops-" + str(uuid.uuid4()).split("-")[0]
+        app_id = str(uuid.uuid4()).split("-")[0]
+        subdomain = "ops-" + app_id
         self.app_name = "%s.%s" % (subdomain, self.cf_domain)
         self.package_name = package_name
         self.package_url = os.environ.get(
@@ -43,14 +44,14 @@ class BaseTest(unittest.TestCase):
 
         self.cmd((
             'wget', '--quiet', '-c',
-            '-O', self.package_name,
+            '-O', app_id + self.package_name,
             self.package_url,
         ))
         try:
             subprocess.check_output((
                 'cf', 'push', self.app_name,
                 '-d', self.cf_domain,
-                '-p', self.package_name,
+                '-p', app_id + self.package_name,
                 '-n', subdomain,
                 '--no-start',
                 '-k', '3G',
