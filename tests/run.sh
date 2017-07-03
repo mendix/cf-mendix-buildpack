@@ -21,12 +21,11 @@ cf apps 2>&1 | grep ops- | awk '{print $1}' | xargs -n 1 -P 5 --no-run-if-empty 
 cf s 2>&1 | grep ops- | awk '{print $1}' | xargs -n 1 -P 5 --no-run-if-empty cf ds -f $service
 echo "Completed environment clean up"
 
-# cf login command above exposes the vars if set -x is on top.
-set -x
-
 [ -d "venv" ] && rm -rf "venv"
 virtualenv -p python2 venv
 . venv/bin/activate
 pip install -r requirements.txt --quiet
 
-python venv/bin/nosetests -vv --processes=3 --process-timeout=600 usecase/
+# cf login command above exposes the vars if set -x is on top.
+set -x
+python venv/bin/nosetests -vv --processes=5 --process-timeout=600 usecase/
