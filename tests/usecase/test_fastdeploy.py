@@ -1,5 +1,4 @@
 import basetest
-import subprocess
 import requests
 import time
 
@@ -7,12 +6,17 @@ import time
 class TestCaseFastdeploy(basetest.BaseTest):
 
     def setUp(self):
-        self.setUpCF('MontBlancApp671.mpk')
-        subprocess.check_call(('cf', 'set-env', self.app_name, 'DEPLOY_PASSWORD', self.mx_password))
+        self.setUpCF('MontBlancApp671.mpk', env_vars={
+            'DEPLOY_PASSWORD': self.mx_password,
+        })
         self.startApp()
 
     def test_fast_deploy(self):
-        subprocess.check_call(('wget', 'https://s3-eu-west-1.amazonaws.com/mx-ci-binaries/MontBlancApp671b.mpk'))
+        self.cmd((
+            'wget', '--quiet',
+            'https://s3-eu-west-1.amazonaws.com'
+            '/mx-ci-binaries/MontBlancApp671b.mpk',
+        ))
         full_uri = "https://" + self.app_name + "/_mxbuild/"
         time.sleep(10)
         r = requests.post(full_uri, auth=('deploy', self.mx_password), files={

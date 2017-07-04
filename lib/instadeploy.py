@@ -52,7 +52,6 @@ class InstaDeployThread(threading.Thread):
 
     def __init__(self, port, restart_callback, reload_callback, mx_version):
         super(InstaDeployThread, self).__init__()
-        self.daemon = True
         self.port = port
         self.restart_callback = restart_callback
         self.reload_callback = reload_callback

@@ -1,12 +1,12 @@
 import basetest
-import subprocess
 
 
 class TestCaseMono4(basetest.BaseTest):
 
     def setUp(self):
-        self.setUpCF('empty-model-7.0.2.mpk')
-        subprocess.check_call(('cf', 'set-env', self.app_name, 'DEPLOY_PASSWORD', self.mx_password))
+        self.setUpCF('empty-model-7.0.2.mpk', env_vars={
+            'DEPLOY_PASSWORD': self.mx_password,
+        })
         self.startApp()
 
     def test_mono4(self):

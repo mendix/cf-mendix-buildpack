@@ -1,30 +1,22 @@
 #!/bin/bash
 
+set -e
 
-ls usecase/*.py
+# See more pre-setup scripts in ../.travis.yml
 
-if [ -f run.sh ]
+if [[ ! -f run.sh ]]
 then
-    echo "correct dir."
-else
     echo "wrong dir to run tests from."
     exit 1
 fi
 
-cf login -a "$CF_ENDPOINT" -u "$CF_USER" -p "$CF_PASSWORD" -o "$CF_ORG" -s "$CF_SPACE" || exit 1
+cf login -a "$CF_ENDPOINT" -u "$CF_USER" -p "$CF_PASSWORD" -o "$CF_ORG" -s "$CF_SPACE" > /dev/null
 
-echo "Begin clean up of environment"
-cf apps | grep ops- | awk '{print $1}' | xargs -n 1 cf delete -r -f
-cf s | grep ops- | awk '{print $1}' | xargs -n 1 cf ds -f
-echo "Completed environment clean up"
+echo "begin clean up of environment"
+cf apps 2>&1 | grep ops- | awk '{print $1}' | xargs -n 1 -P 5 --no-run-if-empty cf delete -r -f | grep -v 'OK' || true
+cf s 2>&1 | grep ops- | awk '{print $1}' | xargs -n 1 -P 5 --no-run-if-empty cf ds -f $service | grep -v 'OK' || true
+echo "completed environment clean up"
 
-# cf login command above exposes the vars if set -x is on top.
-set -e
-set -x
 
-[ -d "venv" ] && rm -rf "venv"
-virtualenv -p python2 venv
-. venv/bin/activate
-pip install -r requirements.txt
-
-python venv/bin/nosetests -vv --processes=3 --process-timeout=600 usecase/
+echo 'starting test run'
+python ~/.local/bin/nosetests -vv --processes=10 --process-timeout=600 --with-timer usecase/
