@@ -623,21 +623,22 @@ def set_up_m2ee_client(vcap_data):
         env['GIT_WORK_TREE'] = mendix_runtime_version_path
 
         # checkout the runtime version
-        process = subprocess.Popen(['git', 'checkout', str(version), '-f'], cwd=mendix_runtimes_path, env=env,
+        process = subprocess.Popen(['git', 'checkout', str(version), '-f'],
+                                   cwd=mendix_runtimes_path, env=env,
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         process.communicate()
         if process.returncode != 0:
-            # 'git fetch' the version we want to the bare repo, then retry to checkout the runtime version
-            logger.info('mendix runtime version {mx_version} is missing in this rootfs'.format(mx_version=version))
+            logger.info('Mendix {} is not available in the rootfs'.format(version))
+            logger.info('Fallback (1): trying to fetch Mendix {} using git'.format(version))
             process = subprocess.Popen(['git', 'fetch', 'origin', 'refs/tags/{0}:refs/tags/{0}'.format(str(version)),
                                         '&&', 'git', 'checkout', str(version), '-f'],
                                        cwd=mendix_runtimes_path, env=env, stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE)
             process.communicate()
             if process.returncode != 0:
-                # download the mendix runtime version from our blobstore
-                logger.info('unable to use rootfs for mendix runtime version {mx_version}'.format(mx_version=version))
+                logger.info('Unable to fetch Mendix {} using git'.format(version))
                 url = buildpackutil.get_blobstore_url('/runtime/mendix-%s.tar.gz' % str(version))
+                logger.info('Fallback (2): downloading Mendix {} from {}'.format(version, url))
                 buildpackutil.download_and_unpack(url, os.path.join(os.getcwd(), 'runtimes'))
 
         m2ee.reload_config()
