@@ -25,7 +25,7 @@ class M2EERunner:
     def _read_pidfile(self):
         pidfile = self._config.get_pidfile()
         try:
-            pf = file(pidfile, 'r')
+            pf = open(pidfile, 'r')
             self._pid = int(pf.read().strip())
             pf.close()
         except IOError as e:
@@ -40,7 +40,7 @@ class M2EERunner:
         if self._pid:
             pidfile = self._config.get_pidfile()
             try:
-                file(pidfile, 'w+').write("%s\n" % self._pid)
+                open(pidfile, 'w+').write("%s\n" % self._pid)
             except IOError as e:
                 logger.error("Cannot write pidfile: %s" % e)
 

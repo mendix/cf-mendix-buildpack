@@ -36,7 +36,7 @@ class M2EEClient:
         self._url = url
         self._headers = {
             'Content-Type': 'application/json',
-            'X-M2EE-Authentication': b64encode(password)
+            'X-M2EE-Authentication': b64encode(password.encode('utf-8')).decode('ascii'),
         }
 
     def request(self, action, params=None, timeout=None):
@@ -50,7 +50,7 @@ class M2EEClient:
                                                       headers=self._headers)
         if (response_headers['status'] == "200"):
             logger.trace("M2EE response: %s" % response_body)
-            return M2EEResponse(action, json.loads(response_body))
+            return M2EEResponse(action, json.loads(response_body.decode('utf-8')))
         else:
             logger.error("non-200 http status code: %s %s" %
                          (response_headers, response_body))
