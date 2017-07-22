@@ -201,7 +201,7 @@ def download(url, destination):
     logging.debug('downloading {url} to {destination}'.format(
         url=url, destination=destination
     ))
-    with open(destination, 'w') as file_handle:
+    with open(destination, 'wb') as file_handle:
         response = requests.get(url, stream=True)
         if not response.ok:
             response.raise_for_status()

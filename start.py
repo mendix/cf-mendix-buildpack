@@ -489,7 +489,7 @@ def get_client_certificates():
         location = os.path.abspath(
             '.local/client_certificate.%d.crt' % num
         )
-        with open(location, 'w') as f:
+        with open(location, 'wb') as f:
             f.write(pfx)
         passwords.append(client_certificate['password'])
         files.append(location)
