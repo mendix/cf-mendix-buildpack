@@ -19,4 +19,4 @@ echo "completed environment clean up"
 
 
 echo 'starting test run'
-python ~/.local/bin/nosetests -vv --processes=10 --process-timeout=600 --with-timer usecase/
+nosetests -vv --processes=10 --process-timeout=600 --with-timer usecase/
