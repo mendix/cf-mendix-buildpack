@@ -3,7 +3,7 @@ language: sh
 before_script:
   - wget --quiet "https://cli.run.pivotal.io/stable?release=debian64&version=6.30.0&source=github-rel" -O cli.deb
   - sudo dpkg -i cli.deb
-  - sudo curl https://download.mendix.com/Mendix-CA-G2.crt -o /usr/local/share/ca-certificates/ca.crt
+  - sudo curl -s https://download.mendix.com/Mendix-CA-G2.crt -o /usr/local/share/ca-certificates/ca.crt
   - sudo update-ca-certificates
   - pip install --user -r tests/requirements.txt -qq
 
