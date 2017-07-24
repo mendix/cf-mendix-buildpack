@@ -18,5 +18,5 @@ cf s 2>&1 | grep ops- | awk '{print $1}' | xargs -n 1 -P 5 --no-run-if-empty cf 
 echo "completed environment clean up"
 
 
-echo 'starting test run'
+echo 'starting test run, tests will run in parallel and output shown at the end'
 nosetests -vv --processes=10 --process-timeout=600 --with-timer usecase/
