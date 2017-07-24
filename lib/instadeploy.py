@@ -131,7 +131,7 @@ class MPKUploadHandler(BaseHTTPRequestHandler):
         self.send_header('Content-type', 'application/json')
         self.end_headers()
         data['code'] = status_code
-        self.wfile.write(json.dumps(data))
+        self.wfile.write(json.dumps(data).encode('utf-8'))
 
 
 def update_project_dir():
