@@ -28,23 +28,17 @@ class TestCaseAccessRestrictions(basetest.BaseTest):
 
     def setUp(self):
         myips = []
-        wide_open_ips = ['0.0.0.0/0']
-        other_ips = ['1.2.3.4/32']
+        wide_open_ips = ['0.0.0.0/0', '::/0']
+        other_ips = ['1.2.3.4/32', '1::2/128']
 
         r = requests.get('https://myipv4.mendix.com/', timeout=5)
         r.raise_for_status()
+
         myips.append(r.text.strip() + '/32')
-
-        # IPv6 does not work currently, we use nginx compiled by staticfile
-        # buildpack. We copy it to our CDN when it is available.
-        # There is an issue open for --with-ipv6 support:
-        # https://github.com/cloudfoundry/staticfile-buildpack/issues/109
-
-        # wide_open_ips.append('::/0')
-        # try:
-        #     myips.append(requests.get('https://myipv6.mendix.com/').text + '/128')
-        # except:
-        #     pass
+        try:
+            myips.append(requests.get('https://myipv6.mendix.com/').text + '/128')
+        except:
+            pass
 
         print('my ip ranges are', ','.join(myips))
 
