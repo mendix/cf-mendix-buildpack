@@ -10,7 +10,7 @@ class TestCaseSampleData(basetest.BaseTest):
         self.startApp()
 
     def test_user_from_sampledata_can_log_in(self):
-        full_uri = "https://" + self.app_name + "/xas/"
+        full_uri = 'https://' + self.app_name + '/xas/'
         login_action = {
             'action': 'login',
             'params': {
