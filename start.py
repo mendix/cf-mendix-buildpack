@@ -62,7 +62,7 @@ def pre_process_m2ee_yaml():
 
 
 def use_instadeploy(mx_version):
-    return mx_version >= 6.7 or str(mx_version) == '6-build10037'
+    return mx_version >= 6.7
 
 
 def get_admin_password():

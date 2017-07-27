@@ -316,19 +316,9 @@ def _get_env_with_monolib(mono_dir):
 
 
 def _detect_mono_version(mx_version):
-    must_use_mono3 = [
-        '7-build14176',
-        '7-build14154',
-        '7-build13112',
-        '7.0.0-alpha2',
-        '7.0.0',
-        '7.0.0-webmodeler',
-        '7.0.1',
-        '7.0.1-webmodeler',
-    ]
     logging.debug('Detecting Mono Runtime using mendix version: ' + str(mx_version))
 
-    if str(mx_version) in must_use_mono3 or mx_version < 7:
+    if mx_version < 7:
         target = 'mono-3.10.0'
     else:
         target = 'mono-4.6.2.16'
