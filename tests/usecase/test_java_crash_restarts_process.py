@@ -12,7 +12,7 @@ class TestCaseJavaCrashRestartsProcess(basetest.BaseTest):
         })
         self.startApp()
 
-    def test_check_java_crash_restarts_process(self):
+    def test_java_crash_restarts_process(self):
         self.assert_app_running()
         print('killing java to see if app will actually restart')
         self.cmd((
