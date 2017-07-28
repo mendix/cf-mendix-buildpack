@@ -173,6 +173,10 @@ Alternatively you can make the required mendix runtime files `mendix-VERSION.tar
 * `BLOBSTORE/mx-buildpack/jre-8-linux-x64.tar.gz`
 * `BLOBSTORE/mx-buildpack/jdk-8-linux-x64.tar.gz`
 
+And for [Mendix < 6.6](https://docs.mendix.com/releasenotes/desktop-modeler/6.6#fixes):
+* `BLOBSTORE/mx-buildpack/jre-8u51-linux-x64.tar.gz`
+* `BLOBSTORE/mx-buildpack/jdk-8u51-linux-x64.tar.gz`
+
 
 ### Certificate Management
 

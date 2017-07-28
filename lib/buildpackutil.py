@@ -209,10 +209,13 @@ class NotFoundException(Exception):
 def get_java_version(mx_version):
     versions = {
         '7': '7u80',
+        '8u51': '8u51',
         '8': '8',
     }
-    if mx_version >= 5.18:
+    if mx_version >= 6.6:
         default = '8'
+    elif mx_version >= 5.18:
+        default = '8u51'
     else:
         default = '7'
     main_java_version = os.getenv('JAVA_VERSION', default)
