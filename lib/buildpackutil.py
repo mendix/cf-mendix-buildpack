@@ -208,7 +208,7 @@ class NotFoundException(Exception):
 def get_java_version(mx_version):
     versions = {
         '7': '7u80',
-        '8': '8u45',
+        '8': '8',
     }
     if mx_version >= 5.18:
         default = '8'
