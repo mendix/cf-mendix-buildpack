@@ -169,7 +169,9 @@ If you are running Cloud Foundry without a connection to the Internet, you shoul
 
 The preferred way to set up this on-premises web server is as a transparant proxy to `https://cdn.mendix.com/`. This prevents manual work by system administrators every time a new Mendix version is released.
 
-Alternatively you can make the required mendix runtime files `mendix-VERSION.tar.gz` available under `BLOBSTORE/runtime/`. You should also make the Java version available on `BLOBSTORE/mx-buildpack/jdk-8-linux-x64.tar.gz`. The original files can be downloaded from `https://cdn.mendix.com/`.
+Alternatively you can make the required mendix runtime files `mendix-VERSION.tar.gz` available under `BLOBSTORE/runtime/`. The original files can be downloaded from `https://cdn.mendix.com/`. You should also make the Java version available on:
+* `BLOBSTORE/mx-buildpack/jre-8-linux-x64.tar.gz`
+* `BLOBSTORE/mx-buildpack/jdk-8-linux-x64.tar.gz`
 
 
 ### Certificate Management

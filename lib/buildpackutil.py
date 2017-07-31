@@ -358,26 +358,25 @@ def ensure_and_get_mono(mx_version, cache_dir):
     return mono_location
 
 
-def ensure_and_return_java_sdk(mx_version, cache_dir):
-    logging.debug('Begin download and install java sdk')
+def ensure_and_get_jvm(mx_version, cache_dir, dot_local_location, package='jdk'):
+    logging.debug('Begin download and install java %s' % package)
     java_version = get_java_version(mx_version)
-    destination = '/tmp/javasdk/usr/lib/jvm/jdk-%s-oracle-x64' % java_version
 
     rootfs_java_path = '/usr/lib/jvm/jdk-%s-oracle-x64' % java_version
-
-    if os.path.isdir(rootfs_java_path):
-        os.symlink(os.path.join(rootfs_java_path, 'bin/java'), destination)
-    else:
+    if not os.path.isdir(rootfs_java_path):
+        logging.debug('rootfs without java sdk detected')
         download_and_unpack(
-            get_blobstore_url('/mx-buildpack/jdk-%s-linux-x64.tar.gz' % java_version),
-            destination,
+            get_blobstore_url('/mx-buildpack/%s-%s-linux-x64.tar.gz' % (package, java_version)),
+            os.path.join(dot_local_location, 'usr/lib/jvm/%s-%s-oracle-x64' % (package, java_version)),
             cache_dir,
         )
-    logging.debug('end download and install java sdk')
+    else:
+        logging.debug('rootfs with java sdk detected')
+    logging.debug('end download and install java %s' % package)
 
     return get_existing_directory_or_raise([
         '/usr/lib/jvm/jdk-%s-oracle-x64' % java_version,
-        '/tmp/javasdk/usr/lib/jvm/jdk-%s-oracle-x64' % java_version,
+        os.path.join(dot_local_location, 'usr/lib/jvm/%s-%s-oracle-x64' % (package, java_version)),
     ], 'Java not found')
 
 
