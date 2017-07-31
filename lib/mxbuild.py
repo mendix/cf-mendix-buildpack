@@ -14,8 +14,8 @@ def start_mxbuild_server(dot_local_location, mx_version):
         )
         path = os.path.join(dot_local_location, 'mxbuild')
 
-    jdk_location = buildpackutil.ensure_and_return_java_sdk(
-        mx_version, cache
+    jvm_location = buildpackutil.ensure_and_get_jvm(
+        mx_version, cache, dot_local_location,
     )
     subprocess.Popen([
         os.path.join(mono_location, 'bin/mono'),
@@ -23,6 +23,6 @@ def start_mxbuild_server(dot_local_location, mx_version):
         os.path.join(path, 'modeler', 'mxbuild.exe'),
         '--serve',
         '--port=6666',
-        '--java-home=%s' % jdk_location,
-        '--java-exe-path=%s/bin/java' % jdk_location,
+        '--java-home=%s' % jvm_location,
+        '--java-exe-path=%s/bin/java' % jvm_location,
     ], env=mono_env)

@@ -79,35 +79,15 @@ def check_database_environment_variable():
 def set_up_java():
     logging.debug('begin download and install java')
     buildpackutil.mkdir_p(os.path.join(DOT_LOCAL_LOCATION, 'bin'))
-    java_version = buildpackutil.get_java_version(get_runtime_version())
-
-    if not os.path.isdir(
-        '/usr/lib/jvm/jdk-{java_version}-oracle-x64'.format(
-            java_version=java_version,
-        )
-    ):
-        logging.debug('rootfs without java sdk detected, downloading and unpacking it now')
-        buildpackutil.download_and_unpack(
-            buildpackutil.get_blobstore_url('/mx-buildpack/jre-%s-linux-x64.tar.gz' % java_version),
-            os.path.join(DOT_LOCAL_LOCATION, 'usr/lib/jvm/jre-%s-oracle-x64' % java_version),
-            CACHE_DIR,
-        )
-        #  use ../ because path is different at staging, so final abspath unknown
-        os.symlink(
-            '../usr/lib/jvm/jre-{java_version}-oracle-x64/bin/java'.format(
-                java_version=java_version,
-            ),
-            os.path.join(DOT_LOCAL_LOCATION, 'bin', 'java')
-        )
-    else:
-        logging.debug('rootfs with java sdk detected, not downloading and unpacking it myself')
-        os.symlink(
-            '/usr/lib/jvm/jdk-{java_version}-oracle-x64/bin/java'.format(
-                java_version=java_version,
-            ),
-            os.path.join(DOT_LOCAL_LOCATION, 'bin', 'java')
-        )
-
+    jvm_location = buildpackutil.ensure_and_get_jvm(
+        get_runtime_version(), CACHE_DIR, DOT_LOCAL_LOCATION, package='jre'
+    )
+    # create a symlink in .local/bin/java
+    os.symlink(
+        # use .. when jdk is in .local because absolute path is different at staging time
+        os.path.join(jvm_location.replace(DOT_LOCAL_LOCATION, '..'), 'bin', 'java'),
+        os.path.join(DOT_LOCAL_LOCATION, 'bin', 'java')
+    )
     logging.debug('end download and install java')
 
 
@@ -203,8 +183,8 @@ def run_mx_build():
         mxbuild_location, mx_version, CACHE_DIR
     )
 
-    jdk_location = buildpackutil.ensure_and_return_java_sdk(
-        mx_version, CACHE_DIR
+    jvm_location = buildpackutil.ensure_and_get_jvm(
+        mx_version, CACHE_DIR, DOT_LOCAL_LOCATION
     )
 
     buildpackutil.lazy_remove_file(BUILD_ERRORS_JSON)
@@ -215,8 +195,8 @@ def run_mx_build():
         os.path.join(mxbuild_location, 'modeler/mxbuild.exe'),
         '--target=package',
         '--output=/tmp/model.mda',
-        '--java-home=%s' % jdk_location,
-        '--java-exe-path=%s' % os.path.join(jdk_location, 'bin/java'),
+        '--java-home=%s' % jvm_location,
+        '--java-exe-path=%s' % os.path.join(jvm_location, 'bin/java'),
     ]
 
     if mx_version >= 6.4 or os.environ.get('FORCE_WRITE_BUILD_ERRORS'):
