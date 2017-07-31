@@ -149,13 +149,9 @@ def download_and_unpack(url, destination, cache_dir='/tmp/downloads'):
 
     logging.debug('extracting: {cached_location} to {dest}'.format(
         cached_location=cached_location, dest=destination))
-    if file_name.endswith('.deb'):
-        subprocess.check_call(
-            ['dpkg-deb', '-x', cached_location, destination]
-        )
-    elif file_name.endswith('.tar.gz') or file_name.endswith('.tgz'):
+    if file_name.endswith('.tar.gz') or file_name.endswith('.tgz'):
         unpack_cmd = ['tar', 'xf', cached_location, '-C', destination]
-        if file_name.startswith('mono-'):
+        if file_name.startswith(('mono-', 'jdk-', 'jre-')):
             unpack_cmd.extend(('--strip', '1'))
         subprocess.check_call(unpack_cmd)
     else:
@@ -364,8 +360,8 @@ def ensure_and_get_mono(mx_version, cache_dir):
 
 def ensure_and_return_java_sdk(mx_version, cache_dir):
     logging.debug('Begin download and install java sdk')
-    destination = '/tmp/javasdk'
     java_version = get_java_version(mx_version)
+    destination = '/tmp/javasdk/usr/lib/jvm/jdk-%s-oracle-x64' % java_version
 
     rootfs_java_path = '/usr/lib/jvm/jdk-%s-oracle-x64' % java_version
 
@@ -373,12 +369,7 @@ def ensure_and_return_java_sdk(mx_version, cache_dir):
         os.symlink(os.path.join(rootfs_java_path, 'bin/java'), destination)
     else:
         download_and_unpack(
-            get_blobstore_url(
-                '/mx-buildpack/'
-                'oracle-java{java_version}-jdk_{java_version}_amd64.deb'.format(
-                    java_version=java_version,
-                ),
-            ),
+            get_blobstore_url('/mx-buildpack/jdk-%s-linux-x64.tar.gz' % java_version),
             destination,
             cache_dir,
         )

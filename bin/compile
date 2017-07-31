@@ -88,13 +88,8 @@ def set_up_java():
     ):
         logging.debug('rootfs without java sdk detected, downloading and unpacking it now')
         buildpackutil.download_and_unpack(
-            buildpackutil.get_blobstore_url(
-                '/mx-buildpack/'
-                'oracle-java{java_version}-jre_{java_version}_amd64.deb'.format(
-                    java_version=java_version,
-                ),
-            ),
-            DOT_LOCAL_LOCATION,
+            buildpackutil.get_blobstore_url('/mx-buildpack/jre-%s-linux-x64.tar.gz' % java_version),
+            os.path.join(DOT_LOCAL_LOCATION, 'usr/lib/jvm/jre-%s-oracle-x64' % java_version),
             CACHE_DIR,
         )
         #  use ../ because path is different at staging, so final abspath unknown
