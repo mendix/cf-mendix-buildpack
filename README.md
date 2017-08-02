@@ -2,7 +2,7 @@ Run Mendix in Cloud Foundry
 =====
 [![Build Status](https://travis-ci.org/mendix/cf-mendix-buildpack.svg?branch=master)](https://travis-ci.org/mendix/cf-mendix-buildpack)
 
-There are specific guides for deploying Mendix apps to the [Pivotal Web Services](https://world.mendix.com/display/howto50/Deploying+a+Mendix+App+to+Pivotal), [IBM Bluemix](https://world.mendix.com/display/public/howto6/Deploying+a+Mendix+App+to+IBM+Bluemix) and [HPE Helion Development Platform](https://world.mendix.com/display/howto50/Deploying+a+Mendix+App+to+HP+Helion) flavors of Cloud Foundry on our [documentation page](https://world.mendix.com/display/howto50/Deploying+a+Mendix+App+to+Cloud+Foundry). This page will document the more low-level details and CLI instructions.
+There are specific guides for deploying Mendix apps to the [Pivotal](https://docs.mendix.com/howto/cloud-foundry/deploy-a-mendix-app-to-pivotal) and [IBM Bluemix](https://docs.mendix.com/howto/cloud-foundry/deploy-a-mendix-app-to-ibm-bluemix) Cloud Foundry platforms on our [documentation page](https://docs.mendix.com/howto/cloud-foundry/). This buildpack readme documents the more low-level details and CLI instructions.
 
 
 Deploying using the CLI
@@ -319,7 +319,7 @@ Example:
 
 ### Enabling the Mendix Debugger
 
-You can enable the Mendix Debugger by setting a `DEBUGGER_PASSWORD` environment variable. This will enable and open up the debugger for the lifetime of this process and is to be used with caution. The debugger is reachable on https://DOMAIN/debugger/. You can follow the second half of this [How To](https://world.mendix.com/display/howto50/Debugging+Microflows+Remotely) to connect with the Mendix Business Modeler. To stop the debugger, unset the environment variable and restart the application.
+You can enable the Mendix Debugger by setting a `DEBUGGER_PASSWORD` environment variable. This will enable and open up the debugger for the lifetime of this process and is to be used with caution. The debugger is reachable on https://DOMAIN/debugger/. You can follow the second half of this [How To](https://docs.mendix.com/howto/monitoring-troubleshooting/debug-microflows) to connect with the Mendix Business Modeler. To stop the debugger, unset the environment variable and restart the application.
 
 
 Contributing
