@@ -275,7 +275,7 @@ Please note that AppDynamics requires Mendix 6.2 or higher.
 Data Snapshots
 ====
 
-If you want to enable initializing your database and files from an existing data snapshot included in the MDA, set `USE_DATA_SNAPSHOT` to `true`.
+If you want to enable initializing your database and files from an existing data snapshot included in the MDA, set the environment variable `USE_DATA_SNAPSHOT` to `true`. Please note: this only works when the database is completely empty. If there are any Mendix tables defined in the database already, the Runtime will refuse the overwrite it. So, if you have ever started an app before setting this environment variable (thereby initializing the database), you will not be able to import a data snapshot.
 
 
 License Activation
