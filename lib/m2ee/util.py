@@ -6,11 +6,15 @@
 #
 
 import os
+import logging
 import shutil
 import subprocess
-import socket
-import httplib
-from log import logger
+import sys
+import tempfile
+from m2ee.exceptions import M2EEException
+from m2ee.version import MXVersion
+
+logger = logging.getLogger(__name__)
 
 try:
     import readline
@@ -21,20 +25,12 @@ try:
 except ImportError:
     pass
 
-try:
-    import httplib2
-except ImportError:
-    logger.critical("Failed to import httplib2. This module is needed by "
-                    "m2ee. Please povide it on the python library path")
-    raise
-
 
 def unpack(config, mda_name):
 
     mda_file_name = os.path.join(config.get_model_upload_path(), mda_name)
     if not os.path.isfile(mda_file_name):
-        logger.error("file %s does not exist" % mda_file_name)
-        return False
+        raise M2EEException("File %s does not exist." % mda_file_name)
 
     logger.debug("Testing archive...")
     cmd = ("unzip", "-tqq", mda_file_name)
@@ -45,23 +41,20 @@ def unpack(config, mda_name):
                                 stderr=subprocess.PIPE)
         (stdout, stderr) = proc.communicate()
 
+        logger.trace("stdout: %s" % stdout)
+        logger.trace("stderr: %s" % stderr)
         if proc.returncode != 0:
-            logger.error("An error occured while testing archive "
-                         "consistency:")
-            logger.error("stdout: %s" % stdout)
-            logger.error("stderr: %s" % stderr)
-            return False
-        else:
-            logger.trace("stdout: %s" % stdout)
-            logger.trace("stderr: %s" % stderr)
+            raise M2EEException("\n".join([
+                "An error occured while testing archive consistency:",
+                "stdout: %s" % stdout,
+                "stderr: %s" % stderr,
+            ]))
     except OSError, ose:
         import errno
         if ose.errno == errno.ENOENT:
-            logger.error("The unzip program could not be found: %s" %
-                         ose.strerror)
+            raise M2EEException("The unzip program could not be found", ose)
         else:
-            logger.error("An error occured while executing unzip: %s" % ose)
-        return False
+            raise M2EEException("An error occured while executing unzip: %s " % ose, ose)
 
     logger.debug("Removing everything in model/ and web/ locations...")
     # TODO: error handling. removing model/ and web/ itself should not be
@@ -78,18 +71,17 @@ def unpack(config, mda_name):
                             stderr=subprocess.PIPE)
     (stdout, stderr) = proc.communicate()
 
+    logger.trace("stdout: %s" % stdout)
+    logger.trace("stderr: %s" % stderr)
     if proc.returncode != 0:
-        logger.error("An error occured while extracting archive:")
-        logger.error("stdout: %s" % stdout)
-        logger.error("stderr: %s" % stderr)
-        return False
-    else:
-        logger.trace("stdout: %s" % stdout)
-        logger.trace("stderr: %s" % stderr)
+        raise M2EEException("\n".join([
+            "An error occured while extracting archive:",
+            "stdout: %s" % stdout,
+            "stderr: %s" % stderr,
+        ]))
 
     # XXX: reset permissions on web/ model/ to be sure after executing this
     # function
-    return True
 
 
 def fix_mxclientsystem_symlink(config):
@@ -137,52 +129,86 @@ def run_post_unpack_hook(post_unpack_hook):
                      post_unpack_hook)
 
 
-def check_download_runtime_existence(url):
-    h = httplib2.Http(timeout=10)
-    logger.debug("Checking for existence of %s via HTTP HEAD" % url)
-    try:
-        (response_headers, response_body) = h.request(url, "HEAD")
-        logger.trace("Response headers: %s" % response_headers)
-    except (httplib2.HttpLib2Error, httplib.HTTPException,
-            socket.error) as e:
-        logger.error("Checking download url %s failed: %s: %s"
-                     % (url, e.__class__.__name__, e))
-        return False
-
-    if (response_headers['status'] == '200'):
-        logger.debug("Ok, got HTTP 200")
-        return True
-    if (response_headers['status'] == '404'):
-        logger.error("The location %s cannot be found." % url)
-        return False
-    logger.error("Checking download url %s failed, HTTP status code %s"
-                 % (url, response_headers['status']))
-    return False
+def download_and_unpack_runtime_curl(version, url, path, curl_opts=None):
+    logger.info("Going to download %s to %s" % (url, path))
+    tempdir = tempfile.mkdtemp(prefix='download_runtime_tmp_', dir=path)
+    temptgz = os.path.join(tempdir, 'runtime-%s.tgz' % str(version))
+    logger.debug("Download temp file: %s" % temptgz)
+    download_with_curl(url, temptgz, curl_opts)
+    logger.info("Extracting runtime archive...")
+    unpack_runtime(version, tempdir, temptgz, path)
+    shutil.rmtree(tempdir, ignore_errors=True)
+    logger.info("Successfully downloaded runtime!")
 
 
-def download_and_unpack_runtime(url, path):
-    if not check_download_runtime_existence(url):
-        return
-
-    logger.info("Going to download and extract %s to %s" % (url, path))
-    p1 = subprocess.Popen([
-        'wget',
-        '-O',
-        '-',
-        url,
-    ], stdout=subprocess.PIPE)
-    p2 = subprocess.Popen([
-        'tar',
-        'xz',
-        '-C',
-        path,
-    ], stdin=p1.stdout, stdout=subprocess.PIPE)
-    p1.stdout.close()
-    stdout, stderr = p2.communicate()
-    if p2.returncode == 0:
-        logger.info("Successfully downloaded runtime!")
-        return True
+def download_with_curl(url, output, curl_opts=None):
+    interactive = sys.stderr.isatty()
+    command = ['curl']
+    if interactive:
+        command.append('-#')
     else:
-        logger.error("Could not download and unpack runtime:")
-        logger.error(stderr)
-        return False
+        command.append('--silent')
+    if curl_opts is not None:
+        command.extend([str(opt) for opt in curl_opts])
+    command.extend(['--fail', '--output', output, url])
+
+    logger.trace("Executing %s" % command)
+    try:
+        subprocess.check_call(command, stdin=subprocess.PIPE,
+                              stdout=subprocess.PIPE,
+                              stderr=None if sys.stderr.isatty() else subprocess.PIPE,
+                              close_fds=True)
+    except subprocess.CalledProcessError as cpe:
+        if interactive and cpe.returncode == 22:
+            # curl error to stderr is already printed on the screen of the user
+            raise M2EEException("Failed to download %s" % url,
+                                errno=M2EEException.ERR_DOWNLOAD_FAILED)
+        else:
+            raise M2EEException("Failed to download %s, curl returncode %s" %
+                                (url, cpe.returncode),
+                                cause=cpe, errno=M2EEException.ERR_DOWNLOAD_FAILED)
+
+
+def unpack_runtime(version, tempdir, temptgz, runtimes_path):
+    try:
+        subprocess.check_call(['tar', 'xz', '-C', tempdir, '-f', temptgz])
+    except subprocess.CalledProcessError as cpe:
+        raise M2EEException("Corrupt runtime archive, extracting failed: %s" % cpe.message, cpe)
+    extracted_runtime_dir = os.path.join(tempdir, str(version))
+    if not os.path.isdir(extracted_runtime_dir):
+        raise M2EEException("Corrupt runtime archive, version %s not found inside!" % version)
+    os.rename(extracted_runtime_dir, os.path.join(runtimes_path, str(version)))
+
+
+def list_installed_runtimes(runtimes_path):
+    found = []
+    for item_present in os.listdir(runtimes_path):
+        try:
+            MXVersion(item_present)
+            found.append(item_present)
+        except:
+            pass
+    return found
+
+
+def cleanup_runtimes_except(versions, runtimes_path):
+    logger.info("Cleaning up old runtimes from %s..." % runtimes_path)
+    keep = set(map(str, versions))
+    items_to_remove = []
+    for item_present in os.listdir(runtimes_path):
+        if item_present in keep:
+            logger.info("Keeping %s" % item_present)
+            continue
+        if item_present.startswith('download_runtime_tmp_'):
+            items_to_remove.append(item_present)
+            continue
+        try:
+            MXVersion(item_present)
+            items_to_remove.append(item_present)
+        except:
+            logger.warning("Ignoring %s for removal, since it doesn't look like a "
+                           "Mendix Runtime version." % item_present)
+    for item_to_remove in items_to_remove:
+        full_path = os.path.join(runtimes_path, item_to_remove)
+        logger.info("Removing %s..." % item_to_remove)
+        shutil.rmtree(full_path, ignore_errors=True)
