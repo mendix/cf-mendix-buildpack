@@ -83,6 +83,7 @@ def get_database_uri_from_vcap():
 
     for service_type_name in (
         'p-mysql',
+        'p.mysql',
         'elephantsql',
         'cleardb',
         'PostgreSQL',
