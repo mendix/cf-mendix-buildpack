@@ -9,21 +9,23 @@ import sys
 import base64
 import uuid
 import atexit
+import traceback
+
 sys.path.insert(0, 'lib')
 import requests
-from m2ee import M2EE, logger
 import buildpackutil
 import logging
 import instadeploy
 import metrics
+
+from m2ee import M2EE, logger
 from nginx import get_path_config, gen_htpasswd
 from buildpackutil import i_am_primary_instance
-import traceback
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
 
-logger.info('Started Mendix Cloud Foundry Buildpack v1.5.1')
+logger.info('Started Mendix Cloud Foundry Buildpack v1.5.2')
 
 logging.getLogger('m2ee').propagate = False
 
@@ -122,13 +124,6 @@ def start_nginx():
     nginx_process = subprocess.Popen([
         'nginx/sbin/nginx', '-p', 'nginx', '-c', 'conf/nginx.conf'
     ])
-    atexit.register(stop_nginx)
-
-
-def stop_nginx():
-    if nginx_process:
-        logger.warning('Stopping nginx')
-        nginx_process.terminate()
 
 
 def get_vcap_data():
@@ -804,6 +799,24 @@ def start_app(m2ee):
     if abort:
         logger.warning('start failed, stopping')
         sys.exit(1)
+
+
+@atexit.register
+def terminate_process():
+    logger.info('stopping app...')
+    if not m2ee.stop():
+        if not m2ee.terminate():
+            m2ee.kill()
+    try:
+        this_process = os.getpgid(0)
+        logger.debug(
+            'Terminating process group with pgid={}'.format(this_process)
+        )
+        os.killpg(this_process, signal.SIGTERM)
+        time.sleep(3)
+        os.killpg(this_process, signal.SIGKILL)
+    except Exception:
+        logger.exception('Failed to terminate all child processes')
 
 
 def create_admin_user(m2ee):
