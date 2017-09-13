@@ -98,8 +98,8 @@ class BaseTest(unittest.TestCase):
     def tearDown(self):
         self.cmd(('./delete-app.sh', self.app_name))
 
-    def assert_app_running(self, app_name, path="/xas/", code=401):
-        full_uri = "https://" + app_name + path
+    def assert_app_running(self, path="/xas/", code=401):
+        full_uri = "https://" + self.app_name + path
         r = requests.get(full_uri)
         assert r.status_code == code
 
@@ -108,8 +108,8 @@ class BaseTest(unittest.TestCase):
             'cf', 'logs', self.app_name, '--recent',
         )), 'utf-8')
 
-    def assert_string_in_recent_logs(self, app_name, substring):
-        output = subprocess.check_output(('cf', 'logs', app_name, '--recent'))
+    def assert_string_in_recent_logs(self, substring):
+        output = self.get_recent_logs()
         if output.find(substring) > 0:
             pass
         else:

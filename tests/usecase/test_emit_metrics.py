@@ -12,7 +12,7 @@ class TestCaseEmitMetrics(basetest.BaseTest):
 
     def test_read_metrics_in_logs(self):
         time.sleep(10)
-        self.assert_string_in_recent_logs(self.app_name, 'MENDIX-METRICS: ')
-        self.assert_string_in_recent_logs(self.app_name, 'storage')
-        self.assert_string_in_recent_logs(self.app_name, 'number_of_files')
-        self.assert_string_in_recent_logs(self.app_name, 'critical_logs_count')
+        self.assert_string_in_recent_logs('MENDIX-METRICS: ')
+        self.assert_string_in_recent_logs('storage')
+        self.assert_string_in_recent_logs('number_of_files')
+        self.assert_string_in_recent_logs('critical_logs_count')

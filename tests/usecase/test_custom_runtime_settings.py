@@ -18,6 +18,5 @@ class TestCaseCustomRuntimeSettings(basetest.BaseTest):
 
     def test_custom_runtime_setting_is_set(self):
         self.assert_string_in_recent_logs(
-            self.app_name,
             'MySQL'
         )

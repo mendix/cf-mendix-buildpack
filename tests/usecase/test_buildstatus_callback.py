@@ -16,7 +16,7 @@ class TestCaseBuildStatusCallback(basetest.BaseTest):
     def test_model_has_no_inconsistency_errors(self):
         self._test_helper('empty-model-7.0.2.mpk')
         self.startApp()
-        self.assert_app_running(self.app_name)
+        self.assert_app_running()
 
     def _test_helper(self, package_name):
         self.setUpCF(package_name, env_vars={

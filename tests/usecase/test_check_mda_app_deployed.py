@@ -8,4 +8,4 @@ class TestCaseMdaAppDeployed(basetest.BaseTest):
         self.startApp()
 
     def test_mda_app_deployed_unauthorized(self):
-        self.assert_app_running(self.app_name)
+        self.assert_app_running()
