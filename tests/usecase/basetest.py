@@ -116,6 +116,14 @@ class BaseTest(unittest.TestCase):
             print(output)
             self.fail('Failed to find substring in recent logs: ' + substring)
 
+    def assert_string_not_in_recent_logs(self, substring):
+        output = self.get_recent_logs()
+        if output.find(substring) > 0:
+            print(output)
+            self.fail('Found substring in recent logs: ' + substring)
+        else:
+            pass
+
     def cmd(self, command):
         subprocess.check_call(
             command,
