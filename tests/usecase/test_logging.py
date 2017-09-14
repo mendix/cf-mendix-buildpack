@@ -11,5 +11,5 @@ class TestCaseLogging(basetest.BaseTest):
         self.startApp()
 
     def test_logging_config(self):
-        self.assert_app_running(self.app_name)
-        self.assert_string_in_recent_logs(self.app_name, 'TRACE - Jetty')
+        self.assert_app_running()
+        self.assert_string_in_recent_logs('TRACE - Jetty')
