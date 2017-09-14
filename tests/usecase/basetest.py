@@ -28,9 +28,12 @@ class BaseTest(unittest.TestCase):
         self.subdomain = "ops-" + self.app_id
         self.app_name = "%s.%s" % (self.subdomain, self.cf_domain)
 
-    def startApp(self, expect_failure=False):
+    def startApp(self, start_timeout=None, expect_failure=False):
         try:
-            self.cmd(('cf', 'start', self.app_name))
+            env = {}
+            if start_timeout:
+                env['CF_STARTUP_TIMEOUT'] = str(start_timeout)
+            self.cmd(('cf', 'start', self.app_name), env=env)
         except subprocess.CalledProcessError as e:
             if expect_failure:
                 return
@@ -131,8 +134,12 @@ class BaseTest(unittest.TestCase):
         else:
             pass
 
-    def cmd(self, command):
+    def cmd(self, command, env=None):
+        effective_env = os.environ.copy()
+        if env:
+            effective_env.update(env)
         return subprocess.check_output(
             command,
             stderr=subprocess.PIPE,
+            env=effective_env,
         )
