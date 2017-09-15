@@ -33,6 +33,7 @@ logging.getLogger('m2ee').propagate = False
 app_is_restarting = False
 default_m2ee_password = str(uuid.uuid4()).replace('-', '@') + 'A1'
 nginx_process = None
+m2ee = None
 
 def emit(**stats):
     stats['version'] = '1.0'
@@ -842,10 +843,11 @@ def start_app(m2ee):
 
 @atexit.register
 def terminate_process():
-    logger.info('stopping app...')
-    if not m2ee.stop():
-        if not m2ee.terminate():
-            m2ee.kill()
+    if m2ee:
+        logger.info('stopping app...')
+        if not m2ee.stop():
+            if not m2ee.terminate():
+                m2ee.kill()
     try:
         this_process = os.getpgid(0)
         logger.debug(
