@@ -58,7 +58,7 @@ class BaseTest(unittest.TestCase):
         self.package_name = package_name
         self.package_url = os.environ.get(
             'PACKAGE_URL',
-            'https://s3-eu-west-1.amazonaws.com/mx-ci-binaries/' + package_name
+            'https://s3-eu-west-1.amazonaws.com/mx-buildpack-ci/' + package_name
         )
 
         self.cmd((
