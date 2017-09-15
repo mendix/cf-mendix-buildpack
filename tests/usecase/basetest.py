@@ -15,7 +15,7 @@ class BaseTest(unittest.TestCase):
     '''
 
     def __init__(self, *args, **kwargs):
-        super(BaseTest, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if not os.environ.get("TRAVIS_BRANCH"):
             current_branch = subprocess.check_output("git rev-parse --symbolic-full-name --abbrev-ref HEAD", shell=True).decode('utf-8')
         else:
