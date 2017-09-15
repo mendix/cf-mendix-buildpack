@@ -9,7 +9,7 @@ class TestCaseBuildStatusCallback(basetest.BaseTest):
         try:
             self.startApp()
         except subprocess.CalledProcessError:
-            logs_out = subprocess.check_output(('cf', 'logs', self.app_name, '--recent'))
+            logs_out = subprocess.check_output(('cf', 'logs', self.app_name, '--recent')).decode('utf-8')
             print(logs_out)
             assert 'Submitting build status' in logs_out
 

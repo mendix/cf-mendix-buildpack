@@ -21,7 +21,7 @@ class TestCaseJavaCrashRestartsProcess(basetest.BaseTest):
         time.sleep(10)
         cf_events = subprocess.check_output(
             ('cf', 'events', self.app_name)
-        )
+        ).decode('utf-8')
         print('checking if process has crashed in cf events')
         print(cf_events)
         assert 'app.crash' in cf_events
