@@ -6,7 +6,7 @@ import json
 class TestCaseSampleData(basetest.BaseTest):
 
     def setUp(self):
-        self.setUpCF('MontBlancApp671WithSampleData.mpk')
+        self.setUpCF('MontBlancApp720WithSampleData.mpk')
         self.startApp()
 
     def test_user_from_sampledata_can_log_in(self):

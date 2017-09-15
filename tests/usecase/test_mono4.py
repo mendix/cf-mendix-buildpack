@@ -4,7 +4,7 @@ import basetest
 class TestCaseMono4(basetest.BaseTest):
 
     def setUp(self):
-        self.setUpCF('empty-model-7.0.2.mpk', env_vars={
+        self.setUpCF('MontBlancApp720.mpk', env_vars={
             'DEPLOY_PASSWORD': self.mx_password,
         })
         self.startApp()
