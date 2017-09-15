@@ -15,18 +15,21 @@ class BaseTest(unittest.TestCase):
     '''
 
     def __init__(self, *args, **kwargs):
-        super(BaseTest, self).__init__(*args, **kwargs)
-        if not os.environ.get("TRAVIS_BRANCH"):
-            current_branch = subprocess.check_output("git rev-parse --symbolic-full-name --abbrev-ref HEAD", shell=True)
+        super().__init__(*args, **kwargs)
+        if not os.environ.get('TRAVIS_BRANCH'):
+            current_branch = subprocess.check_output(
+                ('git', 'rev-parse', '--symbolic-full-name',
+                 '--abbrev-ref', 'HEAD')
+            ).decode('utf-8')
         else:
-            current_branch = "master"
-        self.cf_domain = os.environ.get("CF_DOMAIN")
+            current_branch = 'master'
+        self.cf_domain = os.environ.get('CF_DOMAIN')
         assert self.cf_domain
-        self.branch_name = os.environ.get("TRAVIS_BRANCH", current_branch)
-        self.mx_password = os.environ.get("MX_PASSWORD", "Y0l0lop13#123")
-        self.app_id = str(uuid.uuid4()).split("-")[0]
-        self.subdomain = "ops-" + self.app_id
-        self.app_name = "%s.%s" % (self.subdomain, self.cf_domain)
+        self.branch_name = os.environ.get('TRAVIS_BRANCH', current_branch)
+        self.mx_password = os.environ.get('MX_PASSWORD', 'Y0l0lop13#123')
+        self.app_id = str(uuid.uuid4()).split('-')[0]
+        self.subdomain = 'ops-' + self.app_id
+        self.app_name = '%s.%s' % (self.subdomain, self.cf_domain)
 
     def startApp(self, start_timeout=None, expect_failure=False):
         try:
@@ -44,18 +47,18 @@ class BaseTest(unittest.TestCase):
         if expect_failure:
             raise Exception('App unexpectedly started successfully')
 
-    def setUpCF(self, package_name, health_timeout=180, env_vars=None):
+    def setUpCF(self, package_name, health_timeout=180, env_vars=None, instances=1):
         try:
-            self._setUpCF(package_name, health_timeout, env_vars=env_vars)
+            self._setUpCF(package_name, health_timeout, env_vars=env_vars, instances=instances)
         except:
             self.tearDown()
             raise
 
-    def _setUpCF(self, package_name, health_timeout, env_vars=None):
+    def _setUpCF(self, package_name, health_timeout, env_vars=None, instances=1):
         self.package_name = package_name
         self.package_url = os.environ.get(
-            "PACKAGE_URL",
-            "https://s3-eu-west-1.amazonaws.com/mx-ci-binaries/" + package_name
+            'PACKAGE_URL',
+            'https://s3-eu-west-1.amazonaws.com/mx-buildpack-ci/' + package_name
         )
 
         self.cmd((
@@ -73,20 +76,21 @@ class BaseTest(unittest.TestCase):
                 '-k', '3G',
                 '-m', '2G',
                 '-t', str(health_timeout),
+                '-i', str(instances),
                 '-b', (
                     'https://github.com/mendix/cf-mendix-buildpack.git#%s'
                     % self.branch_name
                 ),
             ), stderr=subprocess.PIPE)
         except subprocess.CalledProcessError as e:
-            print(e.output)
+            print(e.output.decode('utf-8'))
             raise
 
         self.cmd((
             './create-app-services.sh', self.app_name
         ))
 
-        app_guid = subprocess.check_output(('cf', 'app', self.app_name, '--guid')).strip()
+        app_guid = subprocess.check_output(('cf', 'app', self.app_name, '--guid')).decode('utf-8').strip()
 
         environment = {
             'ADMIN_PASSWORD': self.mx_password,
@@ -102,21 +106,21 @@ class BaseTest(unittest.TestCase):
         subprocess.check_output((  # check_call prints the output, no thanks
             'cf', 'curl', '-X', 'PUT',
             '/v2/apps/%s' % app_guid,
-            '-d', json.dumps({"environment_json": environment})
+            '-d', json.dumps({'environment_json': environment})
         ))
 
     def tearDown(self):
         self.cmd(('./delete-app.sh', self.app_name))
 
-    def assert_app_running(self, path="/xas/", code=401):
-        full_uri = "https://" + self.app_name + path
+    def assert_app_running(self, path='/xas/', code=401):
+        full_uri = 'https://' + self.app_name + path
         r = requests.get(full_uri)
         assert r.status_code == code
 
     def get_recent_logs(self):
-        return unicode(subprocess.check_output((
+        return subprocess.check_output((
             'cf', 'logs', self.app_name, '--recent',
-        )), 'utf-8')
+        )).decode('utf-8')
 
     def assert_string_in_recent_logs(self, substring):
         output = self.get_recent_logs()
@@ -142,4 +146,4 @@ class BaseTest(unittest.TestCase):
             command,
             stderr=subprocess.PIPE,
             env=effective_env,
-        )
+        ).decode('utf-8')

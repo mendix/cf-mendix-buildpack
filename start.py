@@ -25,7 +25,7 @@ from buildpackutil import i_am_primary_instance
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
 
-logger.info('Started Mendix Cloud Foundry Buildpack v1.5.2')
+logger.info('Started Mendix Cloud Foundry Buildpack v1.6.0')
 
 logging.getLogger('m2ee').propagate = False
 
@@ -62,7 +62,7 @@ def pre_process_m2ee_yaml():
 
 
 def use_instadeploy(mx_version):
-    return mx_version >= 6.7 or str(mx_version) == '6-build10037'
+    return mx_version >= 6.7
 
 
 def get_admin_password():

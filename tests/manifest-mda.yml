@@ -1,9 +1,0 @@
----
-applications:
-  - name: sample-app
-    memory: 512M
-    path: sample-6.2.0.mda
-    env:
-      DEVELOPMENT_MODE: true
-      S3_USE_SSE: true
-      USE_DATA_SNAPSHOT: true

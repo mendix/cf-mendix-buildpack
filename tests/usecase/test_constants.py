@@ -10,8 +10,8 @@ class TestCaseConstants(basetest.BaseTest):
             'MX_AppCloudServices_OpenIdProvider': 'http://localhost',
             # over this one
             'CONSTANTS': json.dumps({
-                "AppCloudServices.OpenIdEnabled": True,
-                "AppCloudServices.OpenIdProvider": "http://google.com/"
+                'AppCloudServices.OpenIdEnabled': True,
+                'AppCloudServices.OpenIdProvider': 'http://google.com/'
             }),
         })
         self.startApp()
