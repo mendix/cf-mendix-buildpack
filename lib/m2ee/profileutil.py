@@ -6,8 +6,8 @@
 
 import datetime
 
-from log import logger
-from profileutildp import format_dict_table
+from .log import logger
+from .profileutildp import format_dict_table
 
 # Use json if available. If not (python 2.5) we need to import the simplejson
 # module instead, which has to be available.
@@ -16,7 +16,7 @@ try:
 except ImportError:
     try:
         import simplejson as json
-    except ImportError, ie:
+    except ImportError as ie:
         logger.critical("Failed to import json as well as simplejson. If "
                         "using python 2.5, you need to provide the simplejson "
                         "module in your python library path.")
@@ -85,10 +85,10 @@ Original request: %s \n\n \
 
 
 def sort_logs(logs):
-    logs = map(Log, logs.keys(), logs.values())
+    logs = list(map(Log, list(logs.keys()), list(logs.values())))
     logs.sort(lambda x, y: y.duration - x.duration)
 
-    return map(lambda x: x.__dict__, logs)  # back to dict for printing method
+    return [x.__dict__ for x in logs]  # back to dict for printing method
 
 
 def print_logs(logs):

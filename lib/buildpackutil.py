@@ -11,10 +11,7 @@ import requests
 
 
 def get_database_config(development_mode=False):
-    if any(map(
-            lambda x: x.startswith('MXRUNTIME_Database'),
-            os.environ.keys()
-    )):
+    if any([x.startswith('MXRUNTIME_Database') for x in list(os.environ.keys())]):
         return {}
 
     url = get_database_uri_from_vcap()
@@ -126,7 +123,7 @@ def get_database_uri_from_vcap():
 
 
 def appdynamics_used():
-    for k, v in os.environ.iteritems():
+    for k, v in os.environ.items():
         if k.startswith('APPDYNAMICS_'):
             return True
     return False
@@ -239,7 +236,7 @@ def get_java_version(mx_version):
         default = '7'
     main_java_version = os.getenv('JAVA_VERSION', default)
 
-    if main_java_version not in versions.keys():
+    if main_java_version not in list(versions.keys()):
         raise Exception(
             'Invalid Java version specified: %s'
             % main_java_version
@@ -248,7 +245,7 @@ def get_java_version(mx_version):
 
 
 def get_mpr_file_from_dir(directory):
-    mprs = filter(lambda x: x.endswith('.mpr'), os.listdir(directory))
+    mprs = [x for x in os.listdir(directory) if x.endswith('.mpr')]
     if len(mprs) == 1:
         return os.path.join(directory, mprs[0])
     elif len(mprs) > 1:

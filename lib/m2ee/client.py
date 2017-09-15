@@ -7,7 +7,7 @@
 
 from base64 import b64encode
 import socket
-from log import logger
+from .log import logger
 
 try:
     import httplib2
@@ -23,7 +23,7 @@ try:
 except ImportError:
     try:
         import simplejson as json
-    except ImportError, ie:
+    except ImportError as ie:
         logger.critical("Failed to import json as well as simplejson. If "
                         "using python 2.5, you need to provide the simplejson "
                         "module in your python library path.")
@@ -60,13 +60,13 @@ class M2EEClient:
             response = self.request("echo", {"echo": "ping"}, timeout)
             if response.get_result() == 0:
                 return True
-        except AttributeError, e:
+        except AttributeError as e:
             # httplib 0.6 throws AttributeError: 'NoneType' object has no
             # attribute 'makefile' in case of a connection refused :-|
             logger.trace("Got %s: %s" % (type(e), e))
-        except (socket.error, socket.timeout), e:
+        except (socket.error, socket.timeout) as e:
             logger.trace("Got %s: %s" % (type(e), e))
-        except Exception, e:
+        except Exception as e:
             logger.error("Got %s: %s" % (type(e), e))
             import traceback
             logger.error(traceback.format_exc())

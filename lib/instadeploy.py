@@ -1,4 +1,4 @@
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, HTTPServer
 import cgi
 import json
 import shutil
@@ -39,7 +39,7 @@ class MxBuildFailure(Exception):
     Represents any 4xx 5xx issues retrieved from MxBuild HTTP Server
     '''
     def __init__(self, message, status_code, mxbuild_response):
-        super(MxBuildFailure, self).__init__(message)
+        super().__init__(message)
         self.status_code = status_code
         self.mxbuild_response = mxbuild_response
 
@@ -51,7 +51,7 @@ class InstaDeployThread(threading.Thread):
     """
 
     def __init__(self, port, restart_callback, reload_callback, mx_version):
-        super(InstaDeployThread, self).__init__()
+        super().__init__()
         self.port = port
         self.restart_callback = restart_callback
         self.reload_callback = reload_callback
