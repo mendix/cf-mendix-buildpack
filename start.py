@@ -25,7 +25,7 @@ from buildpackutil import i_am_primary_instance
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
 
-logger.info('Started Mendix Cloud Foundry Buildpack v1.6.0')
+logger.info('Started Mendix Cloud Foundry Buildpack v1.6.1')
 
 logging.getLogger('m2ee').propagate = False
 
@@ -242,7 +242,7 @@ def get_constants(metadata):
     return constants
 
 
-def set_heap_size(javaopts, vcap_max_mem):
+def set_jvm_memory(javaopts, vcap_max_mem, java_version):
     max_memory = os.environ.get('MEMORY_LIMIT')
     env_heap_size = os.environ.get('HEAP_SIZE')
 
@@ -269,6 +269,12 @@ def set_heap_size(javaopts, vcap_max_mem):
 
     javaopts.append('-Xmx%s' % heap_size)
     javaopts.append('-Xms%s' % heap_size)
+
+    if java_version.startswith('7'):
+        javaopts.append('-XX:MaxPermSize=256M')
+    elif java_version.startswith('8'):
+        javaopts.append('-XX:MaxMetaspaceSize=256M')
+
     logger.debug('Java heap size set to %s' % heap_size)
 
 
@@ -643,19 +649,17 @@ def set_up_m2ee_client(vcap_data):
         vcap_data,
         m2ee,
     )
-    set_heap_size(m2ee.config._conf['m2ee']['javaopts'],
-                  vcap_data['limits']['mem'])
-    activate_new_relic(m2ee, vcap_data['application_name'])
-    activate_appdynamics(m2ee, vcap_data['application_name'])
-    set_application_name(m2ee, vcap_data['application_name'])
     java_version = buildpackutil.get_java_version(
         m2ee.config.get_runtime_version()
     )
-    java_opts = m2ee.config._conf['m2ee']['javaopts']
-    if java_version.startswith('7'):
-        java_opts.append('-XX:MaxPermSize=128M')
-    elif java_version.startswith('8'):
-        java_opts.append('-XX:MaxMetaspaceSize=128M')
+    set_jvm_memory(
+        m2ee.config._conf['m2ee']['javaopts'],
+        vcap_data['limits']['mem'],
+        java_version,
+    )
+    activate_new_relic(m2ee, vcap_data['application_name'])
+    activate_appdynamics(m2ee, vcap_data['application_name'])
+    set_application_name(m2ee, vcap_data['application_name'])
     return m2ee
 
 
