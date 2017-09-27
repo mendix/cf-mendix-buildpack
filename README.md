@@ -2,6 +2,12 @@ Run Mendix in Cloud Foundry
 =====
 [![Build Status](https://travis-ci.org/mendix/cf-mendix-buildpack.svg?branch=master)](https://travis-ci.org/mendix/cf-mendix-buildpack)
 
+The Mendix Buildpack for Cloud Foundry has two main phases:
+* compile: Fetch the JRE, Mendix Runtime, and nginx and bundle these together with the application model into a `droplet`. This is handled by `bin/compile`.
+* run: Start the various processes and run the application. `python start.py` is for orchestration, the JVM is for executing the Mendix Model, and nginx is used as reverse proxy including handling access restrictions.
+
+The compile phase accepts archives in `.mda` format (Mendix Deployment Archive). There is experimental support for `.mpk` archives (Mendix Project Package). If an `.mpk` file is pushed, `mxbuild` is executed using Mono in the compile phase as well, the run phase stays the same.
+
 There are specific guides for deploying Mendix apps to the [Pivotal](https://docs.mendix.com/deployment/cloud-foundry/deploy-a-mendix-app-to-pivotal) and [IBM Bluemix](https://docs.mendix.com/deployment/cloud-foundry/deploy-a-mendix-app-to-ibm-bluemix) Cloud Foundry platforms on our [documentation page](https://docs.mendix.com/deployment/cloud-foundry). This buildpack readme documents the more low-level details and CLI instructions.
 
 
