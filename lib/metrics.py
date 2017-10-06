@@ -46,6 +46,8 @@ class MetricsEmitterThread(threading.Thread):
                 self.m2ee.client,
                 self.m2ee.config
             )
+            if 'sessions' in m2ee_stats:
+                m2ee_stats['sessions']['user_sessions'] = {}
             m2ee_stats = munin.augment_and_fix_stats(
                 m2ee_stats,
                 self.m2ee.runner.get_pid(),
