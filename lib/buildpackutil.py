@@ -149,13 +149,9 @@ def download_and_unpack(url, destination, cache_dir='/tmp/downloads'):
 
     logging.debug('extracting: {cached_location} to {dest}'.format(
         cached_location=cached_location, dest=destination))
-    if file_name.endswith('.deb'):
-        subprocess.check_call(
-            ['dpkg-deb', '-x', cached_location, destination]
-        )
-    elif file_name.endswith('.tar.gz') or file_name.endswith('.tgz'):
+    if file_name.endswith('.tar.gz') or file_name.endswith('.tgz'):
         unpack_cmd = ['tar', 'xf', cached_location, '-C', destination]
-        if file_name.startswith('mono-'):
+        if file_name.startswith(('mono-', 'jdk-', 'jre-')):
             unpack_cmd.extend(('--strip', '1'))
         subprocess.check_call(unpack_cmd)
     else:
@@ -213,10 +209,13 @@ class NotFoundException(Exception):
 def get_java_version(mx_version):
     versions = {
         '7': '7u80',
-        '8': '8u45',
+        '8u51': '8u51',
+        '8': '8',
     }
-    if mx_version >= 5.18:
+    if mx_version >= 6.6:
         default = '8'
+    elif mx_version >= 5.18:
+        default = '8u51'
     else:
         default = '7'
     main_java_version = os.getenv('JAVA_VERSION', default)
@@ -362,31 +361,25 @@ def ensure_and_get_mono(mx_version, cache_dir):
     return mono_location
 
 
-def ensure_and_return_java_sdk(mx_version, cache_dir):
-    logging.debug('Begin download and install java sdk')
-    destination = '/tmp/javasdk'
+def ensure_and_get_jvm(mx_version, cache_dir, dot_local_location, package='jdk'):
+    logging.debug('Begin download and install java %s' % package)
     java_version = get_java_version(mx_version)
 
     rootfs_java_path = '/usr/lib/jvm/jdk-%s-oracle-x64' % java_version
-
-    if os.path.isdir(rootfs_java_path):
-        os.symlink(os.path.join(rootfs_java_path, 'bin/java'), destination)
-    else:
+    if not os.path.isdir(rootfs_java_path):
+        logging.debug('rootfs without java sdk detected')
         download_and_unpack(
-            get_blobstore_url(
-                '/mx-buildpack/'
-                'oracle-java{java_version}-jdk_{java_version}_amd64.deb'.format(
-                    java_version=java_version,
-                ),
-            ),
-            destination,
+            get_blobstore_url('/mx-buildpack/%s-%s-linux-x64.tar.gz' % (package, java_version)),
+            os.path.join(dot_local_location, 'usr/lib/jvm/%s-%s-oracle-x64' % (package, java_version)),
             cache_dir,
         )
-    logging.debug('end download and install java sdk')
+    else:
+        logging.debug('rootfs with java sdk detected')
+    logging.debug('end download and install java %s' % package)
 
     return get_existing_directory_or_raise([
         '/usr/lib/jvm/jdk-%s-oracle-x64' % java_version,
-        '/tmp/javasdk/usr/lib/jvm/jdk-%s-oracle-x64' % java_version,
+        os.path.join(dot_local_location, 'usr/lib/jvm/%s-%s-oracle-x64' % (package, java_version)),
     ], 'Java not found')
 
 
