@@ -91,6 +91,7 @@ def get_database_uri_from_vcap():
         'mariadb',
         'postgresql',
         'rds',
+        'postgresql_shared',
     ):
         if vcap_services and service_type_name in vcap_services:
             return vcap_services[service_type_name][0]['credentials']['uri']
