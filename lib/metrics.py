@@ -3,6 +3,7 @@ import sys
 import json
 import time
 from m2ee import logger, munin
+
 import threading
 import datetime
 
@@ -36,12 +37,51 @@ class MetricsEmitterThread(threading.Thread):
                 if buildpackutil.i_am_primary_instance():
                     stats = self._inject_storage_stats(stats)
                     stats = self._inject_database_stats(stats)
-
                 logger.info('MENDIX-METRICS: ' + json.dumps(stats))
             except Exception as e:
                 logger.exception('METRICS: error while gathering metrics')
 
             time.sleep(self.interval)
+
+    def _inject_health(self, stats):
+        health = {}
+        translation = {'healthy': 10,
+                       'unknown': 7,
+                       'sick': 3,
+                       'critical': 0}
+        stats['health'] = health
+
+        try:
+            health_response = self.m2ee.client.check_health()
+            if health_response.has_error():
+                if (health_response.get_result() == 3 and
+                        health_response.get_cause() == "java.lang.IllegalArgument"
+                        "Exception: Action should not be null"):
+                    # Because of an incomplete implementation, in Mendix 2.5.4 or
+                    # 2.5.5 this means that the runtime is health-check
+                    # capable, but no health check microflow is defined.
+                    health['health'] = translation['unknown']
+                    health['diagnosis'] = "No health check microflow defined"
+                elif (health_response.get_result() ==
+                        health_response.ERR_ACTION_NOT_FOUND):
+                    # Admin action 'check_health' does not exist.
+                    health['health'] = translation['unknown']
+                    health['diagnosis'] = "No health check microflow defined"
+                else:
+                    health['health'] = translation['critical']
+                    health['diagnosis'] = "Health check failed unexpectedly: %s" \
+                                          % health_response.get_error()
+            else:
+                feedback = health_response.get_feedback()
+                health['health'] = translation[feedback['health']]
+                health['diagnosis'] = feedback['diagnosis'] if 'diagnosis' in feedback else ''
+                health['response'] = health_response._json
+        except Exception as e:
+            logger.warn('Metrics: Failed to get health status, ' + str(e))
+            health['health'] = translation['critical']
+            health['diagnosis'] = "Health check failed unexpectedly: %s" % e
+
+        return stats
 
     def _inject_m2ee_stats(self, stats):
         try:
