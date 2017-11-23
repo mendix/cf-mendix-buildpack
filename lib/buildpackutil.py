@@ -105,6 +105,8 @@ def get_database_uri_from_vcap():
                 return uri
             if key.startswith('dashDB'):
                 return uri
+            if uri.startswith('postgres'):
+                return uri
         except (TypeError, KeyError):
             pass
 
