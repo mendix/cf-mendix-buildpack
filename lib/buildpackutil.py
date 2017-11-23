@@ -99,10 +99,14 @@ def get_database_uri_from_vcap():
         return vcap_services['azure-sqldb'][0]['credentials']['jdbcUrl']
 
     for key in vcap_services:
-        if key.startswith("rds"):
-            return vcap_services[key][0]['credentials']['uri']
-        if key.startswith("dashDB"):
-            return vcap_services[key][0]['credentials']['uri']
+        try:
+            uri = vcap_services[key][0]['credentials']['uri']
+            if key.startswith('rds'):
+                return uri
+            if key.startswith('dashDB'):
+                return uri
+        except (TypeError, KeyError):
+            pass
 
     return None
 
