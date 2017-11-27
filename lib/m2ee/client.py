@@ -44,7 +44,7 @@ class M2EEClient:
         if params:
             body["params"] = params
         body = json.dumps(body)
-        h = httplib2.Http(timeout=timeout)  # httplib does not like os.fork
+        h = httplib2.Http(timeout=timeout, proxy_info=None)  # httplib does not like os.fork
         logger.trace("M2EE request body: %s" % body)
         (response_headers, response_body) = h.request(self._url, "POST", body,
                                                       headers=self._headers)
