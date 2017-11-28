@@ -572,7 +572,7 @@ def activate_appdynamics(m2ee, app_name):
     logger.info('Adding app dynamics')
     m2ee.config._conf['m2ee']['javaopts'].append(
         '-javaagent:{path}'.format(
-            path=os.path.abspath('.local/ver4.1.7.1/javaagent.jar')
+            path=os.path.abspath('.local/ver4.3.5.7/javaagent.jar')
         )
     )
     APPDYNAMICS_AGENT_NODE_NAME = 'APPDYNAMICS_AGENT_NODE_NAME'
