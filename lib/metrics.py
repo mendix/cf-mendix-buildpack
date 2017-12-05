@@ -27,16 +27,19 @@ class MetricsEmitterThread(threading.Thread):
         )
         while True:
 
-            stats = {
-                'version': '1.0',
-                'timestamp': datetime.datetime.now().isoformat(),
-            }
-            stats = self._inject_m2ee_stats(stats)
-            if buildpackutil.i_am_primary_instance():
-                stats = self._inject_storage_stats(stats)
-                stats = self._inject_database_stats(stats)
+            try:
+                stats = {
+                    'version': '1.0',
+                    'timestamp': datetime.datetime.now().isoformat(),
+                }
+                stats = self._inject_m2ee_stats(stats)
+                if buildpackutil.i_am_primary_instance():
+                    stats = self._inject_storage_stats(stats)
+                    stats = self._inject_database_stats(stats)
 
-            logger.info('MENDIX-METRICS: ' + json.dumps(stats))
+                logger.info('MENDIX-METRICS: ' + json.dumps(stats))
+            except Exception as e:
+                logger.exception('METRICS: error while gathering metrics')
 
             time.sleep(self.interval)
 
