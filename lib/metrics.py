@@ -194,11 +194,13 @@ class MetricsEmitterThread(threading.Thread):
                 else:
                     port = 5432
                 self.db = psycopg2.connect(
+                    "options='-c statement_timeout=60s'",
                     database=db_config['DatabaseName'],
                     user=db_config['DatabaseUserName'],
                     password=db_config['DatabasePassword'],
                     host=host,
                     port=port,
+                    connect_timeout=3,
                 )
                 self.db.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
             except Exception as e:
