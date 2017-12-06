@@ -34,7 +34,7 @@ from psycopg2._psycopg import new_type, new_array_type, register_type
 
 
 # import the best json implementation available
-if sys.version_info[:2] >= (2,6):
+if sys.version_info[:2] >= (2, 6):
     import json
 else:
     try:
@@ -51,6 +51,7 @@ JSONARRAY_OID = 199
 JSONB_OID = 3802
 JSONBARRAY_OID = 3807
 
+
 class Json(object):
     """
     An `~psycopg2.extensions.ISQLQuote` wrapper to adapt a Python object to
@@ -65,6 +66,7 @@ class Json(object):
     """
     def __init__(self, adapted, dumps=None):
         self.adapted = adapted
+        self._conn = None
 
         if dumps is not None:
             self._dumps = dumps
@@ -92,9 +94,15 @@ class Json(object):
                 "json module not available: "
                 "you should provide a dumps function")
 
+    def prepare(self, conn):
+        self._conn = conn
+
     def getquoted(self):
         s = self.dumps(self.adapted)
-        return QuotedString(s).getquoted()
+        qs = QuotedString(s)
+        if self._conn is not None:
+            qs.prepare(self._conn)
+        return qs.getquoted()
 
     if sys.version_info < (3,):
         def __str__(self):
@@ -106,7 +114,7 @@ class Json(object):
 
 
 def register_json(conn_or_curs=None, globally=False, loads=None,
-        oid=None, array_oid=None, name='json'):
+                  oid=None, array_oid=None, name='json'):
     """Create and register typecasters converting :sql:`json` type to Python objects.
 
     :param conn_or_curs: a connection or cursor used to find the :sql:`json`
@@ -143,6 +151,7 @@ def register_json(conn_or_curs=None, globally=False, loads=None,
 
     return JSON, JSONARRAY
 
+
 def register_default_json(conn_or_curs=None, globally=False, loads=None):
     """
     Create and register :sql:`json` typecasters for PostgreSQL 9.2 and following.
@@ -155,6 +164,7 @@ def register_default_json(conn_or_curs=None, globally=False, loads=None):
     return register_json(conn_or_curs=conn_or_curs, globally=globally,
         loads=loads, oid=JSON_OID, array_oid=JSONARRAY_OID)
 
+
 def register_default_jsonb(conn_or_curs=None, globally=False, loads=None):
     """
     Create and register :sql:`jsonb` typecasters for PostgreSQL 9.4 and following.
@@ -166,6 +176,7 @@ def register_default_jsonb(conn_or_curs=None, globally=False, loads=None):
     """
     return register_json(conn_or_curs=conn_or_curs, globally=globally,
         loads=loads, oid=JSONB_OID, array_oid=JSONBARRAY_OID, name='jsonb')
+
 
 def _create_json_typecasters(oid, array_oid, loads=None, name='JSON'):
     """Create typecasters for json data type."""
@@ -188,6 +199,7 @@ def _create_json_typecasters(oid, array_oid, loads=None, name='JSON'):
 
     return JSON, JSONARRAY
 
+
 def _get_json_oids(conn_or_curs, name='json'):
     # lazy imports
     from psycopg2.extensions import STATUS_IN_TRANSACTION
@@ -204,7 +216,7 @@ def _get_json_oids(conn_or_curs, name='json'):
     # get the oid for the hstore
     curs.execute(
         "SELECT t.oid, %s FROM pg_type t WHERE t.typname = %%s;"
-            % typarray, (name,))
+        % typarray, (name,))
     r = curs.fetchone()
 
     # revert the status of the connection as before the command
@@ -215,6 +227,3 @@ def _get_json_oids(conn_or_curs, name='json'):
         raise conn.ProgrammingError("%s data type not found" % name)
 
     return r
-
-
-
