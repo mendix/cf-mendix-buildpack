@@ -76,7 +76,7 @@ class M2EEClient:
         myparams = {"echo": "ping"}
         if params is not None:
             myparams.update(params)
-        return self.request("echo", myparams)
+        return self.request("echo", myparams, timeout=10)
 
     def get_critical_log_messages(self):
         echo_feedback = self.echo().get_feedback()
@@ -118,13 +118,13 @@ class M2EEClient:
         return self.request("close_stdio")
 
     def runtime_status(self):
-        return self.request("runtime_status")
+        return self.request("runtime_status", timeout=10)
 
     def runtime_statistics(self):
-        return self.request("runtime_statistics")
+        return self.request("runtime_statistics", timeout=10)
 
     def server_statistics(self):
-        return self.request("server_statistics")
+        return self.request("server_statistics", timeout=10)
 
     def create_log_subscriber(self, params):
         return self.request("create_log_subscriber", params)
