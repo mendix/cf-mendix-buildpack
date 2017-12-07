@@ -55,8 +55,8 @@ def pre_process_m2ee_yaml():
     subprocess.check_call([
         'sed',
         '-i',
-        's|BUILD_PATH|%s|g; s|RUNTIME_PORT|%d|; s|ADMIN_PORT|%d|; s|ADMIN_PASSWORD|%s|'
-        % (os.getcwd(), get_runtime_port(), get_admin_port(), get_m2ee_password()),
+        's|BUILD_PATH|%s|g; s|RUNTIME_PORT|%d|; s|ADMIN_PORT|%d|'
+        % (os.getcwd(), get_runtime_port(), get_admin_port()),
         '.local/m2ee.yaml'
     ])
 
@@ -613,7 +613,13 @@ def activate_new_relic(m2ee, app_name):
 
 
 def set_up_m2ee_client(vcap_data):
-    m2ee = M2EE(yamlfiles=['.local/m2ee.yaml'], load_default_files=False)
+    m2ee = M2EE(yamlfiles=['.local/m2ee.yaml'], load_default_files=False, config={
+        'm2ee': {
+            # this is named admin_pass, but it's the verification http header
+            # to communicate with the internal management port of the runtime
+            'admin_pass': get_m2ee_password(),
+        }
+    })
     version = m2ee.config.get_runtime_version()
 
     mendix_runtimes_path = '/usr/local/share/mendix-runtimes.git'
