@@ -37,6 +37,7 @@ class MetricsEmitterThread(threading.Thread):
                 if buildpackutil.i_am_primary_instance():
                     stats = self._inject_storage_stats(stats)
                     stats = self._inject_database_stats(stats)
+                    stats = self._inject_health(stats)
                 logger.info('MENDIX-METRICS: ' + json.dumps(stats))
             except Exception as e:
                 logger.exception('METRICS: error while gathering metrics')
