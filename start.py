@@ -25,7 +25,7 @@ from buildpackutil import i_am_primary_instance
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
 
-logger.info('Started Mendix Cloud Foundry Buildpack v1.7.6')
+logger.info('Started Mendix Cloud Foundry Buildpack v1.7.6-jdbc')
 
 logging.getLogger('m2ee').propagate = False
 
@@ -707,7 +707,11 @@ def service_backups():
 
     try:
         db_config = buildpackutil.get_database_config()
-        if db_config['DatabaseType'] != 'PostgreSQL':
+        if (
+            'DatabaseType' not in db_config
+            or
+            db_config['DatabaseType'] != 'PostgreSQL'
+        ):
             raise Exception(
                 'Schnapps only supports postgresql, not %s'
                 % db_config['DatabaseType']

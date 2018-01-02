@@ -182,7 +182,11 @@ class MetricsEmitterThread(threading.Thread):
         if not self.db:
             try:
                 db_config = buildpackutil.get_database_config()
-                if db_config['DatabaseType'] != 'PostgreSQL':
+                if (
+                    'DatabaseType' not in db_config
+                    or
+                    db_config['DatabaseType'] != 'PostgreSQL'
+                ):
                     raise Exception(
                         'Metrics only supports postgresql, not %s'
                         % db_config['DatabaseType']
