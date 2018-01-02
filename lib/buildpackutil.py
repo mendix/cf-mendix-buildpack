@@ -48,6 +48,7 @@ def get_database_config(development_mode=False):
 
     if url.startswith('jdbc:'):
         config = {
+            'DatabaseType': database_type,
             'DatabaseJdbcUrl': url,
         }
     else:
