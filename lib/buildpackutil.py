@@ -41,16 +41,16 @@ def get_database_config(development_mode=False):
             'Could not parse DATABASE_URL environment variable %s' % url
         )
 
+    database_type_input = match.group('type')
+    if database_type_input not in supported_databases:
+        raise Exception('Unknown database type: %s', database_type_input)
+    database_type = supported_databases[database_type_input]
+
     if url.startswith('jdbc:'):
         config = {
             'DatabaseJdbcUrl': url,
         }
     else:
-        database_type_input = match.group('type')
-        if database_type_input not in supported_databases:
-            raise Exception('Unknown database type: %s', database_type_input)
-        database_type = supported_databases[database_type_input]
-
         config = {
             'DatabaseType': database_type,
             'DatabaseUserName': match.group('user'),
