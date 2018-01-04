@@ -756,6 +756,7 @@ def service_backups():
 
 
 def start_app(m2ee):
+    print os.environ
     m2ee.start_appcontainer()
     if not m2ee.send_runtime_config():
         sys.exit(1)
