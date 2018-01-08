@@ -240,10 +240,11 @@ def buildstatus_callback(error_file):
             "locations": []
         }
     ]}
-    if os.path.exists(error_file):
+    try:
         with open(error_file, 'r') as b:
-            builddata = b.read()
-    else:
+            builddata = json.dumps(json.load(b))
+    except (IOError, ValueError):
+        logging.exception('Could not read mxbuild error file')
         builddata = json.dumps(generic_build_failure)
     logging.error('MxBuild returned errors: %s' % builddata)
     callback_url = os.environ.get('BUILD_STATUS_CALLBACK_URL')
