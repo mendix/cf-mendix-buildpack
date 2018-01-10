@@ -243,7 +243,7 @@ def buildstatus_callback(error_file):
     input_str = ''
     try:
         with open(error_file, 'r') as b:
-            input_str = b.read()
+            input_str = b.read().decode('utf-8-sig')
             builddata = json.dumps(json.loads(input_str))
     except (IOError, ValueError):
         logging.exception('Could not read mxbuild error file\n%s' % input_str)
