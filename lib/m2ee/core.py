@@ -265,6 +265,7 @@ class M2EE():
                 config[option] = ','.join(config[option])
 
         logger.debug("Sending MxRuntime configuration...")
+        logger.debug(str(config))
         m2eeresponse = self.client.update_configuration(config)
         result = m2eeresponse.get_result()
         if result == 1:
