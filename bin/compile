@@ -100,7 +100,7 @@ def preflight_check():
 def set_up_directory_structure():
     logging.debug('making directory structure')
     buildpackutil.mkdir_p(DOT_LOCAL_LOCATION)
-    for name in ['runtimes', 'log', 'database', 'data']:
+    for name in ['runtimes', 'log', 'database', 'data', 'bin']:
         buildpackutil.mkdir_p(os.path.join(BUILD_DIR, name))
     for name in ['files', 'tmp']:
         buildpackutil.mkdir_p(os.path.join(BUILD_DIR, 'data', name))
@@ -152,6 +152,10 @@ def copy_buildpack_resources():
     shutil.copytree(
         os.path.join(BUILDPACK_DIR, 'lib'),
         os.path.join(BUILD_DIR, 'lib'),
+    )
+    shutil.copy(
+        os.path.join(BUILDPACK_DIR, 'bin', 'mendix-logfilter'),
+        os.path.join(BUILD_DIR, 'bin', 'mendix-logfilter'),
     )
     if buildpackutil.get_new_relic_license_key():
         shutil.copytree(
