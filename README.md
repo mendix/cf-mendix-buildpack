@@ -328,6 +328,13 @@ Example:
 
     cf set-env <YOUR_APP> LOGGING_CONFIG '{ "<LOG NODE VALUE>": "DEBUG"}'
 
+### Rate-limiting of log output
+
+The buildpack has the ability to rate-limit the amount of log lines from the Mendix Runtime. This can be useful for apps that misbehave and cause problems for other users in a multi-tenant environment. Rate-limiting is done in log lines per second. Extra lines are dropped and the number of dropped messages is printed on `stderr`.
+
+Example (1000 loglines/second):
+
+    cf set-env <YOUR_APP> LOG_RATELIMIT '1000'
 
 ### Enabling the Mendix Debugger
 

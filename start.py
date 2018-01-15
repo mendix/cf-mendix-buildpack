@@ -672,12 +672,16 @@ def set_up_m2ee_client(vcap_data):
 def set_up_logging_file():
     buildpackutil.lazy_remove_file('log/out.log')
     os.mkfifo('log/out.log')
-    subprocess.Popen([
-        'sed',
-        '--unbuffered',
-        's|^[0-9\-]\+\s[0-9:\.]\+\s||',
-        'log/out.log',
-    ])
+    log_ratelimit = os.getenv('LOG_RATELIMIT', None)
+    if log_ratelimit is None:
+        subprocess.Popen([
+            'sed',
+            '--unbuffered',
+            's|^[0-9\-]\+\s[0-9:\.]\+\s||',
+            'log/out.log',
+        ])
+    else:
+        subprocess.Popen(['./bin/mendix-logfilter', '-r', log_ratelimit, '-f', 'log/out.log'])
 
 
 def service_backups():
