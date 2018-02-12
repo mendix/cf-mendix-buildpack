@@ -37,7 +37,7 @@ Also note that building the project in Cloud Foundry takes more time and require
 
 ### Configuring admin password
 
-The first push generates a new app. In order to login to your application as admin you can set the password using the `ADMIN_PASSWORD` environment variable. Keep in mind that the admin password should comply with the policy you have set in the Modeler.
+The first push generates a new app. In order to login to your application as admin you can set the password using the `ADMIN_PASSWORD` environment variable. Keep in mind that the admin password should comply with the policy you have set in the Modeler. For security reasons it is recommended to set this environment variable once to create the admin user, then remove the environment variable and restart the app. Finally log in to the app and change the password via the web interface. Similarly, the setting can be used to reset the password of an administrator.
 
     cf set-env <YOUR_APP> ADMIN_PASSWORD "<YOURSECRETPASSWORD>"
 
