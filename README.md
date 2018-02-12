@@ -139,6 +139,17 @@ If the setting contains a dot `.` you can use an underscore `_` in the environme
     cf set-env <YOUR_APP> MXRUNTIME_com_mendix_storage_s3_EndPoint foo
 
 
+### Configuring HTTP headers
+
+To prevent clickjacking, the `X-Frame-Options` header can be configured. See [this Mozilla page](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options) for all supported options. This can be configured via het `X_FRAME_OPTIONS` environment variable. For example:
+
+    cf set-env <YOUR_APP> X_FRAME_OPTIONS SAMEORIGIN
+
+or:
+
+    cf set-env <YOUR_APP> X_FRAME_OPTIONS "ALLOW-FROM https://example.com/"
+
+
 ### Horizontal Scaling
 
 There are two ways for horizontal scaling in Mendix. In Mendix 5.15+ you can use sticky sessions. Mendix 7 brings this even further by no longer requiring a state store. See below on how to activate these settings, based on the Mendix version you use.
