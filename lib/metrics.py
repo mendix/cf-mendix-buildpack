@@ -124,6 +124,9 @@ class MetricsEmitterThread(threading.Thread):
         index_size = self._get_database_index_size()
         if index_size:
             database_stats['indexes_size'] = index_size
+        storage = self._get_database_storage()
+        if storage:
+            database_stats['storage'] = storage
         table_size = self._get_database_table_size()
         if table_size:
             database_stats['tables_size'] = table_size
@@ -132,6 +135,10 @@ class MetricsEmitterThread(threading.Thread):
             database_stats.update(mutations_stats)
         stats["database"] = database_stats
         return stats
+
+    def _get_database_storage(self):
+        if 'DATABASE_DISKSTORAGE' in os.environ:
+            return os.environ['DATABASE_DISKSTORAGE']
 
     def _get_database_mutations(self):
         conn = self._get_db_conn()
