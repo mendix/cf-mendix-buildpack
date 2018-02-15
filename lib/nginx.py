@@ -37,11 +37,37 @@ def get_path_config():
     }
     Default for satisfy is all
     '''
+
+    location_template = """
+location %s {
+    if ($request_uri ~ ^/(.*\.(css|js)|forms/.*|img/.*|pages/.*)\?[0-9]+$) {
+        expires 1y;
+    }
+    proxy_pass http://mendix;
+    satisfy %s;
+    %s
+    %s
+    %s
+}
+"""
+    root_template = """
+location %s {
+    if ($request_uri ~ ^/(.*\.(css|js)|forms/.*|img/.*|pages/.*)\?[0-9]+$) {
+            expires 1y;
+    }
+    proxy_pass http://mendix;
+}
+satisfy %s;
+%s
+%s
+%s
+"""
+
     restrictions = json.loads(os.environ.get('ACCESS_RESTRICTIONS', '{}'))
-    result = ''
     if '/' not in restrictions:
         restrictions['/'] = {}
 
+    result = ''
     index = 0
     for path, config in restrictions.iteritems():
         if path in ['/_mxadmin/', '/client-cert-check-internal']:
@@ -77,25 +103,16 @@ def get_path_config():
         if 'client-cert' in config:
             client_cert = 'auth_request /client-cert-check-internal;'
 
-        result += """
-location %s {
-    if ($request_uri ~ ^/(.*\.(css|js)|forms/.*|img/.*|pages/.*)\?[0-9]+$) {
-        expires 1y;
-    }
-    proxy_pass http://mendix;
-    satisfy %s;
-    %s
-    %s
-    %s
-}
-        """ % (
+        template = root_template if path == '/' else location_template
+        indent = '\n' + ' ' * (0 if path == '/' else 4)
+        result += template % (
             path,
             satisfy,
-            '\n        '.join(ipfilter),
+            indent.join(ipfilter),
             client_cert,
             basic_auth,
         )
-    return '\n    '.join(result.split('\n'))
+    return '\n        '.join(result.split('\n'))
 
 if __name__ == '__main__':
-    print get_path_config()
+    print(get_path_config())
