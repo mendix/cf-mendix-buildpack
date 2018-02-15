@@ -38,7 +38,7 @@ def get_database_config(development_mode=False):
             break
     else:
         raise Exception(
-            'Could not parse DATABASE_URL environment variable %s' % url
+            'Could not parse database credentials from database uri %s' % url
         )
 
     database_type_input = match.group('type')
