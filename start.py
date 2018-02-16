@@ -575,6 +575,11 @@ def activate_appdynamics(m2ee, app_name):
             path=os.path.abspath('.local/ver4.3.5.7/javaagent.jar')
         )
     )
+    m2ee.config._conf['m2ee']['javaopts'].append(
+        '-Dappagent.install.dir={path}'.format(
+            path=os.path.abspath('.local/ver4.3.5.7')
+        )
+    )
     APPDYNAMICS_AGENT_NODE_NAME = 'APPDYNAMICS_AGENT_NODE_NAME'
     if os.getenv(APPDYNAMICS_AGENT_NODE_NAME):
         m2ee.config._conf['m2ee']['custom_environment'][
