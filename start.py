@@ -17,6 +17,7 @@ import buildpackutil
 import logging
 import instadeploy
 import metrics
+from metrics import emit
 
 from m2ee import M2EE, logger
 from nginx import get_path_config, gen_htpasswd
@@ -55,8 +56,8 @@ def pre_process_m2ee_yaml():
     subprocess.check_call([
         'sed',
         '-i',
-        's|BUILD_PATH|%s|g; s|RUNTIME_PORT|%d|; s|ADMIN_PORT|%d|'
-        % (os.getcwd(), get_runtime_port(), get_admin_port()),
+        's|BUILD_PATH|%s|g; s|RUNTIME_PORT|%d|; s|ADMIN_PORT|%d|; s|MYPID|%d|'
+        % (os.getcwd(), get_runtime_port(), get_admin_port(), os.getpid()),
         '.local/m2ee.yaml'
     ])
 
@@ -923,6 +924,7 @@ def loop_until_process_dies(m2ee):
             time.sleep(10)
         else:
             break
+    emit(jvm = {'crash': 1.0})
     logger.info('process died, stopping')
     sys.exit(1)
 
@@ -990,7 +992,13 @@ if __name__ == '__main__':
         m2ee.stop()
         sys.exit(0)
 
+    def sigusr_handler(_signo, _stack_frame):
+        metrics.emit(jvm = {'errors': float(_signo == signal.SIGUSR1),
+                            'ooms': float(_signo == signal.SIGUSR2)})
+
     signal.signal(signal.SIGTERM, sigterm_handler)
+    signal.signal(signal.SIGUSR1, sigusr_handler)
+    signal.signal(signal.SIGUSR2, sigusr_handler)
 
     try:
         service_backups()
