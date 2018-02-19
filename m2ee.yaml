@@ -44,3 +44,5 @@ mxruntime:
  MicroflowConstants: {}
 
  ScheduledEventExecution: ALL
+
+ LogMinDurationQuery: 10000
