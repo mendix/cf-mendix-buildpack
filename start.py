@@ -16,7 +16,6 @@ import requests
 import buildpackutil
 import logging
 import instadeploy
-import metrics
 
 from m2ee import M2EE, logger
 from nginx import get_path_config, gen_htpasswd
@@ -965,6 +964,7 @@ def set_up_instadeploy_if_deploy_password_is_set(m2ee):
 def start_metrics(m2ee):
     metrics_interval = os.getenv('METRICS_INTERVAL')
     if metrics_interval:
+        import metrics
         thread = metrics.MetricsEmitterThread(int(metrics_interval), m2ee)
         thread.setDaemon(True)
         thread.start()
