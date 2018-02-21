@@ -71,7 +71,7 @@ def get_admin_password():
 def get_m2ee_password():
     m2ee_password = os.getenv('M2EE_PASSWORD', get_admin_password())
     if not m2ee_password:
-        logger.warning('No M2EE_PASSWORD set, generating a random password for protection')
+        logger.debug('No ADMIN_PASSWORD or M2EE_PASSWORD configured, using a random password for the m2ee admin api')
         m2ee_password = default_m2ee_password
     return m2ee_password
 
