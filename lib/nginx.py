@@ -69,7 +69,7 @@ satisfy %s;
 
     result = ''
     index = 0
-    for path, config in restrictions.iteritems():
+    for path, config in restrictions.items():
         if path in ['/_mxadmin/', '/client-cert-check-internal']:
             raise Exception(
                 'Can not override access restrictions on system path %s' % path
