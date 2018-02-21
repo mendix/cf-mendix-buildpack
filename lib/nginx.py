@@ -89,12 +89,12 @@ satisfy %s;
                 ipfilter.append('allow ' + ip + ';')
             ipfilter.append('deny all;')
 
-        basic_auth = ''
+        basic_auth = []
         if 'basic_auth' in config:
             index += 1
             gen_htpasswd(config['basic_auth'], str(index))
             basic_auth = (
-                'auth_basic "Restricted";\n'
+                'auth_basic "Restricted";',
                 'auth_basic_user_file ROOT/nginx/.htpasswd%s;'
                 % str(index)
             )
@@ -110,7 +110,7 @@ satisfy %s;
             satisfy,
             indent.join(ipfilter),
             client_cert,
-            basic_auth,
+            indent.join(basic_auth),
         )
     return '\n        '.join(result.split('\n'))
 
