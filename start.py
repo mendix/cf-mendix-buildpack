@@ -241,7 +241,7 @@ def get_constants(metadata):
     return constants
 
 
-def set_jvm_memory(javaopts, vcap, java_version):
+def set_jvm_memory(m2ee_section, vcap, java_version):
     max_memory = os.environ.get('MEMORY_LIMIT')
 
     if max_memory:
@@ -273,6 +273,7 @@ def set_jvm_memory(javaopts, vcap, java_version):
                     heap_size,
                 )
             )
+    javaopts = m2ee_section['javaopts']
 
     javaopts.append('-Xmx%s' % heap_size)
     javaopts.append('-Xms%s' % heap_size)
@@ -283,6 +284,13 @@ def set_jvm_memory(javaopts, vcap, java_version):
         javaopts.append('-XX:MaxMetaspaceSize=256M')
 
     logger.debug('Java heap size set to %s' % heap_size)
+
+    if os.getenv('MALLOC_ARENA_MAX'):
+        logger.info('Using provided environment setting for MALLOC_ARENA_MAX')
+    else:
+        m2ee_section['custom_environment']['MALLOC_ARENA_MAX'] = str(
+            max(1, limit / 1024) * 2
+        )
 
 
 def _get_s3_specific_config(vcap_services, m2ee):
@@ -671,7 +679,7 @@ def set_up_m2ee_client(vcap_data):
         m2ee.config.get_runtime_version()
     )
     set_jvm_memory(
-        m2ee.config._conf['m2ee']['javaopts'],
+        m2ee.config._conf['m2ee'],
         vcap_data,
         java_version,
     )
