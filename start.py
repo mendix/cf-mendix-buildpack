@@ -168,9 +168,9 @@ def activate_license():
         logger.debug('A license was supplied so going to activate it')
         prefs_body = prefs_template.replace(
             '{{LICENSE_ID}}', license_id
-            ).replace(
+        ).replace(
             '{{LICENSE_KEY}}', license_key
-            )
+        )
         with open(os.path.join(prefs_dir, 'prefs.xml'), 'w') as prefs_file:
             prefs_file.write(prefs_body)
 
