@@ -71,7 +71,7 @@ def get_admin_password():
 def get_m2ee_password():
     m2ee_password = os.getenv('M2EE_PASSWORD', get_admin_password())
     if not m2ee_password:
-        logger.warning('No M2EE_PASSWORD set, generating a random password for protection')
+        logger.debug('No ADMIN_PASSWORD or M2EE_PASSWORD configured, using a random password for the m2ee admin api')
         m2ee_password = default_m2ee_password
     return m2ee_password
 
@@ -241,15 +241,14 @@ def get_constants(metadata):
     return constants
 
 
-def set_jvm_memory(javaopts, vcap_max_mem, java_version):
+def set_jvm_memory(javaopts, vcap, java_version):
     max_memory = os.environ.get('MEMORY_LIMIT')
-    env_heap_size = os.environ.get('HEAP_SIZE')
 
     if max_memory:
         match = re.search('([0-9]+)M', max_memory.upper())
         limit = int(match.group(1))
     else:
-        limit = int(vcap_max_mem)
+        limit = int(vcap['limits']['mem'])
 
     if limit >= 8192:
         heap_size = limit - 2048
@@ -262,9 +261,18 @@ def set_jvm_memory(javaopts, vcap_max_mem, java_version):
 
     heap_size = str(heap_size) + 'M'
 
+    env_heap_size = os.environ.get('HEAP_SIZE')
     if env_heap_size:
-        max_memory = max_memory[:-1] if max_memory else vcap_max_mem
-        heap_size = env_heap_size if int(env_heap_size[:-1]) < int(max_memory) else heap_size
+        if int(env_heap_size[:-1]) < limit:
+            heap_size = env_heap_size
+            logger.warning(
+                'specified heap size {} is larger than max memory of the '
+                'container ({}), falling back to a heap size of {}'.format(
+                    env_heap_size,
+                    str(limit) + 'M',
+                    heap_size,
+                )
+            )
 
     javaopts.append('-Xmx%s' % heap_size)
     javaopts.append('-Xms%s' % heap_size)
@@ -664,7 +672,7 @@ def set_up_m2ee_client(vcap_data):
     )
     set_jvm_memory(
         m2ee.config._conf['m2ee']['javaopts'],
-        vcap_data['limits']['mem'],
+        vcap_data,
         java_version,
     )
     activate_new_relic(m2ee, vcap_data['application_name'])
