@@ -327,7 +327,7 @@ def _detect_mono_version(mx_version):
     if mx_version < 7:
         target = 'mono-3.10.0'
     else:
-        target = 'mono-4.6.2.16'
+        target = 'mono-5.8.0.108'
     logging.info('Selecting Mono Runtime: ' + target)
     return target
 
@@ -359,7 +359,7 @@ def ensure_and_get_mono(mx_version, cache_dir):
     except NotFoundException:
         logging.debug('Mono not found in default locations')
         download_and_unpack(
-            get_blobstore_url('/mx-buildpack/' + mono_version + '-mx.tar.gz'),
+            get_blobstore_url('/mx-buildpack/experimental/' + mono_version + '-mx.tar.gz'),
             os.path.join(fallback_location, mono_version),
             cache_dir
         )
