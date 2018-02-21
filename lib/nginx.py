@@ -114,5 +114,6 @@ satisfy %s;
         )
     return '\n        '.join(result.split('\n'))
 
+
 if __name__ == '__main__':
     print(get_path_config())
