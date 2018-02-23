@@ -26,7 +26,7 @@ from buildpackutil import i_am_primary_instance
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
 
-logger.info('Started Mendix Cloud Foundry Buildpack v1.8.2')
+logger.info('Started Mendix Cloud Foundry Buildpack v1.8.6')
 
 logging.getLogger('m2ee').propagate = False
 
@@ -73,7 +73,7 @@ def get_admin_password():
 def get_m2ee_password():
     m2ee_password = os.getenv('M2EE_PASSWORD', get_admin_password())
     if not m2ee_password:
-        logger.warning('No M2EE_PASSWORD set, generating a random password for protection')
+        logger.debug('No ADMIN_PASSWORD or M2EE_PASSWORD configured, using a random password for the m2ee admin api')
         m2ee_password = default_m2ee_password
     return m2ee_password
 
@@ -170,9 +170,9 @@ def activate_license():
         logger.debug('A license was supplied so going to activate it')
         prefs_body = prefs_template.replace(
             '{{LICENSE_ID}}', license_id
-            ).replace(
+        ).replace(
             '{{LICENSE_KEY}}', license_key
-            )
+        )
         with open(os.path.join(prefs_dir, 'prefs.xml'), 'w') as prefs_file:
             prefs_file.write(prefs_body)
 
@@ -243,15 +243,14 @@ def get_constants(metadata):
     return constants
 
 
-def set_jvm_memory(javaopts, vcap_max_mem, java_version):
+def set_jvm_memory(m2ee_section, vcap, java_version):
     max_memory = os.environ.get('MEMORY_LIMIT')
-    env_heap_size = os.environ.get('HEAP_SIZE')
 
     if max_memory:
         match = re.search('([0-9]+)M', max_memory.upper())
         limit = int(match.group(1))
     else:
-        limit = int(vcap_max_mem)
+        limit = int(vcap['limits']['mem'])
 
     if limit >= 8192:
         heap_size = limit - 2048
@@ -264,19 +263,36 @@ def set_jvm_memory(javaopts, vcap_max_mem, java_version):
 
     heap_size = str(heap_size) + 'M'
 
+    env_heap_size = os.environ.get('HEAP_SIZE')
     if env_heap_size:
-        max_memory = max_memory[:-1] if max_memory else vcap_max_mem
-        heap_size = env_heap_size if int(env_heap_size[:-1]) < int(max_memory) else heap_size
+        if int(env_heap_size[:-1]) < limit:
+            heap_size = env_heap_size
+            logger.warning(
+                'specified heap size {} is larger than max memory of the '
+                'container ({}), falling back to a heap size of {}'.format(
+                    env_heap_size,
+                    str(limit) + 'M',
+                    heap_size,
+                )
+            )
+    javaopts = m2ee_section['javaopts']
 
     javaopts.append('-Xmx%s' % heap_size)
     javaopts.append('-Xms%s' % heap_size)
 
     if java_version.startswith('7'):
         javaopts.append('-XX:MaxPermSize=256M')
-    elif java_version.startswith('8'):
+    else:
         javaopts.append('-XX:MaxMetaspaceSize=256M')
 
     logger.debug('Java heap size set to %s' % heap_size)
+
+    if os.getenv('MALLOC_ARENA_MAX'):
+        logger.info('Using provided environment setting for MALLOC_ARENA_MAX')
+    else:
+        m2ee_section['custom_environment']['MALLOC_ARENA_MAX'] = str(
+            max(1, limit / 1024) * 2
+        )
 
 
 def _get_s3_specific_config(vcap_services, m2ee):
@@ -576,6 +592,11 @@ def activate_appdynamics(m2ee, app_name):
             path=os.path.abspath('.local/ver4.3.5.7/javaagent.jar')
         )
     )
+    m2ee.config._conf['m2ee']['javaopts'].append(
+        '-Dappagent.install.dir={path}'.format(
+            path=os.path.abspath('.local/ver4.3.5.7')
+        )
+    )
     APPDYNAMICS_AGENT_NODE_NAME = 'APPDYNAMICS_AGENT_NODE_NAME'
     if os.getenv(APPDYNAMICS_AGENT_NODE_NAME):
         m2ee.config._conf['m2ee']['custom_environment'][
@@ -660,8 +681,8 @@ def set_up_m2ee_client(vcap_data):
         m2ee.config.get_runtime_version()
     )
     set_jvm_memory(
-        m2ee.config._conf['m2ee']['javaopts'],
-        vcap_data['limits']['mem'],
+        m2ee.config._conf['m2ee'],
+        vcap_data,
         java_version,
     )
     activate_new_relic(m2ee, vcap_data['application_name'])
@@ -962,6 +983,7 @@ def set_up_instadeploy_if_deploy_password_is_set(m2ee):
 def start_metrics(m2ee):
     metrics_interval = os.getenv('METRICS_INTERVAL')
     if metrics_interval:
+        import metrics
         thread = metrics.MetricsEmitterThread(int(metrics_interval), m2ee)
         thread.setDaemon(True)
         thread.start()
