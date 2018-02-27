@@ -138,7 +138,10 @@ class MetricsEmitterThread(threading.Thread):
 
     def _get_database_storage(self):
         if 'DATABASE_DISKSTORAGE' in os.environ:
-            return os.environ['DATABASE_DISKSTORAGE']
+            try:
+                return float(os.environ['DATABASE_DISKSTORAGE'])
+            except ValueError:
+                return None
 
     def _get_database_mutations(self):
         conn = self._get_db_conn()
