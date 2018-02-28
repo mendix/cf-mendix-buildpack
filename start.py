@@ -16,7 +16,6 @@ import requests
 import buildpackutil
 import logging
 import instadeploy
-import metrics
 
 from m2ee import M2EE, logger
 from nginx import get_path_config, gen_htpasswd
@@ -25,7 +24,7 @@ from buildpackutil import i_am_primary_instance
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
 
-logger.info('Started Mendix Cloud Foundry Buildpack v1.8.6')
+logger.info('Started Mendix Cloud Foundry Buildpack v1.8.7')
 
 logging.getLogger('m2ee').propagate = False
 
