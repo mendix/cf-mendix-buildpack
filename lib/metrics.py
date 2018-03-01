@@ -13,6 +13,10 @@ sys.path.insert(0, os.path.join(BUILDPACK_DIR, 'lib'))
 import buildpackutil
 import psycopg2
 
+def emit(**stats):
+    stats['version'] = '1.0'
+    stats['timestamp'] = datetime.datetime.now().isoformat()
+    logger.info('MENDIX-METRICS: ' + json.dumps(stats))
 
 class MetricsEmitterThread(threading.Thread):
 

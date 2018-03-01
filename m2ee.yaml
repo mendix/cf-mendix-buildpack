@@ -20,6 +20,8 @@ m2ee:
  javaopts: [
     "-Dfile.encoding=UTF-8",
     "-Djava.io.tmpdir=BUILD_PATH/data/tmp",
+    "-XX:OnError=\"kill -SIGUSR1 MYPID\"",
+    "-XX:OnOutOfMemoryError=\"kill -SIGUSR2 MYPID\"",
  ]
 
  allow_destroy_db: true
