@@ -1017,6 +1017,8 @@ if __name__ == '__main__':
     def sigusr_handler(_signo, _stack_frame):
         metrics.emit(jvm = {'errors': float(_signo == signal.SIGUSR1),
                             'ooms': float(_signo == signal.SIGUSR2)})
+        m2ee.stop()
+        sys.exit(1)
 
     signal.signal(signal.SIGTERM, sigterm_handler)
     signal.signal(signal.SIGUSR1, sigusr_handler)
