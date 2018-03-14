@@ -27,18 +27,20 @@ BASIC_AUTH_OR_OTHER_IP_FILTER_RESOURCE = BASIC_AUTH_OR_OTHER_IP_FILTER + '_table
 class TestCaseAccessRestrictions(basetest.BaseTest):
 
     def setUp(self):
-        myips = []
+        myips = set()
         wide_open_ips = ['0.0.0.0/0', '::/0']
         other_ips = ['1.2.3.4/32', '1::2/128']
 
-        r = requests.get('https://myipv4.mendix.com/', timeout=5)
+        #  https://docs.travis-ci.com/user/ip-addresses/
+        r = requests.get('https://dnsjson.com/nat.travisci.net/A.json')
         r.raise_for_status()
-
-        myips.append(r.text.strip() + '/32')
+        for ip in r.json()['results']['records']:
+            myips.add('%s/32' % ip)
         try:
-            myips.append(requests.get('https://myipv6.mendix.com/').text + '/128')
+            myips.add(requests.get('https://myipv6.mendix.com/').text + '/128')
         except:
             pass
+        myips = list(myips)
 
         print('my ip ranges are', ','.join(myips))
 
