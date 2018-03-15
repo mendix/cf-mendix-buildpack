@@ -16,8 +16,7 @@ import requests
 import buildpackutil
 import logging
 import instadeploy
-import metrics
-from metrics import emit
+import datetime
 
 from m2ee import M2EE, logger
 from nginx import get_path_config, gen_htpasswd
@@ -35,6 +34,10 @@ app_is_restarting = False
 default_m2ee_password = str(uuid.uuid4()).replace('-', '@') + 'A1'
 nginx_process = None
 
+def emit(**stats):
+    stats['version'] = '1.0'
+    stats['timestamp'] = datetime.datetime.now().isoformat()
+    logger.info('MENDIX-METRICS: ' + json.dumps(stats))
 
 def get_nginx_port():
     return int(os.environ['PORT'])
@@ -1015,8 +1018,13 @@ if __name__ == '__main__':
         sys.exit(0)
 
     def sigusr_handler(_signo, _stack_frame):
-        metrics.emit(jvm = {'errors': float(_signo == signal.SIGUSR1),
-                            'ooms': float(_signo == signal.SIGUSR2)})
+        if _signo == signal.SIGUSR1:
+            emit(jvm={'errors': 1.0 })
+        elif _signo == signal.SIGUSR2:
+            emit(jvm={'ooms': 1.0 })
+        else:
+            # Should not happen
+            pass
         m2ee.stop()
         sys.exit(1)
 
