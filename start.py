@@ -59,7 +59,7 @@ def pre_process_m2ee_yaml():
     subprocess.check_call([
         'sed',
         '-i',
-        's|BUILD_PATH|%s|g; s|RUNTIME_PORT|%d|; s|ADMIN_PORT|%d|; s|MYPID|%d|'
+        's|BUILD_PATH|%s|g; s|RUNTIME_PORT|%d|; s|ADMIN_PORT|%d|; s|PYTHONPID|%d|'
         % (os.getcwd(), get_runtime_port(), get_admin_port(), os.getpid()),
         '.local/m2ee.yaml'
     ])
