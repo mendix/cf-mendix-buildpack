@@ -35,8 +35,11 @@ def get_runtime_version():
             data = json.loads(file_handle.read())
             return MXVersion(data['RuntimeVersion'])
     except IOError:
+        mpr = get_mpr_file()
+        if not mpr:
+            raise Exception('No model/metadata.json or .mpr found in archive')
         import sqlite3
-        cursor = sqlite3.connect(get_mpr_file()).cursor()
+        cursor = sqlite3.connect(mpr).cursor()
         cursor.execute('SELECT _ProductVersion FROM _MetaData LIMIT 1')
         record = cursor.fetchone()
         return MXVersion(record[0])
