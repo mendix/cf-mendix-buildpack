@@ -16,6 +16,7 @@ import requests
 import buildpackutil
 import logging
 import instadeploy
+import datetime
 
 from m2ee import M2EE, logger
 from nginx import get_path_config, gen_htpasswd
@@ -33,6 +34,10 @@ app_is_restarting = False
 default_m2ee_password = str(uuid.uuid4()).replace('-', '@') + 'A1'
 nginx_process = None
 
+def emit(**stats):
+    stats['version'] = '1.0'
+    stats['timestamp'] = datetime.datetime.now().isoformat()
+    logger.info('MENDIX-METRICS: ' + json.dumps(stats))
 
 def get_nginx_port():
     return int(os.environ['PORT'])
@@ -54,8 +59,8 @@ def pre_process_m2ee_yaml():
     subprocess.check_call([
         'sed',
         '-i',
-        's|BUILD_PATH|%s|g; s|RUNTIME_PORT|%d|; s|ADMIN_PORT|%d|'
-        % (os.getcwd(), get_runtime_port(), get_admin_port()),
+        's|BUILD_PATH|%s|g; s|RUNTIME_PORT|%d|; s|ADMIN_PORT|%d|; s|PYTHONPID|%d|'
+        % (os.getcwd(), get_runtime_port(), get_admin_port(), os.getpid()),
         '.local/m2ee.yaml'
     ])
 
@@ -943,6 +948,7 @@ def loop_until_process_dies(m2ee):
             time.sleep(10)
         else:
             break
+    emit(jvm = {'crash': 1.0})
     logger.info('process died, stopping')
     sys.exit(1)
 
@@ -1011,7 +1017,20 @@ if __name__ == '__main__':
         m2ee.stop()
         sys.exit(0)
 
+    def sigusr_handler(_signo, _stack_frame):
+        if _signo == signal.SIGUSR1:
+            emit(jvm={'errors': 1.0 })
+        elif _signo == signal.SIGUSR2:
+            emit(jvm={'ooms': 1.0 })
+        else:
+            # Should not happen
+            pass
+        m2ee.stop()
+        sys.exit(1)
+
     signal.signal(signal.SIGTERM, sigterm_handler)
+    signal.signal(signal.SIGUSR1, sigusr_handler)
+    signal.signal(signal.SIGUSR2, sigusr_handler)
 
     try:
         service_backups()
