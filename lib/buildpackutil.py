@@ -117,6 +117,8 @@ def get_database_uri_from_vcap():
                 return uri
             if uri.startswith('postgres'):
                 return uri
+            if uri.startswith('mysql'):
+                return uri
         except (TypeError, KeyError):
             pass
 
