@@ -1,3 +1,4 @@
+import distutils
 import os
 import re
 import json
@@ -401,3 +402,24 @@ def ensure_and_get_jvm(mx_version, cache_dir, dot_local_location, package='jdk')
 
 def i_am_primary_instance():
     return os.getenv('CF_INSTANCE_INDEX', '0') == '0'
+
+
+def bypass_loggregator_logging():
+    env_var = os.getenv('BYPASS_LOGGREGATOR')
+    # Throws a useful message if you put in a nonsensical value.
+    # Necessary since we store these in cloud portal as strings.
+    bypass_loggregator = distutils.util.strtobool(env_var)
+
+    if bypass_loggregator:
+        if os.getenv('METRICS_URL'):
+            return True
+        else:
+            logging.warning(
+                "BYPASS_LOGGREGATOR is set to true, but no metrics URL is "
+                "set. Falling back to old loggregator-based metric reporting.")
+            return False
+    return False
+
+
+def get_metrics_url():
+    return os.getenv('METRICS_URL')

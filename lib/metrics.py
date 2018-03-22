@@ -2,16 +2,39 @@ import os
 import sys
 import json
 import time
-from m2ee import logger, munin
-
 import threading
 import datetime
+from abcmeta import ABCMeta, abstractmethod
+
+from m2ee import logger, munin
 
 BUILDPACK_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 sys.path.insert(0, os.path.join(BUILDPACK_DIR, 'lib'))
 import buildpackutil
 import psycopg2
+import requests
+
+
+class MetricsEmitter(metaclass=ABCMeta):
+    @abstractmethod
+    def emit(self, stats):
+        raise NotImplementedError
+
+
+class LoggingEmitter(MetricsEmitter):
+    def emit(self, stats):
+        logger.info('MENDIX-METRICS: ' + json.dumps(stats))
+
+
+def MetricsServerEmitter(MetricsEmitter):
+    def __init__(self, metrics_url):
+        # TODO: verify signature?
+        self.metrics_url = metrics_url
+
+    def emit(self, stats):
+        # TODO: make this work
+        requests.POST(self.metrics_url, json=stats)
 
 
 class MetricsEmitterThread(threading.Thread):
@@ -21,6 +44,14 @@ class MetricsEmitterThread(threading.Thread):
         self.interval = interval
         self.m2ee = m2ee
         self.db = None
+        if buildpackutil.bypass_loggregator_logging():
+            self.emitter = MetricsServerEmitter(
+                metrics_url=buildpackutil.get_metrics_url())
+        else:
+            self.emitter = LoggingEmitter()
+
+    def emit(self, stats):
+        self.emitter.emit(stats)
 
     def run(self):
         logger.debug(
@@ -38,7 +69,7 @@ class MetricsEmitterThread(threading.Thread):
                     stats = self._inject_storage_stats(stats)
                     stats = self._inject_database_stats(stats)
                     stats = self._inject_health(stats)
-                logger.info('MENDIX-METRICS: ' + json.dumps(stats))
+                self.emit(stats)
             except Exception as e:
                 logger.exception('METRICS: error while gathering metrics')
 
