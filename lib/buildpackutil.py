@@ -411,7 +411,7 @@ def bypass_loggregator_logging():
     bypass_loggregator = strtobool(env_var)
 
     if bypass_loggregator:
-        if os.getenv('METRICS_URL'):
+        if os.getenv('TRENDS_STORAGE_URL'):
             return True
         else:
             logging.warning(
@@ -422,4 +422,4 @@ def bypass_loggregator_logging():
 
 
 def get_metrics_url():
-    return os.getenv('METRICS_URL')
+    return os.getenv('TRENDS_STORAGE_URL')
