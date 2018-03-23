@@ -1,4 +1,3 @@
-import distutils
 import os
 import re
 import json
@@ -6,6 +5,7 @@ import errno
 import subprocess
 import logging
 import sys
+from distutils.util import strtobool
 from urllib.parse import parse_qs
 sys.path.insert(0, 'lib')
 import requests
@@ -408,7 +408,7 @@ def bypass_loggregator_logging():
     env_var = os.getenv('BYPASS_LOGGREGATOR')
     # Throws a useful message if you put in a nonsensical value.
     # Necessary since we store these in cloud portal as strings.
-    bypass_loggregator = distutils.util.strtobool(env_var)
+    bypass_loggregator = strtobool(env_var)
 
     if bypass_loggregator:
         if os.getenv('METRICS_URL'):
