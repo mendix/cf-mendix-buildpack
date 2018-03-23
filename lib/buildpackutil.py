@@ -4,8 +4,8 @@ import json
 import errno
 import subprocess
 import logging
-import urlparse
 import sys
+from urllib.parse import parse_qs
 sys.path.insert(0, 'lib')
 import requests
 
@@ -54,7 +54,7 @@ def get_database_config(development_mode=False):
 
     if 'extra' in match.groupdict() and match.group('extra'):
         extra = match.group('extra').lstrip('?')
-        jdbc_params = urlparse.parse_qs(extra)
+        jdbc_params = parse_qs(extra)
         if 'sslmode' in jdbc_params:
             sslmode = jdbc_params['sslmode']
             if sslmode and sslmode[0] == 'require':
