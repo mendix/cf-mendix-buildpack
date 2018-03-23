@@ -35,7 +35,7 @@ class MetricsServerEmitter(MetricsEmitter):
     def emit(self, stats):
         # TODO: make this work
         try:
-            requests.POST(self.metrics_url, json=stats)
+            requests.post(self.metrics_url, json=stats)
         except Exception as e:
             logger.warning("Failed to send metrics to trends server.",
                            exc_info=True)
