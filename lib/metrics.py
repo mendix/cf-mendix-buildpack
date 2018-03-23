@@ -27,7 +27,7 @@ class LoggingEmitter(MetricsEmitter):
         logger.info('MENDIX-METRICS: ' + json.dumps(stats))
 
 
-def MetricsServerEmitter(MetricsEmitter):
+class MetricsServerEmitter(MetricsEmitter):
     def __init__(self, metrics_url):
         # TODO: verify signature?
         self.metrics_url = metrics_url
