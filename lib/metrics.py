@@ -4,7 +4,7 @@ import json
 import time
 import threading
 import datetime
-from abcmeta import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod
 
 from m2ee import logger, munin
 
