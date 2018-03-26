@@ -49,9 +49,11 @@ class MetricsEmitterThread(threading.Thread):
         self.m2ee = m2ee
         self.db = None
         if buildpackutil.bypass_loggregator_logging():
+            logger.info("Metrics are logged direct to metrics server.")
             self.emitter = MetricsServerEmitter(
                 metrics_url=buildpackutil.get_metrics_url())
         else:
+            logger.info("Metrics are logged to stdout.")
             self.emitter = LoggingEmitter()
 
     def emit(self, stats):
