@@ -405,7 +405,7 @@ def i_am_primary_instance():
 
 
 def bypass_loggregator_logging():
-    env_var = os.getenv('BYPASS_LOGGREGATOR')
+    env_var = os.getenv('BYPASS_LOGGREGATOR', 'False')
     # Throws a useful message if you put in a nonsensical value.
     # Necessary since we store these in cloud portal as strings.
     bypass_loggregator = strtobool(env_var)
