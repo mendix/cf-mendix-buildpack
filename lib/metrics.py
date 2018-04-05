@@ -29,11 +29,10 @@ class LoggingEmitter(MetricsEmitter):
 
 class MetricsServerEmitter(MetricsEmitter):
     def __init__(self, metrics_url):
-        # TODO: verify signature?
+        # TODO: verify signature + URL?
         self.metrics_url = metrics_url
 
     def emit(self, stats):
-        # TODO: make this work
         try:
             requests.post(self.metrics_url, json=stats)
         except Exception as e:
@@ -69,6 +68,7 @@ class MetricsEmitterThread(threading.Thread):
                 stats = {
                     'version': '1.0',
                     'timestamp': datetime.datetime.now().isoformat(),
+                    'instance_index': os.getenv('CF_INSTANCE_INDEX', 0)
                 }
                 stats = self._inject_m2ee_stats(stats)
                 if buildpackutil.i_am_primary_instance():
