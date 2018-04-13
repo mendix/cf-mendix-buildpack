@@ -35,10 +35,12 @@ default_m2ee_password = str(uuid.uuid4()).replace('-', '@') + 'A1'
 nginx_process = None
 m2ee = None
 
+
 def emit(**stats):
     stats['version'] = '1.0'
     stats['timestamp'] = datetime.datetime.now().isoformat()
     logger.info('MENDIX-METRICS: ' + json.dumps(stats))
+
 
 def get_nginx_port():
     return int(os.environ['PORT'])
