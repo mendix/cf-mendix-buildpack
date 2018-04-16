@@ -14,6 +14,7 @@ import traceback
 sys.path.insert(0, 'lib')
 import requests
 import buildpackutil
+import datadog
 import logging
 import instadeploy
 import datetime
@@ -681,6 +682,7 @@ def set_up_m2ee_client(vcap_data):
     activate_new_relic(m2ee, vcap_data['application_name'])
     activate_appdynamics(m2ee, vcap_data['application_name'])
     set_application_name(m2ee, vcap_data['application_name'])
+    datadog.update_config(m2ee, vcap_data['application_name'])
     return m2ee
 
 
@@ -1025,6 +1027,7 @@ if __name__ == '__main__':
     try:
         service_backups()
         set_up_nginx_files(m2ee)
+        datadog.run()
         complete_start_procedure_safe_to_use_for_restart(m2ee)
         set_up_instadeploy_if_deploy_password_is_set(m2ee)
         start_metrics(m2ee)
