@@ -130,16 +130,6 @@ def start_nginx():
     ])
 
 
-def get_vcap_data():
-    if os.environ.get('VCAP_APPLICATION'):
-        return json.loads(os.environ.get('VCAP_APPLICATION'))
-    else:
-        return {
-            'application_uris': ['example.com'],
-            'application_name': 'My App',
-        }
-
-
 def activate_license():
     prefs_dir = os.path.expanduser('~/../.java/.userPrefs/com/mendix/core')
     buildpackutil.mkdir_p(prefs_dir)
@@ -1011,7 +1001,7 @@ if __name__ == '__main__':
         )
     pre_process_m2ee_yaml()
     activate_license()
-    m2ee = set_up_m2ee_client(get_vcap_data())
+    m2ee = set_up_m2ee_client(buildpackutil.get_vcap_data())
 
     def sigterm_handler(_signo, _stack_frame):
         m2ee.stop()
