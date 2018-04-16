@@ -1,4 +1,5 @@
 import os
+import json
 import yaml
 import subprocess
 import buildpackutil
@@ -16,6 +17,7 @@ def _get_hostname():
 def update_config(m2ee, app_name):
     if not is_enabled():
         return
+    tags = json.loads(os.getenv('DD_TAGS', '[]'))
     m2ee.config._conf['m2ee']['javaopts'].extend([
         '-Dcom.sun.management.jmxremote',
         '-Dcom.sun.management.jmxremote.port=7845',
@@ -45,8 +47,9 @@ def update_config(m2ee, app_name):
             'api_key': None,  # set via DD_API_KEY instead
             'confd_path': '.local/datadog/conf.d',
             'logs_enabled': True,
-            'log_file': '/dev/null',
+            'log_file': '/dev/null',  # will be printed via stdout/stderr
             'hostname': _get_hostname(),
+            'tags': tags,
             'process_config': {
                 'enabled': 'true',  # has to be string
                 'log_file': '/dev/null',
@@ -69,8 +72,7 @@ def update_config(m2ee, app_name):
                 'path': 'log/datadog.log',
                 'service': _get_hostname(),
                 'source': 'mendix',
-                'sourcecategory': 'sourcecode',
-                'tags': 'env:prod',
+                'tags': tags,
             }],
         }
         fh.write(yaml.dump(config))
