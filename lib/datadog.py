@@ -62,7 +62,7 @@ def update_config(m2ee, app_name):
                 'run_path': '.local/datadog/run',
             },
         }
-        fh.write(yaml.dump(config))
+        fh.write(yaml.safe_dump(config))
     subprocess.check_call(('mkdir', '-p', '.local/datadog/conf.d/mendix.d'))
     subprocess.check_call(('mkdir', '-p', '.local/datadog/run'))
     with open('.local/datadog/conf.d/mendix.d/conf.yaml', 'w') as fh:
@@ -75,7 +75,7 @@ def update_config(m2ee, app_name):
                 'tags': tags,
             }],
         }
-        fh.write(yaml.dump(config))
+        fh.write(yaml.safe_dump(config))
     subprocess.check_call(('mkdir', '-p', '.local/datadog/conf.d/jmx.d'))
     with open('.local/datadog/conf.d/jmx.d/conf.yaml', 'w') as fh:
         config = {
@@ -89,7 +89,7 @@ def update_config(m2ee, app_name):
                 'java_bin_path': '.local/bin/java',
             }],
         }
-        fh.write(yaml.dump(config))
+        fh.write(yaml.safe_dump(config))
 
 
 def compile(install_path, cache_dir):
