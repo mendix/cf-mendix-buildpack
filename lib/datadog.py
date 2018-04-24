@@ -5,8 +5,18 @@ import subprocess
 import buildpackutil
 
 
+def _get_api_key():
+    return os.getenv('DD_API_KEY')
+
+
+def _get_tags():
+    return json.loads(
+        os.getenv('DD_TAGS', '[]')
+    )
+
+
 def is_enabled():
-    return os.getenv('DD_API_KEY') is not None
+    return _get_api_key() is not None
 
 
 def _get_hostname():
@@ -17,7 +27,7 @@ def _get_hostname():
 def update_config(m2ee, app_name):
     if not is_enabled():
         return
-    tags = json.loads(os.getenv('DD_TAGS', '[]'))
+    tags = _get_tags()
     m2ee.config._conf['m2ee']['javaopts'].extend([
         '-Dcom.sun.management.jmxremote',
         '-Dcom.sun.management.jmxremote.port=7845',
@@ -34,12 +44,16 @@ def update_config(m2ee, app_name):
         'max_size': 1048576,
         'max_rotation': 1,
     })
-# disable until mendix version has been released
-#    jar = os.path.abspath('.local/datadog/mx-agent-assembly-0.1-SNAPSHOT.jar')
-#    m2ee.config._conf['m2ee']['javaopts'].extend([
-#        '-javaagent:{}'.format(jar),
-#        '-Xbootclasspath/a:{}'.format(jar),
-#    ])
+    if m2ee.config.get_runtime_version() >= 7.14:
+        jar = os.path.abspath('.local/datadog/mx-agent-assembly-0.1-SNAPSHOT.jar')
+        m2ee.config._conf['m2ee']['javaopts'].extend([
+            '-javaagent:{}'.format(jar),
+            '-Xbootclasspath/a:{}'.format(jar),
+        ])
+        # if not explicitly set, default to statsd
+        m2ee.config._conf['mxruntime'].setdefault(
+            'com.mendix.metrics.Type', 'statsd'
+        )
     subprocess.check_call(('mkdir', '-p', '.local/datadog'))
     with open('.local/datadog/datadog.yaml', 'w') as fh:
         config = {
@@ -107,7 +121,13 @@ def compile(install_path, cache_dir):
 def run():
     if not is_enabled():
         return
-    subprocess.Popen(('.local/datadog/dd-agent', '-c', '.local/datadog', 'start'))
     e = dict(os.environ)
     e['DD_HOSTNAME'] = _get_hostname()
-    subprocess.Popen(('.local/datadog/dd-process-agent', '-logtostderr', '-config', '.local/datadog/datadog.yaml'), env=e)
+    e['DD_API_KEY'] = _get_api_key()
+    subprocess.Popen((
+        '.local/datadog/dd-agent', '-c', '.local/datadog', 'start',
+    ), env=e)
+    subprocess.Popen((
+        '.local/datadog/dd-process-agent', '-logtostderr',
+        '-config', '.local/datadog/datadog.yaml',
+    ), env=e)
