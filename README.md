@@ -351,6 +351,18 @@ Example (1000 loglines/second):
 You can enable the Mendix Debugger by setting a `DEBUGGER_PASSWORD` environment variable. This will enable and open up the debugger for the lifetime of this process and is to be used with caution. The debugger is reachable on https://DOMAIN/debugger/. You can follow the second half of this [How To](https://docs.mendix.com/howto/monitoring-troubleshooting/debug-microflows) to connect with the Mendix Business Modeler. To stop the debugger, unset the environment variable and restart the application.
 
 
+Version Pinning
+====
+
+If you use the commands as described above, you will always use the latest version of the buildpack, i.e. the most recent commit to the master branch. We reccomend this for the majority of use cases, as you will always have the latest features and fixes.
+
+However, if you have a requirement to exercise a high degree of control over your deployments, it is possible to pin a specific version of the buildpack. This will prevent you from being affected by any potential bugs that are inadvertently introduced, but at the expense of introducing your own procedure to move to new versions of the buildpack.
+
+To push with a specific version of the buildpack, append `#<tag>` to the buildpack URL in your `cf push` command like so: 
+
+    cf push <YOUR_APP> -b https://github.com/mendix/cf-mendix-buildpack#v1.9.2 -p <YOUR_MDA>.mda -t 180
+
+
 Contributing
 ====
 
