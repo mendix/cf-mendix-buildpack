@@ -20,9 +20,17 @@ def is_enabled():
 
 
 def _get_hostname():
-    domain = buildpackutil.get_vcap_data()['application_uris'][0].split('/')[0]
-    return domain + '-' + os.getenv('CF_INSTANCE_INDEX', '')
+    dd_hostname = os.environ.get('DD_HOSTNAME')
+    if dd_hostname is None:
+        domain = buildpackutil.get_vcap_data()['application_uris'][0].split('/')[0]
+        dd_hostname = domain + '-' + os.getenv('CF_INSTANCE_INDEX', '')
+    return dd_hostname
 
+def _get_service():
+    dd_service = os.environ.get('DD_SERVICE')
+    if dd_service is None:
+        dd_service = _get_hostname()
+    return dd_service
 
 def update_config(m2ee, app_name):
     if not is_enabled():
@@ -84,7 +92,7 @@ def update_config(m2ee, app_name):
             'logs': [{
                 'type': 'file',
                 'path': 'log/datadog.log',
-                'service': _get_hostname(),
+                'service': _get_service(),
                 'source': 'mendix',
                 'tags': tags,
             }],
