@@ -37,14 +37,14 @@ Also note that building the project in Cloud Foundry takes more time and require
 
 ### Configuring admin password
 
-The first push generates a new app. In order to login to your application as admin you can set the password using the `ADMIN_PASSWORD` environment variable. Keep in mind that the admin password should comply with the policy you have set in the Modeler. For security reasons it is recommended to set this environment variable once to create the admin user, then remove the environment variable and restart the app. Finally log in to the app and change the password via the web interface. Similarly, the setting can be used to reset the password of an administrator.
+The first push generates a new app. In order to login to your application as admin you can set the password using the `ADMIN_PASSWORD` environment variable. Keep in mind that the admin password should comply with the policy you have set in the Mendix Modeler. For security reasons it is recommended to set this environment variable once to create the admin user, then remove the environment variable and restart the app. Finally log in to the app and change the password via the web interface. Similarly, the setting can be used to reset the password of an administrator.
 
     cf set-env <YOUR_APP> ADMIN_PASSWORD "<YOURSECRETPASSWORD>"
 
 
 ### Connecting a Database
 
-You also need to connect a PostgreSQL or MySQL instance which allows at least 5 connections to the database. Find out which services are available in your Cloud Foundry instance like this.
+You also need to connect a PostgreSQL, MySQL or any other Mendix supported database instance which allows at least 5 connections to the database. Find out which services are available in your Cloud Foundry foundation with the `marketplace` command.
 
     cf marketplace
 
@@ -54,13 +54,13 @@ In our trial we found the service `elephantsql` which offered the free `turtle` 
 
     cf bind-service <YOUR_APP> <SERVICE_NAME>
 
-Note that not all database service set a `DATABASE_URL` value. If this is not done automatically you need to set this variable manually using the details included in the service, as the buildpack will look for this variable for the database connection string.
+Note that not all databases are automatically picked up by the buildpack. If `cf push` returns an error like `Could not parse database credentials`, you need to set the `DATABASE_URL` variable manually using the details included in the service.
 
 Now we need to push the application once more.
 
     cf push <YOUR_APP> -b https://github.com/mendix/cf-mendix-buildpack -p <YOUR_MDA>.mda
 
-You can now log in to your application with the specified password.
+You can now log in to your application with the configured admin password.
 
 
 ### Configuring Constants
@@ -85,7 +85,7 @@ When scaling to multiple instances, the scheduled events that are enabled via th
 
 ### Configuring External Filestore
 
-Mendix supports multiple external file stores: AWS S3 compatible file stores (5.15+), Azure Storage (6.6+) and Swift, used in Bluemix Object Storage (6.7+). All of these can be configured manually via [Custom Runtime Settings](#configuring-custom-runtime-settings), but S3, Azure Storage and Swift (Bluemix Object Storage) can be configured in easier ways:
+Mendix supports multiple external file stores: AWS S3 compatible file stores, Azure Storage and Swift, used in Bluemix Object Storage. All of these can be configured manually via [Custom Runtime Settings](#configuring-custom-runtime-settings), but S3, Azure Storage and Swift (Bluemix Object Storage) can be configured in easier ways:
 
 #### Swift (Bluemix Object Storage) Settings
 
@@ -97,7 +97,7 @@ When deploying Mendix 6.7 or higher to CF on Azure with the Azure Service Broker
 
 #### S3 Settings
 
-Mendix 5.15 and up can use external file stores with an S3 api. Use the following environment variables to enable this.
+Mendix can use external file stores with an S3 compatible api. Use the following environment variables to enable this.
 
 * `S3_ACCESS_KEY_ID`: credentials access key
 * `S3_SECRET_ACCESS_KEY`: credentials secret
@@ -113,7 +113,7 @@ The following environment variables are optional:
 
 ### Configuring the Java heap size
 
-The default java heap size is set to the total available memory divided by two. If your application's memory limit is 1024M, the heap size is set to 512M. You might want to tweak this to your needs by using another environment variable in which case it is used directly.
+The Java heap size is configured automatically based on best practices. You can tweak this to your needs by using another environment variable in which case it is used directly.
 
     cf set-env <YOUR_APP> HEAP_SIZE 512M
 
@@ -127,7 +127,7 @@ The default Java version is 8 for Mendix 5.18 and higher. If you want to force J
 
 ### Configuring Custom Runtime Settings
 
-To configure any of the advanced [Custom Runtime Settings](https://world.mendix.com/display/refguide6/Custom+Settings) you can use setting name prefixed with `MXRUNTIME_` as an environment variable.
+To configure any of the advanced [Custom Runtime Settings](https://docs.mendix.com/refguide/custom-settings) you can use setting name prefixed with `MXRUNTIME_` as an environment variable.
 
 For example, to configure the `ConnectionPoolingMinIdle` setting to value `10`, you can set the following environment variable:
 
@@ -183,13 +183,13 @@ If you are running Cloud Foundry without a connection to the Internet, you shoul
 
 `BLOBSTORE: https://my-intranet-webserver.my-company.com/mendix/`
 
-The preferred way to set up this on-premises web server is as a transparant proxy to `https://cdn.mendix.com/`. This prevents manual work by system administrators every time a new Mendix version is released.
+The preferred way to set up this on-premises web server is as a transparent proxy to `https://cdn.mendix.com/`. This prevents manual work by system administrators every time a new Mendix version is released.
 
 Alternatively you can make the required mendix runtime files `mendix-VERSION.tar.gz` available under `BLOBSTORE/runtime/`. The original files can be downloaded from `https://cdn.mendix.com/`. You should also make the Java version available on:
 * `BLOBSTORE/mx-buildpack/jre-8-linux-x64.tar.gz`
 * `BLOBSTORE/mx-buildpack/jdk-8-linux-x64.tar.gz`
 
-And for [Mendix < 6.6](https://docs.mendix.com/releasenotes/desktop-modeler/6.6#fixes):
+And for [Mendix \< 6.6](https://docs.mendix.com/releasenotes/desktop-modeler/6.6#fixes):
 * `BLOBSTORE/mx-buildpack/jre-8u51-linux-x64.tar.gz`
 * `BLOBSTORE/mx-buildpack/jdk-8u51-linux-x64.tar.gz`
 
