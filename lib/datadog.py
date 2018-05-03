@@ -105,13 +105,44 @@ def update_config(m2ee, app_name):
         }
         fh.write(yaml.safe_dump(config))
 
+    _set_up_postgres()
+
+
+def _set_up_postgres():
+    if not buildpackutil.i_am_primary_instance():
+        return
+    dbconfig = buildpackutil.get_database_config()
+    for k in (
+        'DatabaseType',
+        'DatabaseUserName',
+        'DatabasePassword',
+        'DatabaseHost',
+    ):
+        if k not in dbconfig:
+            return
+    if dbconfig['DatabaseType'] != 'PostgreSQL':
+        return
+    with open('.local/datadog/conf.d/postgres.yaml', 'w') as fh:
+        config = {
+            'init_config': {
+            },
+            'instances': [{
+                'host': dbconfig['DatabaseHost'].split(':')[0],
+                'port': int(dbconfig['DatabaseHost'].split(':')[1]),
+                'username': dbconfig['DatabaseUserName'],
+                'password': dbconfig['DatabasePassword'],
+                'dbname': dbconfig['DatabaseName'],
+            }],
+        }
+        fh.write(yaml.safe_dump(config))
+
 
 def compile(install_path, cache_dir):
     if not is_enabled():
         return
     buildpackutil.download_and_unpack(
         buildpackutil.get_blobstore_url(
-            '/mx-buildpack/experimental/dd-v0.6.tar.gz',
+            '/mx-buildpack/experimental/dd-v0.7.3.tar.gz',
         ),
         os.path.join(install_path, 'datadog'),
         cache_dir=cache_dir,
@@ -124,6 +155,7 @@ def run():
     e = dict(os.environ)
     e['DD_HOSTNAME'] = _get_hostname()
     e['DD_API_KEY'] = _get_api_key()
+    e['LD_LIBRARY_PATH'] = os.path.abspath('.local/datadog/lib/')
     subprocess.Popen((
         '.local/datadog/dd-agent', '-c', '.local/datadog', 'start',
     ), env=e)
