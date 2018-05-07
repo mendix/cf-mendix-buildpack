@@ -85,6 +85,16 @@ def get_vcap_services_data():
         return {}
 
 
+def get_vcap_data():
+    if os.environ.get('VCAP_APPLICATION'):
+        return json.loads(os.environ.get('VCAP_APPLICATION'))
+    else:
+        return {
+            'application_uris': ['example.com'],
+            'application_name': 'My App',
+        }
+
+
 def get_database_uri_from_vcap():
     vcap_services = get_vcap_services_data()
 
