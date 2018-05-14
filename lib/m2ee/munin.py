@@ -9,7 +9,7 @@ import os
 import string
 
 from m2ee.log import logger
-import smaps
+from . import smaps
 
 # Use json if available. If not (python 2.5) we need to import the simplejson
 # module instead, which has to be available.
@@ -18,7 +18,7 @@ try:
 except ImportError:
     try:
         import simplejson as json
-    except ImportError, ie:
+    except ImportError as ie:
         logger.critical("Failed to import json as well as simplejson. If "
                         "using python 2.5, you need to provide the simplejson "
                         "module in your python library path.")
@@ -152,7 +152,7 @@ def get_stats(action, client, config):
     try:
         stats, java_version = get_stats_from_runtime(client, config)
         write_last_known_good_stats_cache(stats, config_cache)
-    except Exception, e:
+    except Exception as e:
         if action == 'config':
             logger.debug("Error fetching runtime/server statistics: %s", e)
             stats = read_stats_from_last_known_good_stats_cache(config_cache)
@@ -219,7 +219,7 @@ def write_last_known_good_stats_cache(stats, config_cache):
     logger.debug("Writing munin cache to %s" % config_cache)
     try:
         file(config_cache, 'w+').write(json.dumps(stats))
-    except Exception, e:
+    except Exception as e:
         logger.error("Error writing munin config cache to %s: %s",
                      (config_cache, e))
 
@@ -231,10 +231,10 @@ def read_stats_from_last_known_good_stats_cache(config_cache):
         fd = open(config_cache)
         stats = json.loads(fd.read())
         fd.close()
-    except IOError, e:
+    except IOError as e:
         logger.error("Error reading munin cache file %s: %s" %
                      (config_cache, e))
-    except ValueError, e:
+    except ValueError as e:
         logger.error("Error parsing munin cache file %s: %s" %
                      (config_cache, e))
     return stats
@@ -247,7 +247,7 @@ def print_requests_config(name, stats):
     print("graph_title %s - MxRuntime Requests" % name)
     print("graph_category Mendix")
     print("graph_info This graph shows the amount of requests this MxRuntime handles")
-    for sub in stats['requests'].iterkeys():
+    for sub in stats['requests'].keys():
         substrip = '_' + string.strip(sub, '/').replace('-', '_')
         if sub != '':
             subname = sub
@@ -263,7 +263,7 @@ def print_requests_config(name, stats):
 
 def print_requests_values(name, stats):
     print("multigraph mxruntime_requests_%s" % name)
-    for sub, count in stats['requests'].iteritems():
+    for sub, count in stats['requests'].items():
         substrip = '_' + string.strip(sub, '/').replace('-', '_')
         print("%s.value %s" % (substrip, count))
     print("")
@@ -278,7 +278,7 @@ def print_connectionbus_config(name, stats):
     print("graph_title %s - Database Queries" % name)
     print("graph_category Mendix")
     print("graph_info This graph shows the amount of executed transactions and queries")
-    for s in stats['connectionbus'].iterkeys():
+    for s in stats['connectionbus'].keys():
         print("%s.label %ss" % (s, s))
         print("%s.draw LINE1" % s)
         print("%s.info amount of %ss" % (s, s))
@@ -291,7 +291,7 @@ def print_connectionbus_values(name, stats):
     if 'connectionbus' not in stats:
         return
     print("multigraph mxruntime_connectionbus_%s" % name)
-    for s, count in stats['connectionbus'].iteritems():
+    for s, count in stats['connectionbus'].items():
         print("%s.value %s" % (s, count))
     print("")
 

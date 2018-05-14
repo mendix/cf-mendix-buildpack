@@ -8,13 +8,13 @@ import codecs
 import time
 import copy
 
-from config import M2EEConfig
-from client import M2EEClient
-from runner import M2EERunner
-from log import logger
+from .config import M2EEConfig
+from .client import M2EEClient
+from .runner import M2EERunner
+from .log import logger
 
-import util
-import client_errno
+from . import util
+from . import client_errno
 
 
 class M2EE():

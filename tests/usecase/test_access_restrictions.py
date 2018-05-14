@@ -94,7 +94,7 @@ class TestCaseAccessRestrictions(basetest.BaseTest):
             self._httpget(BASIC_AUTH_RESOURCE, 200, auth=auth),
             self._httpget(BASIC_AUTH_RESOURCE, 401),
             self._httpget(BASIC_AUTH_RESOURCE, 401, auth=auth_wrong_user),
-#            self._httpget(BASIC_AUTH_RESOURCE, 401, auth=auth_wrong_pass),
+            self._httpget(BASIC_AUTH_RESOURCE, 401, auth=auth_wrong_pass),
             self._httpget(BASIC_AUTH_RESOURCE, 401, auth=auth_wrong_pass2),
 
             self._httpget(BASIC_AUTH_AND_MY_IP_FILTER_RESOURCE, 200, auth=auth),
@@ -109,7 +109,7 @@ class TestCaseAccessRestrictions(basetest.BaseTest):
 
             self._httpget(BASIC_AUTH_OR_OTHER_IP_FILTER_RESOURCE, 200, auth=auth),
             self._httpget(BASIC_AUTH_OR_OTHER_IP_FILTER_RESOURCE, 401, auth=auth_wrong_user),
-#            self._httpget(BASIC_AUTH_OR_OTHER_IP_FILTER_RESOURCE, 401, auth=auth_wrong_pass),
+            self._httpget(BASIC_AUTH_OR_OTHER_IP_FILTER_RESOURCE, 401, auth=auth_wrong_pass),
             self._httpget(BASIC_AUTH_OR_OTHER_IP_FILTER_RESOURCE, 401, auth=auth_wrong_pass2),
             self._httpget(BASIC_AUTH_OR_OTHER_IP_FILTER_RESOURCE, 401),
         ])

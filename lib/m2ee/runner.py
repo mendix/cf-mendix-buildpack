@@ -10,7 +10,7 @@ import signal
 import errno
 from time import sleep
 
-from log import logger
+from .log import logger
 
 
 class M2EERunner:
@@ -25,14 +25,13 @@ class M2EERunner:
     def _read_pidfile(self):
         pidfile = self._config.get_pidfile()
         try:
-            pf = file(pidfile, 'r')
-            self._pid = int(pf.read().strip())
-            pf.close()
-        except IOError, e:
+            with open(pidfile, 'r') as pf:
+                self._pid = int(pf.read().strip())
+        except IOError as e:
             if e.errno != errno.ENOENT:
                 logger.warn("Cannot read pidfile: %s" % e)
             self._pid = None
-        except ValueError, e:
+        except ValueError as e:
             logger.warn("Cannot read pidfile: %s" % e)
             self._pid = None
 
@@ -40,8 +39,9 @@ class M2EERunner:
         if self._pid:
             pidfile = self._config.get_pidfile()
             try:
-                file(pidfile, 'w+').write("%s\n" % self._pid)
-            except IOError, e:
+                with open(pidfile, 'w+') as pf:
+                    pf.write("%s\n" % self._pid)
+            except IOError as e:
                 logger.error("Cannot write pidfile: %s" % e)
 
     def cleanup_pid(self):
@@ -112,7 +112,7 @@ class M2EERunner:
                     return True
                 logger.error("Starting the JVM process did not succeed...")
                 return False
-        except OSError, e:
+        except OSError as e:
             logger.error("Forking subprocess failed: %d (%s)\n" %
                          (e.errno, e.strerror))
             return
@@ -121,11 +121,11 @@ class M2EERunner:
         # decouple from parent environment
         os.chdir("/")
         os.setsid()
-        os.umask(0022)
+        os.umask(0o022)
 
         logger.debug("Environment to be used when starting the JVM: %s" %
                      ' '.join(["%s='%s'" % (k, v)
-                               for k, v in env.iteritems()]))
+                               for k, v in env.items()]))
         logger.debug("Command line to be used when starting the JVM: %s" %
                      ' '.join(cmd))
 
@@ -138,7 +138,7 @@ class M2EERunner:
                 cwd='/',
                 env=env,
             )
-        except OSError, ose:
+        except OSError as ose:
             if ose.errno == errno.ENOENT:
                 logger.error("The java binary cannot be found in the default "
                              "search path!")
