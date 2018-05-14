@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-import os
-import sys
+import codecs
 import json
-import shutil
 import logging
-import zipfile
+import os
+import shutil
 import subprocess
+import sys
+import zipfile
 
 BUILD_DIR = sys.argv[1]
 CACHE_DIR = os.path.join(sys.argv[2], 'bust')
@@ -15,6 +16,7 @@ BUILD_ERRORS_JSON = '/tmp/builderrors.json'
 
 sys.path.insert(0, os.path.join(BUILDPACK_DIR, 'lib'))
 import requests
+import datadog
 import buildpackutil
 from m2ee.version import MXVersion
 
@@ -249,8 +251,8 @@ def buildstatus_callback(error_file):
     ]}
     input_str = ''
     try:
-        with open(error_file, 'r') as b:
-            input_str = b.read().decode('utf-8-sig')
+        with codecs.open(error_file, 'r', encoding='utf-8-sig') as b:
+            input_str = b.read()
             builddata = json.dumps(json.loads(input_str))
     except (IOError, ValueError):
         logging.exception('Could not read mxbuild error file\n%s' % input_str)
@@ -286,6 +288,7 @@ if __name__ == '__main__':
     set_up_directory_structure()
     set_up_java()
     set_up_appdynamics()
+    datadog.compile(DOT_LOCAL_LOCATION, CACHE_DIR)
     download_mendix_version()
     copy_buildpack_resources()
     set_up_nginx()

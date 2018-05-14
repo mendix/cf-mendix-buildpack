@@ -14,6 +14,7 @@ import traceback
 sys.path.insert(0, 'lib')
 import requests
 import buildpackutil
+import datadog
 import logging
 import instadeploy
 import datetime
@@ -35,10 +36,12 @@ default_m2ee_password = str(uuid.uuid4()).replace('-', '@') + 'A1'
 nginx_process = None
 m2ee = None
 
+
 def emit(**stats):
     stats['version'] = '1.0'
     stats['timestamp'] = datetime.datetime.now().isoformat()
     logger.info('MENDIX-METRICS: ' + json.dumps(stats))
+
 
 def get_nginx_port():
     return int(os.environ['PORT'])
@@ -129,16 +132,6 @@ def start_nginx():
     nginx_process = subprocess.Popen([
         'nginx/sbin/nginx', '-p', 'nginx', '-c', 'conf/nginx.conf'
     ])
-
-
-def get_vcap_data():
-    if os.environ.get('VCAP_APPLICATION'):
-        return json.loads(os.environ.get('VCAP_APPLICATION'))
-    else:
-        return {
-            'application_uris': ['example.com'],
-            'application_name': 'My App',
-        }
 
 
 def activate_license():
@@ -692,6 +685,7 @@ def set_up_m2ee_client(vcap_data):
     activate_new_relic(m2ee, vcap_data['application_name'])
     activate_appdynamics(m2ee, vcap_data['application_name'])
     set_application_name(m2ee, vcap_data['application_name'])
+    datadog.update_config(m2ee, vcap_data['application_name'])
     return m2ee
 
 
@@ -1013,7 +1007,7 @@ if __name__ == '__main__':
         )
     pre_process_m2ee_yaml()
     activate_license()
-    m2ee = set_up_m2ee_client(get_vcap_data())
+    m2ee = set_up_m2ee_client(buildpackutil.get_vcap_data())
 
     def sigterm_handler(_signo, _stack_frame):
         m2ee.stop()
@@ -1037,6 +1031,7 @@ if __name__ == '__main__':
     try:
         service_backups()
         set_up_nginx_files(m2ee)
+        datadog.run()
         complete_start_procedure_safe_to_use_for_restart(m2ee)
         set_up_instadeploy_if_deploy_password_is_set(m2ee)
         start_metrics(m2ee)

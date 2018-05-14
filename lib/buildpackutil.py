@@ -86,6 +86,16 @@ def get_vcap_services_data():
         return {}
 
 
+def get_vcap_data():
+    if os.environ.get('VCAP_APPLICATION'):
+        return json.loads(os.environ.get('VCAP_APPLICATION'))
+    else:
+        return {
+            'application_uris': ['example.com'],
+            'application_name': 'My App',
+        }
+
+
 def get_database_uri_from_vcap():
     vcap_services = get_vcap_services_data()
 
@@ -138,7 +148,7 @@ def get_new_relic_license_key():
 
 
 def get_blobstore_url(filename):
-    main_url = os.environ.get('BLOBSTORE', 'http://cdn.mendix.com')
+    main_url = os.environ.get('BLOBSTORE', 'https://cdn.mendix.com')
     if main_url[-1] == '/':
         main_url = main_url[0:-1]
     return main_url + filename
