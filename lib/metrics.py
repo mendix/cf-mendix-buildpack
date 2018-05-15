@@ -34,7 +34,10 @@ class MetricsServerEmitter(MetricsEmitter):
 
     def emit(self, stats):
         try:
+            logger.info("pre post")
             response = requests.post(self.metrics_url, json=stats, timeout=10)
+            logger.info("post post")
+            logger.info("status code: {}".format(response.status_code))
         except Exception as e:
             logger.warning("Failed to send metrics to trends server.",
                            exc_info=True)
@@ -42,6 +45,7 @@ class MetricsServerEmitter(MetricsEmitter):
             # Later, we will want to buffer and resend.
             # This will be done in DEP-75.
             self.fallback_emitter.emit(stats)
+            return
 
         if response.status_code != 200:
             logger.warning(
@@ -50,7 +54,6 @@ class MetricsServerEmitter(MetricsEmitter):
                 response.status_code, self.metrics_url, response.body)
 
             self.fallback_emitter.emit(stats)
-
 
 
 class MetricsEmitterThread(threading.Thread):
