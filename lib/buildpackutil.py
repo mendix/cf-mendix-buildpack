@@ -418,7 +418,14 @@ def bypass_loggregator_logging():
     env_var = os.getenv('BYPASS_LOGGREGATOR', 'False')
     # Throws a useful message if you put in a nonsensical value.
     # Necessary since we store these in cloud portal as strings.
-    bypass_loggregator = strtobool(env_var)
+    try:
+        bypass_loggregator = strtobool(env_var)
+    except ValueError as e:
+        logging.warning(
+            "Bypass loggregator has a nonsensical value: %s. "
+            "Falling back to old loggregator-based metric reporting.",
+            env_var)
+        return False
 
     if bypass_loggregator:
         if os.getenv('TRENDS_STORAGE_URL'):
