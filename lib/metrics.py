@@ -46,8 +46,9 @@ class MetricsServerEmitter(MetricsEmitter):
 
         if response.status_code != 200:
             logger.warning(
-                "Failed to send metrics to trends server. Got status code %s "
-                "for URL %s, with body %s. Falling back to old method.",
+                "Failed to send metrics to trends server. Falling back to old "
+                "loggregator based method. Got status code %s "
+                "for URL %s, with body %s.",
                 response.status_code, self.metrics_url, response.text)
 
             self.fallback_emitter.emit(stats)
