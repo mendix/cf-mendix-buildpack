@@ -34,10 +34,7 @@ class MetricsServerEmitter(MetricsEmitter):
 
     def emit(self, stats):
         try:
-            logger.info("pre post")
             response = requests.post(self.metrics_url, json=stats, timeout=10)
-            logger.info("post post")
-            logger.info("status code: {}".format(response.status_code))
         except Exception as e:
             logger.warning("Failed to send metrics to trends server.",
                            exc_info=True)
@@ -51,7 +48,7 @@ class MetricsServerEmitter(MetricsEmitter):
             logger.warning(
                 "Failed to send metrics to trends server. Got status code %s "
                 "for URL %s, with body %s. Falling back to old method.",
-                response.status_code, self.metrics_url, response.body)
+                response.status_code, self.metrics_url, response.text)
 
             self.fallback_emitter.emit(stats)
 
