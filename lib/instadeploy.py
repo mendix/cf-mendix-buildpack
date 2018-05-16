@@ -71,10 +71,25 @@ class InstaDeployThread(threading.Thread):
         server.serve_forever()
 
 
+class MyFieldStorage(cgi.FieldStorage):
+    @property
+    def filename(self):
+        if self._original_filename is not None:
+            return self._original_filename
+        elif self.name == 'file':
+            return 'file_name'
+        else:
+            return None
+
+    @filename.setter
+    def filename(self, value):
+        self._original_filename = value
+
+
 class MPKUploadHandler(BaseHTTPRequestHandler):
     def process_request(self):
         try:
-            form = cgi.FieldStorage(
+            form = MyFieldStorage(
                 fp=self.rfile,
                 headers=self.headers,
                 environ={
@@ -116,6 +131,7 @@ class MPKUploadHandler(BaseHTTPRequestHandler):
             return (200, {'state': 'FAILED'}, mbf.mxbuild_response)
 
         except Exception:
+            logger.warning("Instadeploy failed", exc_info=True)
             return (500, {
                 'state': 'FAILED',
                 'errordetails': traceback.format_exc(),
