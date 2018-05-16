@@ -1,6 +1,15 @@
 import json
 import crypt
+import random
 import os
+
+
+def _salt():
+    """Returns a string of 2 random letters"""
+    letters = 'abcdefghijklmnopqrstuvwxyz' \
+              'ABCDEFGHIJKLMNOPQRSTUVWXYZ' \
+              '0123456789/.'
+    return random.choice(letters) + random.choice(letters)
 
 
 def gen_htpasswd(users_passwords, file_name_suffix=''):
@@ -12,9 +21,7 @@ def gen_htpasswd(users_passwords, file_name_suffix=''):
                 fh.write(
                     "%s:%s\n" % (
                         user,
-                        crypt.crypt(
-                            password, crypt.mksalt(crypt.METHOD_SHA512)
-                        )
+                        crypt.crypt(password, _salt())
                     )
                 )
 

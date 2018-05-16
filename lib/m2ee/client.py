@@ -7,7 +7,7 @@
 
 from base64 import b64encode
 import socket
-from .log import logger
+from log import logger
 
 try:
     import httplib2
@@ -23,7 +23,7 @@ try:
 except ImportError:
     try:
         import simplejson as json
-    except ImportError as ie:
+    except ImportError, ie:
         logger.critical("Failed to import json as well as simplejson. If "
                         "using python 2.5, you need to provide the simplejson "
                         "module in your python library path.")
@@ -36,7 +36,7 @@ class M2EEClient:
         self._url = url
         self._headers = {
             'Content-Type': 'application/json',
-            'X-M2EE-Authentication': b64encode(password.encode('utf-8')).decode('ascii'),
+            'X-M2EE-Authentication': b64encode(password)
         }
 
     def request(self, action, params=None, timeout=None):
@@ -50,7 +50,7 @@ class M2EEClient:
                                                       headers=self._headers)
         if (response_headers['status'] == "200"):
             logger.trace("M2EE response: %s" % response_body)
-            return M2EEResponse(action, json.loads(response_body.decode('utf-8')))
+            return M2EEResponse(action, json.loads(response_body))
         else:
             logger.error("non-200 http status code: %s %s" %
                          (response_headers, response_body))
@@ -60,13 +60,13 @@ class M2EEClient:
             response = self.request("echo", {"echo": "ping"}, timeout)
             if response.get_result() == 0:
                 return True
-        except AttributeError as e:
+        except AttributeError, e:
             # httplib 0.6 throws AttributeError: 'NoneType' object has no
             # attribute 'makefile' in case of a connection refused :-|
             logger.trace("Got %s: %s" % (type(e), e))
-        except (socket.error, socket.timeout) as e:
+        except (socket.error, socket.timeout), e:
             logger.trace("Got %s: %s" % (type(e), e))
-        except Exception as e:
+        except Exception, e:
             logger.error("Got %s: %s" % (type(e), e))
             import traceback
             logger.error(traceback.format_exc())
