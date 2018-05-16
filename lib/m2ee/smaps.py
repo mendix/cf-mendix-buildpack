@@ -174,7 +174,7 @@ def _get_rss_by_category(smaps):
     result = {}
     for category in categories:
         result[category] = sum([smap.rss for smap in
-                                [x for x in smaps if x.category == category]])
+                                filter(lambda x: x.category == category, smaps)])
     return result
 
 

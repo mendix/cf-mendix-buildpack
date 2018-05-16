@@ -109,16 +109,16 @@ class DictCursorBase(_cursor):
         try:
             if self._prefetch:
                 res = super(DictCursorBase, self).__iter__()
-                first = next(res)
+                first = res.next()
             if self._query_executed:
                 self._build_index()
             if not self._prefetch:
                 res = super(DictCursorBase, self).__iter__()
-                first = next(res)
+                first = res.next()
 
             yield first
             while 1:
-                yield next(res)
+                yield res.next()
         except StopIteration:
             return
 
@@ -175,10 +175,10 @@ class DictRow(list):
         list.__setitem__(self, x, v)
 
     def items(self):
-        return list(self.items())
+        return list(self.iteritems())
 
     def keys(self):
-        return list(self._index.keys())
+        return self._index.keys()
 
     def values(self):
         return tuple(self[:])
@@ -193,17 +193,17 @@ class DictRow(list):
             return default
 
     def iteritems(self):
-        for n, v in self._index.items():
+        for n, v in self._index.iteritems():
             yield n, list.__getitem__(self, v)
 
     def iterkeys(self):
-        return iter(self._index.keys())
+        return self._index.iterkeys()
 
     def itervalues(self):
         return list.__iter__(self)
 
     def copy(self):
-        return dict(iter(self.items()))
+        return dict(self.iteritems())
 
     def __contains__(self, x):
         return x in self._index
@@ -336,19 +336,19 @@ class NamedTupleCursor(_cursor):
         nt = self.Record
         if nt is None:
             nt = self.Record = self._make_nt()
-        return list(map(nt._make, ts))
+        return map(nt._make, ts)
 
     def fetchall(self):
         ts = super(NamedTupleCursor, self).fetchall()
         nt = self.Record
         if nt is None:
             nt = self.Record = self._make_nt()
-        return list(map(nt._make, ts))
+        return map(nt._make, ts)
 
     def __iter__(self):
         try:
             it = super(NamedTupleCursor, self).__iter__()
-            t = next(it)
+            t = it.next()
 
             nt = self.Record
             if nt is None:
@@ -357,13 +357,13 @@ class NamedTupleCursor(_cursor):
             yield nt._make(t)
 
             while 1:
-                yield nt._make(next(it))
+                yield nt._make(it.next())
         except StopIteration:
             return
 
     try:
         from collections import namedtuple
-    except ImportError as _exc:
+    except ImportError, _exc:
         def _make_nt(self):
             raise self._exc
     else:
@@ -588,7 +588,7 @@ class ReplicationCursor(_replicationCursor):
                     "cannot specify output plugin options for physical replication")
 
             command += " ("
-            for k, v in options.items():
+            for k, v in options.iteritems():
                 if not command.endswith('('):
                     command += ", "
                 command += "%s %s" % (quote_ident(k, self), _A(str(v)))
@@ -796,7 +796,7 @@ class HstoreAdapter(object):
 
         adapt = _ext.adapt
         rv = []
-        for k, v in self.wrapped.items():
+        for k, v in self.wrapped.iteritems():
             k = adapt(k)
             k.prepare(self.conn)
             k = k.getquoted()
@@ -818,9 +818,9 @@ class HstoreAdapter(object):
         if not self.wrapped:
             return b"''::hstore"
 
-        k = _ext.adapt(list(self.wrapped.keys()))
+        k = _ext.adapt(self.wrapped.keys())
         k.prepare(self.conn)
-        v = _ext.adapt(list(self.wrapped.values()))
+        v = _ext.adapt(self.wrapped.values())
         v.prepare(self.conn)
         return b"hstore(" + k.getquoted() + b", " + v.getquoted() + b")"
 
@@ -914,7 +914,7 @@ WHERE typname = 'hstore';
         return tuple(rv0), tuple(rv1)
 
 
-def register_hstore(conn_or_curs, globally=False, str=False,
+def register_hstore(conn_or_curs, globally=False, unicode=False,
                     oid=None, array_oid=None):
     r"""Register adapter and typecaster for `!dict`\-\ |hstore| conversions.
 
@@ -965,7 +965,7 @@ def register_hstore(conn_or_curs, globally=False, str=False,
             array_oid = tuple([x for x in array_oid if x])
 
     # create and register the typecaster
-    if _sys.version_info[0] < 3 and str:
+    if _sys.version_info[0] < 3 and unicode:
         cast = HstoreAdapter.parse_unicode
     else:
         cast = HstoreAdapter.parse
@@ -1152,8 +1152,8 @@ def _paginate(seq, page_size):
     it = iter(seq)
     while 1:
         try:
-            for i in range(page_size):
-                page.append(next(it))
+            for i in xrange(page_size):
+                page.append(it.next())
             yield page
             page = []
         except StopIteration:

@@ -126,7 +126,7 @@ class Range(object):
 
         return True
 
-    def __bool__(self):
+    def __nonzero__(self):
         return self._bounds is not None
 
     def __eq__(self, other):
@@ -188,7 +188,7 @@ class Range(object):
         )
 
     def __setstate__(self, state):
-        for slot, value in list(state.items()):
+        for slot, value in state.items():
             setattr(self, slot, value)
 
 
@@ -299,7 +299,7 @@ class RangeCaster(object):
         # an implementation detail and is not documented. It is currently used
         # for the numeric ranges.
         self.adapter = None
-        if isinstance(pgrange, str):
+        if isinstance(pgrange, basestring):
             self.adapter = type(pgrange, (RangeAdapter,), {})
             self.adapter.name = pgrange
         else:
@@ -316,7 +316,7 @@ class RangeCaster(object):
 
         self.range = None
         try:
-            if isinstance(pyrange, str):
+            if isinstance(pyrange, basestring):
                 self.range = type(pyrange, (Range,), {})
             if issubclass(pyrange, Range) and pyrange is not Range:
                 self.range = pyrange
