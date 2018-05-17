@@ -2,5 +2,5 @@
 
 cat << EOF
 default_process_types:
-  web: python start.py
+  web: python3 start.py
 EOF

@@ -9,7 +9,7 @@ import os
 import subprocess
 import time
 
-from log import logger
+from .log import logger
 
 
 def dumpdb(config, name=None):

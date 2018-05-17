@@ -10,8 +10,8 @@ import cmd
 import datetime
 import sys
 
-from client import M2EEClient
-from profileutil import print_logs, print_log, sort_logs, to_csv, format_as_csv
+from .client import M2EEClient
+from .profileutil import print_logs, print_log, sort_logs, to_csv, format_as_csv
 
 
 class M2EEProfiler(cmd.Cmd):
@@ -58,7 +58,7 @@ class M2EEProfiler(cmd.Cmd):
         return True
 
     def do_EOF(self, args):
-        print
+        print()
         return True
 
     def emptyline(self):
@@ -109,8 +109,8 @@ class M2EEProfiler(cmd.Cmd):
 
         while minimum_duration_to_log is None:
             try:
-                answer = raw_input("Minimum duration to log? Defaults to "
-                                   "1000(ms) ")
+                answer = input("Minimum duration to log? Defaults to "
+                               "1000(ms) ")
                 if answer == "":
                     minimum_duration_to_log = 1000
                 else:
@@ -130,7 +130,7 @@ class M2EEProfiler(cmd.Cmd):
 
         while flush_interval is None:
             try:
-                answer = raw_input("Flush interval? Defaults to 30 min ")
+                answer = input("Flush interval? Defaults to 30 min ")
                 if answer == "":
                     flush_interval = 30
                 else:

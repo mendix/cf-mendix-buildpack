@@ -54,7 +54,7 @@ def format_dict_table(rows, column_names=None, max_column_width=None,
             column_list = column_names
         else:
             try:
-                column_list = rows[0].keys()
+                column_list = list(rows[0].keys())
             except:
                 column_list = None
         if column_list:

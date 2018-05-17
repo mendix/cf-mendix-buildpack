@@ -147,7 +147,7 @@ class Composed(Composable):
             "foo", "bar"
 
         """
-        if isinstance(joiner, basestring):
+        if isinstance(joiner, str):
             joiner = SQL(joiner)
         elif not isinstance(joiner, SQL):
             raise TypeError(
@@ -179,7 +179,7 @@ class SQL(Composable):
         select "foo", "bar" from "table"
     """
     def __init__(self, string):
-        if not isinstance(string, basestring):
+        if not isinstance(string, str):
             raise TypeError("SQL values must be strings")
         super(SQL, self).__init__(string)
 
@@ -276,7 +276,7 @@ class SQL(Composable):
         rv = []
         it = iter(seq)
         try:
-            rv.append(it.next())
+            rv.append(next(it))
         except StopIteration:
             pass
         else:
@@ -308,7 +308,7 @@ class Identifier(Composable):
 
     """
     def __init__(self, string):
-        if not isinstance(string, basestring):
+        if not isinstance(string, str):
             raise TypeError("SQL identifiers must be strings")
 
         super(Identifier, self).__init__(string)
@@ -395,7 +395,7 @@ class Placeholder(Composable):
     """
 
     def __init__(self, name=None):
-        if isinstance(name, basestring):
+        if isinstance(name, str):
             if ')' in name:
                 raise ValueError("invalid name: %r" % name)
 

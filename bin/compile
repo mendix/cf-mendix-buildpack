@@ -1,11 +1,12 @@
-#!/usr/bin/env python
-import os
-import sys
+#!/usr/bin/env python3
+import codecs
 import json
-import shutil
 import logging
-import zipfile
+import os
+import shutil
 import subprocess
+import sys
+import zipfile
 
 BUILD_DIR = sys.argv[1]
 CACHE_DIR = os.path.join(sys.argv[2], 'bust')
@@ -250,8 +251,8 @@ def buildstatus_callback(error_file):
     ]}
     input_str = ''
     try:
-        with open(error_file, 'r') as b:
-            input_str = b.read().decode('utf-8-sig')
+        with codecs.open(error_file, 'r', encoding='utf-8-sig') as b:
+            input_str = b.read()
             builddata = json.dumps(json.loads(input_str))
     except (IOError, ValueError):
         logging.exception('Could not read mxbuild error file\n%s' % input_str)
