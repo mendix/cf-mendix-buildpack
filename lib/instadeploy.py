@@ -214,6 +214,7 @@ def build():
 
     return result
 
+
 def sync_project_files():
     for name in ('web', 'model'):
         subprocess.check_call((
@@ -221,6 +222,7 @@ def sync_project_files():
             os.path.join(DEPLOYMENT_DIR, name) + '/',
             os.path.join(ROOT_DIR, name) + '/',
         ))
+
 
 def extract_mxbuild_response(mxbuild_response):
     r = {}
