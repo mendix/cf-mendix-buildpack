@@ -72,6 +72,7 @@ class InstaDeployThread(threading.Thread):
 
 
 class MyFieldStorage(cgi.FieldStorage):
+    # cgi bug, see https://stackoverflow.com/questions/42213318
     @property
     def filename(self):
         if self._original_filename is not None:
