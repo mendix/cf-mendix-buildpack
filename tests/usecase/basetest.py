@@ -50,7 +50,7 @@ class BaseTest(unittest.TestCase):
     def setUpCF(self, package_name, health_timeout=180, env_vars=None, instances=1):
         try:
             self._setUpCF(package_name, health_timeout, env_vars=env_vars, instances=instances)
-        except:
+        except Exception:
             self.tearDown()
             raise
 

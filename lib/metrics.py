@@ -1,17 +1,16 @@
+import datetime
+import json
 import os
 import sys
-import json
-import time
-from m2ee import logger, munin
-
 import threading
-import datetime
+import time
 
 BUILDPACK_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-
 sys.path.insert(0, os.path.join(BUILDPACK_DIR, 'lib'))
-import buildpackutil
-import psycopg2
+import buildpackutil   # noqa: E402
+import psycopg2   # noqa: E402
+
+from m2ee import logger, munin   # noqa: E402
 
 
 class MetricsEmitterThread(threading.Thread):
@@ -149,7 +148,13 @@ class MetricsEmitterThread(threading.Thread):
             db_config = buildpackutil.get_database_config()
             with conn.cursor() as cursor:
                 cursor.execute(
-                    "select xact_commit, xact_rollback, tup_inserted, tup_updated, tup_deleted from pg_stat_database where datname = '%s';" % (
+                    "SELECT xact_commit,"
+                    "       xact_rollback,"
+                    "       tup_inserted,"
+                    "       tup_updated,"
+                    "       tup_deleted"
+                    "FROM pg_stat_database"
+                    "WHERE datname = '%s';" % (
                         db_config['DatabaseName'],
                     )
                 )
@@ -189,22 +194,27 @@ class MetricsEmitterThread(threading.Thread):
         conn = self._get_db_conn()
         try:
             with conn.cursor() as cursor:
-                cursor.execute(
-                    """
-                    SELECT
-                        SUM(pg_relation_size(quote_ident(indexrelname)::text)) AS index_size
-                    FROM pg_tables t
-                    LEFT OUTER JOIN pg_class c ON t.tablename=c.relname
-                    LEFT OUTER JOIN
-                        ( SELECT c.relname AS ctablename, ipg.relname AS indexname, x.indnatts AS number_of_columns, idx_scan, idx_tup_read, idx_tup_fetch, indexrelname, indisunique FROM pg_index x
-                            JOIN pg_class c ON c.oid = x.indrelid
-                            JOIN pg_class ipg ON ipg.oid = x.indexrelid
-                            JOIN pg_stat_all_indexes psai ON x.indexrelid = psai.indexrelid )
-                        AS foo
-                        ON t.tablename = foo.ctablename
-                    WHERE t.schemaname='public';
-                    """
-                )
+                cursor.execute("""
+SELECT SUM(pg_relation_size(quote_ident(indexrelname)::text)) AS index_size
+FROM pg_tables t
+LEFT OUTER JOIN pg_class c ON t.tablename=c.relname
+LEFT OUTER JOIN
+  (SELECT c.relname AS ctablename,
+          ipg.relname AS indexname,
+          x.indnatts AS number_of_columns,
+          idx_scan,
+          idx_tup_read,
+          idx_tup_fetch,
+          indexrelname,
+          indisunique
+   FROM pg_index x
+   JOIN pg_class c ON c.oid = x.indrelid
+   JOIN pg_class ipg ON ipg.oid = x.indexrelid
+   JOIN pg_stat_all_indexes psai ON x.indexrelid = psai.indexrelid)
+   AS foo
+   ON t.tablename = foo.ctablename
+WHERE t.schemaname='public';
+""")
                 rows = cursor.fetchall()
                 return int(rows[0][0])
         except Exception as e:

@@ -23,6 +23,7 @@ class M2EELogger(logging.Logger):
     def trace(self, msg, *args, **kwargs):
         self.log(LOG_TRACE, msg, *args, **kwargs)
 
+
 logging.setLoggerClass(M2EELogger)
 logger = logging.getLogger("m2ee")
 # level will be set at startup
@@ -38,6 +39,7 @@ class M2EELogFilter(logging.Filter):
         if self.ge:
             return record.levelno >= self.level
         return record.levelno < self.level
+
 
 consolelogformatter = logging.Formatter("%(levelname)s: %(message)s")
 

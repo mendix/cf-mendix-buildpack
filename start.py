@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
+import atexit
+import base64
+import datetime
 import json
+import logging
 import os
 import re
 import signal
 import subprocess
-import time
 import sys
-import base64
-import uuid
-import atexit
+import time
 import traceback
+import uuid
 
 sys.path.insert(0, 'lib')
-import requests
-import buildpackutil
-import datadog
-import logging
-import instadeploy
-import datetime
+import buildpackutil  # noqa: E402
+import datadog  # noqa: E402
+import instadeploy  # noqa: E402
+import requests  # noqa: E402
 
-from m2ee import M2EE, logger
-from nginx import get_path_config, gen_htpasswd
-from buildpackutil import i_am_primary_instance
+from m2ee import M2EE, logger  # noqa: E402
+from nginx import get_path_config, gen_htpasswd  # noqa: E402
+from buildpackutil import i_am_primary_instance  # noqa: E402
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
@@ -944,7 +944,7 @@ def loop_until_process_dies(m2ee):
             time.sleep(10)
         else:
             break
-    emit(jvm = {'crash': 1.0})
+    emit(jvm={'crash': 1.0})
     logger.info('process died, stopping')
     sys.exit(1)
 
@@ -1015,9 +1015,9 @@ if __name__ == '__main__':
 
     def sigusr_handler(_signo, _stack_frame):
         if _signo == signal.SIGUSR1:
-            emit(jvm={'errors': 1.0 })
+            emit(jvm={'errors': 1.0})
         elif _signo == signal.SIGUSR2:
-            emit(jvm={'ooms': 1.0 })
+            emit(jvm={'ooms': 1.0})
         else:
             # Should not happen
             pass
