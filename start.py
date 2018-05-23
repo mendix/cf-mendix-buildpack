@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
+import atexit
+import base64
+import datetime
 import json
+import logging
 import os
 import re
 import signal
 import subprocess
-import time
 import sys
-import base64
-import uuid
-import atexit
+import time
 import traceback
+import uuid
 
 sys.path.insert(0, 'lib')
-import requests
-import buildpackutil
-import datadog
-import logging
-import instadeploy
-import datetime
+import buildpackutil  # noqa
+import datadog  # noqa
+import requests  # noqa
 
-from m2ee import M2EE, logger
-from nginx import get_path_config, gen_htpasswd
-from buildpackutil import i_am_primary_instance
+import instadeploy  # noqa
+from m2ee import M2EE, logger  # noqa
+from nginx import get_path_config, gen_htpasswd  # noqa
+from buildpackutil import i_am_primary_instance  # noqa
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
@@ -63,7 +63,8 @@ def pre_process_m2ee_yaml():
     subprocess.check_call([
         'sed',
         '-i',
-        's|BUILD_PATH|%s|g; s|RUNTIME_PORT|%d|; s|ADMIN_PORT|%d|; s|PYTHONPID|%d|'
+        's|BUILD_PATH|%s|g; s|RUNTIME_PORT|%d|; s|ADMIN_PORT|%d|; '
+        's|PYTHONPID|%d|'
         % (os.getcwd(), get_runtime_port(), get_admin_port(), os.getpid()),
         '.local/m2ee.yaml'
     ])
@@ -80,7 +81,9 @@ def get_admin_password():
 def get_m2ee_password():
     m2ee_password = os.getenv('M2EE_PASSWORD', get_admin_password())
     if not m2ee_password:
-        logger.debug('No ADMIN_PASSWORD or M2EE_PASSWORD configured, using a random password for the m2ee admin api')
+        logger.debug(
+            'No ADMIN_PASSWORD or M2EE_PASSWORD configured, using a random '
+            'password for the m2ee admin api')
         m2ee_password = default_m2ee_password
     return m2ee_password
 
@@ -158,7 +161,8 @@ def activate_license():
         os.environ.get('LICENSE_ID', None)
     )
     if server_id:
-        logger.warning('SERVER_ID is deprecated, please use LICENSE_ID instead')
+        logger.warning(
+            'SERVER_ID is deprecated, please use LICENSE_ID instead')
 
     if not license_id:
         license_id = server_id
@@ -338,7 +342,8 @@ def _get_s3_specific_config(vcap_services, m2ee):
     if 'S3_ENCRYPTION_KEYS' in os.environ:
         encryption_keys = json.loads(os.getenv('S3_ENCRYPTION_KEYS'))
 
-    dont_perform_deletes = os.getenv('S3_PERFORM_DELETES', 'true').lower() == 'false'
+    dont_perform_deletes = os.getenv(
+        'S3_PERFORM_DELETES', 'true').lower() == 'false'
     key_suffix = os.getenv('S3_KEY_SUFFIX', key_suffix)
     endpoint = os.getenv('S3_ENDPOINT', endpoint)
     v2_auth = os.getenv('S3_USE_V2_AUTH', v2_auth).lower() == 'true'
@@ -632,40 +637,62 @@ def activate_new_relic(m2ee, app_name):
 
 
 def set_up_m2ee_client(vcap_data):
-    m2ee = M2EE(yamlfiles=['.local/m2ee.yaml'], load_default_files=False, config={
-        'm2ee': {
-            # this is named admin_pass, but it's the verification http header
-            # to communicate with the internal management port of the runtime
-            'admin_pass': get_m2ee_password(),
+    m2ee = M2EE(
+        yamlfiles=['.local/m2ee.yaml'],
+        load_default_files=False,
+        config={
+            'm2ee': {
+                # this is named admin_pass, but it's the verification http
+                # header to communicate with the internal management port of
+                # the runtime
+                'admin_pass': get_m2ee_password(),
+            }
         }
-    })
+    )
     version = m2ee.config.get_runtime_version()
 
     mendix_runtimes_path = '/usr/local/share/mendix-runtimes.git'
-    mendix_runtime_version_path = os.path.join(os.getcwd(), 'runtimes', str(version))
-    if os.path.isdir(mendix_runtimes_path) and not os.path.isdir(mendix_runtime_version_path):
+    mendix_runtime_version_path = os.path.join(
+        os.getcwd(), 'runtimes', str(version))
+    if (os.path.isdir(mendix_runtimes_path)
+            and not os.path.isdir(mendix_runtime_version_path)):
         buildpackutil.mkdir_p(mendix_runtime_version_path)
         env = dict(os.environ)
         env['GIT_WORK_TREE'] = mendix_runtime_version_path
 
         # checkout the runtime version
-        process = subprocess.Popen(['git', 'checkout', str(version), '-f'],
-                                   cwd=mendix_runtimes_path, env=env,
-                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        process = subprocess.Popen(
+            ['git', 'checkout', str(version), '-f'],
+            cwd=mendix_runtimes_path, env=env,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         process.communicate()
         if process.returncode != 0:
-            logger.info('Mendix {} is not available in the rootfs'.format(version))
-            logger.info('Fallback (1): trying to fetch Mendix {} using git'.format(version))
-            process = subprocess.Popen(['git', 'fetch', 'origin', 'refs/tags/{0}:refs/tags/{0}'.format(str(version)),
-                                        '&&', 'git', 'checkout', str(version), '-f'],
-                                       cwd=mendix_runtimes_path, env=env, stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE)
+            logger.info(
+                'Mendix {} is not available in the rootfs'.format(version))
+            logger.info(
+                'Fallback (1): trying to fetch Mendix {} using git'.format(
+                    version))
+            process = subprocess.Popen(
+                [
+                    'git', 'fetch', 'origin',
+                    'refs/tags/{0}:refs/tags/{0}'.format(str(version)),
+                    '&&',
+                    'git', 'checkout', str(version), '-f'
+                ],
+                cwd=mendix_runtimes_path, env=env, stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
             process.communicate()
             if process.returncode != 0:
-                logger.info('Unable to fetch Mendix {} using git'.format(version))
-                url = buildpackutil.get_blobstore_url('/runtime/mendix-%s.tar.gz' % str(version))
-                logger.info('Fallback (2): downloading Mendix {} from {}'.format(version, url))
-                buildpackutil.download_and_unpack(url, os.path.join(os.getcwd(), 'runtimes'))
+                logger.info(
+                    'Unable to fetch Mendix {} using git'.format(version))
+                url = buildpackutil.get_blobstore_url(
+                    '/runtime/mendix-%s.tar.gz' % str(version))
+                logger.info(
+                    'Fallback (2): downloading Mendix {} from {}'.format(
+                        version, url))
+                buildpackutil.download_and_unpack(
+                    url, os.path.join(os.getcwd(), 'runtimes'))
 
         m2ee.reload_config()
     set_runtime_config(
@@ -701,7 +728,13 @@ def set_up_logging_file():
             'log/out.log',
         ])
     else:
-        subprocess.Popen(['./bin/mendix-logfilter', '-r', log_ratelimit, '-f', 'log/out.log'])
+        subprocess.Popen(
+            [
+                './bin/mendix-logfilter',
+                '-r', log_ratelimit,
+                '-f', 'log/out.log'
+            ]
+        )
 
 
 def service_backups():
@@ -727,7 +760,8 @@ def service_backups():
             'bucketName': s3_credentials['bucket'],
         }
         if 'key_suffix' in s3_credentials:  # Not all s3 plans have this field
-            backup_service['filesCredentials']['keySuffix'] = s3_credentials['key_suffix']
+            backup_service['filesCredentials']['keySuffix'] =\
+                s3_credentials['key_suffix']
 
     try:
         db_config = buildpackutil.get_database_config()
@@ -858,10 +892,12 @@ def create_admin_user(m2ee):
     logger.info('Ensuring admin user credentials')
     app_admin_password = get_admin_password()
     if os.getenv('M2EE_PASSWORD'):
-        logger.debug('M2EE_PASSWORD is set so skipping creation of application admin password')
+        logger.debug('M2EE_PASSWORD is set so skipping creation of '
+                     'application admin password')
         return
     if not app_admin_password:
-        logger.warning('ADMIN_PASSWORD not set, so skipping creation of application admin password')
+        logger.warning('ADMIN_PASSWORD not set, so skipping creation of '
+                       'application admin password')
         return
     logger.debug('Creating admin user')
 
@@ -944,7 +980,7 @@ def loop_until_process_dies(m2ee):
             time.sleep(10)
         else:
             break
-    emit(jvm = {'crash': 1.0})
+    emit(jvm={'crash': 1.0})
     logger.info('process died, stopping')
     sys.exit(1)
 
@@ -1015,9 +1051,9 @@ if __name__ == '__main__':
 
     def sigusr_handler(_signo, _stack_frame):
         if _signo == signal.SIGUSR1:
-            emit(jvm={'errors': 1.0 })
+            emit(jvm={'errors': 1.0})
         elif _signo == signal.SIGUSR2:
-            emit(jvm={'ooms': 1.0 })
+            emit(jvm={'ooms': 1.0})
         else:
             # Should not happen
             pass

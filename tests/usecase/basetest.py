@@ -142,8 +142,12 @@ class BaseTest(unittest.TestCase):
         effective_env = os.environ.copy()
         if env:
             effective_env.update(env)
-        return subprocess.check_output(
-            command,
-            stderr=subprocess.PIPE,
-            env=effective_env,
-        ).decode('utf-8')
+        try:
+            return subprocess.check_output(
+                command,
+                stderr=subprocess.PIPE,
+                env=effective_env,
+            ).decode('utf-8')
+        except subprocess.CalledProcessError as e:
+            print(e.output.decode('utf-8'))
+            raise
