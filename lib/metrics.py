@@ -1,17 +1,17 @@
+import datetime
+import json
 import os
 import sys
-import json
-import time
-from m2ee import logger, munin
-
 import threading
-import datetime
+import time
 
 BUILDPACK_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-
 sys.path.insert(0, os.path.join(BUILDPACK_DIR, 'lib'))
-import buildpackutil
-import psycopg2
+
+import buildpackutil  # noqa
+import psycopg2  # noqa
+
+from m2ee import logger, munin  # noqa
 
 
 class MetricsEmitterThread(threading.Thread):
@@ -55,11 +55,12 @@ class MetricsEmitterThread(threading.Thread):
         try:
             health_response = self.m2ee.client.check_health()
             if health_response.has_error():
-                if (health_response.get_result() == 3 and
-                        health_response.get_cause() == "java.lang.IllegalArgument"
+                if (health_response.get_result() == 3
+                        and health_response.get_cause() ==
+                        "java.lang.IllegalArgument"
                         "Exception: Action should not be null"):
-                    # Because of an incomplete implementation, in Mendix 2.5.4 or
-                    # 2.5.5 this means that the runtime is health-check
+                    # Because of an incomplete implementation, in Mendix 2.5.4
+                    # or 2.5.5 this means that the runtime is health-check
                     # capable, but no health check microflow is defined.
                     health['health'] = translation['unknown']
                     health['diagnosis'] = "No health check microflow defined"
@@ -70,12 +71,15 @@ class MetricsEmitterThread(threading.Thread):
                     health['diagnosis'] = "No health check microflow defined"
                 else:
                     health['health'] = translation['critical']
-                    health['diagnosis'] = "Health check failed unexpectedly: %s" \
-                                          % health_response.get_error()
+                    health['diagnosis'] = "Health check failed unexpectedly:" \
+                                          " %s" % health_response.get_error()
             else:
                 feedback = health_response.get_feedback()
                 health['health'] = translation[feedback['health']]
-                health['diagnosis'] = feedback['diagnosis'] if 'diagnosis' in feedback else ''
+                if 'diagnosis' in feedback:
+                    health['diagnosis'] = feedback['diagnosis']
+                else:
+                    health['diagnosis'] = ''
                 health['response'] = health_response._json
         except Exception as e:
             logger.warn('Metrics: Failed to get health status, ' + str(e))
@@ -149,7 +153,9 @@ class MetricsEmitterThread(threading.Thread):
             db_config = buildpackutil.get_database_config()
             with conn.cursor() as cursor:
                 cursor.execute(
-                    "select xact_commit, xact_rollback, tup_inserted, tup_updated, tup_deleted from pg_stat_database where datname = '%s';" % (
+                    "select xact_commit, xact_rollback, tup_inserted, "
+                    "tup_updated, tup_deleted from pg_stat_database "
+                    "where datname = '%s';" % (
                         db_config['DatabaseName'],
                     )
                 )
@@ -189,22 +195,27 @@ class MetricsEmitterThread(threading.Thread):
         conn = self._get_db_conn()
         try:
             with conn.cursor() as cursor:
-                cursor.execute(
-                    """
-                    SELECT
-                        SUM(pg_relation_size(quote_ident(indexrelname)::text)) AS index_size
-                    FROM pg_tables t
-                    LEFT OUTER JOIN pg_class c ON t.tablename=c.relname
-                    LEFT OUTER JOIN
-                        ( SELECT c.relname AS ctablename, ipg.relname AS indexname, x.indnatts AS number_of_columns, idx_scan, idx_tup_read, idx_tup_fetch, indexrelname, indisunique FROM pg_index x
-                            JOIN pg_class c ON c.oid = x.indrelid
-                            JOIN pg_class ipg ON ipg.oid = x.indexrelid
-                            JOIN pg_stat_all_indexes psai ON x.indexrelid = psai.indexrelid )
-                        AS foo
-                        ON t.tablename = foo.ctablename
-                    WHERE t.schemaname='public';
-                    """
-                )
+                cursor.execute("""
+SELECT SUM(pg_relation_size(quote_ident(indexrelname)::text)) AS index_size
+FROM pg_tables t
+LEFT OUTER JOIN pg_class c ON t.tablename=c.relname
+LEFT OUTER JOIN
+  (SELECT c.relname AS ctablename,
+          ipg.relname AS indexname,
+          x.indnatts AS number_of_columns,
+          idx_scan,
+          idx_tup_read,
+          idx_tup_fetch,
+          indexrelname,
+          indisunique
+   FROM pg_index x
+   JOIN pg_class c ON c.oid = x.indrelid
+   JOIN pg_class ipg ON ipg.oid = x.indexrelid
+   JOIN pg_stat_all_indexes psai
+   ON x.indexrelid = psai.indexrelid)
+   AS foo ON t.tablename = foo.ctablename
+WHERE t.schemaname='public';
+""")
                 rows = cursor.fetchall()
                 return int(rows[0][0])
         except Exception as e:
@@ -218,7 +229,8 @@ class MetricsEmitterThread(threading.Thread):
 
         with conn.cursor() as cursor:
             cursor.execute(
-                'SELECT COUNT(id) from system$filedocument WHERE hascontents=true;'
+                'SELECT COUNT(id) from system$filedocument '
+                'WHERE hascontents=true;'
             )
             rows = cursor.fetchall()
             if len(rows) == 0:
@@ -253,7 +265,8 @@ class MetricsEmitterThread(threading.Thread):
                     port=port,
                     connect_timeout=3,
                 )
-                self.db.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+                self.db.set_isolation_level(
+                    psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
             except Exception as e:
                 logger.warn('METRICS: ' + e.message)
         return self.db
