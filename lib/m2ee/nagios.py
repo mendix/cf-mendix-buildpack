@@ -17,17 +17,17 @@ DUNNO = -1
 def check(runner, client):
     (runtime_state, message) = _check_process(runner, client)
     if runtime_state != DUNNO:
-        print message
+        print(message)
         return runtime_state
 
     (runtime_health, message) = _check_health(client)
     if runtime_health != STATE_OK:
-        print message
+        print(message)
         return runtime_health
 
     (critical_log_status, message) = _check_critical_logs(client)
     if critical_log_status != STATE_OK:
-        print message
+        print(message)
         return critical_log_status
 
     # everything seems to be fine, print version info and exit
@@ -39,7 +39,7 @@ def check(runner, client):
 
 def check_process(runner, client):
     (status, message) = _check_process(runner, client)
-    print message
+    print(message)
     if status is DUNNO:
         return 0
     return status
@@ -48,9 +48,9 @@ def check_process(runner, client):
 def check_health(runner, client):
     if client.ping():
         (health_status, health_message) = _check_health(client)
-        print health_message
+        print(health_message)
         return health_status
-    print "Runtime not running. Health could not be determined"
+    print("Runtime not running. Health could not be determined")
     return STATE_UNKNOWN
 
 
@@ -58,9 +58,9 @@ def check_critical_logs(runner, client):
     if client.ping():
         (critical_logs_status,
          critical_logs_message) = _check_critical_logs(client)
-        print critical_logs_message
+        print(critical_logs_message)
         return critical_logs_status
-    print "Runtime not running. Critical Logs could not be determined"
+    print("Runtime not running. Critical Logs could not be determined")
     return STATE_UNKNOWN
 
 

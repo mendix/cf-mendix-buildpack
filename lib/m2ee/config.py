@@ -12,9 +12,9 @@ import pwd
 import re
 import copy
 
-from log import logger
+from .log import logger
 from collections import defaultdict
-from version import MXVersion
+from .version import MXVersion
 
 # Use json if available. If not (python 2.5) we need to import the simplejson
 # module instead, which has to be available.
@@ -23,7 +23,7 @@ try:
 except ImportError:
     try:
         import simplejson as json
-    except ImportError, ie:
+    except ImportError as ie:
         logger.critical("Failed to import json as well as simplejson. If "
                         "using python 2.5, you need to provide the simplejson "
                         "module in your python library path.")
@@ -199,7 +199,7 @@ class M2EEConfig:
         fd = None
         try:
             fd = open(jsonfile)
-        except Exception, e:
+        except Exception as e:
             logger.debug("Error reading configuration file %s: %s; "
                          "ignoring..." % (jsonfile, e))
             return {}
@@ -207,7 +207,7 @@ class M2EEConfig:
         config = None
         try:
             config = json.load(fd)
-        except Exception, e:
+        except Exception as e:
             logger.error("Error parsing configuration file %s: %s" %
                          (jsonfile, e))
             return {}
@@ -216,7 +216,7 @@ class M2EEConfig:
         return config
 
     def mtime_changed(self):
-        for yamlfile, mtime in self._mtimes.iteritems():
+        for yamlfile, mtime in self._mtimes.items():
             if os.stat(yamlfile)[8] != mtime:
                 return True
         return False
@@ -328,9 +328,9 @@ class M2EEConfig:
     def fix_permissions(self):
         basepath = self._conf['m2ee']['app_base']
         for directory, mode in {
-                "model": 0700,
-                "web": 0755,
-                "data": 0700}.iteritems():
+                "model": 0o700,
+                "web": 0o755,
+                "data": 0o700}.items():
             fullpath = os.path.join(basepath, directory)
             if not os.path.exists(fullpath):
                 logger.critical("Directory %s does not exist!" % fullpath)
@@ -373,7 +373,7 @@ class M2EEConfig:
             try:
                 input_file = open(felix_template_file)
                 template = input_file.read()
-            except IOError, e:
+            except IOError as e:
                 logger.error("felix configuration template could not be "
                              "read: %s", e)
                 return False
@@ -385,7 +385,7 @@ class M2EEConfig:
                     FrameworkStorage=osgi_storage_path
                 )
                 output_file.write(render)
-            except IOError, e:
+            except IOError as e:
                 logger.error("felix configuration file could not be "
                              "written: %s", e)
                 return False
@@ -406,7 +406,7 @@ class M2EEConfig:
         if not os.path.isdir(dotm2ee):
             try:
                 os.mkdir(dotm2ee)
-            except OSError, e:
+            except OSError as e:
                 logger.debug("Got %s: %s" % (type(e), e))
                 import traceback
                 logger.debug(traceback.format_exc())
@@ -665,7 +665,7 @@ class M2EEConfig:
         repos = self._conf['mxnode']['mxjar_repo']
         logger.debug("Searching for writeable mxjar repos... in %s"
                      % repos)
-        repos = filter(lambda repo: os.access(repo, os.W_OK), repos)
+        repos = [repo for repo in repos if os.access(repo, os.W_OK)]
         if len(repos) > 0:
             found = repos[0]
             logger.debug("Found writable mxjar location: %s" % found)
@@ -823,7 +823,7 @@ class M2EEConfig:
             version = c.fetchone()[0]
             c.close()
             conn.close()
-        except sqlite3.Error, e:
+        except sqlite3.Error as e:
             logger.error("An error occured while trying to read mendix "
                          "version number from model.mdp: %s" % e)
             return None
@@ -876,7 +876,7 @@ class M2EEConfig:
             for constant
             in self._model_metadata['Constants']
         ]
-        yaml_constants = self._conf['mxruntime']['MicroflowConstants'].keys()
+        yaml_constants = list(self._conf['mxruntime']['MicroflowConstants'].keys())
 
         missing = [m for m in model_constants if m not in yaml_constants]
         if missing:
@@ -925,14 +925,14 @@ def load_config(yaml_file):
     fd = None
     try:
         fd = open(yaml_file)
-    except Exception, e:
+    except Exception as e:
         logger.error("Error reading configuration file %s, ignoring..." %
                      yaml_file)
         return
 
     try:
         return yaml.load(fd)
-    except Exception, e:
+    except Exception as e:
         logger.error("Error parsing configuration file %s: %s" %
                      (yaml_file, e))
         return
@@ -946,7 +946,7 @@ def merge_config(initial_config, additional_config):
     if initial_config is None:
         return additional_config
 
-    for section in set(initial_config.keys() + additional_config.keys()):
+    for section in set(list(initial_config.keys()) + list(additional_config.keys())):
         if section in initial_config:
             if section in additional_config:
                 if isinstance(additional_config[section], dict):

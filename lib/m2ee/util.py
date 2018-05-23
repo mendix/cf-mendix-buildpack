@@ -9,8 +9,8 @@ import os
 import shutil
 import subprocess
 import socket
-import httplib
-from log import logger
+import http.client
+from .log import logger
 
 try:
     import readline
@@ -54,7 +54,7 @@ def unpack(config, mda_name):
         else:
             logger.trace("stdout: %s" % stdout)
             logger.trace("stderr: %s" % stderr)
-    except OSError, ose:
+    except OSError as ose:
         import errno
         if ose.errno == errno.ENOENT:
             logger.error("The unzip program could not be found: %s" %
@@ -114,7 +114,7 @@ def fix_mxclientsystem_symlink(config):
                      real_mxclientsystem_path)
         try:
             os.symlink(real_mxclientsystem_path, mxclient_symlink)
-        except OSError, e:
+        except OSError as e:
             logger.error("creating symlink failed: %s" % e)
     else:
         logger.warn("Not touching mxclientsystem symlink: file exists "
@@ -143,7 +143,7 @@ def check_download_runtime_existence(url):
     try:
         (response_headers, response_body) = h.request(url, "HEAD")
         logger.trace("Response headers: %s" % response_headers)
-    except (httplib2.HttpLib2Error, httplib.HTTPException,
+    except (httplib2.HttpLib2Error, http.client.HTTPException,
             socket.error) as e:
         logger.error("Checking download url %s failed: %s: %s"
                      % (url, e.__class__.__name__, e))

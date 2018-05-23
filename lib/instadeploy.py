@@ -1,4 +1,4 @@
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, HTTPServer
 import cgi
 import json
 import shutil
@@ -39,7 +39,7 @@ class MxBuildFailure(Exception):
     Represents any 4xx 5xx issues retrieved from MxBuild HTTP Server
     '''
     def __init__(self, message, status_code, mxbuild_response):
-        super(MxBuildFailure, self).__init__(message)
+        super().__init__(message)
         self.status_code = status_code
         self.mxbuild_response = mxbuild_response
 
@@ -51,7 +51,7 @@ class InstaDeployThread(threading.Thread):
     """
 
     def __init__(self, port, restart_callback, reload_callback, mx_version):
-        super(InstaDeployThread, self).__init__()
+        super().__init__()
         self.port = port
         self.restart_callback = restart_callback
         self.reload_callback = reload_callback
@@ -71,10 +71,26 @@ class InstaDeployThread(threading.Thread):
         server.serve_forever()
 
 
+class MyFieldStorage(cgi.FieldStorage):
+    # cgi bug, see https://stackoverflow.com/questions/42213318
+    @property
+    def filename(self):
+        if self._original_filename is not None:
+            return self._original_filename
+        elif self.name == 'file':
+            return 'file_name'
+        else:
+            return None
+
+    @filename.setter
+    def filename(self, value):
+        self._original_filename = value
+
+
 class MPKUploadHandler(BaseHTTPRequestHandler):
-    def do_POST(self):
+    def process_request(self):
         try:
-            form = cgi.FieldStorage(
+            form = MyFieldStorage(
                 fp=self.rfile,
                 headers=self.headers,
                 environ={
@@ -88,7 +104,7 @@ class MPKUploadHandler(BaseHTTPRequestHandler):
                 mxbuild_response = build()
                 logger.debug(mxbuild_response)
                 if mxbuild_response['status'] == 'Busy':
-                    return self._terminate(200, {'state': 'BUSY'}, mxbuild_response)
+                    return (200, {'state': 'BUSY'}, mxbuild_response)
                 if mxbuild_response['status'] != 'Success':
                     # possible 'status': Success, Failure, Busy
                     logger.warning(
@@ -104,26 +120,26 @@ class MPKUploadHandler(BaseHTTPRequestHandler):
                     logger.info('Reloading model after MPK push')
                     self.server.reload_callback()
                     state = 'STARTED'
-                return self._terminate(200, {
-                    'state': state,
-                }, mxbuild_response)
+                return (200, {'state': state}, mxbuild_response)
             else:
-                return self._terminate(401, {
+                return (401, {
                     'state': 'FAILED',
                     'errordetails': 'No MPK found',
-                })
+                }, None)
 
         except MxBuildFailure as mbf:
             logger.warning('InstaDeploy terminating with MxBuildFailure: {}'.format(mbf.message))
-            return self._terminate(200, {'state': 'FAILED'}, mbf.mxbuild_response)
+            return (200, {'state': 'FAILED'}, mbf.mxbuild_response)
 
         except Exception:
-            return self._terminate(500, {
+            logger.warning("Instadeploy failed", exc_info=True)
+            return (500, {
                 'state': 'FAILED',
                 'errordetails': traceback.format_exc(),
-            })
+            }, None)
 
-    def _terminate(self, status_code, data, mxbuild_response=None):
+    def do_POST(self):
+        status_code, data, mxbuild_response = self.process_request()
         if mxbuild_response:
             flat_response = extract_mxbuild_response(mxbuild_response)
             data.update(flat_response)
@@ -131,7 +147,7 @@ class MPKUploadHandler(BaseHTTPRequestHandler):
         self.send_header('Content-type', 'application/json')
         self.end_headers()
         data['code'] = status_code
-        self.wfile.write(json.dumps(data))
+        self.wfile.write(json.dumps(data).encode('utf-8'))
 
 
 def update_project_dir():
@@ -198,6 +214,7 @@ def build():
 
     return result
 
+
 def sync_project_files():
     for name in ('web', 'model'):
         subprocess.check_call((
@@ -205,6 +222,7 @@ def sync_project_files():
             os.path.join(DEPLOYMENT_DIR, name) + '/',
             os.path.join(ROOT_DIR, name) + '/',
         ))
+
 
 def extract_mxbuild_response(mxbuild_response):
     r = {}

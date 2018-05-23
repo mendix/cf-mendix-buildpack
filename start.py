@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import json
 import os
 import re
@@ -26,7 +26,7 @@ from buildpackutil import i_am_primary_instance
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
 
-logger.info('Started Mendix Cloud Foundry Buildpack v1.9.2')
+logger.info('Started Mendix Cloud Foundry Buildpack v2.0.0')
 
 logging.getLogger('m2ee').propagate = False
 
@@ -34,11 +34,14 @@ logging.getLogger('m2ee').propagate = False
 app_is_restarting = False
 default_m2ee_password = str(uuid.uuid4()).replace('-', '@') + 'A1'
 nginx_process = None
+m2ee = None
+
 
 def emit(**stats):
     stats['version'] = '1.0'
     stats['timestamp'] = datetime.datetime.now().isoformat()
     logger.info('MENDIX-METRICS: ' + json.dumps(stats))
+
 
 def get_nginx_port():
     return int(os.environ['PORT'])
@@ -480,7 +483,7 @@ def get_client_certificates():
         location = os.path.abspath(
             '.local/client_certificate.%d.crt' % num
         )
-        with open(location, 'w') as f:
+        with open(location, 'wb') as f:
             f.write(pfx)
         passwords.append(client_certificate['password'])
         files.append(location)
@@ -500,7 +503,7 @@ def get_custom_settings(metadata, existing_config):
         custom_settings_key = 'Configuration'
         if custom_settings_key in metadata:
             config = {}
-            for k, v in metadata[custom_settings_key].iteritems():
+            for k, v in metadata[custom_settings_key].items():
                 if k not in existing_config:
                     config[k] = v
             return config
@@ -518,7 +521,7 @@ def get_custom_runtime_settings():
     except Exception as e:
         logger.warning('Failed to parse CUSTOM_RUNTIME_SETTINGS: ' + str(e))
 
-    for k, v in os.environ.iteritems():
+    for k, v in os.environ.items():
         if k.startswith('MXRUNTIME_'):
             custom_runtime_settings[
                 k.replace('MXRUNTIME_', '', 1).replace('_', '.')
@@ -834,10 +837,11 @@ def start_app(m2ee):
 
 @atexit.register
 def terminate_process():
-    logger.info('stopping app...')
-    if not m2ee.stop():
-        if not m2ee.terminate():
-            m2ee.kill()
+    if m2ee:
+        logger.info('stopping app...')
+        if not m2ee.stop():
+            if not m2ee.terminate():
+                m2ee.kill()
     try:
         this_process = os.getpgid(0)
         logger.debug(
@@ -907,7 +911,7 @@ def configure_debugger(m2ee):
 
 def _transform_logging(nodes):
     res = []
-    for k, v in nodes.iteritems():
+    for k, v in nodes.items():
         res.append({
             "name": k,
             "level": v
@@ -916,7 +920,7 @@ def _transform_logging(nodes):
 
 
 def configure_logging(m2ee):
-    for k, v in os.environ.iteritems():
+    for k, v in os.environ.items():
         if k.startswith('LOGGING_CONFIG'):
             m2ee.set_log_levels(
                 '*',

@@ -4,17 +4,14 @@ import json
 import errno
 import subprocess
 import logging
-import urlparse
 import sys
+from urllib.parse import parse_qs
 sys.path.insert(0, 'lib')
 import requests
 
 
 def get_database_config(development_mode=False):
-    if any(map(
-            lambda x: x.startswith('MXRUNTIME_Database'),
-            os.environ.keys()
-    )):
+    if any([x.startswith('MXRUNTIME_Database') for x in list(os.environ.keys())]):
         return {}
 
     url = get_database_uri_from_vcap()
@@ -57,7 +54,7 @@ def get_database_config(development_mode=False):
 
     if 'extra' in match.groupdict() and match.group('extra'):
         extra = match.group('extra').lstrip('?')
-        jdbc_params = urlparse.parse_qs(extra)
+        jdbc_params = parse_qs(extra)
         if 'sslmode' in jdbc_params:
             sslmode = jdbc_params['sslmode']
             if sslmode and sslmode[0] == 'require':
@@ -136,7 +133,7 @@ def get_database_uri_from_vcap():
 
 
 def appdynamics_used():
-    for k, v in os.environ.iteritems():
+    for k, v in os.environ.items():
         if k.startswith('APPDYNAMICS_'):
             return True
     return False
@@ -150,7 +147,7 @@ def get_new_relic_license_key():
 
 
 def get_blobstore_url(filename):
-    main_url = os.environ.get('BLOBSTORE', 'http://cdn.mendix.com')
+    main_url = os.environ.get('BLOBSTORE', 'https://cdn.mendix.com')
     if main_url[-1] == '/':
         main_url = main_url[0:-1]
     return main_url + filename
@@ -214,7 +211,7 @@ def download(url, destination):
     logging.debug('downloading {url} to {destination}'.format(
         url=url, destination=destination
     ))
-    with open(destination, 'w') as file_handle:
+    with open(destination, 'wb') as file_handle:
         response = requests.get(url, stream=True)
         if not response.ok:
             response.raise_for_status()
@@ -249,7 +246,7 @@ def get_java_version(mx_version):
         default = '7'
     main_java_version = os.getenv('JAVA_VERSION', default)
 
-    if main_java_version not in versions.keys():
+    if main_java_version not in list(versions.keys()):
         raise Exception(
             'Invalid Java version specified: %s'
             % main_java_version
@@ -258,7 +255,7 @@ def get_java_version(mx_version):
 
 
 def get_mpr_file_from_dir(directory):
-    mprs = filter(lambda x: x.endswith('.mpr'), os.listdir(directory))
+    mprs = [x for x in os.listdir(directory) if x.endswith('.mpr')]
     if len(mprs) == 1:
         return os.path.join(directory, mprs[0])
     elif len(mprs) > 1:
