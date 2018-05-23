@@ -20,16 +20,31 @@ def gen_htpasswd(users_passwords, file_name_suffix=''):
 
 
 def get_path_config():
-    '''
-    Example for ACCESS_RESTRICTIONS
+    """
+    Example for ACCESS_RESTRICTIONS:
     {
-        "/": {'ipfilter': ['10.0.0.0/8'], 'client_cert': true, 'satisfy': 'any'},
-        "/ws/MyWebService/": {'ipfilter': ['10.0.0.0/8'], 'client_cert': true, 'satisfy': 'all'},
-        "/CustomRequestHandler/": {'ipfilter': ['10.0.0.0/8']},
-        "/CustomRequestHandler2/": {'basic_auth': {'user1': 'password', 'user2': 'password2'}},
+        "/": {
+            'ipfilter': ['10.0.0.0/8'],
+            'client_cert': true,
+            'satisfy': 'any'
+        },
+        "/ws/MyWebService/": {
+            'ipfilter': ['10.0.0.0/8'],
+            'client_cert': true,
+            'satisfy': 'all'
+        },
+        "/CustomRequestHandler/": {
+            'ipfilter': ['10.0.0.0/8']
+        },
+        "/CustomRequestHandler2/": {
+            'basic_auth': {
+                'user1': 'password',
+                'user2': 'password2'
+            }
+        },
     }
     Default for satisfy is all
-    '''
+    """
 
     location_template = """
 location %s {
