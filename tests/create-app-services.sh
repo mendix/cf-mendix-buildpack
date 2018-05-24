@@ -3,7 +3,6 @@
 pids=""
 RESULT=0
 APPNAME=$1
-export CF_TRACE=true
 
 cf create-service schnapps-testfree basic-testfree $APPNAME-schnapps 2>&1 &
 pids="$pids $!"
