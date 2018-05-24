@@ -38,7 +38,7 @@ class TestCaseAccessRestrictions(basetest.BaseTest):
             myips.add('%s/32' % ip)
         try:
             myips.add(requests.get('https://myipv6.mendix.com/').text + '/128')
-        except:
+        except Exception:
             pass
         myips = list(myips)
 
@@ -117,5 +117,9 @@ class TestCaseAccessRestrictions(basetest.BaseTest):
 
     def _httpget(self, path, expected_code, auth=None):
         r = requests.get('https://' + self.app_name + path, auth=auth)
-        print('OK' if r.status_code == expected_code else 'NOK', path, 'expected', expected_code, 'got', r.status_code, 'authentication', auth)
+        if r.status_code == expected_code:
+            print('OK')
+        else:
+            print('NOK {} expected {} got {} authentication {}'.format(
+                path, expected_code, r.status_code, auth))
         return r.status_code == expected_code

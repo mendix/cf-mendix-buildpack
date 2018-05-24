@@ -206,7 +206,7 @@ def build():
         try:
             sync_project_files()
             logger.info("Syncing project files ...")
-        except:
+        except Exception:
             logger.warning("Syncing project files failed: %s", traceback.format_exc())
             raise
     else:

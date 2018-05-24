@@ -1,13 +1,15 @@
+import errno
+import json
+import logging
 import os
 import re
-import json
-import errno
 import subprocess
-import logging
 import sys
 from urllib.parse import parse_qs
+
 sys.path.insert(0, 'lib')
-import requests
+
+import requests  # noqa: E402
 
 
 def get_database_config(development_mode=False):
@@ -18,8 +20,8 @@ def get_database_config(development_mode=False):
     if url is None:
         url = os.environ['DATABASE_URL']
     patterns = [
-        r'(?P<type>[a-zA-Z0-9]+)://(?P<user>[^:]+):(?P<password>[^@]+)@(?P<host>[^/]+)/(?P<dbname>[^?]*)(?P<extra>\?.*)?',
-        r'jdbc:(?P<type>[a-zA-Z0-9]+)://(?P<host>[^;]+);database=(?P<dbname>[^;]*);user=(?P<user>[^;]+);password=(?P<password>.*)$'
+        r'(?P<type>[a-zA-Z0-9]+)://(?P<user>[^:]+):(?P<password>[^@]+)@(?P<host>[^/]+)/(?P<dbname>[^?]*)(?P<extra>\?.*)?',  # noqa: E501
+        r'jdbc:(?P<type>[a-zA-Z0-9]+)://(?P<host>[^;]+);database=(?P<dbname>[^;]*);user=(?P<user>[^;]+);password=(?P<password>.*)$'  # noqa: E501
     ]
 
     supported_databases = {
@@ -303,7 +305,7 @@ def _checkout_from_git_rootfs(directory, mx_version):
             stderr=subprocess.PIPE,
         )
         return
-    except:
+    except Exception:
         try:
             subprocess.check_call(
                 (
@@ -322,7 +324,7 @@ def _checkout_from_git_rootfs(directory, mx_version):
             )
             logging.debug('found mx version after updating runtimes.git')
             return
-        except:
+        except Exception:
             logging.debug('tried updating git repo, also failed')
     raise NotFoundException(
         'Could not download mxbuild ' +
