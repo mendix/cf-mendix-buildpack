@@ -148,12 +148,12 @@ class MetricsEmitterThread(threading.Thread):
             db_config = buildpackutil.get_database_config()
             with conn.cursor() as cursor:
                 cursor.execute(
-                    "SELECT xact_commit,"
-                    "       xact_rollback,"
-                    "       tup_inserted,"
-                    "       tup_updated,"
-                    "       tup_deleted"
-                    "FROM pg_stat_database"
+                    "SELECT xact_commit, "
+                    "       xact_rollback, "
+                    "       tup_inserted, "
+                    "       tup_updated, "
+                    "       tup_deleted "
+                    "FROM pg_stat_database "
                     "WHERE datname = '%s';" % (
                         db_config['DatabaseName'],
                     )
