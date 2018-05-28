@@ -218,7 +218,8 @@ def get_stats_from_runtime(client, config):
 def write_last_known_good_stats_cache(stats, config_cache):
     logger.debug("Writing munin cache to %s" % config_cache)
     try:
-        file(config_cache, 'w+').write(json.dumps(stats))
+        with open(config_cache, 'w+') as f:
+            f.write(json.dumps(stats))
     except Exception as e:
         logger.error("Error writing munin config cache to %s: %s",
                      (config_cache, e))
@@ -546,8 +547,8 @@ def print_jvm_process_memory_values(name, stats, pid, client, java_version):
     print("multigraph mxruntime_jvm_process_memory_%s" % name)
 
     for k in ['tenured', 'survivor', 'eden', 'javaheap', 'permanent',
-        'nativemem', 'stacks', 'total', 'jar', 'nativecode', 'code',
-        'codecache']:
+              'nativemem', 'stacks', 'total', 'jar', 'nativecode', 'code',
+              'codecache']:
         print('%s.value %s' % (k, memory[k]))
     print("")
 

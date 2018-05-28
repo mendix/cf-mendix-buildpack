@@ -146,6 +146,7 @@ class M2EEProfiler(cmd.Cmd):
         else:
             print(json)
 
+
 if __name__ == '__main__':
     server = "http://agile:8090"
     client = M2EEClient(server, "1")

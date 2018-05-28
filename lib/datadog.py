@@ -26,11 +26,13 @@ def _get_hostname():
         dd_hostname = domain + '-' + os.getenv('CF_INSTANCE_INDEX', '')
     return dd_hostname
 
+
 def _get_service():
     dd_service = os.environ.get('DD_SERVICE')
     if dd_service is None:
         dd_service = _get_hostname()
     return dd_service
+
 
 def update_config(m2ee, app_name):
     if not is_enabled():

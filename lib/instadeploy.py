@@ -71,10 +71,26 @@ class InstaDeployThread(threading.Thread):
         server.serve_forever()
 
 
+class MyFieldStorage(cgi.FieldStorage):
+    # cgi bug, see https://stackoverflow.com/questions/42213318
+    @property
+    def filename(self):
+        if self._original_filename is not None:
+            return self._original_filename
+        elif self.name == 'file':
+            return 'file_name'
+        else:
+            return None
+
+    @filename.setter
+    def filename(self, value):
+        self._original_filename = value
+
+
 class MPKUploadHandler(BaseHTTPRequestHandler):
     def process_request(self):
         try:
-            form = cgi.FieldStorage(
+            form = MyFieldStorage(
                 fp=self.rfile,
                 headers=self.headers,
                 environ={
@@ -116,6 +132,7 @@ class MPKUploadHandler(BaseHTTPRequestHandler):
             return (200, {'state': 'FAILED'}, mbf.mxbuild_response)
 
         except Exception:
+            logger.warning("Instadeploy failed", exc_info=True)
             return (500, {
                 'state': 'FAILED',
                 'errordetails': traceback.format_exc(),
@@ -189,13 +206,14 @@ def build():
         try:
             sync_project_files()
             logger.info("Syncing project files ...")
-        except:
+        except Exception:
             logger.warning("Syncing project files failed: %s", traceback.format_exc())
             raise
     else:
         logger.warning("Not syncing project files. MxBuild result: %s", result)
 
     return result
+
 
 def sync_project_files():
     for name in ('web', 'model'):
@@ -204,6 +222,7 @@ def sync_project_files():
             os.path.join(DEPLOYMENT_DIR, name) + '/',
             os.path.join(ROOT_DIR, name) + '/',
         ))
+
 
 def extract_mxbuild_response(mxbuild_response):
     r = {}

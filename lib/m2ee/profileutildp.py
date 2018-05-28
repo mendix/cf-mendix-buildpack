@@ -55,12 +55,12 @@ def format_dict_table(rows, column_names=None, max_column_width=None,
         else:
             try:
                 column_list = list(rows[0].keys())
-            except:
+            except Exception:
                 column_list = None
         if column_list:
             # characters that make up the table rules
             border_style = int(border_style)
-            #border_style = 0
+            # border_style = 0
             if border_style == 0:
                 vertical_rule = '  '
                 horizontal_rule = ''

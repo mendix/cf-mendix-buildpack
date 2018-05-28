@@ -15,7 +15,7 @@ before_script:
   - sudo update-ca-certificates
 
 script:
-  - cd tests && bash run.sh
+  - make test
 
 notifications:
   email: false
