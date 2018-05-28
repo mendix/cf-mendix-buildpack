@@ -5,6 +5,7 @@ import os
 import re
 import subprocess
 import sys
+from distutils.util import strtobool
 from urllib.parse import parse_qs
 
 sys.path.insert(0, 'lib')
@@ -413,3 +414,31 @@ def ensure_and_get_jvm(mx_version, cache_dir, dot_local_location, package='jdk')
 
 def i_am_primary_instance():
     return os.getenv('CF_INSTANCE_INDEX', '0') == '0'
+
+
+def bypass_loggregator_logging():
+    env_var = os.getenv('BYPASS_LOGGREGATOR', 'False')
+    # Throws a useful message if you put in a nonsensical value.
+    # Necessary since we store these in cloud portal as strings.
+    try:
+        bypass_loggregator = strtobool(env_var)
+    except ValueError as e:
+        logging.warning(
+            "Bypass loggregator has a nonsensical value: %s. "
+            "Falling back to old loggregator-based metric reporting.",
+            env_var)
+        return False
+
+    if bypass_loggregator:
+        if os.getenv('TRENDS_STORAGE_URL'):
+            return True
+        else:
+            logging.warning(
+                "BYPASS_LOGGREGATOR is set to true, but no metrics URL is "
+                "set. Falling back to old loggregator-based metric reporting.")
+            return False
+    return False
+
+
+def get_metrics_url():
+    return os.getenv('TRENDS_STORAGE_URL')

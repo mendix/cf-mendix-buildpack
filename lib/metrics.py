@@ -4,13 +4,53 @@ import os
 import sys
 import threading
 import time
+from abc import ABCMeta, abstractmethod
 
 BUILDPACK_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, os.path.join(BUILDPACK_DIR, 'lib'))
 import buildpackutil   # noqa: E402
 import psycopg2   # noqa: E402
+import requests  # noqa: E402
 
 from m2ee import logger, munin   # noqa: E402
+
+
+class MetricsEmitter(metaclass=ABCMeta):
+    @abstractmethod
+    def emit(self, stats):
+        raise NotImplementedError
+
+
+class LoggingEmitter(MetricsEmitter):
+    def emit(self, stats):
+        logger.info('MENDIX-METRICS: ' + json.dumps(stats))
+
+
+class MetricsServerEmitter(MetricsEmitter):
+    def __init__(self, metrics_url):
+        self.metrics_url = metrics_url
+        self.fallback_emitter = LoggingEmitter()
+
+    def emit(self, stats):
+        try:
+            response = requests.post(self.metrics_url, json=stats, timeout=10)
+        except Exception as e:
+            logger.warning("Failed to send metrics to trends server.",
+                           exc_info=True)
+            # Fallback to old pipeline and stdout for now.
+            # Later, we will want to buffer and resend.
+            # This will be done in DEP-75.
+            self.fallback_emitter.emit(stats)
+            return
+
+        if response.status_code != 200:
+            logger.warning(
+                "Failed to send metrics to trends server. Falling back to old "
+                "loggregator based method. Got status code %s "
+                "for URL %s, with body %s.",
+                response.status_code, self.metrics_url, response.text)
+
+            self.fallback_emitter.emit(stats)
 
 
 class MetricsEmitterThread(threading.Thread):
@@ -20,6 +60,16 @@ class MetricsEmitterThread(threading.Thread):
         self.interval = interval
         self.m2ee = m2ee
         self.db = None
+        if buildpackutil.bypass_loggregator_logging():
+            logger.info("Metrics are logged direct to metrics server.")
+            self.emitter = MetricsServerEmitter(
+                metrics_url=buildpackutil.get_metrics_url())
+        else:
+            logger.info("Metrics are logged to stdout.")
+            self.emitter = LoggingEmitter()
+
+    def emit(self, stats):
+        self.emitter.emit(stats)
 
     def run(self):
         logger.debug(
@@ -31,13 +81,14 @@ class MetricsEmitterThread(threading.Thread):
                 stats = {
                     'version': '1.0',
                     'timestamp': datetime.datetime.now().isoformat(),
+                    'instance_index': os.getenv('CF_INSTANCE_INDEX', 0)
                 }
                 stats = self._inject_m2ee_stats(stats)
                 if buildpackutil.i_am_primary_instance():
                     stats = self._inject_storage_stats(stats)
                     stats = self._inject_database_stats(stats)
                     stats = self._inject_health(stats)
-                logger.info('MENDIX-METRICS: ' + json.dumps(stats))
+                self.emit(stats)
             except Exception as e:
                 logger.exception('METRICS: error while gathering metrics')
 
