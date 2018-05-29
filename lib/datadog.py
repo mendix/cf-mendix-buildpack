@@ -46,14 +46,14 @@ def update_config(m2ee, app_name):
         '-Dcom.sun.management.jmxremote.ssl=false',
         '-Djava.rmi.server.hostname=127.0.0.1',
     ])
-    m2ee.config._conf['logging'].append({
-        'type': 'file',
-        'name': 'FileSubscriberDataDog',
-        'autosubscribe': 'INFO',
-        'filename': os.path.join(os.getcwd(), 'log', 'datadog.log'),
-        'max_size': 1048576,
-        'max_rotation': 1,
-    })
+    if m2ee.config.get_runtime_version() >= 7.15:
+        m2ee.config._conf['logging'].append({
+            'type': 'tcpjsonlines',
+            'name': 'DataDogSubscriber',
+            'autosubscribe': 'INFO',
+            'host': 'localhost',
+            'port': 9032,
+        })
     if m2ee.config.get_runtime_version() >= 7.14:
         jar = os.path.abspath('.local/datadog/mx-agent-assembly-0.1-SNAPSHOT.jar')
         m2ee.config._conf['m2ee']['javaopts'].extend([
@@ -92,8 +92,8 @@ def update_config(m2ee, app_name):
     with open('.local/datadog/conf.d/mendix.d/conf.yaml', 'w') as fh:
         config = {
             'logs': [{
-                'type': 'file',
-                'path': 'log/datadog.log',
+                'type': 'tcp',
+                'port': '9032',
                 'service': _get_service(),
                 'source': 'mendix',
                 'tags': tags,
