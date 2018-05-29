@@ -116,6 +116,7 @@ def update_config(m2ee, app_name):
                 'host': 'localhost',
                 'port': 7845,
                 'java_bin_path': '.local/bin/java',
+                'java_options': '-Xmx50m -Xms5m',
                 'conf': [{
                     'include': {
                         'bean': 'com.mendix:type=SessionInformation',
