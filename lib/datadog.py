@@ -102,6 +102,11 @@ def update_config(m2ee, app_name):
         fh.write(yaml.safe_dump(config))
     subprocess.check_call(('mkdir', '-p', '.local/datadog/conf.d/jmx.d'))
     with open('.local/datadog/conf.d/jmx.d/conf.yaml', 'w') as fh:
+        # jmx beans and values can be inspected with jmxterm
+        # download the jmxterm jar into the container
+        # and run app/.local/bin/java -jar ~/jmxterm.jar
+        #
+        # the extra attributes are only available from Mendix 7.15.0+
         config = {
             'init_config': {
                 'collect_default_metrics': True,
@@ -111,6 +116,76 @@ def update_config(m2ee, app_name):
                 'host': 'localhost',
                 'port': 7845,
                 'java_bin_path': '.local/bin/java',
+                'conf': [{
+                    'include': {
+                        'bean': 'com.mendix:type=SessionInformation',
+                        # NamedUsers = 1;
+                        # NamedUserSessions = 0;
+                        # AnonymousSessions = 0;
+
+                        'attribute': {
+                            'NamedUsers': {'metrics_type': 'gauge'},
+                            'NamedUserSessions': {'metrics_type': 'gauge'},
+                            'AnonymousSessions': {'metrics_type': 'gauge'},
+                        },
+                    },
+                }, {
+                    'include': {
+                        'bean': 'com.mendix:type=Statistics,name=DataStorage',
+                        # Selects = 1153;
+                        # Inserts = 1;
+                        # Updates = 24;
+                        # Deletes = 0;
+                        # Transactions = 25;
+
+                        'attribute': {
+                            'Selects': {'metrics_type': 'counter'},
+                            'Updates': {'metrics_type': 'counter'},
+                            'Inserts': {'metrics_type': 'counter'},
+                            'Deletes': {'metrics_type': 'counter'},
+                            'Transactions': {'metrics_type': 'counter'},
+                        },
+                    },
+                }, {
+                    'include': {
+                        'bean': 'com.mendix:type=General',
+                        # Languages = en_US;
+                        # Entities = 24;
+
+                        'attribute': {
+                            'Entities': {'metrics_type': 'gauge'},
+                        },
+                    },
+                }, {
+                    'include': {
+                        'bean': 'com.mendix:type=JettyThreadPool',
+                        # Threads = 8
+                        # IdleThreads = 3;
+                        # IdleTimeout = 60000;
+                        # MaxThreads = 254;
+                        # StopTimeout = 30000;
+                        # MinThreads = 8;
+                        # ThreadsPriority = 5;
+                        # QueueSize = 0;
+
+                        'attribute': {
+                            'Threads': {'metrics_type': 'gauge'},
+                            'MaxThreads': {'metrics_type': 'gauge'},
+                            'IdleThreads': {'metrics_type': 'gauge'},
+                            'QueueSize': {'metrics_type': 'gauge'},
+                        },
+                    },
+                }],
+                #  }, {
+                #    'include': {
+                #        'bean': 'com.mendix:type=Jetty',
+                #        # ConnectedEndPoints = 0;
+                #        # IdleTimeout = 30000;
+                #        # RequestsActiveMax = 0;
+
+                #        'attribute': {
+                #        }
+                #    },
             }],
         }
         fh.write(yaml.safe_dump(config))
