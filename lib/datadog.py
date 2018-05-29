@@ -117,6 +117,7 @@ def update_config(m2ee, app_name):
                 'port': 7845,
                 'java_bin_path': '.local/bin/java',
                 'java_options': '-Xmx50m -Xms5m',
+                # 'refresh_beans': 10, # runtime takes time to initialize the beans
                 'conf': [{
                     'include': {
                         'bean': 'com.mendix:type=SessionInformation',
