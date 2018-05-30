@@ -3,6 +3,7 @@ import json
 import yaml
 import subprocess
 import buildpackutil
+from m2ee import logger
 
 
 def _get_api_key():
@@ -46,18 +47,31 @@ def update_config(m2ee, app_name):
         '-Dcom.sun.management.jmxremote.ssl=false',
         '-Djava.rmi.server.hostname=127.0.0.1',
     ])
-    m2ee.config._conf['logging'].append({
-        'type': 'file',
-        'name': 'FileSubscriberDataDog',
-        'autosubscribe': 'INFO',
-        'filename': os.path.join(os.getcwd(), 'log', 'datadog.log'),
-        'max_size': 1048576,
-        'max_rotation': 1,
-    })
+    if m2ee.config.get_runtime_version() >= 7.15:
+        m2ee.config._conf['logging'].append({
+            'type': 'tcpjsonlines',
+            'name': 'DataDogSubscriber',
+            'autosubscribe': 'INFO',
+            'host': 'localhost',
+            'port': 9032,
+        })
     if m2ee.config.get_runtime_version() >= 7.14:
-        jar = os.path.abspath('.local/datadog/mx-agent-assembly-0.1-SNAPSHOT.jar')
+        # This is a dirty way to make it self-service until we pick up DEP-59.
+        # After DEP-59 we can pick this up from a dedicated env var.
+        agent_config = ''
+        if 'MetricsAgentConfig' in m2ee.config._conf['mxruntime']:
+            v = m2ee.config._conf['mxruntime']['MetricsAgentConfig']
+            try:
+                json.loads(v)  # ensure that this contains valid json
+                config_file_path = os.path.abspath('.local/MetricsAgentConfig.json')
+                with open(config_file_path, 'w') as fh:
+                    fh.write(v)
+                agent_config = '=config=' + config_file_path
+            except ValueError:
+                logger.error('Could not parse json from MetricsAgentConfig', exc_info=True)
+        jar = os.path.abspath('.local/datadog/mx-agent-assembly-0.1.1-SNAPSHOT.jar')
         m2ee.config._conf['m2ee']['javaopts'].extend([
-            '-javaagent:{}'.format(jar),
+            '-javaagent:{}{}'.format(jar, agent_config),
             '-Xbootclasspath/a:{}'.format(jar),
         ])
         # if not explicitly set, default to statsd
@@ -92,8 +106,8 @@ def update_config(m2ee, app_name):
     with open('.local/datadog/conf.d/mendix.d/conf.yaml', 'w') as fh:
         config = {
             'logs': [{
-                'type': 'file',
-                'path': 'log/datadog.log',
+                'type': 'tcp',
+                'port': '9032',
                 'service': _get_service(),
                 'source': 'mendix',
                 'tags': tags,
@@ -102,6 +116,11 @@ def update_config(m2ee, app_name):
         fh.write(yaml.safe_dump(config))
     subprocess.check_call(('mkdir', '-p', '.local/datadog/conf.d/jmx.d'))
     with open('.local/datadog/conf.d/jmx.d/conf.yaml', 'w') as fh:
+        # jmx beans and values can be inspected with jmxterm
+        # download the jmxterm jar into the container
+        # and run app/.local/bin/java -jar ~/jmxterm.jar
+        #
+        # the extra attributes are only available from Mendix 7.15.0+
         config = {
             'init_config': {
                 'collect_default_metrics': True,
@@ -111,6 +130,78 @@ def update_config(m2ee, app_name):
                 'host': 'localhost',
                 'port': 7845,
                 'java_bin_path': '.local/bin/java',
+                'java_options': '-Xmx50m -Xms5m',
+                # 'refresh_beans': 10, # runtime takes time to initialize the beans
+                'conf': [{
+                    'include': {
+                        'bean': 'com.mendix:type=SessionInformation',
+                        # NamedUsers = 1;
+                        # NamedUserSessions = 0;
+                        # AnonymousSessions = 0;
+
+                        'attribute': {
+                            'NamedUsers': {'metrics_type': 'gauge'},
+                            'NamedUserSessions': {'metrics_type': 'gauge'},
+                            'AnonymousSessions': {'metrics_type': 'gauge'},
+                        },
+                    },
+                }, {
+                    'include': {
+                        'bean': 'com.mendix:type=Statistics,name=DataStorage',
+                        # Selects = 1153;
+                        # Inserts = 1;
+                        # Updates = 24;
+                        # Deletes = 0;
+                        # Transactions = 25;
+
+                        'attribute': {
+                            'Selects': {'metrics_type': 'counter'},
+                            'Updates': {'metrics_type': 'counter'},
+                            'Inserts': {'metrics_type': 'counter'},
+                            'Deletes': {'metrics_type': 'counter'},
+                            'Transactions': {'metrics_type': 'counter'},
+                        },
+                    },
+                }, {
+                    'include': {
+                        'bean': 'com.mendix:type=General',
+                        # Languages = en_US;
+                        # Entities = 24;
+
+                        'attribute': {
+                            'Entities': {'metrics_type': 'gauge'},
+                        },
+                    },
+                }, {
+                    'include': {
+                        'bean': 'com.mendix:type=JettyThreadPool',
+                        # Threads = 8
+                        # IdleThreads = 3;
+                        # IdleTimeout = 60000;
+                        # MaxThreads = 254;
+                        # StopTimeout = 30000;
+                        # MinThreads = 8;
+                        # ThreadsPriority = 5;
+                        # QueueSize = 0;
+
+                        'attribute': {
+                            'Threads': {'metrics_type': 'gauge'},
+                            'MaxThreads': {'metrics_type': 'gauge'},
+                            'IdleThreads': {'metrics_type': 'gauge'},
+                            'QueueSize': {'metrics_type': 'gauge'},
+                        },
+                    },
+                }],
+                #  }, {
+                #    'include': {
+                #        'bean': 'com.mendix:type=Jetty',
+                #        # ConnectedEndPoints = 0;
+                #        # IdleTimeout = 30000;
+                #        # RequestsActiveMax = 0;
+
+                #        'attribute': {
+                #        }
+                #    },
             }],
         }
         fh.write(yaml.safe_dump(config))
@@ -119,6 +210,8 @@ def update_config(m2ee, app_name):
 
 
 def _set_up_postgres():
+    # TODO: set up a way to disable this, on shared database (mxapps.io) we
+    # don't want to allow this.
     if not buildpackutil.i_am_primary_instance():
         return
     dbconfig = buildpackutil.get_database_config()
@@ -150,9 +243,25 @@ def _set_up_postgres():
 def compile(install_path, cache_dir):
     if not is_enabled():
         return
+    # the dd-vX.Y.Z.tar.gz needs to be created manually
+    #
+    # see all bundled resources here:
+    # curl -s https://cdn.mendix.com/mx-buildpack/experimental/dd-vX.Y.Z.tar.gz | tar tzv
+    #
+    # mx-agent-assembly-0.X-SNAPSHOT.jar is generated by the Mendix Runtime team
+    #
+    # the rest is copied from the datadog-agent debian package
+    # install datadog-agent in a ubuntu-16.04 docker image
+    # and extract the required python / dd-agent / jmxfetch dependencies
+    #
+    # lib/libpython2.7.so.1.0 is necessary so the go agent can include a cpython interpreter
+    #
+    # create the package with:
+    # tar zcvf ../dd-vX.Y.Z.tar.gz --owner 0 --group 0 *
+    # aws s3 cp ../dd-vX.Y.Z.tar.gz s3://mx-cdn/mx-buildpack/experimental/
     buildpackutil.download_and_unpack(
         buildpackutil.get_blobstore_url(
-            '/mx-buildpack/experimental/dd-v0.7.3.tar.gz',
+            '/mx-buildpack/experimental/dd-v0.8.0.tar.gz',
         ),
         os.path.join(install_path, 'datadog'),
         cache_dir=cache_dir,
@@ -167,9 +276,11 @@ def run():
     e['DD_API_KEY'] = _get_api_key()
     e['LD_LIBRARY_PATH'] = os.path.abspath('.local/datadog/lib/')
     subprocess.Popen((
-        '.local/datadog/dd-agent', '-c', '.local/datadog', 'start',
+        '.local/datadog/datadog-agent', '-c', '.local/datadog', 'start',
     ), env=e)
+    # after datadog agent 6.3 is released, a separate process agent might
+    # not be necessary any more: https://github.com/DataDog/datadog-process-agent/pull/124
     subprocess.Popen((
-        '.local/datadog/dd-process-agent', '-logtostderr',
+        '.local/datadog/process-agent', '-logtostderr',
         '-config', '.local/datadog/datadog.yaml',
     ), env=e)
