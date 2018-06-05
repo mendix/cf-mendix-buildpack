@@ -26,7 +26,7 @@ from buildpackutil import i_am_primary_instance  # noqa: E402
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
 
-logger.info('Started Mendix Cloud Foundry Buildpack v2.0.2')
+logger.info('Started Mendix Cloud Foundry Buildpack v2.0.3')
 
 logging.getLogger('m2ee').propagate = False
 
