@@ -264,6 +264,7 @@ def set_jvm_memory(m2ee_section, vcap, java_version):
     if env_heap_size:
         if int(env_heap_size[:-1]) < limit:
             heap_size = env_heap_size
+        else:
             logger.warning(
                 'specified heap size {} is larger than max memory of the '
                 'container ({}), falling back to a heap size of {}'.format(
