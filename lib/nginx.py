@@ -28,7 +28,7 @@ def get_path_config():
         "/CustomRequestHandler/": {'ipfilter': ['10.0.0.0/8']},
         "/CustomRequestHandler2/": {'basic_auth': {'user1': 'password', 'user2': 'password2'}},
     }
-    Default for satisfy is all
+    Default for satisfy is any
     '''
 
     location_template = """
@@ -67,7 +67,7 @@ satisfy %s;
             raise Exception(
                 'Can not override access restrictions on system path %s' % path
             )
-        satisfy = 'all'
+        satisfy = 'any'
         if 'satisfy' in config:
             if config['satisfy'] in ['any', 'all']:
                 satisfy = config['satisfy']
