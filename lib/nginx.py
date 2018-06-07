@@ -93,7 +93,7 @@ satisfy %s;
             )
 
         client_cert = ''
-        if 'client-cert' in config:
+        if config.get('client-cert') or config.get('client_cert'):
             client_cert = 'auth_request /client-cert-check-internal;'
 
         template = root_template if path == '/' else location_template
