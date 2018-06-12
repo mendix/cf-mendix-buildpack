@@ -12,8 +12,9 @@ def _get_api_key():
 
 def _get_tags():
     return json.loads(
-        os.getenv('DD_TAGS', '[]')
-    )
+        os.getenv('TAGS', 
+            os.getenv('DD_TAGS', '[]')
+    ))
 
 
 def is_enabled():
