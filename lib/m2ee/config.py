@@ -206,8 +206,8 @@ class M2EEConfig:
 
         config = None
         try:
-            codecs.open(file_name,'r', encoding='utf-8-sig') as file_handle
-            config = json.load(file_handle)
+            with codecs.open(file_name,'r', encoding='utf-8-sig') as file_handle:
+                config = json.load(file_handle)
         except Exception as e:
             logger.error("Error parsing configuration file %s: %s" %
                          (jsonfile, e))
