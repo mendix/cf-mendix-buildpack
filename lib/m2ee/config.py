@@ -11,6 +11,7 @@ import sys
 import pwd
 import re
 import copy
+import codecs
 
 from .log import logger
 from collections import defaultdict
