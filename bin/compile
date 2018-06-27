@@ -33,7 +33,7 @@ logging.getLogger("requests").setLevel(logging.WARNING)
 def get_runtime_version():
     file_name = os.path.join(BUILD_DIR, 'model', 'metadata.json')
     try:
-        with open(file_name) as file_handle:
+        with codecs.open(file_name) as file_handle:
             data = json.loads(file_handle.read())
             return MXVersion(data['RuntimeVersion'])
     except IOError:
