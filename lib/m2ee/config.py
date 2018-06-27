@@ -206,7 +206,7 @@ class M2EEConfig:
 
         config = None
         try:
-            config = json.load(fd)
+            config = json.load(fd, 'r', encoding='utf-8-sig')
         except Exception as e:
             logger.error("Error parsing configuration file %s: %s" %
                          (jsonfile, e))
