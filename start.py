@@ -293,6 +293,19 @@ def set_jvm_memory(m2ee_section, vcap, java_version):
         )
 
 
+def set_jetty_config(m2ee):
+    jetty_config_json = os.environ.get('JETTY_CONFIG')
+    if not jetty_config_json:
+        return None
+    try:
+        jetty_config = json.loads(jetty_config_json)
+        jetty = m2ee.config._conf['m2ee']['jetty']
+        jetty.update(jetty_config)
+        logger.debug('Jetty configured: %s', json.dumps(jetty))
+    except Exception as e:
+        logger.warning('Failed to configure jetty', exc_info=True)
+
+
 def _get_s3_specific_config(vcap_services, m2ee):
     access_key = secret = bucket = encryption_keys = key_suffix = None
     endpoint = None
@@ -683,6 +696,7 @@ def set_up_m2ee_client(vcap_data):
         vcap_data,
         java_version,
     )
+    set_jetty_config(m2ee)
     activate_new_relic(m2ee, vcap_data['application_name'])
     activate_appdynamics(m2ee, vcap_data['application_name'])
     set_application_name(m2ee, vcap_data['application_name'])
