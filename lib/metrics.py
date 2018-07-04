@@ -69,6 +69,9 @@ class MetricsEmitterThread(threading.Thread):
             self.emitter = LoggingEmitter()
 
     def emit(self, stats):
+        stats['version'] = '1.0'
+        stats['timestamp'] = datetime.datetime.now().isoformat()
+        stats['instance_index'] = os.getenv('CF_INSTANCE_INDEX', 0)
         self.emitter.emit(stats)
 
     def run(self):
@@ -78,19 +81,28 @@ class MetricsEmitterThread(threading.Thread):
         while True:
 
             try:
-                stats = {
-                    'version': '1.0',
-                    'timestamp': datetime.datetime.now().isoformat(),
-                    'instance_index': os.getenv('CF_INSTANCE_INDEX', 0)
-                }
-                stats = self._inject_m2ee_stats(stats)
+                stats = self._inject_m2ee_stats({})
                 if buildpackutil.i_am_primary_instance():
-                    stats = self._inject_storage_stats(stats)
                     stats = self._inject_database_stats(stats)
+                    stats = self._inject_storage_stats(stats)
                     stats = self._inject_health(stats)
                 self.emit(stats)
+            except psycopg2.OperationalError as up:
+                logger.exception('METRICS: error while gathering metrics')
+                self.emit({
+                    'health' : {
+                        'health': 0,
+                        'diagnosis': "Database error: %s" % str(up)
+                    }
+                })
             except Exception as e:
                 logger.exception('METRICS: error while gathering metrics')
+                self.emit({
+                    'health' : {
+                        'health': 4,
+                        'diagnosis': "Unable to retrieve metrics"
+                    }
+                })
 
             time.sleep(self.interval)
 
@@ -98,7 +110,7 @@ class MetricsEmitterThread(threading.Thread):
         health = {}
         translation = {'healthy': 10,
                        'unknown': 7,
-                       'sick': 3,
+                       'sick': 4,
                        'critical': 0}
         stats['health'] = health
 
@@ -156,6 +168,7 @@ class MetricsEmitterThread(threading.Thread):
             logger.warn(
                 'Metrics: Failed to get Mendix Runtime metrics, ' + str(e)
             )
+            raise
         return stats
 
     def _inject_storage_stats(self, stats):
@@ -166,6 +179,7 @@ class MetricsEmitterThread(threading.Thread):
             logger.warn(
                 'Metrics: Failed to retrieve number of files, ' + str(e)
             )
+            raise
         stats["storage"] = storage_stats
         return stats
 
@@ -221,6 +235,7 @@ class MetricsEmitterThread(threading.Thread):
             logger.warn(
                 'Metrics: Failed to get database mutation stats, ' + str(e)
             )
+            raise
         return None
 
     def _get_database_table_size(self):
@@ -239,6 +254,7 @@ class MetricsEmitterThread(threading.Thread):
             logger.warn(
                 'Metrics: Failed to get database data size, ' + str(e)
             )
+            raise
         return None
 
     def _get_database_index_size(self):
@@ -316,5 +332,5 @@ WHERE t.schemaname='public';
                 )
                 self.db.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
             except Exception as e:
-                logger.warn('METRICS: ' + e.message)
+                logger.warn('METRICS: ' + str(e))
         return self.db
