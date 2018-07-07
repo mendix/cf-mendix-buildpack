@@ -308,29 +308,26 @@ WHERE t.schemaname='public';
             self.db = None
 
         if not self.db:
-            try:
-                db_config = buildpackutil.get_database_config()
-                if db_config['DatabaseType'] != 'PostgreSQL':
-                    raise Exception(
-                        'Metrics only supports postgresql, not %s'
-                        % db_config['DatabaseType']
-                    )
-                host_and_port = db_config['DatabaseHost'].split(':')
-                host = host_and_port[0]
-                if len(host_and_port) > 1:
-                    port = int(host_and_port[1])
-                else:
-                    port = 5432
-                self.db = psycopg2.connect(
-                    "options='-c statement_timeout=60s'",
-                    database=db_config['DatabaseName'],
-                    user=db_config['DatabaseUserName'],
-                    password=db_config['DatabasePassword'],
-                    host=host,
-                    port=port,
-                    connect_timeout=3,
+            db_config = buildpackutil.get_database_config()
+            if db_config['DatabaseType'] != 'PostgreSQL':
+                raise Exception(
+                    'Metrics only supports postgresql, not %s'
+                    % db_config['DatabaseType']
                 )
-                self.db.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-            except Exception as e:
-                logger.warn('METRICS: ' + str(e))
+            host_and_port = db_config['DatabaseHost'].split(':')
+            host = host_and_port[0]
+            if len(host_and_port) > 1:
+                port = int(host_and_port[1])
+            else:
+                port = 5432
+            self.db = psycopg2.connect(
+                "options='-c statement_timeout=60s'",
+                database=db_config['DatabaseName'],
+                user=db_config['DatabaseUserName'],
+                password=db_config['DatabasePassword'],
+                host=host,
+                port=port,
+                connect_timeout=3,
+            )
+            self.db.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
         return self.db
