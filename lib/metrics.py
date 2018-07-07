@@ -147,28 +147,22 @@ class MetricsEmitterThread(threading.Thread):
         return stats
 
     def _inject_m2ee_stats(self, stats):
-        try:
-            m2ee_stats, java_version = munin.get_stats_from_runtime(
-                self.m2ee.client,
-                self.m2ee.config
-            )
-            if 'sessions' in m2ee_stats:
-                m2ee_stats['sessions']['user_sessions'] = {}
-            m2ee_stats = munin.augment_and_fix_stats(
-                m2ee_stats,
-                self.m2ee.runner.get_pid(),
-                java_version)
+        m2ee_stats, java_version = munin.get_stats_from_runtime(
+            self.m2ee.client,
+            self.m2ee.config
+        )
+        if 'sessions' in m2ee_stats:
+            m2ee_stats['sessions']['user_sessions'] = {}
+        m2ee_stats = munin.augment_and_fix_stats(
+            m2ee_stats,
+            self.m2ee.runner.get_pid(),
+            java_version)
 
-            critical_logs_count = len(
-                self.m2ee.client.get_critical_log_messages()
-            )
-            m2ee_stats['critical_logs_count'] = critical_logs_count
-            stats['mendix_runtime'] = m2ee_stats
-        except Exception as e:
-            logger.warn(
-                'Metrics: Failed to get Mendix Runtime metrics, ' + str(e)
-            )
-            raise
+        critical_logs_count = len(
+            self.m2ee.client.get_critical_log_messages()
+        )
+        m2ee_stats['critical_logs_count'] = critical_logs_count
+        stats['mendix_runtime'] = m2ee_stats
         return stats
 
     def _inject_storage_stats(self, stats):
@@ -209,59 +203,45 @@ class MetricsEmitterThread(threading.Thread):
 
     def _get_database_mutations(self):
         conn = self._get_db_conn()
-        try:
-            db_config = buildpackutil.get_database_config()
-            with conn.cursor() as cursor:
-                cursor.execute(
-                    "SELECT xact_commit, "
-                    "       xact_rollback, "
-                    "       tup_inserted, "
-                    "       tup_updated, "
-                    "       tup_deleted "
-                    "FROM pg_stat_database "
-                    "WHERE datname = '%s';" % (
-                        db_config['DatabaseName'],
-                    )
+        db_config = buildpackutil.get_database_config()
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "SELECT xact_commit, "
+                "       xact_rollback, "
+                "       tup_inserted, "
+                "       tup_updated, "
+                "       tup_deleted "
+                "FROM pg_stat_database "
+                "WHERE datname = '%s';" % (
+                    db_config['DatabaseName'],
                 )
-                rows = cursor.fetchall()
-                return {
-                    'xact_commit': int(rows[0][0]),
-                    'xact_rollback': int(rows[0][1]),
-                    'tup_inserted': int(rows[0][2]),
-                    'tup_updated': int(rows[0][3]),
-                    'tup_deleted': int(rows[0][4]),
-                }
-        except Exception as e:
-            logger.warn(
-                'Metrics: Failed to get database mutation stats, ' + str(e)
             )
-            raise
+            rows = cursor.fetchall()
+            return {
+                'xact_commit': int(rows[0][0]),
+                'xact_rollback': int(rows[0][1]),
+                'tup_inserted': int(rows[0][2]),
+                'tup_updated': int(rows[0][3]),
+                'tup_deleted': int(rows[0][4]),
+            }
         return None
 
     def _get_database_table_size(self):
         conn = self._get_db_conn()
-        try:
-            db_config = buildpackutil.get_database_config()
-            with conn.cursor() as cursor:
-                cursor.execute(
-                    "SELECT pg_database_size('%s');" % (
-                        db_config['DatabaseName'],
-                    )
+        db_config = buildpackutil.get_database_config()
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "SELECT pg_database_size('%s');" % (
+                    db_config['DatabaseName'],
                 )
-                rows = cursor.fetchall()
-                return int(rows[0][0])
-        except Exception as e:
-            logger.warn(
-                'Metrics: Failed to get database data size, ' + str(e)
             )
-            raise
-        return None
+            rows = cursor.fetchall()
+            return int(rows[0][0])
 
     def _get_database_index_size(self):
         conn = self._get_db_conn()
-        try:
-            with conn.cursor() as cursor:
-                cursor.execute("""
+        with conn.cursor() as cursor:
+            cursor.execute("""
 SELECT SUM(pg_relation_size(quote_ident(indexrelname)::text)) AS index_size
 FROM pg_tables t
 LEFT OUTER JOIN pg_class c ON t.tablename=c.relname
@@ -282,13 +262,8 @@ LEFT OUTER JOIN
    ON t.tablename = foo.ctablename
 WHERE t.schemaname='public';
 """)
-                rows = cursor.fetchall()
-                return int(rows[0][0])
-        except Exception as e:
-            logger.warn(
-                'Metrics: Failed to get database index size, ' + str(e)
-            )
-        return None
+            rows = cursor.fetchall()
+            return int(rows[0][0])
 
     def _get_number_of_files(self):
         conn = self._get_db_conn()
