@@ -6,56 +6,26 @@ import buildpackutil
 from m2ee import logger
 
 
-def _get_api_key():
+def get_api_key():
     return os.getenv('DD_API_KEY')
 
 
-def _get_tags():
-    return json.loads(
-        os.getenv('TAGS', 
-            os.getenv('DD_TAGS', '[]')
-    ))
-
-
 def is_enabled():
-    return _get_api_key() is not None
-
-
-def _get_hostname():
-    dd_hostname = os.environ.get('DD_HOSTNAME')
-    if dd_hostname is None:
-        domain = buildpackutil.get_vcap_data()['application_uris'][0].split('/')[0]
-        dd_hostname = domain + '-' + os.getenv('CF_INSTANCE_INDEX', '')
-    return dd_hostname
+    return get_api_key() is not None
 
 
 def _get_service():
     dd_service = os.environ.get('DD_SERVICE')
     if dd_service is None:
-        dd_service = _get_hostname()
+        dd_service = buildpackutil.get_hostname()
     return dd_service
 
 
-def update_config(m2ee, app_name):
-    if not is_enabled():
+def enable_runtime_agent(m2ee):
+    # check already configured
+    if 0 in [v.find('-javaagent') for v in m2ee.config._conf['m2ee']['javaopts']]:
         return
-    tags = _get_tags()
-    m2ee.config._conf['m2ee']['javaopts'].extend([
-        '-Dcom.sun.management.jmxremote',
-        '-Dcom.sun.management.jmxremote.port=7845',
-        '-Dcom.sun.management.jmxremote.local.only=true',
-        '-Dcom.sun.management.jmxremote.authenticate=false',
-        '-Dcom.sun.management.jmxremote.ssl=false',
-        '-Djava.rmi.server.hostname=127.0.0.1',
-    ])
-    if m2ee.config.get_runtime_version() >= 7.15:
-        m2ee.config._conf['logging'].append({
-            'type': 'tcpjsonlines',
-            'name': 'DataDogSubscriber',
-            'autosubscribe': 'INFO',
-            'host': 'localhost',
-            'port': 9032,
-        })
+
     if m2ee.config.get_runtime_version() >= 7.14:
         # This is a dirty way to make it self-service until we pick up DEP-59.
         # After DEP-59 we can pick this up from a dedicated env var.
@@ -79,6 +49,29 @@ def update_config(m2ee, app_name):
         m2ee.config._conf['mxruntime'].setdefault(
             'com.mendix.metrics.Type', 'statsd'
         )
+
+
+def update_config(m2ee, app_name):
+    if not is_enabled():
+        return
+    tags = buildpackutil.get_tags()
+    m2ee.config._conf['m2ee']['javaopts'].extend([
+        '-Dcom.sun.management.jmxremote',
+        '-Dcom.sun.management.jmxremote.port=7845',
+        '-Dcom.sun.management.jmxremote.local.only=true',
+        '-Dcom.sun.management.jmxremote.authenticate=false',
+        '-Dcom.sun.management.jmxremote.ssl=false',
+        '-Djava.rmi.server.hostname=127.0.0.1',
+    ])
+    if m2ee.config.get_runtime_version() >= 7.15:
+        m2ee.config._conf['logging'].append({
+            'type': 'tcpjsonlines',
+            'name': 'DataDogSubscriber',
+            'autosubscribe': 'INFO',
+            'host': 'localhost',
+            'port': 9032,
+        })
+    enable_runtime_agent(m2ee)
     subprocess.check_call(('mkdir', '-p', '.local/datadog'))
     with open('.local/datadog/datadog.yaml', 'w') as fh:
         config = {
@@ -87,7 +80,7 @@ def update_config(m2ee, app_name):
             'confd_path': '.local/datadog/conf.d',
             'logs_enabled': True,
             'log_file': '/dev/null',  # will be printed via stdout/stderr
-            'hostname': _get_hostname(),
+            'hostname': buildpackutil.get_hostname(),
             'tags': tags,
             'process_config': {
                 'enabled': 'true',  # has to be string
@@ -100,6 +93,7 @@ def update_config(m2ee, app_name):
             'logs_config': {
                 'run_path': '.local/datadog/run',
             },
+            'use_dogstatsd': not buildpackutil.is_appmetrics_enabled()
         }
         fh.write(yaml.safe_dump(config))
     subprocess.check_call(('mkdir', '-p', '.local/datadog/conf.d/mendix.d'))
@@ -273,8 +267,8 @@ def run():
     if not is_enabled():
         return
     e = dict(os.environ)
-    e['DD_HOSTNAME'] = _get_hostname()
-    e['DD_API_KEY'] = _get_api_key()
+    e['DD_HOSTNAME'] = buildpackutil.get_hostname()
+    e['DD_API_KEY'] = get_api_key()
     e['LD_LIBRARY_PATH'] = os.path.abspath('.local/datadog/lib/')
     subprocess.Popen((
         '.local/datadog/datadog-agent', '-c', '.local/datadog', 'start',
