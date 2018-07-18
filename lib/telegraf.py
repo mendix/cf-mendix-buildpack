@@ -181,7 +181,9 @@ def compile(install_path, cache_dir):
     )
 
     buildpackutil.download_and_unpack(
-        'https://dl.influxdata.com/telegraf/releases/telegraf-1.7.1_linux_amd64.tar.gz',
+        buildpackutil.get_blobstore_url(
+            'telegraf-1.7.1_linux_amd64.tar.gz'
+        ),
         install_path,
         cache_dir=cache_dir
     )
