@@ -1,6 +1,7 @@
 import basetest
 import subprocess
 
+
 class TestCaseMpkAppDeployed(basetest.BaseTest):
 
     def setUp(self):

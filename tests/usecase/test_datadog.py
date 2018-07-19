@@ -1,6 +1,7 @@
 import basetest
 import subprocess
 
+
 class TestCaseMpkAppDeployed(basetest.BaseTest):
 
     def setUp(self):
@@ -20,4 +21,3 @@ class TestCaseMpkAppDeployed(basetest.BaseTest):
         )
         assert output is not None
         assert str(output).find('datadog') >= 0
-

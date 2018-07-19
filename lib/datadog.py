@@ -14,6 +14,10 @@ def is_enabled():
     return get_api_key() is not None
 
 
+def _is_installed():
+    return os.path.exists('.local/datadog/datadog-agent')
+
+
 def _get_service():
     dd_service = os.environ.get('DD_SERVICE')
     if dd_service is None:
@@ -52,8 +56,9 @@ def enable_runtime_agent(m2ee):
 
 
 def update_config(m2ee, app_name):
-    if not is_enabled():
+    if not is_enabled() or not _is_installed():
         return
+
     tags = buildpackutil.get_tags()
     m2ee.config._conf['m2ee']['javaopts'].extend([
         '-Dcom.sun.management.jmxremote',
@@ -266,6 +271,12 @@ def compile(install_path, cache_dir):
 def run():
     if not is_enabled():
         return
+
+    if not _is_installed():
+        logger.warn('DataDog agent isn''t installed yet but DD_API_KEY is set. ' +
+                    'Please push or restage your app to complete DataDog installation.')
+        return
+
     e = dict(os.environ)
     e['DD_HOSTNAME'] = buildpackutil.get_hostname()
     e['DD_API_KEY'] = get_api_key()

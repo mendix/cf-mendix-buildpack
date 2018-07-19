@@ -32,6 +32,10 @@ def is_enabled():
     return _get_appmetrics_target() is not None
 
 
+def _is_installed():
+    return os.path.exists('.local/telegraf/usr/bin/telegraf')
+
+
 def _get_tags():
     # Telegraf tags must be key / value
     tags = {}
@@ -105,14 +109,14 @@ def _write_http_output_config(http_config):
     kpionly = http_config['kpionly'] if 'kpionly' in http_config else True
     if kpionly:
         http_output['[outputs.http.tagpass]'] = {
-            'KPI': [ 'true' ]
+            'KPI': ['true']
         }
 
     _write_config('[[outputs.http]]', http_output)
 
 
 def update_config(m2ee, app_name):
-    if not is_enabled():
+    if not is_enabled() or not _is_installed():
         return
 
     # Telegraf config, taking over defaults from telegraf.conf from the distro
@@ -182,7 +186,7 @@ def compile(install_path, cache_dir):
 
     buildpackutil.download_and_unpack(
         buildpackutil.get_blobstore_url(
-            'telegraf-1.7.1_linux_amd64.tar.gz'
+            '/mx-buildpack/telegraf-1.7.1_linux_amd64.tar.gz'
         ),
         install_path,
         cache_dir=cache_dir
@@ -192,6 +196,12 @@ def compile(install_path, cache_dir):
 def run():
     if not is_enabled():
         return
+
+    if not _is_installed():
+        logger.warn('Telegraf isn\'t installed yet but APPMETRICS_TARGET is set. ' +
+                    'Please push or restage your app to complete Telegraf installation.')
+        return
+
     e = dict(os.environ)
     subprocess.Popen((
         '.local/telegraf/usr/bin/telegraf',
