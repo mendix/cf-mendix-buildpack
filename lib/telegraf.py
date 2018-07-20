@@ -4,7 +4,7 @@
 # Add Telegraf to an app container to collect StatsD events from the runtime.
 # Metrics will be forwarded to host defined in APPMETRICS_TARGET environment
 # variable which is a JSON (single or array) with the following values
-# - url: complate url of the endpoint. Mandatory.
+# - url: complete url of the endpoint. Mandatory.
 # - username: basic auth username. Optional.
 # - password: basic auth password. Mandatory if username is specified.
 # - kpionly: indicates that by default only metrics with KPI=true tag are passed
@@ -59,7 +59,7 @@ def _config_value_str(value):
 
 
 def _create_config_file(agent_config):
-    logger.info('writing config file')
+    logger.debug('writing config file')
     with open('.local/telegraf/etc/telegraf/telegraf.conf', 'w') as tc:
         print('[agent]', file=tc)
         for item in agent_config:
@@ -70,7 +70,7 @@ def _create_config_file(agent_config):
 
 
 def _write_config(section, config):
-    logger.info('writing section %s' % section)
+    logger.debug('writing section %s' % section)
     with open('.local/telegraf/etc/telegraf/telegraf.conf', 'a') as tc:
         _write_config_in_fd(section, config, tc)
 
@@ -89,7 +89,7 @@ def _write_config_in_fd(section, config, fd, indent=''):
 
 
 def _write_http_output_config(http_config):
-    logger.info('writing http output config')
+    logger.debug('writing http output config')
     if 'url' not in http_config:
         logger.error('APPMETRICS_TARGET.url value is not defined in %s' % _get_appmetrics_target())
         return
@@ -120,7 +120,7 @@ def update_config(m2ee, app_name):
         return
 
     # Telegraf config, taking over defaults from telegraf.conf from the distro
-    logger.info('creating telegraf config')
+    logger.debug('creating telegraf config')
     _create_config_file({
             'interval': '10s',
             'round_interval': True,
