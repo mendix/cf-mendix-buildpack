@@ -1,5 +1,5 @@
 #
-# [EXPIRIMENTAL]
+# [EXPERIMENTAL]
 #
 # Add Telegraf to an app container to collect StatsD events from the runtime.
 # Metrics will be forwarded to host defined in APPMETRICS_TARGET environment
