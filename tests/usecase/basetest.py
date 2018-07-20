@@ -25,6 +25,7 @@ class BaseTest(unittest.TestCase):
             current_branch = 'master'
         self.cf_domain = os.environ.get('CF_DOMAIN')
         assert self.cf_domain
+        self.buildpack_repo = os.environ.get('BUILDPACK_REPO', 'https://github.com/mendix/cf-mendix-buildpack.git')
         self.branch_name = os.environ.get('TRAVIS_BRANCH', current_branch)
         self.mx_password = os.environ.get('MX_PASSWORD', 'Y0l0lop13#123')
         self.app_id = str(uuid.uuid4()).split('-')[0]
@@ -77,10 +78,7 @@ class BaseTest(unittest.TestCase):
                 '-m', '2G',
                 '-t', str(health_timeout),
                 '-i', str(instances),
-                '-b', (
-                    'https://github.com/mendix/cf-mendix-buildpack.git#%s'
-                    % self.branch_name
-                ),
+                '-b', ('%s#%s' % (self.buildpack_repo, self.branch_name))
             ), stderr=subprocess.PIPE)
         except subprocess.CalledProcessError as e:
             print(e.output.decode('utf-8'))
