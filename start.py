@@ -15,7 +15,8 @@ import uuid
 
 sys.path.insert(0, 'lib')
 import buildpackutil  # noqa: E402
-import datadog  # noqa: E402
+import telegraf  # noqa: E402
+import datadog   # noqa: E402
 import instadeploy  # noqa: E402
 import requests  # noqa: E402
 
@@ -700,6 +701,7 @@ def set_up_m2ee_client(vcap_data):
     activate_new_relic(m2ee, vcap_data['application_name'])
     activate_appdynamics(m2ee, vcap_data['application_name'])
     set_application_name(m2ee, vcap_data['application_name'])
+    telegraf.update_config(m2ee, vcap_data['application_name'])
     datadog.update_config(m2ee, vcap_data['application_name'])
     return m2ee
 
@@ -1046,6 +1048,7 @@ if __name__ == '__main__':
     try:
         service_backups()
         set_up_nginx_files(m2ee)
+        telegraf.run()
         datadog.run()
         complete_start_procedure_safe_to_use_for_restart(m2ee)
         set_up_instadeploy_if_deploy_password_is_set(m2ee)

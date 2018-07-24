@@ -149,6 +149,22 @@ def get_new_relic_license_key():
     return None
 
 
+def is_appmetrics_enabled():
+    return os.getenv('APPMETRICS_TARGET') is not None
+
+
+def get_tags():
+    return json.loads(os.getenv('TAGS', os.getenv('DD_TAGS', '[]')))
+
+
+def get_hostname():
+    dd_hostname = os.environ.get('DD_HOSTNAME')
+    if dd_hostname is None:
+        domain = get_vcap_data()['application_uris'][0].split('/')[0]
+        dd_hostname = domain + '-' + os.getenv('CF_INSTANCE_INDEX', '')
+    return dd_hostname
+
+
 def get_blobstore_url(filename):
     main_url = os.environ.get('BLOBSTORE', 'https://cdn.mendix.com')
     if main_url[-1] == '/':

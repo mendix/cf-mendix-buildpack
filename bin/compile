@@ -17,6 +17,7 @@ BUILD_ERRORS_JSON = '/tmp/builderrors.json'
 sys.path.insert(0, os.path.join(BUILDPACK_DIR, 'lib'))
 import requests
 import datadog
+import telegraf
 import buildpackutil
 from m2ee.version import MXVersion
 
@@ -288,6 +289,7 @@ if __name__ == '__main__':
     set_up_directory_structure()
     set_up_java()
     set_up_appdynamics()
+    telegraf.compile(DOT_LOCAL_LOCATION, CACHE_DIR)
     datadog.compile(DOT_LOCAL_LOCATION, CACHE_DIR)
     download_mendix_version()
     copy_buildpack_resources()
