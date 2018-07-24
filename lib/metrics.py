@@ -90,7 +90,7 @@ class MetricsEmitterThread(threading.Thread):
             except psycopg2.OperationalError as up:
                 logger.exception('METRICS: error while gathering metrics')
                 self.emit({
-                    'health' : {
+                    'health': {
                         'health': 0,
                         'diagnosis': "Database error: %s" % str(up)
                     }
@@ -98,7 +98,7 @@ class MetricsEmitterThread(threading.Thread):
             except Exception as e:
                 logger.exception('METRICS: error while gathering metrics')
                 self.emit({
-                    'health' : {
+                    'health': {
                         'health': 4,
                         'diagnosis': "Unable to retrieve metrics"
                     }
