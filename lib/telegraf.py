@@ -100,11 +100,11 @@ def _write_http_output_config(http_config):
         'data_format': 'influx'
     }
 
-    username = http_config['username'] if 'username' in http_config else None
-    password = http_config['username'] if 'username' in http_config else None
+    username = http_config.get('username')
+    password = http_config.get('password')
     if username is not None:
-        http_output.username = username
-        http_output.password = password
+        http_output['username'] = username
+        http_output['password'] = password
 
     kpionly = http_config['kpionly'] if 'kpionly' in http_config else True
     if kpionly:
