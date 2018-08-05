@@ -261,7 +261,7 @@ def compile(install_path, cache_dir):
     # aws s3 cp ../dd-vX.Y.Z.tar.gz s3://mx-cdn/mx-buildpack/experimental/
     buildpackutil.download_and_unpack(
         buildpackutil.get_blobstore_url(
-            '/mx-buildpack/experimental/dd-v0.8.0.tar.gz',
+            '/mx-buildpack/experimental/dd-v0.9.0.tar.gz',
         ),
         os.path.join(install_path, 'datadog'),
         cache_dir=cache_dir,
