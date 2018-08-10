@@ -11,10 +11,11 @@
 #     to custom end points
 #
 # Examples:
-# {"url: "https://customreceiver.mydomain.com", "username": "user", "password": secret", "kpionly": true}
-# [{"url: "https://customreceiver.mydomain.com", "username": "user", "password": secret", "kpionly": true}]
+# {"url": "https://customreceiver.mydomain.com", "username": "user", "password": "secret", "kpionly": true}
+# [{"url": "https://customreceiver.mydomain.com", "username": "user", "password": "secret", "kpionly": true}]
 #
 
+import base64
 import json
 import os
 
@@ -103,8 +104,13 @@ def _write_http_output_config(http_config):
     username = http_config.get('username')
     password = http_config.get('password')
     if username is not None:
-        http_output['username'] = username
-        http_output['password'] = password
+        # Workaround for https://github.com/influxdata/telegraf/issues/4544
+        # http_output['username'] = username
+        # http_output['password'] = password
+        credentials = base64.b64encode(('%s:%s' % (username, password)).encode()).decode('ascii')
+        http_output['[outputs.http.headers]'] = {
+            'Authorization': 'Basic ' + credentials
+        }
 
     kpionly = http_config['kpionly'] if 'kpionly' in http_config else True
     if kpionly:
