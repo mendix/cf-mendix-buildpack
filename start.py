@@ -19,6 +19,7 @@ import telegraf  # noqa: E402
 import datadog  # noqa: E402
 import instadeploy  # noqa: E402
 import requests  # noqa: E402
+import metrics   # noqa: E402
 
 from m2ee import M2EE, logger  # noqa: E402
 from nginx import get_path_config, gen_htpasswd  # noqa: E402
@@ -1034,11 +1035,16 @@ def set_up_instadeploy_if_deploy_password_is_set(m2ee):
 def start_metrics(m2ee):
     metrics_interval = os.getenv("METRICS_INTERVAL")
     if metrics_interval:
-        import metrics
-
         thread = metrics.MetricsEmitterThread(int(metrics_interval), m2ee)
         thread.setDaemon(True)
         thread.start()
+
+
+def start_logging_heartbeat():
+    logging_interval = os.getenv('METRICS_LOGGING_HEARTBEAT_INTERVAL', str(3600 * 6))
+    thread = metrics.LoggingHeartbeatEmitterThread(int(logging_interval))
+    thread.setDaemon(True)
+    thread.start()
 
 
 def complete_start_procedure_safe_to_use_for_restart(m2ee):
@@ -1089,6 +1095,7 @@ if __name__ == "__main__":
         complete_start_procedure_safe_to_use_for_restart(m2ee)
         set_up_instadeploy_if_deploy_password_is_set(m2ee)
         start_metrics(m2ee)
+        start_logging_heartbeat()
         start_nginx()
         loop_until_process_dies(m2ee)
     except Exception:
