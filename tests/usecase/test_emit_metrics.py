@@ -20,12 +20,16 @@ class TestCaseEmitMetrics(basetest.BaseTest):
 
 class TestNewMetricsFlows(basetest.BaseTest):
     def test_fallback_flow_when_server_unreachable(self):
-        self.setUpCF('sample-6.2.0.mda', env_vars={
-            'METRICS_INTERVAL': '10',
-            'BYPASS_LOGGREGATOR': 'True',
-            # This should always 404:
-            'TRENDS_STORAGE_URL': 'https://example.com/a_fake_path'
-        })
+        self.setUpCF(
+            "sample-6.2.0.mda",
+            env_vars={
+                "METRICS_INTERVAL": "10",
+                "BYPASS_LOGGREGATOR": "True",
+                # This should always 404:
+                "TRENDS_STORAGE_URL": "https://example.com/a_fake_path",
+                "BUILDPACK_XTRACE": "true",
+            },
+        )
         self.startApp()
 
         time.sleep(10)
