@@ -8,3 +8,4 @@ ordereddict==1.1
 requests==2.18.1
 termcolor==1.1.0
 urllib3==1.21.1
+black==18.6b4
