@@ -15,7 +15,8 @@ import uuid
 
 sys.path.insert(0, 'lib')
 import buildpackutil  # noqa: E402
-import datadog  # noqa: E402
+import telegraf  # noqa: E402
+import datadog   # noqa: E402
 import instadeploy  # noqa: E402
 import requests  # noqa: E402
 
@@ -26,7 +27,7 @@ from buildpackutil import i_am_primary_instance  # noqa: E402
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
 
-logger.info('Started Mendix Cloud Foundry Buildpack v2.0.3')
+logger.info("Started Mendix Cloud Foundry Buildpack v2.0.4")
 
 logging.getLogger('m2ee').propagate = False
 
@@ -291,6 +292,19 @@ def set_jvm_memory(m2ee_section, vcap, java_version):
         m2ee_section['custom_environment']['MALLOC_ARENA_MAX'] = str(
             max(1, limit / 1024) * 2
         )
+
+
+def set_jetty_config(m2ee):
+    jetty_config_json = os.environ.get('JETTY_CONFIG')
+    if not jetty_config_json:
+        return None
+    try:
+        jetty_config = json.loads(jetty_config_json)
+        jetty = m2ee.config._conf['m2ee']['jetty']
+        jetty.update(jetty_config)
+        logger.debug('Jetty configured: %s', json.dumps(jetty))
+    except Exception as e:
+        logger.warning('Failed to configure jetty', exc_info=True)
 
 
 def _get_s3_specific_config(vcap_services, m2ee):
@@ -683,9 +697,11 @@ def set_up_m2ee_client(vcap_data):
         vcap_data,
         java_version,
     )
+    set_jetty_config(m2ee)
     activate_new_relic(m2ee, vcap_data['application_name'])
     activate_appdynamics(m2ee, vcap_data['application_name'])
     set_application_name(m2ee, vcap_data['application_name'])
+    telegraf.update_config(m2ee, vcap_data['application_name'])
     datadog.update_config(m2ee, vcap_data['application_name'])
     return m2ee
 
@@ -1032,6 +1048,7 @@ if __name__ == '__main__':
     try:
         service_backups()
         set_up_nginx_files(m2ee)
+        telegraf.run()
         datadog.run()
         complete_start_procedure_safe_to_use_for_restart(m2ee)
         set_up_instadeploy_if_deploy_password_is_set(m2ee)
