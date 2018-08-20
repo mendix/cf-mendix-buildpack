@@ -468,7 +468,7 @@ def get_certificate_authorities():
                     '.local/certificate_authorities.%d.crt' % n
                 )
                 with open(location, 'wb') as output_file:
-                    output_file.write(ca)
+                    output_file.write(bytes(ca,'utf-8'))
                 files.append(location)
                 n += 1
         config['CACertificates'] = ','.join(files)
