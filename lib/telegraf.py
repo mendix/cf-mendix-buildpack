@@ -11,10 +11,11 @@
 #     to custom end points
 #
 # Examples:
-# {"url: "https://customreceiver.mydomain.com", "username": "user", "password": secret", "kpionly": true}
-# [{"url: "https://customreceiver.mydomain.com", "username": "user", "password": secret", "kpionly": true}]
+# {"url": "https://customreceiver.mydomain.com", "username": "user", "password": "secret", "kpionly": true}
+# [{"url": "https://customreceiver.mydomain.com", "username": "user", "password": "secret", "kpionly": true}]
 #
 
+import base64
 import json
 import os
 
@@ -43,7 +44,7 @@ def _get_tags():
         if len(kv) == 2:
             tags[kv[0]] = kv[1]
         else:
-            logger.warn('Skipping tag % because not a key/value')
+            logger.warn('Skipping tag "{}" from TAGS because not a key/value'.format(kv[0]))
     return tags
 
 
@@ -64,26 +65,26 @@ def _create_config_file(agent_config):
         print('[agent]', file=tc)
         for item in agent_config:
             value = agent_config[item]
-            print('  %s = %s' % (item, _config_value_str(value)), file=tc)
+            print('  {} = {}'.format(item, _config_value_str(value)), file=tc)
 
         print('', file=tc)
 
 
 def _write_config(section, config):
-    logger.debug('writing section %s' % section)
+    logger.debug('writing section {}'.format(section))
     with open('.local/telegraf/etc/telegraf/telegraf.conf', 'a') as tc:
         _write_config_in_fd(section, config, tc)
 
 
 def _write_config_in_fd(section, config, fd, indent=''):
-    print('%s%s' % (indent, section), file=fd)
+    print('{}{}'.format(indent, section), file=fd)
     # reverse sort to get '[section]' in last
     for item in sorted(config, reverse=True):
         value = config[item]
         if type(value) is dict:
-            _write_config_in_fd(item, value, fd, '%s  ' % indent)
+            _write_config_in_fd(item, value, fd, '{}  '.format(indent))
         else:
-            print('%s  %s = %s' % (indent, item, _config_value_str(value)), file=fd)
+            print('{}  {} = {}'.format(indent, item, _config_value_str(value)), file=fd)
 
     print('', file=fd)
 
@@ -91,7 +92,7 @@ def _write_config_in_fd(section, config, fd, indent=''):
 def _write_http_output_config(http_config):
     logger.debug('writing http output config')
     if 'url' not in http_config:
-        logger.error('APPMETRICS_TARGET.url value is not defined in %s' % _get_appmetrics_target())
+        logger.error('APPMETRICS_TARGET.url value is not defined in {}'.format(_get_appmetrics_target()))
         return
 
     http_output = {
@@ -102,9 +103,14 @@ def _write_http_output_config(http_config):
 
     username = http_config.get('username')
     password = http_config.get('password')
-    if username is not None:
-        http_output['username'] = username
-        http_output['password'] = password
+    if username:
+        # Workaround for https://github.com/influxdata/telegraf/issues/4544
+        # http_output['username'] = username
+        # http_output['password'] = password
+        credentials = base64.b64encode(('{}:{}'.format(username, password)).encode()).decode('ascii')
+        http_output['[outputs.http.headers]'] = {
+            'Authorization': 'Basic {}'.format(credentials)
+        }
 
     kpionly = http_config['kpionly'] if 'kpionly' in http_config else True
     if kpionly:
