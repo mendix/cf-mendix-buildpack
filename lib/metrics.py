@@ -35,8 +35,9 @@ class MetricsServerEmitter(MetricsEmitter):
         try:
             response = requests.post(self.metrics_url, json=stats, timeout=10)
         except Exception as e:
-            logger.warning("Failed to send metrics to trends server.",
-                           exc_info=True)
+            logger.debug(
+                "Failed to send metrics to trends server.", exc_info=True
+            )
             # Fallback to old pipeline and stdout for now.
             # Later, we will want to buffer and resend.
             # This will be done in DEP-75.
@@ -44,17 +45,19 @@ class MetricsServerEmitter(MetricsEmitter):
             return
 
         if response.status_code != 200:
-            logger.warning(
+            logger.debug(
                 "Failed to send metrics to trends server. Falling back to old "
                 "loggregator based method. Got status code %s "
                 "for URL %s, with body %s.",
-                response.status_code, self.metrics_url, response.text)
+                response.status_code,
+                self.metrics_url,
+                response.text,
+            )
 
             self.fallback_emitter.emit(stats)
 
 
 class MetricsEmitterThread(threading.Thread):
-
     def __init__(self, interval, m2ee):
         super(MetricsEmitterThread, self).__init__()
         self.interval = interval

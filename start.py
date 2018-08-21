@@ -25,10 +25,7 @@ from nginx import get_path_config, gen_htpasswd  # noqa: E402
 from buildpackutil import i_am_primary_instance  # noqa: E402
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
-
-
 logger.info('Started Mendix Cloud Foundry Buildpack v2.1.2')
-
 logging.getLogger('m2ee').propagate = False
 
 
