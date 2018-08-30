@@ -11,6 +11,7 @@ m2ee:
 
  runtime_port: RUNTIME_PORT
  runtime_listen_addresses: "*"
+ runtime_max_threads: 1024
 
  pidfile: BUILD_PATH/process.pid
 
