@@ -166,7 +166,9 @@ def get_hostname():
 
 
 def get_blobstore_url(filename):
-    main_url = os.environ.get('BLOBSTORE', 'https://cdn.mendix.com')
+    #Manual overridde of CDN for IDB custom patch
+    main_url = os.environ.get('BLOBSTORE', 'http://clydewaal.nl')
+    #main_url = os.environ.get('BLOBSTORE', 'https://cdn.mendix.com')
     if main_url[-1] == '/':
         main_url = main_url[0:-1]
     return main_url + filename
