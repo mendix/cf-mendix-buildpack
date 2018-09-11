@@ -113,6 +113,10 @@ def get_database_uri_from_vcap():
         'rds',
         'postgresql_shared',
     ):
+        if 'azure-postgresqldb' in vcap_services:
+            credentials = vcap_services['azure-postgresqldb'][0]['credentials']
+            return 'postgresql://' + credentials['username'] + ':' + credentials['password'] + '@' + credentials['hostname'] + ':' + str(credentials['port']) + '/' + credentials['postgresqlDatabaseName'] + '?sslmode=require'
+
         if vcap_services and service_type_name in vcap_services:
             return vcap_services[service_type_name][0]['credentials']['uri']
     if 'azure-sqldb' in vcap_services:
