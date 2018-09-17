@@ -30,14 +30,17 @@ class MetricsServerEmitter(MetricsEmitter):
     def __init__(self, metrics_url):
         self.metrics_url = metrics_url
         self.fallback_emitter = LoggingEmitter()
+        self.logfailure = True
 
     def emit(self, stats):
         try:
             response = requests.post(self.metrics_url, json=stats, timeout=10)
+            self.logfailure = True
         except Exception as e:
-            logger.debug(
-                "Failed to send metrics to trends server.", exc_info=True
-            )
+            if self.logfailure:
+                logger.warning("Failed to send metrics to trends server.",
+                               exc_info=True)
+                self.logfailure = False
             # Fallback to old pipeline and stdout for now.
             # Later, we will want to buffer and resend.
             # This will be done in DEP-75.
@@ -157,7 +160,6 @@ class MetricsEmitterThread(threading.Thread):
             logger.warn("Metrics: Failed to get health status, " + str(e))
             health["health"] = translation["critical"]
             health["diagnosis"] = "Health check failed unexpectedly: %s" % e
-
         return stats
 
     def _inject_m2ee_stats(self, stats):
@@ -284,6 +286,23 @@ WHERE t.schemaname='public';
             if len(rows) == 0:
                 raise Exception("Unexpected result from database query")
             return int(rows[0][0])
+
+    def _get_size_of_files(self):
+        conn = self._get_db_conn()
+        with conn.cursor() as cursor:
+            try:
+                cursor.execute(
+                    'SELECT sum(size) from system$filedocument WHERE hascontents=true;'
+                )
+                rows = cursor.fetchall()
+                if len(rows) == 0:
+                    return 0
+                return int(rows[0][0])
+            except Exception as e:
+                # We ignore errors here, as the information is not available for
+                # older mendix versions
+                logger.debug("METRICS: Error retrieving file sizes", e)
+                return 0
 
     def _get_db_conn(self):
         if self.db and self.db.closed != 0:
