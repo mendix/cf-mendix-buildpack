@@ -7,8 +7,8 @@ import subprocess
 import threading
 import time
 import traceback
-import urlparse
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from urllib.parse import urljoin
 
 import requests
 
@@ -290,9 +290,7 @@ def send_metadata_to_cloudportal():
     # TODO: The target path should only contain an enironmentUUID, cloudportal
     # should map this to a loft UUID. Mode should not be used.
     target_path = INSTADEPLOY_FEEDBACK_PATH.format(app_id=app_id, mode="TODO")
-    target_url = urlparse.urljoin(
-        os.environ["CLOUD_PORTAL_LOCATION"], target_path
-    )
+    target_url = urljoin(os.environ["CLOUD_PORTAL_LOCATION"], target_path)
 
     with open("/home/vcap/app/model/metadata.json", "rb") as metadata_json:
         files = {"file": metadata_json}
