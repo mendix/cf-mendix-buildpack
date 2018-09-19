@@ -1,18 +1,19 @@
-from http.server import BaseHTTPRequestHandler, HTTPServer
 import cgi
 import json
-import shutil
-import time
 import logging
-import mxbuild
 import os
-from m2ee import logger
-import traceback
-import threading
-import buildpackutil
-import requests
+import shutil
 import subprocess
+import threading
+import time
+import traceback
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
+import requests
+
+import buildpackutil
+import mxbuild
+from m2ee import logger
 
 ROOT_DIR = os.getcwd() + "/"
 MXBUILD_FOLDER = ROOT_DIR + "mxbuild/"
