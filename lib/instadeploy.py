@@ -7,6 +7,7 @@ import subprocess
 import threading
 import time
 import traceback
+import urlparse
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 import requests
@@ -24,6 +25,10 @@ DEPLOYMENT_DIR = os.path.join(PROJECT_DIR, "deployment")
 INCOMING_MPK_DIR = ".local/tmp_project"
 INTERMEDIATE_MPK_DIR = ".local/tmp_project_2"
 MPK_FILE = os.path.join(PROJECT_DIR, "app.mpk")
+
+INSTADEPLOY_FEEDBACK_PATH = (
+    "v1/apps/{app_id}/environments/{mode}/instadeployfeedback"
+)
 
 for directory in (
     MXBUILD_FOLDER,
@@ -234,6 +239,13 @@ def build():
                 "Syncing project files failed: %s", traceback.format_exc()
             )
             raise
+        try:
+            send_metadata_to_cloudportal()
+        except Exception:
+            logger.warning(
+                "Failed to send instadeploy feedback to Cloud Portal",
+                exc_info=True,
+            )
     else:
         logger.warning("Not syncing project files. MxBuild result: %s", result)
 
@@ -262,3 +274,30 @@ def extract_mxbuild_response(mxbuild_response):
     if "message" in mxbuild_response:
         r["message"] = mxbuild_response["message"]
     return r
+
+
+def send_metadata_to_cloudportal():
+    required_variables = ("CLOUD_PORTAL_LOCATION", "ENVIRONMENT_SIGNATURE")
+
+    if not all([v in os.environ for v in required_variables]):
+        logger.info(
+            "Required environment variables for intadeploy feedback "
+            "are missing. Skipping instadeploy feedback."
+        )
+        return
+
+    app_id = json.loads(os.environ["VCAP_APPLICATION"])["name"]
+    # TODO: The target path should only contain an enironmentUUID, cloudportal
+    # should map this to a loft UUID. Mode should not be used.
+    target_path = INSTADEPLOY_FEEDBACK_PATH.format(app_id=app_id, mode="TODO")
+    target_url = urlparse.urljoin(
+        os.environ["CLOUD_PORTAL_LOCATION"], target_path
+    )
+
+    with open("/home/vcap/app/model/metadata.json", "rb") as metadata_json:
+        files = {"file": metadata_json}
+        headers = {
+            "Mendix-Environment-Signature": os.environ["ENVIRONMENT_SIGNATURE"]
+        }
+        # We don't care about the response.
+        requests.post(target_url, files=files, headers=headers)
