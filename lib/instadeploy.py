@@ -26,9 +26,7 @@ INCOMING_MPK_DIR = ".local/tmp_project"
 INTERMEDIATE_MPK_DIR = ".local/tmp_project_2"
 MPK_FILE = os.path.join(PROJECT_DIR, "app.mpk")
 
-INSTADEPLOY_FEEDBACK_PATH = (
-    "v1/apps/{app_id}/environments/{mode}/instadeployfeedback"
-)
+INSTADEPLOY_FEEDBACK_PATH = "api/1/environments/{app_id}/instadeployfeedback"
 
 for directory in (
     MXBUILD_FOLDER,
@@ -287,9 +285,7 @@ def send_metadata_to_cloudportal():
         return
 
     app_id = json.loads(os.environ["VCAP_APPLICATION"])["name"]
-    # TODO: The target path should only contain an enironmentUUID, cloudportal
-    # should map this to a loft UUID. Mode should not be used.
-    target_path = INSTADEPLOY_FEEDBACK_PATH.format(app_id=app_id, mode="TODO")
+    target_path = INSTADEPLOY_FEEDBACK_PATH.format(app_id=app_id)
     target_url = urljoin(os.environ["CLOUD_PORTAL_LOCATION"], target_path)
 
     with open("/home/vcap/app/model/metadata.json", "rb") as metadata_json:
