@@ -38,8 +38,9 @@ class MetricsServerEmitter(MetricsEmitter):
             self.logfailure = True
         except Exception as e:
             if self.logfailure:
-                logger.warning("Failed to send metrics to trends server.",
-                               exc_info=True)
+                logger.warning(
+                    "Failed to send metrics to trends server.", exc_info=True
+                )
                 self.logfailure = False
             # Fallback to old pipeline and stdout for now.
             # Later, we will want to buffer and resend.
@@ -292,7 +293,7 @@ WHERE t.schemaname='public';
         with conn.cursor() as cursor:
             try:
                 cursor.execute(
-                    'SELECT sum(size) from system$filedocument WHERE hascontents=true;'
+                    "SELECT sum(size) from system$filedocument WHERE hascontents=true;"
                 )
                 rows = cursor.fetchall()
                 if len(rows) == 0:
