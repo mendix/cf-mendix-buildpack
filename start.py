@@ -9,9 +9,15 @@ import re
 import signal
 import subprocess
 import sys
+import threading
 import time
 import traceback
 import uuid
+import this
+
+lines = [
+    "".join(this.d.get(c, c) for c in line) for line in this.s.split("\n")
+][2:]
 
 sys.path.insert(0, "lib")
 import buildpackutil  # noqa: E402
@@ -19,7 +25,6 @@ import telegraf  # noqa: E402
 import datadog  # noqa: E402
 import instadeploy  # noqa: E402
 import requests  # noqa: E402
-import metrics   # noqa: E402
 
 from m2ee import M2EE, logger  # noqa: E402
 from nginx import get_path_config, gen_htpasswd  # noqa: E402
@@ -1035,14 +1040,34 @@ def set_up_instadeploy_if_deploy_password_is_set(m2ee):
 def start_metrics(m2ee):
     metrics_interval = os.getenv("METRICS_INTERVAL")
     if metrics_interval:
+        import metrics
+
         thread = metrics.MetricsEmitterThread(int(metrics_interval), m2ee)
         thread.setDaemon(True)
         thread.start()
 
 
+class LoggingHeartbeatEmitterThread(threading.Thread):
+    def __init__(self, interval):
+        super().__init__()
+        self.interval = interval
+
+    def run(self):
+        i = 0
+        logger.debug(
+            "Starting metrics emitter with interval %d", self.interval
+        )
+        while True:
+            logger.info("MENDIX-LOGGING-HEARTBEAT: %s", lines[i])
+            i = i + 1 if i < len(lines) else 0
+            time.sleep(self.interval)
+
+
 def start_logging_heartbeat():
-    logging_interval = os.getenv('METRICS_LOGGING_HEARTBEAT_INTERVAL', str(3600 * 6))
-    thread = metrics.LoggingHeartbeatEmitterThread(int(logging_interval))
+    logging_interval = os.getenv(
+        "METRICS_LOGGING_HEARTBEAT_INTERVAL", str(3600 * 6)
+    )
+    thread = LoggingHeartbeatEmitterThread(int(logging_interval))
     thread.setDaemon(True)
     thread.start()
 

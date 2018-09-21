@@ -4,8 +4,7 @@ import os
 import sys
 import threading
 import time
-import random
-import string
+
 from abc import ABCMeta, abstractmethod
 
 BUILDPACK_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -57,23 +56,6 @@ class MetricsServerEmitter(MetricsEmitter):
             )
 
             self.fallback_emitter.emit(stats)
-
-
-class LoggingHeartbeatEmitterThread(threading.Thread):
-    def __init__(self, interval):
-        super(LoggingHeartbeatEmitterThread, self).__init__()
-        self.interval = interval
-
-    def run(self):
-        logger.debug(
-            'Starting metrics emitter with interval %d' % self.interval
-        )
-        while True:
-            interesting_looking_string = ''.join(random.choice(
-                string.ascii_lowercase + string.digits
-            ) for _ in range(4))
-            logger.info('MENDIX-LOGGING-HEARTBEAT: ' + interesting_looking_string)
-            time.sleep(self.interval)
 
 
 class MetricsEmitterThread(threading.Thread):
