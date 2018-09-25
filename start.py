@@ -845,7 +845,7 @@ def service_backups():
         logger.warning("Failed to contact backup service. SSLError: " + str(e))
         return
     except Exception as e:
-        logger.warning("Failed to contact backup service: " + e)
+        logger.warning("Failed to contact backup service: ", exc_info=True)
         return
 
     if result.status_code == 200:
