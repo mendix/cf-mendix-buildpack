@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 import atexit
 import base64
+import codecs
 import datetime
+import itertools
 import json
 import logging
 import os
@@ -9,6 +11,7 @@ import re
 import signal
 import subprocess
 import sys
+import threading
 import time
 import traceback
 import uuid
@@ -23,6 +26,30 @@ import requests  # noqa: E402
 from m2ee import M2EE, logger  # noqa: E402
 from nginx import get_path_config, gen_htpasswd  # noqa: E402
 from buildpackutil import i_am_primary_instance  # noqa: E402
+
+HEARTBEAT_SOURCE_STRING = """Gur Mra bs Clguba, ol Gvz Crgref
+Ornhgvshy vf orggre guna htyl.
+Rkcyvpvg vf orggre guna vzcyvpvg.
+Fvzcyr vf orggre guna pbzcyrk.
+Pbzcyrk vf orggre guna pbzcyvpngrq.
+Syng vf orggre guna arfgrq.
+Fcnefr vf orggre guna qrafr.
+Ernqnovyvgl pbhagf.
+Fcrpvny pnfrf nera'g fcrpvny rabhtu gb oernx gur ehyrf.
+Nygubhtu cenpgvpnyvgl orngf chevgl.
+Reebef fubhyq arire cnff fvyragyl.
+Hayrff rkcyvpvgyl fvyraprq.
+Va gur snpr bs nzovthvgl, ershfr gur grzcgngvba gb thrff.
+Gurer fubhyq or bar-- naq cersrenoyl bayl bar --boivbhf jnl gb qb vg.
+Nygubhtu gung jnl znl abg or boivbhf ng svefg hayrff lbh'er Qhgpu.
+Abj vf orggre guna arire.
+Nygubhtu arire vf bsgra orggre guna *evtug* abj.
+Vs gur vzcyrzragngvba vf uneq gb rkcynva, vg'f n onq vqrn.
+Vs gur vzcyrzragngvba vf rnfl gb rkcynva, vg znl or n tbbq vqrn.
+Anzrfcnprf ner bar ubaxvat terng vqrn -- yrg'f qb zber bs gubfr!"""
+HEARTBEAT_STRING_LIST = codecs.encode(HEARTBEAT_SOURCE_STRING, "rot13").split(
+    "\n"
+)
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 logger.info("Started Mendix Cloud Foundry Buildpack v2.1.3")
@@ -818,7 +845,7 @@ def service_backups():
         logger.warning("Failed to contact backup service. SSLError: " + str(e))
         return
     except Exception as e:
-        logger.warning("Failed to contact backup service: " + e)
+        logger.warning("Failed to contact backup service: ", exc_info=True)
         return
 
     if result.status_code == 200:
@@ -1041,6 +1068,29 @@ def start_metrics(m2ee):
         thread.start()
 
 
+class LoggingHeartbeatEmitterThread(threading.Thread):
+    def __init__(self, interval):
+        super().__init__()
+        self.interval = interval
+
+    def run(self):
+        logger.debug(
+            "Starting metrics emitter with interval %d", self.interval
+        )
+        for line in itertools.cycle(HEARTBEAT_STRING_LIST):
+            logger.info("MENDIX-LOGGING-HEARTBEAT: %s", line)
+            time.sleep(self.interval)
+
+
+def start_logging_heartbeat():
+    logging_interval = os.getenv(
+        "METRICS_LOGGING_HEARTBEAT_INTERVAL", str(3600 * 6)
+    )
+    thread = LoggingHeartbeatEmitterThread(int(logging_interval))
+    thread.setDaemon(True)
+    thread.start()
+
+
 def complete_start_procedure_safe_to_use_for_restart(m2ee):
     buildpackutil.mkdir_p("model/lib/userlib")
     set_up_logging_file()
@@ -1089,6 +1139,7 @@ if __name__ == "__main__":
         complete_start_procedure_safe_to_use_for_restart(m2ee)
         set_up_instadeploy_if_deploy_password_is_set(m2ee)
         start_metrics(m2ee)
+        start_logging_heartbeat()
         start_nginx()
         loop_until_process_dies(m2ee)
     except Exception:
