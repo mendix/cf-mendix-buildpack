@@ -30,18 +30,14 @@ class MetricsServerEmitter(MetricsEmitter):
     def __init__(self, metrics_url):
         self.metrics_url = metrics_url
         self.fallback_emitter = LoggingEmitter()
-        self.logfailure = True
 
     def emit(self, stats):
         try:
             response = requests.post(self.metrics_url, json=stats, timeout=10)
-            self.logfailure = True
         except Exception as e:
-            if self.logfailure:
-                logger.warning(
-                    "Failed to send metrics to trends server.", exc_info=True
-                )
-                self.logfailure = False
+            logger.debug(
+                "Failed to send metrics to trends server.", exc_info=True
+            )
             # Fallback to old pipeline and stdout for now.
             # Later, we will want to buffer and resend.
             # This will be done in DEP-75.
