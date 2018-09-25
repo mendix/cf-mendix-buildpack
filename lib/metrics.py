@@ -298,7 +298,9 @@ WHERE t.schemaname='public';
             except Exception as e:
                 # We ignore errors here, as the information is not available for
                 # older mendix versions
-                logger.debug("METRICS: Error retrieving file sizes", e)
+                logger.debug(
+                    "METRICS: Error retrieving file sizes", exc_info=True
+                )
                 return 0
 
     def _get_db_conn(self):
