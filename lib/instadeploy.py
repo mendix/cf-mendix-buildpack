@@ -1,18 +1,20 @@
-from http.server import BaseHTTPRequestHandler, HTTPServer
 import cgi
 import json
-import shutil
-import time
 import logging
-import mxbuild
 import os
-from m2ee import logger
-import traceback
-import threading
-import buildpackutil
-import requests
+import shutil
 import subprocess
+import threading
+import time
+import traceback
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from urllib.parse import urljoin
 
+import requests
+
+import buildpackutil
+import mxbuild
+from m2ee import logger
 
 ROOT_DIR = os.getcwd() + "/"
 MXBUILD_FOLDER = ROOT_DIR + "mxbuild/"
@@ -23,6 +25,8 @@ DEPLOYMENT_DIR = os.path.join(PROJECT_DIR, "deployment")
 INCOMING_MPK_DIR = ".local/tmp_project"
 INTERMEDIATE_MPK_DIR = ".local/tmp_project_2"
 MPK_FILE = os.path.join(PROJECT_DIR, "app.mpk")
+
+INSTADEPLOY_FEEDBACK_PATH = "api/1/environments/{app_id}/instadeployfeedback"
 
 for directory in (
     MXBUILD_FOLDER,
@@ -233,6 +237,13 @@ def build():
                 "Syncing project files failed: %s", traceback.format_exc()
             )
             raise
+        try:
+            send_metadata_to_cloudportal()
+        except Exception:
+            logger.warning(
+                "Failed to send instadeploy feedback to Cloud Portal",
+                exc_info=True,
+            )
     else:
         logger.warning("Not syncing project files. MxBuild result: %s", result)
 
@@ -261,3 +272,26 @@ def extract_mxbuild_response(mxbuild_response):
     if "message" in mxbuild_response:
         r["message"] = mxbuild_response["message"]
     return r
+
+
+def send_metadata_to_cloudportal():
+    required_variables = ("CLOUD_PORTAL_LOCATION", "ENVIRONMENT_SIGNATURE")
+
+    if not all([v in os.environ for v in required_variables]):
+        logger.info(
+            "Required environment variables for intadeploy feedback "
+            "are missing. Skipping instadeploy feedback."
+        )
+        return
+
+    app_id = json.loads(os.environ["VCAP_APPLICATION"])["name"]
+    target_path = INSTADEPLOY_FEEDBACK_PATH.format(app_id=app_id)
+    target_url = urljoin(os.environ["CLOUD_PORTAL_LOCATION"], target_path)
+
+    with open("/home/vcap/app/model/metadata.json", "rb") as metadata_json:
+        files = {"file": metadata_json}
+        headers = {
+            "Mendix-Environment-Signature": os.environ["ENVIRONMENT_SIGNATURE"]
+        }
+        # We don't care about the response.
+        requests.post(target_url, files=files, headers=headers)
