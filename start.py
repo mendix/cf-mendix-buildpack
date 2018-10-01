@@ -235,7 +235,12 @@ def get_constants(metadata):
     try:
         constants_from_json = json.loads(constants_json)
     except Exception as e:
-        logger.warning("Failed to parse CONSTANTS: " + str(e))
+        logger.warning(
+            "Failed to parse model constant values, due to invalid JSON. "
+            "Application terminating.",
+            exc_info=True,
+        )
+        raise
 
     for constant in metadata["Constants"]:
         constant_name = constant["Name"]
