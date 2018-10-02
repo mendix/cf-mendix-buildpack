@@ -1098,7 +1098,7 @@ class LoggingHeartbeatEmitterThread(threading.Thread):
 
 def start_logging_heartbeat():
     logging_interval = os.getenv(
-        "METRICS_LOGGING_HEARTBEAT_INTERVAL", str(3600 * 6)
+        "METRICS_LOGGING_HEARTBEAT_INTERVAL", str(3600)
     )
     thread = LoggingHeartbeatEmitterThread(int(logging_interval))
     thread.setDaemon(True)
