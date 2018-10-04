@@ -15,6 +15,7 @@ import threading
 import time
 import traceback
 import uuid
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 sys.path.insert(0, "lib")
 import buildpackutil  # noqa: E402
@@ -60,6 +61,37 @@ app_is_restarting = False
 default_m2ee_password = str(uuid.uuid4()).replace("-", "@") + "A1"
 nginx_process = None
 m2ee = None
+MAINTENANCE_MESSAGE = (
+    "App is in maintenance mode. To turn off unset DEBUG_CONTAINER variable"
+)
+
+
+class Maintenance(BaseHTTPRequestHandler):
+    def _handle_all(self):
+        logger.warning(MAINTENANCE_MESSAGE)
+        self.send_response(503)
+        self.send_header("X-Mendix-Cloud-Mode", "maintenance")
+        self.end_headers()
+        self.wfile.write(MAINTENANCE_MESSAGE.encode("utf-8"))
+
+    def do_GET(self):
+        self._handle_all()
+
+    def do_POST(self):
+        self._handle_all()
+
+    def do_PUT(self):
+        self._handle_all()
+
+    def do_HEAD(self):
+        self._handle_all()
+
+
+if os.environ.get("DEBUG_CONTAINER", "false").lower() == "true":
+    logger.warning(MAINTENANCE_MESSAGE)
+    port = int(os.environ.get("PORT", 8080))
+    httpd = HTTPServer(("", port), Maintenance)
+    httpd.serve_forever()
 
 
 def emit(**stats):
