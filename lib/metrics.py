@@ -16,6 +16,14 @@ import requests  # noqa: E402
 from m2ee import logger, munin  # noqa: E402
 
 
+def int_or_default(value, default=0):
+    try:
+        return int(value)
+    except Exception as e:
+        logger.debug("Failed to coerce %s to int.", value, exc_info=True)
+        return default
+
+
 class MetricsEmitter(metaclass=ABCMeta):
     @abstractmethod
     def emit(self, stats):
@@ -226,11 +234,11 @@ class MetricsEmitterThread(threading.Thread):
             )
             rows = cursor.fetchall()
             return {
-                "xact_commit": int(rows[0][0]),
-                "xact_rollback": int(rows[0][1]),
-                "tup_inserted": int(rows[0][2]),
-                "tup_updated": int(rows[0][3]),
-                "tup_deleted": int(rows[0][4]),
+                "xact_commit": int_or_default(rows[0][0]),
+                "xact_rollback": int_or_default(rows[0][1]),
+                "tup_inserted": int_or_default(rows[0][2]),
+                "tup_updated": int_or_default(rows[0][3]),
+                "tup_deleted": int_or_default(rows[0][4]),
             }
         return None
 
@@ -242,7 +250,7 @@ class MetricsEmitterThread(threading.Thread):
                 "SELECT pg_database_size('%s');" % (db_config["DatabaseName"],)
             )
             rows = cursor.fetchall()
-            return int(rows[0][0])
+            return int_or_default(rows[0][0])
 
     def _get_database_index_size(self):
         conn = self._get_db_conn()
@@ -271,7 +279,7 @@ WHERE t.schemaname='public';
 """
             )
             rows = cursor.fetchall()
-            return int(rows[0][0])
+            return int_or_default(rows[0][0])
 
     def _get_number_of_files(self):
         conn = self._get_db_conn()
@@ -283,7 +291,7 @@ WHERE t.schemaname='public';
             rows = cursor.fetchall()
             if len(rows) == 0:
                 raise Exception("Unexpected result from database query")
-            return int(rows[0][0])
+            return int_or_default(rows[0][0])
 
     def _get_size_of_files(self):
         conn = self._get_db_conn()
@@ -295,7 +303,7 @@ WHERE t.schemaname='public';
                 rows = cursor.fetchall()
                 if len(rows) == 0:
                     return 0
-                return int(rows[0][0])
+                return int_or_default(rows[0][0])
             except Exception as e:
                 # We ignore errors here, as the information is not available for
                 # older mendix versions
