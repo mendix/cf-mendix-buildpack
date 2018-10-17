@@ -167,7 +167,7 @@ def update_config(m2ee, app_name):
             "delete_sets": True,
             "delete_timings": True,
             "percentiles": [90],
-            "metric_separator": "_",
+            "metric_separator": ".",
             "parse_data_dog_tags": True,
             "allowed_pending_messages": 10000,
             "percentile_limit": 1000,
