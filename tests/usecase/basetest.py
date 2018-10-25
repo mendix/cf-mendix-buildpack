@@ -44,6 +44,22 @@ class BaseTest(unittest.TestCase):
     def setUp(self):
         self.cf_home = tempfile.TemporaryDirectory()
         os.mkdir(os.path.join(self.cf_home.name, ".cf"))
+        self.cmd(
+            (
+                "cf",
+                "login",
+                "-a",
+                os.environ["CF_ENDPOINT"],
+                "-u",
+                os.environ["CF_USER"],
+                "-p",
+                os.environ["CF_PASSWORD"],
+                "-o",
+                os.environ["CF_ORG"],
+                "-s",
+                os.environ["CF_SPACE"],
+            )
+        )
 
     def startApp(self, start_timeout=None, expect_failure=False):
         try:
@@ -96,7 +112,7 @@ class BaseTest(unittest.TestCase):
             )
         )
         try:
-            subprocess.check_output(
+            self.cmd(
                 (
                     "cf",
                     "push",
@@ -118,8 +134,7 @@ class BaseTest(unittest.TestCase):
                     str(instances),
                     "-b",
                     ("%s#%s" % (self.buildpack_repo, self.branch_name)),
-                ),
-                stderr=subprocess.PIPE,
+                )
             )
         except subprocess.CalledProcessError as e:
             print(e.output.decode("utf-8"))
@@ -127,11 +142,7 @@ class BaseTest(unittest.TestCase):
 
         self.cmd(("./create-app-services.sh", self.app_name))
 
-        app_guid = (
-            subprocess.check_output(("cf", "app", self.app_name, "--guid"))
-            .decode("utf-8")
-            .strip()
-        )
+        app_guid = self.cmd(("cf", "app", self.app_name, "--guid")).strip()
 
         environment = {
             "ADMIN_PASSWORD": self.mx_password,
@@ -144,7 +155,7 @@ class BaseTest(unittest.TestCase):
         if env_vars is not None:
             environment.update(env_vars)
 
-        subprocess.check_output(
+        self.cmd(
             (  # check_call prints the output, no thanks
                 "cf",
                 "curl",
@@ -166,9 +177,7 @@ class BaseTest(unittest.TestCase):
         assert r.status_code == code
 
     def get_recent_logs(self):
-        return subprocess.check_output(
-            ("cf", "logs", self.app_name, "--recent")
-        ).decode("utf-8")
+        return self.cmd(("cf", "logs", self.app_name, "--recent"))
 
     def assert_string_in_recent_logs(self, substring):
         output = self.get_recent_logs()
