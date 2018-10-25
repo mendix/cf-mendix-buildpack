@@ -1,5 +1,4 @@
 import basetest
-import subprocess
 
 
 class TestCaseMpkAppDeployed(basetest.BaseTest):
@@ -15,11 +14,14 @@ class TestCaseMpkAppDeployed(basetest.BaseTest):
         self.assert_app_running()
 
         # Validate telegraf is running and has port 8125 opened for StatsD
-        output = subprocess.check_output(
-            "cf ssh %s -c \"lsof -i | grep '^telegraf.*:8125'\""
-            % self.app_name,
-            stderr=subprocess.STDOUT,
-            shell=True,
+        output = self.cmd(
+            (
+                "cf",
+                "ssh",
+                self.app_name,
+                "-c",
+                "lsof -i | grep '^telegraf.*:8125'",
+            )
         )
         assert output is not None
         assert str(output).find("telegraf") >= 0
