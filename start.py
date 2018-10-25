@@ -53,7 +53,7 @@ HEARTBEAT_STRING_LIST = codecs.encode(HEARTBEAT_SOURCE_STRING, "rot13").split(
 )
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
-logger.info("Started Mendix Cloud Foundry Buildpack v2.2.2")
+logger.info("Started Mendix Cloud Foundry Buildpack v2.2.3")
 logging.getLogger("m2ee").propagate = False
 
 
