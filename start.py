@@ -53,7 +53,7 @@ HEARTBEAT_STRING_LIST = codecs.encode(HEARTBEAT_SOURCE_STRING, "rot13").split(
 )
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
-logger.info("Started Mendix Cloud Foundry Buildpack v2.2.2")
+logger.info("Started Mendix Cloud Foundry Buildpack v2.2.3")
 logging.getLogger("m2ee").propagate = False
 
 
@@ -802,6 +802,38 @@ def set_up_m2ee_client(vcap_data):
     return m2ee
 
 
+class LogFilterThread(threading.Thread):
+    def __init__(self, log_ratelimit):
+        super().__init__()
+        self.log_ratelimit = log_ratelimit
+
+    def run(self):
+        try:
+            while True:
+                proc = subprocess.Popen(
+                    [
+                        "./bin/mendix-logfilter",
+                        "-r",
+                        self.log_ratelimit,
+                        "-f",
+                        "log/out.log",
+                    ]
+                )
+                proc.wait()
+                logger.warning(
+                    "MENDIX LOGGING: Mendix logfilter crashed with return code "
+                    "%s. This is nothing to worry about, we are restarting the "
+                    "logfilter now.",
+                    proc.returncode,
+                )
+        except Exception:
+            logger.warning(
+                "MENDIX LOGGING: Logging pipeline failed completely. To "
+                "restore log availibility, restart your application.",
+                exc_info=True,
+            )
+
+
 def set_up_logging_file():
     buildpackutil.lazy_remove_file("log/out.log")
     os.mkfifo("log/out.log")
@@ -816,15 +848,9 @@ def set_up_logging_file():
             ]
         )
     else:
-        subprocess.Popen(
-            [
-                "./bin/mendix-logfilter",
-                "-r",
-                log_ratelimit,
-                "-f",
-                "log/out.log",
-            ]
-        )
+        log_filter_thread = LogFilterThread(log_ratelimit)
+        log_filter_thread.daemon = True
+        log_filter_thread.start()
 
 
 def service_backups():
