@@ -4,6 +4,7 @@ import basetest
 
 class TestCaseMxAdminExposed(basetest.BaseTest):
     def setUp(self):
+        super().setUp()
         self.setUpCF("MontBlancApp720.mpk")
         self.startApp()
 

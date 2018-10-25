@@ -3,6 +3,7 @@ import basetest
 
 class TestCaseTerminateChildProcessesCompleteOnCrashingApp(basetest.BaseTest):
     def setUp(self):
+        super().setUp()
         self.setUpCF(
             "Sample-StartError.mpk",
             health_timeout=60,

@@ -3,6 +3,7 @@ import basetest
 
 class TestCaseMpkAppDeployed(basetest.BaseTest):
     def setUp(self):
+        super().setUp()
         self.setUpCF("MontBlancApp720.mpk")
         self.startApp()
 

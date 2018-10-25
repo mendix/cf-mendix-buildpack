@@ -34,6 +34,7 @@ BASIC_AUTH_OR_OTHER_IP_FILTER_RESOURCE = (
 
 class TestCaseAccessRestrictions(basetest.BaseTest):
     def setUp(self):
+        super().setUp()
         myips = set()
         wide_open_ips = ["0.0.0.0/0", "::/0"]
         other_ips = ["1.2.3.4/32", "1::2/128"]

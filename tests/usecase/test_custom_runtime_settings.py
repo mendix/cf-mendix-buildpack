@@ -4,6 +4,7 @@ import json
 
 class TestCaseCustomRuntimeSettings(basetest.BaseTest):
     def setUp(self):
+        super().setUp()
         self.setUpCF(
             "sample-6.2.0.mda",
             health_timeout=60,

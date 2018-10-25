@@ -3,6 +3,7 @@ import basetest
 
 class TestCaseMdaAppDeployed(basetest.BaseTest):
     def setUp(self):
+        super().setUp()
         self.setUpCF("sample-6.2.0.mda", instances=3)
         self.startApp()
 
