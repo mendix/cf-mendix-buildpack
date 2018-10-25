@@ -4,6 +4,7 @@ import time
 
 class TestCaseEmitMetrics(basetest.BaseTest):
     def setUp(self):
+        super().setUp()
         self.setUpCF("sample-6.2.0.mda", env_vars={"METRICS_INTERVAL": "10"})
         self.startApp()
 

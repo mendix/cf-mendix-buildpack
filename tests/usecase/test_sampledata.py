@@ -5,6 +5,7 @@ import json
 
 class TestCaseSampleData(basetest.BaseTest):
     def setUp(self):
+        super().setUp()
         self.setUpCF("MontBlancApp720WithSampleData.mpk")
         self.startApp()
 

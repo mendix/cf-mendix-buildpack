@@ -4,6 +4,7 @@ import subprocess
 import unittest
 import uuid
 import requests
+import tempfile
 
 
 class BaseTest(unittest.TestCase):
@@ -39,6 +40,10 @@ class BaseTest(unittest.TestCase):
         self.app_id = str(uuid.uuid4()).split("-")[0]
         self.subdomain = "ops-" + self.app_id
         self.app_name = "%s.%s" % (self.subdomain, self.cf_domain)
+
+    def setUp(self):
+        self.cf_home = tempfile.TemporaryDirectory()
+        os.mkdir(os.path.join(self.cf_home.name, ".cf"))
 
     def startApp(self, start_timeout=None, expect_failure=False):
         try:
@@ -153,6 +158,7 @@ class BaseTest(unittest.TestCase):
 
     def tearDown(self):
         self.cmd(("./delete-app.sh", self.app_name))
+        self.cf_home.cleanup()
 
     def assert_app_running(self, path="/xas/", code=401):
         full_uri = "https://" + self.app_name + path
@@ -182,6 +188,7 @@ class BaseTest(unittest.TestCase):
 
     def cmd(self, command, env=None):
         effective_env = os.environ.copy()
+        effective_env.update({"CF_HOME": self.cf_home.name})
         if env:
             effective_env.update(env)
         try:

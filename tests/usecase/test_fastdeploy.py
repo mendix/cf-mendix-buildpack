@@ -5,6 +5,7 @@ import time
 
 class TestCaseFastdeploy(basetest.BaseTest):
     def setUp(self):
+        super().setUp()
         self.setUpCF(
             "MontBlancApp720.mpk",
             env_vars={"DEPLOY_PASSWORD": self.mx_password},

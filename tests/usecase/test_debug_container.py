@@ -4,6 +4,7 @@ import requests
 
 class TestCaseDebugContainer(basetest.BaseTest):
     def setUp(self):
+        super().setUp()
         self.setUpCF(
             "BuildpackTestApp-mx-7-16.mda",
             env_vars={"DEBUG_CONTAINER": "true"},

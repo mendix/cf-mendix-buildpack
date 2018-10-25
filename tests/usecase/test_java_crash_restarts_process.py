@@ -5,6 +5,7 @@ import time
 
 class TestCaseJavaCrashRestartsProcess(basetest.BaseTest):
     def setUp(self):
+        super().setUp()
         self.setUpCF(
             "sample-6.2.0.mda",
             env_vars={

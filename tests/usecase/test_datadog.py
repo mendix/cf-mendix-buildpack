@@ -4,6 +4,7 @@ import subprocess
 
 class TestCaseMpkAppDeployed(basetest.BaseTest):
     def setUp(self):
+        super().setUp()
         self.setUpCF(
             "BuildpackTestApp-mx-7-16.mda",
             env_vars={"DD_API_KEY": "NON-VALID-TEST-KEY"},
