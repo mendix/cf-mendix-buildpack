@@ -385,7 +385,7 @@ cd app
 python3 start.py
 ```
 
-After you are done turn it off with:
+After you are done, you can disable debug mode with:
 ```
 cf unset-env <YOUR_APP> DEBUG_CONTAINER
 cf restart <YOUR_APP>
