@@ -373,3 +373,8 @@ Make sure your code complies with pep8 and that no pyflakes errors/warnings are 
 Rebase your git history in such a way that each commit makes one consistent change. Don't include separate "fixup" commits later on.
 
 For new code changes going live, the version has to bumped at the top of `start.py`, and a new tag with that version number needs to be pushed to github.
+
+License
+====
+
+This project is licensed under the Apache License v2 (for details, see the [LICENSE](LICENSE) file).

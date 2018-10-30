@@ -53,7 +53,7 @@ HEARTBEAT_STRING_LIST = codecs.encode(HEARTBEAT_SOURCE_STRING, "rot13").split(
 )
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
-logger.info("Started Mendix Cloud Foundry Buildpack v2.2.3")
+logger.info("Started Mendix Cloud Foundry Buildpack v2.2.4")
 logging.getLogger("m2ee").propagate = False
 
 
@@ -583,18 +583,21 @@ def get_custom_settings(metadata, existing_config):
 def get_license_subscription():
     try:
         vcap_services = buildpackutil.get_vcap_services_data()
-        if 'mendix-platform' in vcap_services:
-            subscription = vcap_services['mendix-platform'][0]
-            logger.debug('Configuring license subscription for %s' % subscription['name'])
-            credentials = subscription['credentials']
+        if "mendix-platform" in vcap_services:
+            subscription = vcap_services["mendix-platform"][0]
+            logger.debug(
+                "Configuring license subscription for %s"
+                % subscription["name"]
+            )
+            credentials = subscription["credentials"]
             return {
-                'License.EnvironmentName': credentials['environment_id'],
-                'License.LicenseServerURL': credentials['license_server_url'],
-                'License.SubscriptionSecret': credentials['secret'],
-                'License.UseLicenseServer': True,
+                "License.EnvironmentName": credentials["environment_id"],
+                "License.LicenseServerURL": credentials["license_server_url"],
+                "License.SubscriptionSecret": credentials["secret"],
+                "License.UseLicenseServer": True,
             }
     except Exception as e:
-        logger.warning('Failed to configure license subscription: ' + str(e))
+        logger.warning("Failed to configure license subscription: " + str(e))
     return {}
 
 
