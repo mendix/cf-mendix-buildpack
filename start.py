@@ -580,6 +580,24 @@ def get_custom_settings(metadata, existing_config):
     return {}
 
 
+def get_license_subscription():
+    try:
+        vcap_services = buildpackutil.get_vcap_services_data()
+        if 'mendix-platform' in vcap_services:
+            subscription = vcap_services['mendix-platform'][0]
+            logger.debug('Configuring license subscription for %s' % subscription['name'])
+            credentials = subscription['credentials']
+            return {
+                'License.EnvironmentName': credentials['environment_id'],
+                'License.LicenseServerURL': credentials['license_server_url'],
+                'License.SubscriptionSecret': credentials['secret'],
+                'License.UseLicenseServer': True,
+            }
+    except Exception as e:
+        logger.warning('Failed to configure license subscription: ' + str(e))
+    return {}
+
+
 def get_custom_runtime_settings():
     custom_runtime_settings = {}
     custom_runtime_settings_json = os.environ.get(
@@ -644,6 +662,7 @@ def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
     mxruntime_config.update(get_certificate_authorities())
     mxruntime_config.update(get_client_certificates())
     mxruntime_config.update(get_custom_settings(metadata, mxruntime_config))
+    mxruntime_config.update(get_license_subscription())
     mxruntime_config.update(get_custom_runtime_settings())
 
 
