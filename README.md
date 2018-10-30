@@ -365,6 +365,33 @@ To push with a specific version of the buildpack, append `#<tag>` to the buildpa
 You can find the list of available tags here: https://github.com/mendix/cf-mendix-buildpack/tags
 
 
+Troubleshooting (Rescue mode)
+====
+
+Sometimes the app won't run because it exits with status code 143. Or, for any reason, the app is unable to start, leaving you unable to debug the issue from within the container. For these cases we have introduced a `DEBUG_CONTAINER` mode. To enable it:
+
+```
+cf set-env <YOUR_APP> DEBUG_CONTAINER true
+cf restart <YOUR_APP>
+```
+
+Now your app will start in CloudFoundry (n.b. - the Mendix Runtime will not start yet) and you can troubleshoot the problem with:
+```
+cf ssh <YOUR_APP>
+export HOME=$HOME/app # this should not be needed but for now it is
+export DEBUG_CONTAINER=false # while we are in the container turn it off, we could try to make this optional by detecting other environment variables that are present over ssh but not regular start
+export PORT=1234 # so that nginx can start correctly
+cd app
+python3 start.py
+```
+
+After you are done, you can disable debug mode with:
+```
+cf unset-env <YOUR_APP> DEBUG_CONTAINER
+cf restart <YOUR_APP>
+```
+
+
 Contributing
 ====
 
