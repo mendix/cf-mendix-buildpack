@@ -375,7 +375,7 @@ cf set-env <YOUR_APP> DEBUG_CONTAINER true
 cf restart <YOUR_APP>
 ```
 
-Now your app starts and you can troubleshoot the problem with:
+Now your app will start in CloudFoundry (n.b. - the Mendix Runtime will not start yet) and you can troubleshoot the problem with:
 ```
 cf ssh <YOUR_APP>
 export HOME=$HOME/app # this should not be needed but for now it is
