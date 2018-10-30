@@ -368,7 +368,7 @@ You can find the list of available tags here: https://github.com/mendix/cf-mendi
 Troubleshooting (Rescue mode)
 ====
 
-Sometimes the app won't run cause it exists with status code 143. Or for whatever reason the app won't start so that you can debug the issue from within the container. For these cases we have introduced a `DEBUG_CONTAINER` mode. To enable it:
+Sometimes the app won't run because it exits with status code 143. Or, for any reason, the app is unable to start, leaving you unable to debug the issue from within the container. For these cases we have introduced a `DEBUG_CONTAINER` mode. To enable it:
 
 ```
 cf set-env <YOUR_APP> DEBUG_CONTAINER true
