@@ -224,6 +224,14 @@ def activate_license():
             prefs_file.write(prefs_body)
 
 
+def get_application_root_url(vcap_data):
+    try:
+        return "https://%s" % vcap_data["application_uris"][0]
+    except IndexError:
+        logger.warning("ApplicationRootUrl can't be configured, no application routes are defined.")
+        return ""
+
+
 def get_scheduled_events(metadata):
     scheduled_events = os.getenv("SCHEDULED_EVENTS", None)
     if not i_am_primary_instance():
@@ -629,7 +637,7 @@ def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
         metadata
     )
     app_config = {
-        "ApplicationRootUrl": "https://%s" % vcap_data["application_uris"][0],
+        "ApplicationRootUrl": get_application_root_url(vcap_data),
         "MicroflowConstants": get_constants(metadata),
         "ScheduledEventExecution": scheduled_event_execution,
     }
