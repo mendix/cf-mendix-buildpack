@@ -226,7 +226,7 @@ def activate_license():
 
 def get_application_root_url(vcap_data):
     try:
-        return "https://%s" % vcap_data["application_uris"][0]
+        return "https://{}".format(vcap_data["application_uris"][0])
     except IndexError:
         logger.warning("ApplicationRootUrl can't be configured, no application routes are defined.")
         return ""
