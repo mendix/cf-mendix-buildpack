@@ -228,7 +228,10 @@ def get_application_root_url(vcap_data):
     try:
         return "https://{}".format(vcap_data["application_uris"][0])
     except IndexError:
-        logger.warning("ApplicationRootUrl can't be configured, no application routes are defined.")
+        logger.warning(
+            "No application routes are defined. Your application will not be "
+            "accessible. Please contact support if this issue persists."
+        )
         return ""
 
 
