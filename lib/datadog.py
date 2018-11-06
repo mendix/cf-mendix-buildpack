@@ -216,8 +216,7 @@ def update_config(m2ee, app_name):
                     "source": "nginx",
                     "tags": tags,
                     "sourcecategory": "http_web_access",
-                }],
-                "logs": [{
+                }, {
                     "type": "file",
                     "path": "/tmp/nginx.error.log",
                     "service": _get_service(),
