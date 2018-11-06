@@ -225,8 +225,8 @@ def update_config(m2ee, app_name):
                     "tags": tags,
                     "sourcecategory": "http_web_access",
                 }]
-             }
-             fh.write(yaml.safe_dump(config))
+            }
+            fh.write(yaml.safe_dump(config))
 
     _set_up_postgres()
 
