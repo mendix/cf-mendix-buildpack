@@ -214,7 +214,7 @@ def update_config(m2ee, app_name):
                     "service": _get_service(),
                     "source": "nginx",
                     "tags": tags,
-                    "sourcecategory: "http_web_access",
+                    "sourcecategory": "http_web_access",
                 }],
                 "logs": [{
                     "type": "file",
@@ -222,7 +222,7 @@ def update_config(m2ee, app_name):
                     "service": _get_service(),
                     "source": "nginx",
                     "tags": tags,
-                    "sourcecategory: "http_web_access",
+                    "sourcecategory": "http_web_access",
                 }]
              }
         fh.write(yaml.safe_dump(config))
