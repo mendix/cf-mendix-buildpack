@@ -207,8 +207,8 @@ def update_config(m2ee, app_name):
         fh.write(yaml.safe_dump(config))
         # NGINX access logging to Datadog
         with open(".local/datadog/conf.d/nginx.d/conf.yaml", "w") as fh:
-        config = {
-            "logs": [
+            config = {
+                "logs": [
                 {
                     "type": "file"
                     "path": "/tmp/nginx.log",
