@@ -210,7 +210,7 @@ def update_config(m2ee, app_name):
             config = {
                 "logs": [
                 {
-                    "type": "file"
+                    "type": "file".
                     "path": "/tmp/nginx.log",
                     "service": _get_service(),
                     "source": "nginx",
