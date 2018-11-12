@@ -38,6 +38,7 @@ location %s {
         expires 1y;
     }
     proxy_pass http://mendix;
+    proxy_intercept_errors %s;
     satisfy %s;
     %s
     %s
@@ -51,6 +52,7 @@ location %s {
     }
     proxy_pass http://mendix;
 }
+proxy_intercept_errors %s;
 satisfy %s;
 %s
 %s
@@ -68,6 +70,12 @@ satisfy %s;
             raise Exception(
                 "Can not override access restrictions on system path %s" % path
             )
+        if path in ["/", "/p/", "/rest-doc/", "/link/",
+                    "/api-doc/", "/odata-doc/", "/ws-doc/", "/rest-doc"]:
+            proxy_intercept_errors = "on"
+        else:
+            proxy_intercept_errors = "off"
+
         satisfy = "any"
         if "satisfy" in config:
             if config["satisfy"] in ["any", "all"]:
@@ -100,6 +108,7 @@ satisfy %s;
         indent = "\n" + " " * (0 if path == "/" else 4)
         result += template % (
             path,
+            proxy_intercept_errors,
             satisfy,
             indent.join(ipfilter),
             client_cert,
