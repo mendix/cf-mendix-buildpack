@@ -431,7 +431,11 @@ def _get_s3_specific_config(vcap_services, m2ee):
 
     if dont_perform_deletes:
         logger.debug("disabling perform deletes for runtime")
-        config["com.mendix.storage.PerformDeleteFromStorage"] = False
+        if m2ee.config.get_runtime_version() < 7.19:
+            # Deprecated in 7.19
+            config["com.mendix.storage.s3.PerformDeleteFromStorage"] = False
+        else:
+            config["com.mendix.storage.PerformDeleteFromStorage"] = False
     if key_suffix:
         config["com.mendix.storage.s3.ResourceNameSuffix"] = key_suffix
     if v2_auth:
