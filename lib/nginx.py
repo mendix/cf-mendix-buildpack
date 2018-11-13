@@ -70,8 +70,16 @@ satisfy %s;
             raise Exception(
                 "Can not override access restrictions on system path %s" % path
             )
-        if path in ["/", "/p/", "/rest-doc/", "/link/",
-                    "/api-doc/", "/odata-doc/", "/ws-doc/", "/rest-doc"]:
+        if path in [
+            "/",
+            "/p/",
+            "/rest-doc/",
+            "/link/",
+            "/api-doc/",
+            "/odata-doc/",
+            "/ws-doc/",
+            "/rest-doc",
+        ]:
             proxy_intercept_errors = "on"
         else:
             proxy_intercept_errors = "off"
