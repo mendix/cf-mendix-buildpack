@@ -313,7 +313,7 @@ def ensure_mxbuild_in_directory(directory, mx_version, cache_dir):
             logging.debug(str(e))
             download_and_unpack(
                 get_blobstore_url(
-                    "/runtime/mxbuild-%s.tar.gz" % str(mx_version)
+                    "/runtimes/mxbuild-%s.tar.gz" % str(mx_version)
                 ),
                 directory,
                 cache_dir=cache_dir,
