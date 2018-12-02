@@ -28,9 +28,11 @@ from m2ee import logger
 def _get_appmetrics_target():
     return os.getenv("APPMETRICS_TARGET")
 
+def _get_appmetrics_prometheus():
+    return os.getenv("APPMETRICS_PROMETHEUS")
 
 def is_enabled():
-    return _get_appmetrics_target() is not None
+    return _get_appmetrics_target() is not None or _get_appmetrics_prometheus() is not None
 
 
 def _is_installed():
@@ -185,19 +187,19 @@ def update_config(m2ee, app_name):
     if datadog.is_enabled():
         _write_config("[[outputs.datadog]]", {"apikey": datadog.get_api_key()})
 
+    
+    # Expose metrics with Prometheus Client Serice when enabled
+    if _get_appmetrics_prometheus is not None:
+        _write_prometheus_output_config()
+        
     # # Write http_oputs (one or array)
-    http_configs = json.loads(_get_appmetrics_target())
-    if type(http_configs) is list:
-        for http_config in http_configs:
-            if http_config=='prometheus':
-                _write_prometheus_output_config()
-            else:
+    if _get_appmetrics_target is not None:
+        http_configs = json.loads(_get_appmetrics_target())
+        if type(http_configs) is list:
+            for http_config in http_configs:
                 _write_http_output_config(http_config)
-    else:
-        if http_config=='prometheus':
-            _write_prometheus_output_config()
         else:
-        _write_http_output_config(http_configs)
+            _write_http_output_config(http_configs)
 
     # Enable Java Agent on MxRuntime to
     datadog.enable_runtime_agent(m2ee)
