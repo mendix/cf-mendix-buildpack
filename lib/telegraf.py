@@ -115,7 +115,7 @@ def _write_http_output_config(http_config):
         "method": "POST",
         "data_format": "influx",
     }
-    
+
     username = http_config.get("username")
     password = http_config.get("password")
     if username:
@@ -194,7 +194,7 @@ def update_config(m2ee, app_name):
     # Expose metrics with Prometheus Client Serice when enabled
     if _get_appmetrics_prometheus is not None:
         _write_prometheus_output_config()
-        
+
     # # Write http_oputs (one or array)
     if _get_appmetrics_target is not None:
         http_configs = json.loads(_get_appmetrics_target())
