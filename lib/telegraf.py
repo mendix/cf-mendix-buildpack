@@ -28,8 +28,10 @@ from m2ee import logger
 def _get_appmetrics_target():
     return os.getenv("APPMETRICS_TARGET")
 
+
 def _get_appmetrics_prometheus():
     return os.getenv("APPMETRICS_PROMETHEUS")
+
 
 def is_enabled():
     return _get_appmetrics_target() is not None or _get_appmetrics_prometheus() is not None
@@ -133,6 +135,7 @@ def _write_http_output_config(http_config):
 
     _write_config("[[outputs.http]]", http_output)
 
+
 def _write_prometheus_output_config():
     logger.debug("writing prometheus output config")
     prometheus_output = {
@@ -140,6 +143,7 @@ def _write_prometheus_output_config():
     }
 
     _write_config("[[outputs.prometheus_client]]", prometheus_output)
+
 
 def update_config(m2ee, app_name):
     if not is_enabled() or not _is_installed():
@@ -187,7 +191,6 @@ def update_config(m2ee, app_name):
     if datadog.is_enabled():
         _write_config("[[outputs.datadog]]", {"apikey": datadog.get_api_key()})
 
-    
     # Expose metrics with Prometheus Client Serice when enabled
     if _get_appmetrics_prometheus is not None:
         _write_prometheus_output_config()
