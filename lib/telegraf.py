@@ -111,7 +111,7 @@ def _write_http_output_config(http_config):
         "method": "POST",
         "data_format": "influx",
     }
-
+    
     username = http_config.get("username")
     password = http_config.get("password")
     if username:
@@ -131,6 +131,13 @@ def _write_http_output_config(http_config):
 
     _write_config("[[outputs.http]]", http_output)
 
+def _write_prometheus_output_config():
+    logger.debug("writing prometheus output config")
+    prometheus_output = {
+        "listen": ":9273",
+    }
+
+    _write_config("[[outputs.prometheus_client]]", prometheus_output)
 
 def update_config(m2ee, app_name):
     if not is_enabled() or not _is_installed():
@@ -182,8 +189,14 @@ def update_config(m2ee, app_name):
     http_configs = json.loads(_get_appmetrics_target())
     if type(http_configs) is list:
         for http_config in http_configs:
-            _write_http_output_config(http_config)
+            if http_config=='prometheus':
+                _write_prometheus_output_config()
+            else:
+                _write_http_output_config(http_config)
     else:
+        if http_config=='prometheus':
+            _write_prometheus_output_config()
+        else:
         _write_http_output_config(http_configs)
 
     # Enable Java Agent on MxRuntime to
