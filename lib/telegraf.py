@@ -197,6 +197,7 @@ def update_config(m2ee, app_name):
     # Expose metrics with Prometheus Client Serice when enabled
     if _get_appmetrics_prometheus is not None:
         _write_prometheus_output_config()
+        return
     
     # # Write http_oputs (one or array)
     if _get_appmetrics_target is not None:
