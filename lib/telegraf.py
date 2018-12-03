@@ -202,7 +202,7 @@ def update_config(m2ee, app_name):
     if _get_appmetrics_target is not None:
         try:
             http_configs = json.loads(_get_appmetrics_target())
-        except ValueError as e:
+        except TypeError as e:
                return
         if type(http_configs) is list:
             for http_config in http_configs:
