@@ -203,7 +203,10 @@ def update_config(m2ee, app_name):
         try:
             http_configs = json.loads(_get_appmetrics_target())
         except TypeError as e:
-               return
+               logger.error(
+                    "APPMETRICS_TARGET not in JSON format"
+                )
+                return
         if type(http_configs) is list:
             for http_config in http_configs:
                 _write_http_output_config(http_config)
