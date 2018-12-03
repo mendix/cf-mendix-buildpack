@@ -197,15 +197,18 @@ def update_config(m2ee, app_name):
     # Expose metrics with Prometheus Client Serice when enabled
     if _get_appmetrics_prometheus is not None:
         _write_prometheus_output_config()
-    else:
-        # # Write http_outputs (one or array)
-        if _get_appmetrics_target is not None:
+
+    # # Write http_outputs (one or array)
+    if _get_appmetrics_target is not None:
+        try:
             http_configs = json.loads(_get_appmetrics_target())
-            if type(http_configs) is list:
-                for http_config in http_configs:
-                    _write_http_output_config(http_config)
-            else:
-                _write_http_output_config(http_configs)
+        except ValueError as e:
+               return
+        if type(http_configs) is list:
+            for http_config in http_configs:
+                _write_http_output_config(http_config)
+        else:
+            _write_http_output_config(http_configs)
 
 
 def compile(install_path, cache_dir):
