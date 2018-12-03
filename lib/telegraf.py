@@ -187,6 +187,9 @@ def update_config(m2ee, app_name):
         },
     )
 
+    # Enable Java Agent on MxRuntime to
+    datadog.enable_runtime_agent(m2ee)
+    
     # Forward metrics also to DataDog when enabled
     if datadog.is_enabled():
         _write_config("[[outputs.datadog]]", {"apikey": datadog.get_api_key()})
@@ -194,7 +197,7 @@ def update_config(m2ee, app_name):
     # Expose metrics with Prometheus Client Serice when enabled
     if _get_appmetrics_prometheus is not None:
         _write_prometheus_output_config()
-
+    
     # # Write http_oputs (one or array)
     if _get_appmetrics_target is not None:
         http_configs = json.loads(_get_appmetrics_target())
@@ -203,9 +206,6 @@ def update_config(m2ee, app_name):
                 _write_http_output_config(http_config)
         else:
             _write_http_output_config(http_configs)
-
-    # Enable Java Agent on MxRuntime to
-    datadog.enable_runtime_agent(m2ee)
 
 
 def compile(install_path, cache_dir):
