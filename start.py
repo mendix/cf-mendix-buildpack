@@ -1162,7 +1162,7 @@ def start_metrics(m2ee):
         thread.setDaemon(True)
         thread.start()
     else:
-        logger.info("MENDIX-METRICS: Metrics are disabled.")
+        logger.info("MENDIX-INTERNAL: Metrics are disabled.")
 
 
 class LoggingHeartbeatEmitterThread(threading.Thread):
