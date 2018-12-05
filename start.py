@@ -1161,6 +1161,8 @@ def start_metrics(m2ee):
         thread = metrics.MetricsEmitterThread(int(metrics_interval), m2ee)
         thread.setDaemon(True)
         thread.start()
+    else:
+        logger.info("MENDIX-METRICS: Metrics are disabled.")
 
 
 class LoggingHeartbeatEmitterThread(threading.Thread):
