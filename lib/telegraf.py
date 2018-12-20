@@ -29,8 +29,12 @@ def _get_appmetrics_target():
     return os.getenv("APPMETRICS_TARGET")
 
 
+def _get_appmetrics_aai():
+    return os.getenv("APPMETRICS_AAI")
+
+
 def is_enabled():
-    return _get_appmetrics_target() is not None
+    return _get_appmetrics_target() is not None or _get_appmetrics_aai() is not None
 
 
 def _is_installed():
@@ -132,6 +136,31 @@ def _write_http_output_config(http_config):
     _write_config("[[outputs.http]]", http_output)
 
 
+def _write_aai_output_config():
+    logger.debug("writing aai output config")
+    aai_output = {
+        "instrumentation_key": _get_appmetrics_aai(),
+    }
+
+    _write_config("[[outputs.application_insights]]", aai_output)
+
+
+def _write_mendix_admin_http_input_config(action, metric_prefix, query, fields):
+    mxpassword = os.getenv("ADMIN_PASSWORD")
+    mxpassword64 = base64.b64encode(mxpassword.encode()).decode("ascii")
+    http_input = {
+        "urls": ["http://localhost:82/_mxadmin"],
+        "method": "POST",
+        "[inputs.http.headers]": {"Content-Type": "application/json", "X-M2EE-Authentication":  mxpassword64 },
+        "data_format": "json",
+        "name_override": metric_prefix,
+        "body": "{\\\"action\\\" : \\\"" + action + "\\\", \\\"params\\\":{} }",
+        "json_query": query,
+        "fieldpass": fields
+    }
+    _write_config("[[inputs.http]]", http_input)
+
+
 def update_config(m2ee, app_name):
     if not is_enabled() or not _is_installed():
         return
@@ -178,13 +207,26 @@ def update_config(m2ee, app_name):
     if datadog.is_enabled():
         _write_config("[[outputs.datadog]]", {"apikey": datadog.get_api_key()})
 
+    # Expose metrics to Azure Application Insights when enabled
+    if _get_appmetrics_aai() is not None:
+        _write_aai_output_config()
+    
+    # Collect statistics from Mendix admin port
+    _write_mendix_admin_http_input_config("runtime_statistics", "mendix_runtime_memory", "feedback.memory", ["used_heap", "committed_heap", "init_heap", "max_heap", "used_nonheap", "committed_nonheap", "init_nonheap", "max_nonheap"])
+    _write_mendix_admin_http_input_config("runtime_statistics", "mendix_runtime_connectionbus", "feedback.connectionbus", ["select", "insert", "update", "delete", "transaction"])
+    _write_mendix_admin_http_input_config("runtime_statistics", "mendix_runtime_sessions", "feedback.sessions", ["named_users", "anonymous_sessions", "named_user_sessions"])
+    _write_mendix_admin_http_input_config("server_statistics", "mendix_runtime_threads", "feedback.threadpool", ["threads"])
+    _write_mendix_admin_http_input_config("server_statistics", "mendix_runtime_connections", "feedback.jetty", ["current_connections"])
+    _write_mendix_admin_http_input_config("get_logged_in_user_names", "mendix_runtime_loggedinusers", "feedback", ["count"])
+
     # # Write http_oputs (one or array)
-    http_configs = json.loads(_get_appmetrics_target())
-    if type(http_configs) is list:
-        for http_config in http_configs:
-            _write_http_output_config(http_config)
-    else:
-        _write_http_output_config(http_configs)
+    if _get_appmetrics_target() is not None:
+        http_configs = json.loads(_get_appmetrics_target())
+        if type(http_configs) is list:
+            for http_config in http_configs:
+                _write_http_output_config(http_config)
+        else:
+            _write_http_output_config(http_configs)
 
     # Enable Java Agent on MxRuntime to
     datadog.enable_runtime_agent(m2ee)
@@ -205,9 +247,7 @@ def compile(install_path, cache_dir):
     )
 
     buildpackutil.download_and_unpack(
-        buildpackutil.get_blobstore_url(
-            "/mx-buildpack/telegraf-1.7.1_linux_amd64.tar.gz"
-        ),
+        "https://dl.influxdata.com/telegraf/nightlies/telegraf-nightly_linux_amd64.tar.gz",
         install_path,
         cache_dir=cache_dir,
     )
