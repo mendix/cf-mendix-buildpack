@@ -160,6 +160,28 @@ def _write_mendix_admin_http_input_config(action, metric_prefix, query, fields):
     }
     _write_config("[[inputs.http]]", http_input)
 
+def _write_mendix_admin_http_named_input_config(action, metric_prefix, key_name, query, fields):
+    mxpassword = os.getenv("ADMIN_PASSWORD")
+    mxpassword64 = base64.b64encode(mxpassword.encode()).decode("ascii")
+    http_input = {
+        "urls": ["http://localhost:82/_mxadmin"],
+        "method": "POST",
+        "[inputs.http.headers]": {"Content-Type": "application/json", "X-M2EE-Authentication":  mxpassword64 },
+        "data_format": "json",
+        "name_prefix": metric_prefix,
+        "json_name_key": key_name,
+        "body": "{\\\"action\\\" : \\\"" + action + "\\\", \\\"params\\\":{} }",
+        "json_query": query,
+        "fieldpass": fields
+    }
+    _write_config("[[inputs.http]]", http_input)
+
+def _write_cpu_input_config():
+    cpu_input = {
+        "percpu": False,
+        "totalcpu": True,
+    }
+    _write_config("[[inputs.cpu]]", cpu_input)
 
 def update_config(m2ee, app_name):
     if not is_enabled() or not _is_installed():
@@ -218,6 +240,9 @@ def update_config(m2ee, app_name):
     _write_mendix_admin_http_input_config("server_statistics", "mendix_runtime_threads", "feedback.threadpool", ["threads"])
     _write_mendix_admin_http_input_config("server_statistics", "mendix_runtime_connections", "feedback.jetty", ["current_connections"])
     _write_mendix_admin_http_input_config("get_logged_in_user_names", "mendix_runtime_loggedinusers", "feedback", ["count"])
+    _write_mendix_admin_http_named_input_config("runtime_statistics", "mendix_runtime_requests_", "name", "feedback.requests", ["value"])
+
+    _write_cpu_input_config()
 
     # # Write http_oputs (one or array)
     if _get_appmetrics_target() is not None:
