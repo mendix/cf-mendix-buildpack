@@ -71,6 +71,10 @@ def update_config(m2ee, app_name):
         return
 
     tags = buildpackutil.get_tags()
+    if buildpackutil.is_appmetrics_enabled():
+        statsd_port = 8126
+    else:
+        statsd_port = 8125
     m2ee.config._conf["m2ee"]["javaopts"].extend(
         [
             "-Dcom.sun.management.jmxremote",
@@ -108,7 +112,8 @@ def update_config(m2ee, app_name):
             },
             "apm_config": {"enabled": True, "max_traces_per_second": 10},
             "logs_config": {"run_path": ".local/datadog/run"},
-            "use_dogstatsd": not buildpackutil.is_appmetrics_enabled(),
+            "use_dogstatsd": True,
+            "dogstatsd_port": statsd_port,
         }
         fh.write(yaml.safe_dump(config))
     subprocess.check_call(("mkdir", "-p", ".local/datadog/conf.d/mendix.d"))
@@ -141,6 +146,7 @@ def update_config(m2ee, app_name):
                     "port": 7845,
                     "java_bin_path": ".local/bin/java",
                     "java_options": "-Xmx50m -Xms5m",
+                    "reporter": "statsd:localhost:{}".format(statsd_port),
                     # 'refresh_beans': 10, # runtime takes time to initialize the beans
                     "conf": [
                         {
