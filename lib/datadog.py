@@ -71,7 +71,7 @@ def update_config(m2ee, app_name):
         return
 
     tags = buildpackutil.get_tags()
-    if buildpackutil_is_appmetrics_enabled():
+    if buildpackutil.is_appmetrics_enabled():
         statsd_port = 8126
     else:
         statsd_port = 8125
