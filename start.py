@@ -54,9 +54,22 @@ HEARTBEAT_STRING_LIST = codecs.encode(HEARTBEAT_SOURCE_STRING, "rot13").split(
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
-logger.info("Started Mendix Cloud Foundry Buildpack v2.2.5")
-logging.getLogger("m2ee").propagate = False
 
+def get_current_buildpack_commit():
+    try:
+        with open(".buildpack_commit", "r") as commit_file:
+            short_commit = commit_file.readline().strip()
+            return short_commit
+    except Exception:
+        logger.debug("Failed to read file", exc_info=True)
+        return "unknown_commit"
+
+
+logger.info(
+    "Started Mendix Cloud Foundry Buildpack v2.2.6 [commit:%s]",
+    get_current_buildpack_commit(),
+)
+logging.getLogger("m2ee").propagate = False
 
 app_is_restarting = False
 default_m2ee_password = str(uuid.uuid4()).replace("-", "@") + "A1"

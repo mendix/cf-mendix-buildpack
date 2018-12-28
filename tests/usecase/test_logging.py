@@ -1,5 +1,7 @@
-import basetest
 import json
+import os
+
+import basetest
 
 
 class TestCaseLogging(basetest.BaseTest):
@@ -14,3 +16,9 @@ class TestCaseLogging(basetest.BaseTest):
     def test_logging_config(self):
         self.assert_app_running()
         self.assert_string_in_recent_logs("TRACE - Jetty")
+
+    def test_commit_hash_in_logs(self):
+        commit_hash = os.getenv("TRAVIS_COMMIT")
+        if commit_hash:
+            short_commit_hash = commit_hash[:7]
+            self.assert_string_in_recent_logs(short_commit_hash)
