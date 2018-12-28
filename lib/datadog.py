@@ -71,7 +71,10 @@ def update_config(m2ee, app_name):
         return
 
     tags = buildpackutil.get_tags()
-    statsd_port = 8125 if not buildpackutil.is_appmetrics_enabled() else 8126
+    if buildpackutil_is_appmetrics_enabled():
+        statsd_port = 8126
+    else:
+        statsd_port = 8125
     m2ee.config._conf["m2ee"]["javaopts"].extend(
         [
             "-Dcom.sun.management.jmxremote",
