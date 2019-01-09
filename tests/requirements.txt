@@ -7,5 +7,5 @@ nose-timer==0.7.0
 ordereddict==1.1
 requests==2.20.0
 termcolor==1.1.0
-urllib3==1.21.1
+urllib3==1.23
 black==18.6b4

@@ -19,6 +19,7 @@ import requests
 import datadog
 import telegraf
 import buildpackutil
+import instadeploy
 from m2ee.version import MXVersion
 
 
@@ -261,11 +262,18 @@ def run_mx_build():
                 shutil.rmtree(path)
             else:
                 os.unlink(path)
+
     zf = zipfile.ZipFile('/tmp/model.mda')
     try:
         zf.extractall(BUILD_DIR)
     finally:
         zf.close()
+
+    try:
+        with open(os.path.join(BUILD_DIR, '.sourcepush'), 'w') as f:
+            f.write('sourcepush')
+    except:
+        logger.warn('Could not write source push indicator.')
 
 
 def buildstatus_callback(error_file):

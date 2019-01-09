@@ -66,7 +66,7 @@ def get_current_buildpack_commit():
 
 
 logger.info(
-    "Started Mendix Cloud Foundry Buildpack v2.2.6 [commit:%s]",
+    "Started Mendix Cloud Foundry Buildpack v2.2.7 [commit:%s]",
     get_current_buildpack_commit(),
 )
 logging.getLogger("m2ee").propagate = False
@@ -1163,6 +1163,9 @@ def set_up_instadeploy_if_deploy_password_is_set(m2ee):
             )
             thread.setDaemon(True)
             thread.start()
+
+            if os.path.exists(os.path.expanduser("~/.sourcepush")):
+                instadeploy.send_metadata_to_cloudportal()
         else:
             logger.warning(
                 "Not setting up InstaDeploy because this mendix "
