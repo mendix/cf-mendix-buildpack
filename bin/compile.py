@@ -273,7 +273,7 @@ def run_mx_build():
             f.write("sourcepush")
     except Exception as e:
         logging.warn(
-            "Could not write source push indicator. {}".format(str(e))
+            "Could not write source push indicator. %s, str(e)
         )
 
 
