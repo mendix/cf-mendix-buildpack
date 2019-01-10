@@ -6,8 +6,10 @@ import os
 import shutil
 import subprocess
 import sys
-import zipfile
+
 import requests
+import zipfile
+
 import datadog
 import telegraf
 import buildpackutil
@@ -19,7 +21,6 @@ CACHE_DIR = os.path.join(sys.argv[2], "bust")
 DOT_LOCAL_LOCATION = os.path.join(BUILD_DIR, ".local")
 BUILD_ERRORS_JSON = "/tmp/builderrors.json"
 
-# sys.path.insert(0, os.path.join(BUILDPACK_DIR, 'lib'))
 
 logging.basicConfig(
     level=buildpackutil.get_buildpack_loglevel(),
@@ -272,9 +273,7 @@ def run_mx_build():
         with open(os.path.join(BUILD_DIR, ".sourcepush"), "w") as f:
             f.write("sourcepush")
     except Exception as e:
-        logging.warn(
-            "Could not write source push indicator. %s, str(e)
-        )
+        logging.warning("Could not write source push indicator. %s", str(e))
 
 
 def buildstatus_callback(error_file):
