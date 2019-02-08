@@ -196,13 +196,7 @@ def compile(install_path, cache_dir):
     #
     # Add Telegraf to the container which can forward metrics to a custom
     # AppMetrics target
-    buildpackutil.download_and_unpack(
-        buildpackutil.get_blobstore_url(
-            "/mx-buildpack/experimental/dd-v0.8.0.tar.gz"
-        ),
-        os.path.join(install_path, "datadog"),
-        cache_dir=cache_dir,
-    )
+    datadog.download(install_path, cache_dir)
 
     buildpackutil.download_and_unpack(
         buildpackutil.get_blobstore_url(
