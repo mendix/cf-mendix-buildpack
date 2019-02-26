@@ -98,7 +98,11 @@ class MetricsEmitterThread(threading.Thread):
                     stats = self._inject_database_stats(stats)
                     stats = self._inject_storage_stats(stats)
                     stats = self._inject_health(stats)
-                stats = self._inject_m2ee_stats(stats)
+                try:
+                    stats = self._inject_m2ee_stats(stats)
+                except Exception:
+                    logger.debug("Unable to get metrics from runtime")
+
                 self.emit(stats)
             except psycopg2.OperationalError as up:
                 logger.exception("METRICS: error while gathering metrics")
