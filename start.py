@@ -314,6 +314,13 @@ def set_jvm_locale(m2ee_section, java_version):
         javaopts.append("-Djava.locale.providers=JRE,SPI,CLDR")
 
 
+def set_user_provided_java_options(m2ee_section):
+    javaopts = m2ee_section["javaopts"]
+    options = os.environ.get("JAVA_OPTS", None)
+    if options:
+        javaopts.append(options.split())
+
+
 def set_jvm_memory(m2ee_section, vcap, java_version):
     max_memory = os.environ.get("MEMORY_LIMIT")
 
@@ -833,6 +840,7 @@ def set_up_m2ee_client(vcap_data):
     )
     set_jvm_memory(m2ee.config._conf["m2ee"], vcap_data, java_version)
     set_jvm_locale(m2ee.config._conf["m2ee"], java_version)
+    set_user_provided_java_options(m2ee.config._conf["m2ee"])
     set_jetty_config(m2ee)
     activate_new_relic(m2ee, vcap_data["application_name"])
     activate_appdynamics(m2ee, vcap_data["application_name"])
