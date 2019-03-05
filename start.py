@@ -318,7 +318,7 @@ def set_user_provided_java_options(m2ee_section):
     javaopts = m2ee_section["javaopts"]
     options = os.environ.get("JAVA_OPTS", None)
     if options:
-        javaopts.append(options.split())
+        javaopts.extend(options.split())
 
 
 def set_jvm_memory(m2ee_section, vcap, java_version):
