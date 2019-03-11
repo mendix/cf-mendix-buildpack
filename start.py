@@ -318,7 +318,13 @@ def set_user_provided_java_options(m2ee_section):
     javaopts = m2ee_section["javaopts"]
     options = os.environ.get("JAVA_OPTS", None)
     if options:
-        javaopts.extend(options.split())
+        try:
+            options = json.loads(options)
+        except json.JSONDecodeError as e:
+            logger.error(
+                "Failed to parse JAVA_OPTS, due to invalid JSON.", exc_info=True)
+            raise
+        javaopts.extend(options)
 
 
 def set_jvm_memory(m2ee_section, vcap, java_version):
