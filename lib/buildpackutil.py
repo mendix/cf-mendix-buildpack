@@ -6,11 +6,13 @@ import re
 import subprocess
 import sys
 from distutils.util import strtobool
-from urllib.parse import parse_qs
+from urllib.parse import parse_qs, urlencode
 
 sys.path.insert(0, "lib")
 
 import requests  # noqa: E402
+
+from m2ee import logger  # noqa: E402
 
 
 def get_database_config(development_mode=False):
@@ -57,13 +59,41 @@ def get_database_config(development_mode=False):
         "DatabaseName": match.group("dbname"),
     }
 
-    if "extra" in match.groupdict() and match.group("extra"):
+    # parsing additional parameters
+    # 1) check for sslmode in existing jdbc url for m2ee config
+    # 2) update jdbc url (from vcap) with input from DATABASE_CONNECTION_PARAMS
+    jdbc_params = {}
+
+    # getting values from url
+    has_extra = "extra" in match.groupdict() and match.group("extra")
+    if has_extra:
         extra = match.group("extra").lstrip("?")
         jdbc_params = parse_qs(extra)
-        if "sslmode" in jdbc_params:
-            sslmode = jdbc_params["sslmode"]
-            if sslmode and sslmode[0] == "require":
-                config.update({"DatabaseUseSsl": True})
+
+    # defaults
+    if database_type == "PostgreSQL":
+        jdbc_params.update({"tcpKeepAlive": "true"})
+
+    extra_url_params_str = os.getenv("DATABASE_CONNECTION_PARAMS")
+    if extra_url_params_str is not None:
+        try:
+            extra_url_params = json.loads(extra_url_params_str)
+            jdbc_params.update(extra_url_params)
+        except Exception:
+            logger.warning(
+                "Invalid JSON string for DATABASE_CONNECTION_PARAMS"
+            )
+
+    # generate jdbc_url, might be None
+    jdbc_url = get_jdbc_strings(url, match, config, jdbc_params)
+    if jdbc_url is not None:
+        logger.debug("Setting JDBC url: {}".format(jdbc_url))
+        config.update({"DatabaseJdbcUrl": jdbc_url})
+
+    if "sslmode" in jdbc_params:
+        sslmode = jdbc_params["sslmode"]
+        if sslmode and sslmode[0] == "require":
+            config.update({"DatabaseUseSsl": True})
 
     if development_mode:
         config.update(
@@ -85,6 +115,32 @@ def get_database_config(development_mode=False):
         )
 
     return config
+
+
+def get_jdbc_strings(url, match, config, jdbc_params):
+    # JDBC strings might be different from connection uri strings retrieved from the VCAP
+    # For supported/tested situations we'll create a JDBC string based on
+    # * url (from VCAP or DATABASE_URL)
+    # * config (extracted information from url)
+    # * jdbc_params (from DATABASE_URL or DATABASE_CONNECTION_PARAMS)
+    #
+    # if given url is a JDBC string this will be returned
+    #
+
+    # return unmodified jdbc string
+    if url.startswith("jdbc:"):
+        return url
+
+    if len(jdbc_params) > 0:
+        extra_jdbc_params = "?{}".format(urlencode(jdbc_params))
+    else:
+        extra_jdbc_params = ""
+
+    if config["DatabaseType"] == "PostgreSQL":
+        jdbc_url = "jdbc:postgresql://{}/{}{}".format(
+            config["DatabaseHost"], config["DatabaseName"], extra_jdbc_params
+        )
+        return jdbc_url
 
 
 def get_vcap_services_data():

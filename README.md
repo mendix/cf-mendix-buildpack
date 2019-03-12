@@ -62,6 +62,14 @@ Now we need to push the application once more.
 
 You can now log in to your application with the configured admin password.
 
+For PostgreSQL we support setting additional parameters in the connection uri retrieved from the VCAP. To set additional JDBC parameters set the `DATABASE_CONNECTION_PARAMS` environment variable as JSON key-value string.
+
+```
+cf set-env <YOUR_APP> DATABASE_CONNECTION_PARAMS '{"tcpKeepAlive": "true", "connectionTimeout": 30, "loginTimeout": 15}'
+```
+
+Note: if you set `DATABASE_URL` provide it as JDBC connection string (prefixed with `jdbc:` and including parameters, `DATABASE_CONNECTION_PARAMS` is not needed then.
+
 
 ### Configuring Constants
 
@@ -358,7 +366,7 @@ If you use the `cf push` commands as described above, you will always use the la
 
 However, if you need to exercise a high degree of control over your deployments, it is possible to pin a specific version of the buildpack. This will prevent you from being affected by bugs that are inadvertently introduced, but you will need to set up a procedure to regularly move to new versions of the buildpack.
 
-To push with a specific version of the buildpack, append `#<tag>` to the buildpack URL in your `cf push` command like so: 
+To push with a specific version of the buildpack, append `#<tag>` to the buildpack URL in your `cf push` command like so:
 
     cf push <YOUR_APP> -b https://github.com/mendix/cf-mendix-buildpack#v1.9.2 -p <YOUR_MDA>.mda -t 180
 
