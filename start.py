@@ -322,7 +322,9 @@ def set_user_provided_java_options(m2ee_section):
             options = json.loads(options)
         except json.JSONDecodeError as e:
             logger.error(
-                "Failed to parse JAVA_OPTS, due to invalid JSON.", exc_info=True)
+                "Failed to parse JAVA_OPTS, due to invalid JSON.",
+                exc_info=True,
+            )
             raise
         javaopts.extend(options)
 
