@@ -13,6 +13,11 @@ import requests  # noqa: E402
 
 
 def get_database_config(development_mode=False):
+    if any(
+        [x.startswith("MXRUNTIME_Database") for x in list(os.environ.keys())]
+    ):
+        return None
+
     factory = DatabaseConfigurationFactory()
     configuration = factory.get_instance()
 

@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import re
 import buildpackutil
@@ -11,16 +12,11 @@ class DatabaseConfigurationFactory:
     for the Mendix runtime"""
 
     def get_instance(self):
-        if any(
-            [
-                x.startswith("MXRUNTIME_Database")
-                for x in list(os.environ.keys())
-            ]
-        ):
-            return None
-
         # explicit detect supported configurations
         vcap_services = buildpackutil.get_vcap_services_data()
+
+        if "hana" in vcap_services:
+            return SapHanaDatabaseConfiguration(vcap_services["hana"][0]["credentials"])
 
         # fallback to original configuration
         url = self.get_database_uri_from_vcap(vcap_services)
@@ -93,6 +89,8 @@ class DatabaseConfiguration:
                 }
             )
 
+        logging.debug("Returning database configuration: {}".format(json.dumps(config)))
+
         return config
 
     def parse_configuration(self):
@@ -104,6 +102,7 @@ class UrlDatabaseConfiguration(DatabaseConfiguration):
     """Returns a database configuration compatible with the original code from buildpackutil"""
 
     def __init__(self, url):
+        logger.info("Detected URL based database configuration.")
         self.url = url
 
     def parse_configuration(self):
@@ -158,7 +157,7 @@ class UrlDatabaseConfiguration(DatabaseConfiguration):
         if database_type == "PostgreSQL":
             jdbc_params.update({"tcpKeepAlive": "true"})
 
-        extra_url_params_str = os.getenv("DATABASE_CONNECTION_PARAMS")
+        extra_url_params_str = os.getenv("DATABASE_CONNECTION_PARAMS", "{}")
         if extra_url_params_str is not None:
             try:
                 extra_url_params = json.loads(extra_url_params_str)
@@ -216,3 +215,30 @@ class UrlDatabaseConfiguration(DatabaseConfiguration):
                 extra_jdbc_params,
             )
             return jdbc_url
+
+
+class SapHanaDatabaseConfiguration(DatabaseConfiguration):
+
+    datababase_type = "SAPHANA"
+
+    def __init__(self, credentials):
+        logger.info("Detected SAP Hana configuration.")
+        self.credentials = credentials
+
+    def parse_configuration(self):
+        url = self.credentials["url"]
+        schema = self.credentials["schema"]
+        host = "{}:{}".format(
+            self.credentials["host"], self.credentials["port"]
+        )
+        username = self.credentials["user"]
+        password = self.credentials["password"]
+
+        return {
+            "DatabaseType": self.datababase_type,
+            "DatabaseJdbcUrl": url,
+            "DatabaseHost": host,
+            "DatabaseUserName": username,
+            "DatabasePassword": password,
+            "DatabaseName": schema,
+        }

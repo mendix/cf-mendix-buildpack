@@ -100,7 +100,7 @@ def check_database_environment_variable():
         buildpackutil.get_database_config()
         return True
     except Exception as e:
-        logging.warning(
+        logging.error(
             "You should provide a DATABASE_URL by adding a database service "
             "to this application, it can be either MySQL or Postgres "
             "If this is the first push of a new app, set up a database service "
