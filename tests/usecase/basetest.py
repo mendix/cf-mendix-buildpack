@@ -140,9 +140,13 @@ class BaseTest(unittest.TestCase):
                     self.buildpack,
                 )
             )
+
         except subprocess.CalledProcessError as e:
             print(e.output.decode("utf-8"))
             raise
+        finally:
+            # remove the downloaded file
+            os.remove(self.app_id + self.package_name)
 
         self.cmd(("./create-app-services.sh", self.app_name))
 
