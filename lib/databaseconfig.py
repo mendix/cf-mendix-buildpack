@@ -11,15 +11,20 @@ class DatabaseConfigurationFactory:
     """Returns a DatabaseConfiguration instance to return database configuration
     for the Mendix runtime"""
 
+    def __init__(self):
+        self.vcap_services = buildpackutil.get_vcap_services_data()
+
     def get_instance(self):
         # explicit detect supported configurations
-        vcap_services = buildpackutil.get_vcap_services_data()
-
-        if "hana" in vcap_services:
-            return SapHanaDatabaseConfiguration(vcap_services["hana"][0]["credentials"])
+        if self.present_in_vcap(
+            "hana", tags=["hana", "database", "relational"]
+        ):
+            return SapHanaDatabaseConfiguration(
+                self.vcap_services["hana"][0]["credentials"]
+            )
 
         # fallback to original configuration
-        url = self.get_database_uri_from_vcap(vcap_services)
+        url = self.get_database_uri_from_vcap(self.vcap_services)
         if url is None:
             url = os.environ["DATABASE_URL"]
 
@@ -27,6 +32,23 @@ class DatabaseConfigurationFactory:
             return UrlDatabaseConfiguration(url)
 
         return None
+
+    def present_in_vcap(self, service_name, tags=[]):
+        """Check if service is available in vcap and given tags match"""
+        if service_name is not None:
+            present = service_name in self.vcap_services
+            if not present:
+                return False
+
+            binding = self.vcap_services[service_name][0]
+            return set(binding.tags) & set(tags) == set(tags)
+
+        # Loop services when no service name given, check types
+        for binding in [service[0] for service in self.vcap_services]:
+            if set(binding.tags) & set(tags) == set(tags):
+                return True
+
+        return False
 
     def get_database_uri_from_vcap(self, vcap_services):
         for service_type_name in (
@@ -76,10 +98,24 @@ class DatabaseConfiguration:
 
     def get_database_configuration(self):
         """Return the m2ee configuration for connection to the database"""
-        config = self.parse_configuration()
+
+        # parse configuration -> returns raw fields
+        # update jdbc parameters with defaults, additional parameters
+        # construct Mendix database configuration
+        config_fields = self.parse_configuration()
+
+        parameters = {}
+        if "parameters" in config_fields:
+            parameters = config_fields["parameters"]
+
+        parameters.update(self.get_default_connection_parameters())
+        parameters.update(self.get_override_connection_parameters())
+        config_fields.update({"parameters": parameters})
+
+        mx_config = self.get_mx_configuration(config_fields)
 
         if self.development_mode:
-            config.update(
+            mx_config.update(
                 {
                     "ConnectionPoolingMaxIdle": 1,
                     "ConnectionPoolingMaxActive": 20,
@@ -89,23 +125,53 @@ class DatabaseConfiguration:
                 }
             )
 
-        logging.debug("Returning database configuration: {}".format(json.dumps(config)))
+        logging.debug(
+            "Returning database configuration: {}".format(
+                json.dumps(mx_config)
+            )
+        )
 
-        return config
+        return mx_config
+
+    def get_override_connection_parameters(self):
+        params_str = os.getenv("DATABASE_CONNECTION_PARAMS", "{}")
+        try:
+            params = json.loads(params_str)
+            return params
+        except Exception:
+            logger.warning(
+                "Invalid JSON string for DATABASE_CONNECTION_PARAMS. Ignoring value."
+            )
+            return {}
 
     def parse_configuration(self):
-        """Parse the configuration, this should be handled by implementations"""
+        """Parse the configuration, this should be handled by implementations. Should return
+        all fields needed to create Mendix Congifuration. We expect the method to return
+
+        {
+            "keyX": "valueX",
+            "keyY": "valueY",
+            "parameters": {
+                "paramX": "valueX"
+            }
+        }"""
+        return {}
+
+    def get_default_connection_parameters(self):
+        return {}
+
+    def get_mx_configuration(self, fields):
         return {}
 
 
 class UrlDatabaseConfiguration(DatabaseConfiguration):
-    """Returns a database configuration compatible with the original code from buildpackutil"""
+    """Returns a database configuration based on the original code from buildpackutil."""
 
     def __init__(self, url):
         logger.info("Detected URL based database configuration.")
         self.url = url
 
-    def parse_configuration(self):
+    def get_mx_configuration(self, fields):
         patterns = [
             r"(?P<type>[a-zA-Z0-9]+)://(?P<user>[^:]+):(?P<password>[^@]+)@(?P<host>[^/]+)/(?P<dbname>[^?]*)(?P<extra>\?.*)?",  # noqa: E501
             r"jdbc:(?P<type>[a-zA-Z0-9]+)://(?P<host>[^;]+);database=(?P<dbname>[^;]*);user=(?P<user>[^;]+);password=(?P<password>.*)$",  # noqa: E501
@@ -228,17 +294,53 @@ class SapHanaDatabaseConfiguration(DatabaseConfiguration):
     def parse_configuration(self):
         url = self.credentials["url"]
         schema = self.credentials["schema"]
-        host = "{}:{}".format(
-            self.credentials["host"], self.credentials["port"]
-        )
+        host = self.credentials["host"]
+        port = self.credentials["port"]
         username = self.credentials["user"]
         password = self.credentials["password"]
 
+        # parse parameters
+        pattern = r"jdbc:sap://(?P<host>[a-zA-Z0-9]+):(?P<port>[0-9]+)(?P<q>\?(?P<params>.*))?$"
+        match = re.search(pattern, url)
+        if match is None:
+            logger.error("Unable to parse Hana JDBC url string for parameters")
+            raise Exception(
+                "Unable to parse Hana JDBC url string for parameters"
+            )
+
+        parameters = {}
+        q = None
+        if match.group("q") is not None and match.group("params") is not None:
+            q = match.group("q")
+            params = match.group("params")
+            parameters.update(parse_qs(params))
+
+        # parse parameters for url
+        return {
+            "url": url,
+            "schema": schema,
+            "host": host,
+            "port": port,
+            "username": username,
+            "password": password,
+            "parameters": parameters,
+            "q": q,
+        }
+
+    def get_mx_configuration(self, fields):
+        host = "{}:{}".format(fields["host"], fields["port"])
+        jdbcUrl = fields["url"]
+        q = fields["q"]
+
+        if q is not None and len(fields["parameters"]) > 0:
+            parameterStr = "?{}".format(urlencode(fields["parameters"]))
+            jdbcUrl = jdbcUrl.replace(q, parameterStr)
+
         return {
             "DatabaseType": self.datababase_type,
-            "DatabaseJdbcUrl": url,
+            "DatabaseJdbcUrl": jdbcUrl,
             "DatabaseHost": host,
-            "DatabaseUserName": username,
-            "DatabasePassword": password,
-            "DatabaseName": schema,
+            "DatabaseUserName": fields["username"],
+            "DatabasePassword": fields["password"],
+            "DatabaseName": fields["schema"],
         }
