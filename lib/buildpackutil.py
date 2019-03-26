@@ -5,23 +5,10 @@ import os
 import subprocess
 import sys
 from distutils.util import strtobool
-from databaseconfig import DatabaseConfigurationFactory
 
 sys.path.insert(0, "lib")
 
 import requests  # noqa: E402
-
-
-def get_database_config(development_mode=False):
-    if any(
-        [x.startswith("MXRUNTIME_Database") for x in list(os.environ.keys())]
-    ):
-        return None
-
-    factory = DatabaseConfigurationFactory()
-    configuration = factory.get_instance()
-
-    return configuration.get_database_configuration()
 
 
 def get_vcap_services_data():

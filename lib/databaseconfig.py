@@ -7,6 +7,18 @@ from urllib.parse import parse_qs, urlencode
 from m2ee import logger  # noqa: E402
 
 
+def get_database_config(development_mode=False):
+    if any(
+        [x.startswith("MXRUNTIME_Database") for x in list(os.environ.keys())]
+    ):
+        return None
+
+    factory = DatabaseConfigurationFactory()
+    configuration = factory.get_instance()
+
+    return configuration.get_database_configuration()
+
+
 class DatabaseConfigurationFactory:
     """Returns a DatabaseConfiguration instance to return database configuration
     for the Mendix runtime"""
@@ -41,11 +53,13 @@ class DatabaseConfigurationFactory:
                 return False
 
             binding = self.vcap_services[service_name][0]
-            return set(binding.tags) & set(tags) == set(tags)
+            return set(binding["tags"]) & set(tags) == set(tags)
 
         # Loop services when no service name given, check types
-        for binding in [service[0] for service in self.vcap_services]:
-            if set(binding.tags) & set(tags) == set(tags):
+        for binding in [
+            self.vcap_services[service][0] for service in self.vcap_services
+        ]:
+            if set(binding["tags"]) & set(tags) == set(tags):
                 return True
 
         return False
@@ -270,7 +284,7 @@ class UrlDatabaseConfiguration(DatabaseConfiguration):
             return url
 
         if len(jdbc_params) > 0:
-            extra_jdbc_params = "?{}".format(urlencode(jdbc_params))
+            extra_jdbc_params = "?{}".format(urlencode(jdbc_params, True))
         else:
             extra_jdbc_params = ""
 
@@ -285,7 +299,7 @@ class UrlDatabaseConfiguration(DatabaseConfiguration):
 
 class SapHanaDatabaseConfiguration(DatabaseConfiguration):
 
-    datababase_type = "SAPHANA"
+    database_type = "SAPHANA"
 
     def __init__(self, credentials):
         logger.info("Detected SAP Hana configuration.")
@@ -333,11 +347,11 @@ class SapHanaDatabaseConfiguration(DatabaseConfiguration):
         q = fields["q"]
 
         if q is not None and len(fields["parameters"]) > 0:
-            parameterStr = "?{}".format(urlencode(fields["parameters"]))
+            parameterStr = "?{}".format(urlencode(fields["parameters"], True))
             jdbcUrl = jdbcUrl.replace(q, parameterStr)
 
         return {
-            "DatabaseType": self.datababase_type,
+            "DatabaseType": self.database_type,
             "DatabaseJdbcUrl": jdbcUrl,
             "DatabaseHost": host,
             "DatabaseUserName": fields["username"],

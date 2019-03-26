@@ -10,6 +10,7 @@ from abc import ABCMeta, abstractmethod
 BUILDPACK_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, os.path.join(BUILDPACK_DIR, "lib"))
 import buildpackutil  # noqa: E402
+import databaseconfig  # noqa: E402
 import psycopg2  # noqa: E402
 import requests  # noqa: E402
 
@@ -225,7 +226,7 @@ class MetricsEmitterThread(threading.Thread):
 
     def _get_database_mutations(self):
         conn = self._get_db_conn()
-        db_config = buildpackutil.get_database_config()
+        db_config = databaseconfig.get_database_config()
         with conn.cursor() as cursor:
             cursor.execute(
                 "SELECT xact_commit, "
@@ -248,7 +249,7 @@ class MetricsEmitterThread(threading.Thread):
 
     def _get_database_table_size(self):
         conn = self._get_db_conn()
-        db_config = buildpackutil.get_database_config()
+        db_config = databaseconfig.get_database_config()
         with conn.cursor() as cursor:
             cursor.execute(
                 "SELECT pg_database_size('%s');" % (db_config["DatabaseName"],)
@@ -322,7 +323,7 @@ WHERE t.schemaname='public';
             self.db = None
 
         if not self.db:
-            db_config = buildpackutil.get_database_config()
+            db_config = databaseconfig.get_database_config()
             if db_config["DatabaseType"] != "PostgreSQL":
                 raise Exception(
                     "Metrics only supports postgresql, not %s"

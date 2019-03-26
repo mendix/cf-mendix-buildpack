@@ -11,6 +11,7 @@ import requests
 import zipfile
 
 import datadog
+import databaseconfig
 import telegraf
 import buildpackutil
 from m2ee.version import MXVersion
@@ -97,7 +98,7 @@ def set_up_appdynamics():
 
 def check_database_environment_variable():
     try:
-        buildpackutil.get_database_config()
+        databaseconfig.get_database_config()
         return True
     except Exception as e:
         logging.error(
