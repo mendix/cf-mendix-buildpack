@@ -21,11 +21,11 @@ class TestCaseSapHanaDryRun:
                 "credentials": {
                     "certificate": "-----BEGIN CERTIFICATE-----\\n<<certficate>>\\n-----END CERTIFICATE-----\\n",
                     "driver": "com.sap.db.jdbc.Driver",
-                    "host": "hostname",
+                    "host": "hostname.region.subdomain.domain",
                     "password": "password",
                     "port": "21863",
                     "schema": "USR_username",
-                    "url": "jdbc:sap://hostname:21863?encrypt=true\u0026validateCertificate=true\u0026currentschema=USR_username",
+                    "url": "jdbc:sap://hostname.region.subdomain.domain:21863?encrypt=true\u0026validateCertificate=true\u0026currentschema=USR_username",
                     "user": "USR_username"
                 },
                 "instance_name": "Hana Schema",
@@ -66,10 +66,13 @@ class TestCaseSapHanaDryRun:
             vcap["hana"][0]["credentials"]
         )
         config = sapHanaConfiguration.get_database_configuration()
+        assert (
+            "hostname.region.subdomain.domain:21863" == config["DatabaseHost"]
+        ), "hostname mismatch. got: {}".format(config["DatabaseHost"])
         assert "DatabaseJdbcUrl" in config
         assert (
             config["DatabaseJdbcUrl"]
-            == "jdbc:sap://hostname:21863?encrypt=true\u0026validateCertificate=true\u0026currentschema=USR_username"
+            == "jdbc:sap://hostname.region.subdomain.domain:21863?encrypt=true\u0026validateCertificate=true\u0026currentschema=USR_username"  # noqa: E501
         ), "url mismatch: {}".format(
             config["DatabaseJdbcUrl"]
         )
@@ -85,7 +88,7 @@ class TestCaseSapHanaDryRun:
         assert "DatabaseJdbcUrl" in config
         assert (
             config["DatabaseJdbcUrl"]
-            == "jdbc:sap://hostname:21863?encrypt=true\u0026validateCertificate=true\u0026currentschema=USR_username\u0026foo=bar"  # noqa: E501
+            == "jdbc:sap://hostname.region.subdomain.domain:21863?encrypt=true\u0026validateCertificate=true\u0026currentschema=USR_username\u0026foo=bar"  # noqa: E501
         ), "url mismatch: {}".format(
             config["DatabaseJdbcUrl"]
         )

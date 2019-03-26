@@ -314,7 +314,7 @@ class SapHanaDatabaseConfiguration(DatabaseConfiguration):
         password = self.credentials["password"]
 
         # parse parameters
-        pattern = r"jdbc:sap://(?P<host>[a-zA-Z0-9]+):(?P<port>[0-9]+)(?P<q>\?(?P<params>.*))?$"
+        pattern = r"jdbc:sap://(?P<host>[^:]+):(?P<port>[0-9]+)(?P<q>\?(?P<params>.*))?$"
         match = re.search(pattern, url)
         if match is None:
             logger.error("Unable to parse Hana JDBC url string for parameters")
