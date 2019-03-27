@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import buildpackutil
+from abc import abstractmethod, ABC
 from urllib.parse import parse_qs, urlencode
 from m2ee import logger  # noqa: E402
 
@@ -16,7 +17,7 @@ def get_database_config(development_mode=False):
     factory = DatabaseConfigurationFactory()
     configuration = factory.get_instance()
 
-    return configuration.get_database_configuration()
+    return configuration.get_m2ee_configuration()
 
 
 class DatabaseConfigurationFactory:
@@ -102,31 +103,29 @@ class DatabaseConfigurationFactory:
         return None
 
 
-class DatabaseConfiguration:
+class DatabaseConfiguration(ABC):
     """Base clase for database configurations. Implements only the basics."""
 
-    development_mode = os.getenv("DEVELOPMENT_MODE", "").lower() == "true"
-
     def __init__(self):
-        pass
+        self.development_mode = (
+            os.getenv("DEVELOPMENT_MODE", "").lower() == "true"
+        )
 
-    def get_database_configuration(self):
+    def get_m2ee_configuration(self):
         """Return the m2ee configuration for connection to the database"""
 
-        # parse configuration -> returns raw fields
-        # update jdbc parameters with defaults, additional parameters
-        # construct Mendix database configuration
-        config_fields = self.parse_configuration()
+        self.init()
 
-        parameters = {}
-        if "parameters" in config_fields:
-            parameters = config_fields["parameters"]
+        mx_config = {
+            "DatabaseType": self.get_database_type(),
+            "DatabaseHost": self.get_database_host(),
+            "DatabaseUserName": self.get_database_username(),
+            "DatabasePassword": self.get_database_password(),
+            "DatabaseName": self.get_database_name(),
+            "DatabaseJdbcUrl": self.get_database_jdbc_url(),
+        }
 
-        parameters.update(self.get_default_connection_parameters())
-        parameters.update(self.get_override_connection_parameters())
-        config_fields.update({"parameters": parameters})
-
-        mx_config = self.get_mx_configuration(config_fields)
+        mx_config.update(self.get_additional_m2ee_config())
 
         if self.development_mode:
             mx_config.update(
@@ -158,23 +157,44 @@ class DatabaseConfiguration:
             )
             return {}
 
-    def parse_configuration(self):
-        """Parse the configuration, this should be handled by implementations. Should return
-        all fields needed to create Mendix Congifuration. We expect the method to return
+    @abstractmethod
+    def init(self):
+        """Parse the configuration. This method should read the source (either
+        vcap or environment variables) to make it possible that methods are
+        get_dabatabase_hostname can work"""
 
-        {
-            "keyX": "valueX",
-            "keyY": "valueY",
-            "parameters": {
-                "paramX": "valueX"
-            }
-        }"""
-        return {}
+    @abstractmethod
+    def get_database_type(self):
+        """Return the database type for the M2EE configuration"""
+        pass
 
-    def get_default_connection_parameters(self):
-        return {}
+    @abstractmethod
+    def get_database_host(self):
+        """Return the database host for the M2EE configuration"""
+        pass
 
-    def get_mx_configuration(self, fields):
+    @abstractmethod
+    def get_database_username(self):
+        """Return the username for the M2EE configuration"""
+        pass
+
+    @abstractmethod
+    def get_database_password(self):
+        """Return the password for the M2EE configuration"""
+        pass
+
+    @abstractmethod
+    def get_database_jdbc_url(self):
+        """Return the database jdbc url for the M2EE configuration"""
+        pass
+
+    @abstractmethod
+    def get_database_name(self):
+        """Return the database name for the M2EE configuration"""
+        pass
+
+    @abstractmethod
+    def get_additional_m2ee_config(self):
         return {}
 
 
@@ -182,6 +202,7 @@ class UrlDatabaseConfiguration(DatabaseConfiguration):
     """Returns a database configuration based on the original code from buildpackutil."""
 
     def __init__(self, url):
+        super().__init__()
         logger.info("Detected URL based database configuration.")
         self.url = url
 
@@ -302,18 +323,30 @@ class SapHanaDatabaseConfiguration(DatabaseConfiguration):
     database_type = "SAPHANA"
 
     def __init__(self, credentials):
+        super().__init__()
         logger.info("Detected SAP Hana configuration.")
         self.credentials = credentials
 
-    def parse_configuration(self):
-        url = self.credentials["url"]
-        schema = self.credentials["schema"]
-        host = self.credentials["host"]
-        port = self.credentials["port"]
-        username = self.credentials["user"]
-        password = self.credentials["password"]
+    def init(self):
+        pass
 
-        # parse parameters
+    def get_database_type(self):
+        return self.database_type
+
+    def get_database_host(self):
+        return "{}:{}".format(
+            self.credentials["host"], self.credentials["port"]
+        )
+
+    def get_database_username(self):
+        return self.credentials["user"]
+
+    def get_database_password(self):
+        return self.credentials["password"]
+
+    def get_database_jdbc_url(self):
+        """Return the database jdbc url for the M2EE configuration"""
+        url = self.credentials["url"]
         pattern = r"jdbc:sap://(?P<host>[^:]+):(?P<port>[0-9]+)(?P<q>\?(?P<params>.*))?$"
         match = re.search(pattern, url)
         if match is None:
@@ -323,38 +356,22 @@ class SapHanaDatabaseConfiguration(DatabaseConfiguration):
             )
 
         parameters = {}
-        q = None
         if match.group("q") is not None and match.group("params") is not None:
             q = match.group("q")
             params = match.group("params")
             parameters.update(parse_qs(params))
 
-        # parse parameters for url
-        return {
-            "url": url,
-            "schema": schema,
-            "host": host,
-            "port": port,
-            "username": username,
-            "password": password,
-            "parameters": parameters,
-            "q": q,
-        }
+        # override parameters from DATABASE_CONNECTION_PARAMS
+        parameters.update(self.get_override_connection_parameters())
 
-    def get_mx_configuration(self, fields):
-        host = "{}:{}".format(fields["host"], fields["port"])
-        jdbcUrl = fields["url"]
-        q = fields["q"]
+        if q is not None and len(parameters) > 0:
+            parameterStr = "?{}".format(urlencode(parameters, True))
+            url = url.replace(q, parameterStr)
 
-        if q is not None and len(fields["parameters"]) > 0:
-            parameterStr = "?{}".format(urlencode(fields["parameters"], True))
-            jdbcUrl = jdbcUrl.replace(q, parameterStr)
+        return url
 
-        return {
-            "DatabaseType": self.database_type,
-            "DatabaseJdbcUrl": jdbcUrl,
-            "DatabaseHost": host,
-            "DatabaseUserName": fields["username"],
-            "DatabasePassword": fields["password"],
-            "DatabaseName": fields["schema"],
-        }
+    def get_database_name(self):
+        return self.credentials["schema"]
+
+    def get_additional_m2ee_config(self):
+        return {}

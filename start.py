@@ -21,7 +21,7 @@ sys.path.insert(0, "lib")
 import requests  # noqa: E402
 
 import buildpackutil  # noqa: E402
-import databaseconfig  # noqa: E402
+import database_config  # noqa: E402
 import datadog  # noqa: E402
 import instadeploy  # noqa: E402
 import telegraf  # noqa: E402
@@ -692,7 +692,7 @@ def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
     buildpackutil.mkdir_p(os.path.join(os.getcwd(), "model", "resources"))
     mxruntime_config.update(app_config)
     mxruntime_config.update(
-        databaseconfig.get_database_config(
+        database_config.get_database_config(
             development_mode=is_development_mode()
         )
     )
@@ -939,7 +939,7 @@ def service_backups():
             ]
 
     try:
-        db_config = databaseconfig.get_database_config()
+        db_config = database_config.get_database_config()
         if db_config["DatabaseType"] != "PostgreSQL":
             raise Exception(
                 "Schnapps only supports postgresql, not %s"

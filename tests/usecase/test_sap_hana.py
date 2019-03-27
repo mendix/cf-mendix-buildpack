@@ -1,6 +1,6 @@
 import json
 import os
-from databaseconfig import (
+from database_config import (
     DatabaseConfigurationFactory,
     SapHanaDatabaseConfiguration,
 )
@@ -65,7 +65,7 @@ class TestCaseSapHanaDryRun:
         sapHanaConfiguration = SapHanaDatabaseConfiguration(
             vcap["hana"][0]["credentials"]
         )
-        config = sapHanaConfiguration.get_database_configuration()
+        config = sapHanaConfiguration.get_m2ee_configuration()
         assert (
             "hostname.region.subdomain.domain:21863" == config["DatabaseHost"]
         ), "hostname mismatch. got: {}".format(config["DatabaseHost"])
@@ -84,7 +84,7 @@ class TestCaseSapHanaDryRun:
         sapHanaConfiguration = SapHanaDatabaseConfiguration(
             vcap["hana"][0]["credentials"]
         )
-        config = sapHanaConfiguration.get_database_configuration()
+        config = sapHanaConfiguration.get_m2ee_configuration()
         assert "DatabaseJdbcUrl" in config
         assert (
             config["DatabaseJdbcUrl"]
