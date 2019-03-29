@@ -116,7 +116,7 @@ class DatabaseConfiguration(ABC):
 
         self.init()
 
-        mx_config = {
+        m2ee_config = {
             "DatabaseType": self.get_database_type(),
             "DatabaseHost": self.get_database_host(),
             "DatabaseUserName": self.get_database_username(),
@@ -125,10 +125,10 @@ class DatabaseConfiguration(ABC):
             "DatabaseJdbcUrl": self.get_database_jdbc_url(),
         }
 
-        mx_config.update(self.get_additional_m2ee_config())
+        m2ee_config.update(self.get_additional_m2ee_config())
 
         if self.development_mode:
-            mx_config.update(
+            m2ee_config.update(
                 {
                     "ConnectionPoolingMaxIdle": 1,
                     "ConnectionPoolingMaxActive": 20,
@@ -140,11 +140,11 @@ class DatabaseConfiguration(ABC):
 
         logging.debug(
             "Returning database configuration: {}".format(
-                json.dumps(mx_config)
+                json.dumps(m2ee_config)
             )
         )
 
-        return mx_config
+        return m2ee_config
 
     def get_override_connection_parameters(self):
         params_str = os.getenv("DATABASE_CONNECTION_PARAMS", "{}")
@@ -185,7 +185,11 @@ class DatabaseConfiguration(ABC):
 
     @abstractmethod
     def get_database_jdbc_url(self):
-        """Return the database jdbc url for the M2EE configuration"""
+        """Return the database jdbc url for the M2EE configuration
+
+        Implementations should use get_override_connection_parameters allowing users
+        adjust or extend the parameters retrieved from the VCAP.
+        """
         pass
 
     @abstractmethod
@@ -206,7 +210,7 @@ class UrlDatabaseConfiguration(DatabaseConfiguration):
         logger.info("Detected URL based database configuration.")
         self.url = url
 
-    def get_mx_configuration(self, fields):
+    def init(self):
         patterns = [
             r"(?P<type>[a-zA-Z0-9]+)://(?P<user>[^:]+):(?P<password>[^@]+)@(?P<host>[^/]+)/(?P<dbname>[^?]*)(?P<extra>\?.*)?",  # noqa: E501
             r"jdbc:(?P<type>[a-zA-Z0-9]+)://(?P<host>[^;]+);database=(?P<dbname>[^;]*);user=(?P<user>[^;]+);password=(?P<password>.*)$",  # noqa: E501
@@ -279,16 +283,7 @@ class UrlDatabaseConfiguration(DatabaseConfiguration):
             if sslmode and sslmode[0] == "require":
                 config.update({"DatabaseUseSsl": True})
 
-        if database_type_input == "mysql":
-            config.update(
-                {
-                    "ConnectionPoolingNumTestsPerEvictionRun": 50,
-                    "ConnectionPoolingSoftMinEvictableIdleTimeMillis": 10000,
-                    "ConnectionPoolingTimeBetweenEvictionRunsMillis": 10000,
-                }
-            )
-
-        return config
+        self.m2ee_config = config
 
     def get_jdbc_strings(self, url, match, config, jdbc_params):
         # JDBC strings might be different from connection uri strings retrieved from the VCAP
@@ -316,6 +311,35 @@ class UrlDatabaseConfiguration(DatabaseConfiguration):
                 extra_jdbc_params,
             )
             return jdbc_url
+
+    def get_database_type(self):
+        return self.m2ee_config["DatabaseType"]
+
+    def get_database_host(self):
+        return self.m2ee_config["DatabaseHost"]
+
+    def get_database_username(self):
+        return self.m2ee_config["DatabaseUserName"]
+
+    def get_database_password(self):
+        return self.m2ee_config["DatabasePassword"]
+
+    def get_database_jdbc_url(self):
+        return self.m2ee_config["DatabaseJdbcUrl"]
+
+    def get_database_name(self):
+        """Return the database name for the M2EE configuration"""
+        return self.m2ee_config["DatabaseName"]
+
+    def get_additional_m2ee_config(self):
+        if self.m2ee_config["DatabaseType"] == "MySQL":
+            return {
+                "ConnectionPoolingNumTestsPerEvictionRun": 50,
+                "ConnectionPoolingSoftMinEvictableIdleTimeMillis": 10000,
+                "ConnectionPoolingTimeBetweenEvictionRunsMillis": 10000,
+            }
+
+        return {}
 
 
 class SapHanaDatabaseConfiguration(DatabaseConfiguration):

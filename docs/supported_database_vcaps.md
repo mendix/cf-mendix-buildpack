@@ -1,12 +1,12 @@
 # Overview of supported VCAP schemas
 
-Using Cloud Foundry database services are detected from VCAP bindings and translated into Mendix M2EE configuration. In case no database service is bound the fallback is the environment variable `DATABASE_URL`. 
+Using Cloud Foundry database services are detected from VCAP bindings and translated into Mendix M2EE configuration. In case no database service is bound the fallback is the environment variable `DATABASE_URL`.
 
-All database configuration code can be found in `lib\databaseconfig.py`. VCAP service bindings have preference over `DATABASE_URL`. VCAP are recognized on the identifier and tags.
+All database configuration code can be found in `lib/database_config.py`. VCAP service bindings have preference over `DATABASE_URL`. VCAP are recognized on the identifier and/or tags.
 
 ## Postgres using RDS Service Broker
 
-Selection based on tags `["database", "RDS", "postgresql"]`.  
+Selection based on tags `["database", "RDS", "postgresql"]`.
 
 ```
   "rds": [
@@ -14,9 +14,9 @@ Selection based on tags `["database", "RDS", "postgresql"]`.
     "binding_name": null,
     "credentials": {
      "db_name": "databasename",
-     "host": "hostname",
+     "host": "hostname.local",
      "password": "password",
-     "uri": "postgres://username:password@hostname:5432/databasename",
+     "uri": "postgres://username:password@hostname.local:5432/databasename",
      "username": "username"
     },
     "instance_name": "03E2080E-BA38-4AD4-B3AC-5F2D7ED2483B-database",
