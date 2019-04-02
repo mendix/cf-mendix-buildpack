@@ -3,6 +3,7 @@ import json
 import yaml
 import subprocess
 import buildpackutil
+import database_config
 from m2ee import logger
 
 DD_SIDECAR = "dd-v0.10.0.tar.gz"
@@ -241,7 +242,7 @@ def _set_up_postgres():
     # don't want to allow this.
     if not buildpackutil.i_am_primary_instance():
         return
-    dbconfig = buildpackutil.get_database_config()
+    dbconfig = database_config.get_database_config()
     for k in (
         "DatabaseType",
         "DatabaseUserName",

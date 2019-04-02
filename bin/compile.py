@@ -11,6 +11,7 @@ import requests
 import zipfile
 
 import datadog
+import database_config
 import telegraf
 import buildpackutil
 from m2ee.version import MXVersion
@@ -97,10 +98,10 @@ def set_up_appdynamics():
 
 def check_database_environment_variable():
     try:
-        buildpackutil.get_database_config()
+        database_config.get_database_config()
         return True
     except Exception as e:
-        logging.warning(
+        logging.error(
             "You should provide a DATABASE_URL by adding a database service "
             "to this application, it can be either MySQL or Postgres "
             "If this is the first push of a new app, set up a database service "

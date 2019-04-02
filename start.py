@@ -18,11 +18,13 @@ import uuid
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 sys.path.insert(0, "lib")
+import requests  # noqa: E402
+
 import buildpackutil  # noqa: E402
-import telegraf  # noqa: E402
+import database_config  # noqa: E402
 import datadog  # noqa: E402
 import instadeploy  # noqa: E402
-import requests  # noqa: E402
+import telegraf  # noqa: E402
 
 from m2ee import M2EE, logger  # noqa: E402
 from nginx import get_path_config, gen_htpasswd  # noqa: E402
@@ -66,7 +68,7 @@ def get_current_buildpack_commit():
 
 
 logger.info(
-    "Started Mendix Cloud Foundry Buildpack v2.2.14 [commit:%s]",
+    "Started Mendix Cloud Foundry Buildpack v2.3.0 [commit:%s]",
     get_current_buildpack_commit(),
 )
 logging.getLogger("m2ee").propagate = False
@@ -690,7 +692,7 @@ def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
     buildpackutil.mkdir_p(os.path.join(os.getcwd(), "model", "resources"))
     mxruntime_config.update(app_config)
     mxruntime_config.update(
-        buildpackutil.get_database_config(
+        database_config.get_database_config(
             development_mode=is_development_mode()
         )
     )
@@ -937,7 +939,7 @@ def service_backups():
             ]
 
     try:
-        db_config = buildpackutil.get_database_config()
+        db_config = database_config.get_database_config()
         if db_config["DatabaseType"] != "PostgreSQL":
             raise Exception(
                 "Schnapps only supports postgresql, not %s"
