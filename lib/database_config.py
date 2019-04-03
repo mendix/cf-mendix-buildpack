@@ -138,13 +138,15 @@ class DatabaseConfiguration(ABC):
                 }
             )
 
+        # Strip empty values
+        filter_m2ee_config = {k: v for k, v in m2ee_config.items() if v}
         logging.debug(
             "Returning database configuration: {}".format(
-                json.dumps(m2ee_config)
+                json.dumps(filter_m2ee_config)
             )
         )
 
-        return m2ee_config
+        return filter_m2ee_config
 
     def get_override_connection_parameters(self):
         params_str = os.getenv("DATABASE_CONNECTION_PARAMS", "{}")
@@ -313,23 +315,23 @@ class UrlDatabaseConfiguration(DatabaseConfiguration):
             return jdbc_url
 
     def get_database_type(self):
-        return self.m2ee_config["DatabaseType"]
+        return self.m2ee_config.get("DatabaseType")
 
     def get_database_host(self):
-        return self.m2ee_config["DatabaseHost"]
+        return self.m2ee_config.get("DatabaseHost")
 
     def get_database_username(self):
-        return self.m2ee_config["DatabaseUserName"]
+        return self.m2ee_config.get("DatabaseUserName")
 
     def get_database_password(self):
-        return self.m2ee_config["DatabasePassword"]
+        return self.m2ee_config.get("DatabasePassword")
 
     def get_database_jdbc_url(self):
-        return self.m2ee_config["DatabaseJdbcUrl"]
+        return self.m2ee_config.get("DatabaseJdbcUrl")
 
     def get_database_name(self):
         """Return the database name for the M2EE configuration"""
-        return self.m2ee_config["DatabaseName"]
+        return self.m2ee_config.get("DatabaseName")
 
     def get_additional_m2ee_config(self):
         if self.m2ee_config["DatabaseType"] == "MySQL":
@@ -359,18 +361,18 @@ class SapHanaDatabaseConfiguration(DatabaseConfiguration):
 
     def get_database_host(self):
         return "{}:{}".format(
-            self.credentials["host"], self.credentials["port"]
+            self.credentials.get("host"), self.credentials.get("port")
         )
 
     def get_database_username(self):
-        return self.credentials["user"]
+        return self.credentials.get("user")
 
     def get_database_password(self):
-        return self.credentials["password"]
+        return self.credentials.get("password")
 
     def get_database_jdbc_url(self):
         """Return the database jdbc url for the M2EE configuration"""
-        url = self.credentials["url"]
+        url = self.credentials.get("url", "")
         pattern = r"jdbc:sap://(?P<host>[^:]+):(?P<port>[0-9]+)(?P<q>\?(?P<params>.*))?$"
         match = re.search(pattern, url)
         if match is None:
@@ -395,7 +397,7 @@ class SapHanaDatabaseConfiguration(DatabaseConfiguration):
         return url
 
     def get_database_name(self):
-        return self.credentials["schema"]
+        return self.credentials.get("schema")
 
     def get_additional_m2ee_config(self):
         return {}
