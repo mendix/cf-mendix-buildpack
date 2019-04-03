@@ -343,13 +343,13 @@ def _determine_jdk(java_version, package="jdk"):
 
 def _compose_jvm_target_dir(java_version, jdk):
     return "usr/lib/jvm/{type}-{version}-{vendor}-x64".format(
-        type=jdk.type, version=java_version, vendor=jdk.vendor
+        type=jdk["type"], version=java_version, vendor=jdk["vendor"]
     )
 
 
 def _compose_jre_url_path(java_version, jdk):
     return "/mx-buildpack/{type}-{version}-linux-x64.tar.gz".format(
-        type=jdk.type, version=java_version
+        type=jdk["type"], version=java_version
     )
 
 
