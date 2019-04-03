@@ -207,7 +207,7 @@ class UrlDatabaseConfiguration(DatabaseConfiguration):
 
     def __init__(self, url):
         super().__init__()
-        logger.info("Detected URL based database configuration.")
+        logging.debug("Detected URL based database configuration.")
         self.url = url
 
     def init(self):
@@ -348,7 +348,7 @@ class SapHanaDatabaseConfiguration(DatabaseConfiguration):
 
     def __init__(self, credentials):
         super().__init__()
-        logger.info("Detected SAP Hana configuration.")
+        logging.debug("Detected SAP Hana configuration.")
         self.credentials = credentials
 
     def init(self):
