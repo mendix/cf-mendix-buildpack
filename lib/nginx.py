@@ -50,6 +50,10 @@ location %s {
     if ($request_uri ~ ^/(.*\.(css|js)|forms/.*|img/.*|pages/.*)\?[0-9]+$) {
             expires 1y;
     }
+    if ($request_uri ~ ^/((index[\w-]*|login)\.html)?$) {
+            HTTP_HEADERS
+            add_header Cache-Control "no-cache";
+    }
     proxy_pass http://mendix;
 }
 proxy_intercept_errors %s;
