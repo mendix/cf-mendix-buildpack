@@ -327,29 +327,34 @@ def ensure_and_get_mono(mx_version, cache_dir):
     return mono_location
 
 
-def _determine_jdk(java_version, package="jdk"):
+def _determine_jdk(mx_version, package="jdk"):
     oracle_jdks = ["7", "8u51", "8"]
     adoptopenjdk_jdks = ["8u202"]
+    java_version = get_java_version(mx_version)
 
     if java_version in oracle_jdks:
-        return {"type": package, "vendor": "oracle"}
+        return {"version": java_version, "type": package, "vendor": "oracle"}
     elif java_version in adoptopenjdk_jdks:
-        return {"type": "AdoptOpenJDK", "vendor": "AdoptOpenJDK"}
+        return {
+            "version": java_version,
+            "type": "AdoptOpenJDK",
+            "vendor": "AdoptOpenJDK",
+        }
     else:
         raise Exception(
             "Unknown java version identifier: {}".format(java_version)
         )
 
 
-def _compose_jvm_target_dir(java_version, jdk):
+def _compose_jvm_target_dir(jdk):
     return "usr/lib/jvm/{type}-{version}-{vendor}-x64".format(
-        type=jdk["type"], version=java_version, vendor=jdk["vendor"]
+        type=jdk["type"], version=jdk["version"], vendor=jdk["vendor"]
     )
 
 
-def _compose_jre_url_path(java_version, jdk):
+def _compose_jre_url_path(jdk):
     return "/mx-buildpack/{type}-{version}-linux-x64.tar.gz".format(
-        type=jdk["type"], version=java_version
+        type=jdk["type"], version=jdk["version"]
     )
 
 
@@ -357,17 +362,15 @@ def ensure_and_get_jvm(
     mx_version, cache_dir, dot_local_location, package="jdk"
 ):
     logging.debug("Begin download and install java %s" % package)
-    java_version = get_java_version(mx_version)
-    jdk = _determine_jdk(java_version, package)
 
-    rootfs_java_path = "/" + _compose_jvm_target_dir(java_version, jdk)
+    jdk = _determine_jdk(mx_version, package)
+
+    rootfs_java_path = "/" + _compose_jvm_target_dir(jdk)
     if not os.path.isdir(rootfs_java_path):
         logging.debug("rootfs without java sdk detected")
         download_and_unpack(
-            get_blobstore_url(_compose_jre_url_path(java_version, jdk)),
-            os.path.join(
-                dot_local_location, _compose_jvm_target_dir(java_version, jdk)
-            ),
+            get_blobstore_url(_compose_jre_url_path(jdk)),
+            os.path.join(dot_local_location, _compose_jvm_target_dir(jdk)),
             cache_dir,
         )
     else:
@@ -376,10 +379,8 @@ def ensure_and_get_jvm(
 
     return get_existing_directory_or_raise(
         [
-            "/" + _compose_jvm_target_dir(java_version, jdk),
-            os.path.join(
-                dot_local_location, _compose_jvm_target_dir(java_version, jdk)
-            ),
+            "/" + _compose_jvm_target_dir(jdk),
+            os.path.join(dot_local_location, _compose_jvm_target_dir(jdk)),
         ],
         "Java not found",
     )
