@@ -337,7 +337,7 @@ def _determine_jdk(mx_version, package="jdk"):
     elif java_version in adoptopenjdk_jdks:
         return {
             "version": java_version,
-            "type": "AdoptOpenJDK",
+            "type": "AdoptOpenJDK-{}".format(package),
             "vendor": "AdoptOpenJDK",
         }
     else:
