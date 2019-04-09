@@ -167,7 +167,7 @@ def get_java_version(mx_version):
     elif mx_version >= MXVersion("7.23.1"):
         default = "8u202"
     elif mx_version >= MXVersion("6.6"):
-        default = "8"  # This is actually version 8u144
+        default = "8"
     elif mx_version >= MXVersion("5.18"):
         default = "8u51"
     else:
