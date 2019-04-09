@@ -328,8 +328,8 @@ def ensure_and_get_mono(mx_version, cache_dir):
 
 
 def _determine_jdk(mx_version, package="jdk"):
-    oracle_jdks = ["7", "8u51", "8"]
-    adoptopenjdk_jdks = ["8u202"]
+    oracle_jdks = ("7", "8u51", "8")
+    adoptopenjdk_jdks = ("8u202",)
     java_version = get_java_version(mx_version)
 
     if java_version in oracle_jdks:
@@ -365,7 +365,7 @@ def ensure_and_get_jvm(
 
     jdk = _determine_jdk(mx_version, package)
 
-    rootfs_java_path = "/" + _compose_jvm_target_dir(jdk)
+    rootfs_java_path = "/{}".format(_compose_jvm_target_dir(jdk))
     if not os.path.isdir(rootfs_java_path):
         logging.debug("rootfs without java sdk detected")
         download_and_unpack(
