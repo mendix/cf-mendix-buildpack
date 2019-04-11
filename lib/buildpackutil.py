@@ -10,6 +10,8 @@ sys.path.insert(0, "lib")
 
 import requests  # noqa: E402
 
+from m2ee.version import MXVersion  # noqa: E402
+
 
 def get_vcap_services_data():
     if os.environ.get("VCAP_SERVICES"):
@@ -96,7 +98,7 @@ def download_and_unpack(url, destination, cache_dir="/tmp/downloads"):
     )
     if file_name.endswith(".tar.gz") or file_name.endswith(".tgz"):
         unpack_cmd = ["tar", "xf", cached_location, "-C", destination]
-        if file_name.startswith(("mono-", "jdk-", "jre-")):
+        if file_name.startswith(("mono-", "jdk-", "jre-", "AdoptOpenJDK-")):
             unpack_cmd.extend(("--strip", "1"))
         subprocess.check_call(unpack_cmd)
     else:
@@ -158,10 +160,15 @@ class NotFoundException(Exception):
 
 
 def get_java_version(mx_version):
-    versions = {"7": "7u80", "8u51": "8u51", "8": "8"}
-    if mx_version >= 6.6:
+    versions = {"7": "7u80", "8u51": "8u51", "8": "8", "8u202": "8u202"}
+
+    if mx_version >= MXVersion("8"):
+        default = "8u202"
+    elif mx_version >= MXVersion("7.23.1"):
+        default = "8u202"
+    elif mx_version >= MXVersion("6.6"):
         default = "8"
-    elif mx_version >= 5.18:
+    elif mx_version >= MXVersion("5.18"):
         default = "8u51"
     else:
         default = "7"
@@ -320,24 +327,50 @@ def ensure_and_get_mono(mx_version, cache_dir):
     return mono_location
 
 
+def _determine_jdk(mx_version, package="jdk"):
+    oracle_jdks = ("7", "8u51", "8")
+    adoptopenjdk_jdks = ("8u202",)
+    java_version = get_java_version(mx_version)
+
+    if java_version in oracle_jdks:
+        return {"version": java_version, "type": package, "vendor": "oracle"}
+    elif java_version in adoptopenjdk_jdks:
+        return {
+            "version": java_version,
+            "type": "AdoptOpenJDK-{}".format(package),
+            "vendor": "AdoptOpenJDK",
+        }
+    else:
+        raise Exception(
+            "Unknown java version identifier: {}".format(java_version)
+        )
+
+
+def _compose_jvm_target_dir(jdk):
+    return "usr/lib/jvm/{type}-{version}-{vendor}-x64".format(
+        type=jdk["type"], version=jdk["version"], vendor=jdk["vendor"]
+    )
+
+
+def _compose_jre_url_path(jdk):
+    return "/mx-buildpack/{type}-{version}-linux-x64.tar.gz".format(
+        type=jdk["type"], version=jdk["version"]
+    )
+
+
 def ensure_and_get_jvm(
     mx_version, cache_dir, dot_local_location, package="jdk"
 ):
     logging.debug("Begin download and install java %s" % package)
-    java_version = get_java_version(mx_version)
 
-    rootfs_java_path = "/usr/lib/jvm/jdk-%s-oracle-x64" % java_version
+    jdk = _determine_jdk(mx_version, package)
+
+    rootfs_java_path = "/{}".format(_compose_jvm_target_dir(jdk))
     if not os.path.isdir(rootfs_java_path):
         logging.debug("rootfs without java sdk detected")
         download_and_unpack(
-            get_blobstore_url(
-                "/mx-buildpack/%s-%s-linux-x64.tar.gz"
-                % (package, java_version)
-            ),
-            os.path.join(
-                dot_local_location,
-                "usr/lib/jvm/%s-%s-oracle-x64" % (package, java_version),
-            ),
+            get_blobstore_url(_compose_jre_url_path(jdk)),
+            os.path.join(dot_local_location, _compose_jvm_target_dir(jdk)),
             cache_dir,
         )
     else:
@@ -346,11 +379,8 @@ def ensure_and_get_jvm(
 
     return get_existing_directory_or_raise(
         [
-            "/usr/lib/jvm/jdk-%s-oracle-x64" % java_version,
-            os.path.join(
-                dot_local_location,
-                "usr/lib/jvm/%s-%s-oracle-x64" % (package, java_version),
-            ),
+            "/" + _compose_jvm_target_dir(jdk),
+            os.path.join(dot_local_location, _compose_jvm_target_dir(jdk)),
         ],
         "Java not found",
     )
