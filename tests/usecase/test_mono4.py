@@ -6,7 +6,10 @@ class TestCaseMono4(basetest.BaseTest):
         super().setUp()
         self.setUpCF(
             "MontBlancApp720.mpk",
-            env_vars={"DEPLOY_PASSWORD": self.mx_password},
+            env_vars={
+                "DEPLOY_PASSWORD": self.mx_password,
+                "DEVELOPMENT_MODE": True,
+            },
         )
         self.startApp()
 

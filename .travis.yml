@@ -15,7 +15,7 @@ before_script:
   - sudo update-ca-certificates
 
 script:
-  - travis_wait 30 make test
+  - travis_wait 45 make test
 
 notifications:
   email: false
