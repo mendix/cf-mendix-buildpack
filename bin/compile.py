@@ -310,7 +310,7 @@ def buildstatus_callback(error_file):
 def set_up_nginx():
     buildpackutil.download_and_unpack(
         buildpackutil.get_blobstore_url(
-            "/mx-buildpack/nginx-1.13.3-linux-x64-53917f43.tgz"
+            "/mx-buildpack/nginx-1.15.10-linux-x64-cflinuxfs2-6247377a.tgz"
         ),
         BUILD_DIR,
         cache_dir=CACHE_DIR,
