@@ -4,7 +4,7 @@ import os
 import re
 import buildpackutil
 from abc import abstractmethod, ABC
-from urllib.parse import parse_qs, urlencode
+from urllib.parse import parse_qs, urlencode, unquote
 from m2ee import logger  # noqa: E402
 
 
@@ -243,7 +243,7 @@ class UrlDatabaseConfiguration(DatabaseConfiguration):
 
         config = {
             "DatabaseType": database_type,
-            "DatabaseUserName": match.group("user"),
+            "DatabaseUserName": urllib.parse.unquote(match.group("user")),
             "DatabasePassword": match.group("password"),
             "DatabaseHost": match.group("host"),
             "DatabaseName": match.group("dbname"),
