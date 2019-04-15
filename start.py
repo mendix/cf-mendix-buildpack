@@ -68,7 +68,7 @@ def get_current_buildpack_commit():
 
 
 logger.info(
-    "Started Mendix Cloud Foundry Buildpack v3.1.0 [commit:%s]",
+    "Started Mendix Cloud Foundry Buildpack v3.1.2 [commit:%s]",
     get_current_buildpack_commit(),
 )
 logging.getLogger("m2ee").propagate = False
@@ -847,7 +847,7 @@ def set_up_m2ee_client(vcap_data):
     )
     java_version = buildpackutil.get_java_version(
         m2ee.config.get_runtime_version()
-    )
+    )["version"]
     set_jvm_memory(m2ee.config._conf["m2ee"], vcap_data, java_version)
     set_jvm_locale(m2ee.config._conf["m2ee"], java_version)
     set_user_provided_java_options(m2ee.config._conf["m2ee"])

@@ -24,6 +24,6 @@ cleanup
 
 echo 'starting test run, tests will run in parallel and output shown at the end'
 export PYTHONPATH=$PWD/../lib/
-nosetests -s -vv --processes=10 --process-timeout=900 --with-timer usecase/
+nosetests --verbosity=3 --processes=5 --process-timeout=900 --with-timer usecase/
 
 cleanup

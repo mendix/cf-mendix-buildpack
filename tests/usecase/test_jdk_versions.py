@@ -54,8 +54,8 @@ class TestJDKVersions(basetest.BaseTest):
         jdk = buildpackutil._determine_jdk("7.16.0", "jre")
         target_dir = buildpackutil._compose_jvm_target_dir(jdk)
 
-        assert jdk["version"] == "8"
-        assert target_dir == "usr/lib/jvm/jre-8-oracle-x64"
+        assert jdk["version"] == "8u202"
+        assert target_dir == "usr/lib/jvm/jre-8u202-oracle-x64"
 
         self._check_java_presence(target_dir)
 

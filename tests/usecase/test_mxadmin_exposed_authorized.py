@@ -5,7 +5,7 @@ import basetest
 class TestCaseMxAdminExposed(basetest.BaseTest):
     def setUp(self):
         super().setUp()
-        self.setUpCF("MontBlancApp720.mpk")
+        self.setUpCF("BuildpackTestApp-mx-7-16.mda")
         self.startApp()
 
     def test_mxadmin_exposed_unauthorized(self):

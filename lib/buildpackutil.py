@@ -2,6 +2,7 @@ import errno
 import json
 import logging
 import os
+import re
 import subprocess
 import sys
 from distutils.util import strtobool
@@ -160,25 +161,35 @@ class NotFoundException(Exception):
 
 
 def get_java_version(mx_version):
-    versions = {"7": "7u80", "8u51": "8u51", "8": "8", "8u202": "8u202"}
-
-    if mx_version >= MXVersion("8"):
-        default = "8u202"
-    elif mx_version >= MXVersion("7.23.1"):
-        default = "8u202"
+    if mx_version >= MXVersion("7.23.1"):
+        java_version = {
+            "version": os.getenv("JAVA_VERSION", "8u202"),
+            "vendor": "AdoptOpenJDK",
+        }
     elif mx_version >= MXVersion("6.6"):
-        default = "8"
+        java_version = {
+            "version": os.getenv("JAVA_VERSION", "8u202"),
+            "vendor": "oracle",
+        }
     elif mx_version >= MXVersion("5.18"):
-        default = "8u51"
+        java_version = {
+            "version": os.getenv("JAVA_VERSION", "8u51"),
+            "vendor": "oracle",
+        }
     else:
-        default = "7"
-    main_java_version = os.getenv("JAVA_VERSION", default)
+        java_version = {
+            "version": os.getenv("JAVA_VERSION", "7u80"),
+            "vendor": "oracle",
+        }
 
-    if main_java_version not in list(versions.keys()):
+    if not re.match(r"^\d+u\d+$", java_version["version"]):
         raise Exception(
-            "Invalid Java version specified: %s" % main_java_version
+            "Invalid Java version specified: {}".format(
+                java_version["version"]
+            )
         )
-    return versions[main_java_version]
+
+    return java_version
 
 
 def get_mpr_file_from_dir(directory):
@@ -328,22 +339,14 @@ def ensure_and_get_mono(mx_version, cache_dir):
 
 
 def _determine_jdk(mx_version, package="jdk"):
-    oracle_jdks = ("7", "8u51", "8")
-    adoptopenjdk_jdks = ("8u202",)
     java_version = get_java_version(mx_version)
 
-    if java_version in oracle_jdks:
-        return {"version": java_version, "type": package, "vendor": "oracle"}
-    elif java_version in adoptopenjdk_jdks:
-        return {
-            "version": java_version,
-            "type": "AdoptOpenJDK-{}".format(package),
-            "vendor": "AdoptOpenJDK",
-        }
+    if java_version["vendor"] == "AdoptOpenJDK":
+        java_version.update({"type": "AdoptOpenJDK-{}".format(package)})
     else:
-        raise Exception(
-            "Unknown java version identifier: {}".format(java_version)
-        )
+        java_version.update({"type": package})
+
+    return java_version
 
 
 def _compose_jvm_target_dir(jdk):
