@@ -243,7 +243,7 @@ class UrlDatabaseConfiguration(DatabaseConfiguration):
 
         config = {
             "DatabaseType": database_type,
-            "DatabaseUserName": urllib.parse.unquote(match.group("user")),
+            "DatabaseUserName": unquote(match.group("user")),
             "DatabasePassword": match.group("password"),
             "DatabaseHost": match.group("host"),
             "DatabaseName": match.group("dbname"),
