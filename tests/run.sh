@@ -23,6 +23,7 @@ function cleanup {
 cleanup
 
 echo 'starting test run, tests will run in parallel and output shown at the end'
-nosetests -vv --processes=10 --process-timeout=600 --with-timer usecase/
+export PYTHONPATH=$PWD/../lib/
+nosetests --verbosity=3 --processes=5 --process-timeout=900 --with-timer usecase/
 
 cleanup

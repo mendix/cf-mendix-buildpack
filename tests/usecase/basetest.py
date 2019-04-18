@@ -29,13 +29,17 @@ class BaseTest(unittest.TestCase):
             ).decode("utf-8")
         else:
             current_branch = "master"
+        self.branch_name = os.environ.get("TRAVIS_BRANCH", current_branch)
+
         self.cf_domain = os.environ.get("CF_DOMAIN")
         assert self.cf_domain
         self.buildpack_repo = os.environ.get(
             "BUILDPACK_REPO",
             "https://github.com/mendix/cf-mendix-buildpack.git",
         )
-        self.branch_name = os.environ.get("TRAVIS_BRANCH", current_branch)
+        self.buildpack = os.environ.get(
+            "BUILDPACK", "{}#{}".format(self.buildpack_repo, self.branch_name)
+        )
         self.mx_password = os.environ.get("MX_PASSWORD", "Y0l0lop13#123")
         self.app_id = str(uuid.uuid4()).split("-")[0]
         self.subdomain = "ops-" + self.app_id
@@ -133,12 +137,16 @@ class BaseTest(unittest.TestCase):
                     "-i",
                     str(instances),
                     "-b",
-                    ("%s#%s" % (self.buildpack_repo, self.branch_name)),
+                    self.buildpack,
                 )
             )
+
         except subprocess.CalledProcessError as e:
             print(e.output.decode("utf-8"))
             raise
+        finally:
+            # remove the downloaded file
+            os.remove(self.app_id + self.package_name)
 
         self.cmd(("./create-app-services.sh", self.app_name))
 

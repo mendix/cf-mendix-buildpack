@@ -18,11 +18,13 @@ import uuid
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 sys.path.insert(0, "lib")
+import requests  # noqa: E402
+
 import buildpackutil  # noqa: E402
-import telegraf  # noqa: E402
+import database_config  # noqa: E402
 import datadog  # noqa: E402
 import instadeploy  # noqa: E402
-import requests  # noqa: E402
+import telegraf  # noqa: E402
 
 from m2ee import M2EE, logger  # noqa: E402
 from nginx import get_path_config, gen_htpasswd  # noqa: E402
@@ -66,7 +68,7 @@ def get_current_buildpack_commit():
 
 
 logger.info(
-    "Started Mendix Cloud Foundry Buildpack v2.2.6 [commit:%s]",
+    "Started Mendix Cloud Foundry Buildpack v3.1.3 [commit:%s]",
     get_current_buildpack_commit(),
 )
 logging.getLogger("m2ee").propagate = False
@@ -312,6 +314,21 @@ def set_jvm_locale(m2ee_section, java_version):
     # enable locale for java8 or later
     if not java_version.startswith("7"):
         javaopts.append("-Djava.locale.providers=JRE,SPI,CLDR")
+
+
+def set_user_provided_java_options(m2ee_section):
+    javaopts = m2ee_section["javaopts"]
+    options = os.environ.get("JAVA_OPTS", None)
+    if options:
+        try:
+            options = json.loads(options)
+        except json.JSONDecodeError as e:
+            logger.error(
+                "Failed to parse JAVA_OPTS, due to invalid JSON.",
+                exc_info=True,
+            )
+            raise
+        javaopts.extend(options)
 
 
 def set_jvm_memory(m2ee_section, vcap, java_version):
@@ -675,7 +692,7 @@ def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
     buildpackutil.mkdir_p(os.path.join(os.getcwd(), "model", "resources"))
     mxruntime_config.update(app_config)
     mxruntime_config.update(
-        buildpackutil.get_database_config(
+        database_config.get_database_config(
             development_mode=is_development_mode()
         )
     )
@@ -830,9 +847,10 @@ def set_up_m2ee_client(vcap_data):
     )
     java_version = buildpackutil.get_java_version(
         m2ee.config.get_runtime_version()
-    )
+    )["version"]
     set_jvm_memory(m2ee.config._conf["m2ee"], vcap_data, java_version)
     set_jvm_locale(m2ee.config._conf["m2ee"], java_version)
+    set_user_provided_java_options(m2ee.config._conf["m2ee"])
     set_jetty_config(m2ee)
     activate_new_relic(m2ee, vcap_data["application_name"])
     activate_appdynamics(m2ee, vcap_data["application_name"])
@@ -921,7 +939,7 @@ def service_backups():
             ]
 
     try:
-        db_config = buildpackutil.get_database_config()
+        db_config = database_config.get_database_config()
         if db_config["DatabaseType"] != "PostgreSQL":
             raise Exception(
                 "Schnapps only supports postgresql, not %s"
@@ -1163,6 +1181,9 @@ def set_up_instadeploy_if_deploy_password_is_set(m2ee):
             )
             thread.setDaemon(True)
             thread.start()
+
+            if os.path.exists(os.path.expanduser("~/.sourcepush")):
+                instadeploy.send_metadata_to_cloudportal()
         else:
             logger.warning(
                 "Not setting up InstaDeploy because this mendix "

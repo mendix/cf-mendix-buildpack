@@ -145,7 +145,8 @@ def update_config(m2ee, app_name):
             "metric_batch_size": 1000,
             "metric_buffer_limit": 10000,
             "collection_jitter": "0s",
-            "flush_jitter": "10s",
+            "flush_interval": "10s",
+            "flush_jitter": "5s",
             "precision": "",
             "debug": False,
             "logfile": "",
@@ -196,13 +197,7 @@ def compile(install_path, cache_dir):
     #
     # Add Telegraf to the container which can forward metrics to a custom
     # AppMetrics target
-    buildpackutil.download_and_unpack(
-        buildpackutil.get_blobstore_url(
-            "/mx-buildpack/experimental/dd-v0.8.0.tar.gz"
-        ),
-        os.path.join(install_path, "datadog"),
-        cache_dir=cache_dir,
-    )
+    datadog.download(install_path, cache_dir)
 
     buildpackutil.download_and_unpack(
         buildpackutil.get_blobstore_url(

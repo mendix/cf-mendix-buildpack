@@ -931,7 +931,7 @@ def load_config(yaml_file):
         return
 
     try:
-        return yaml.load(fd)
+        return yaml.load(fd, Loader=yaml.FullLoader)
     except Exception as e:
         logger.error("Error parsing configuration file %s: %s" %
                      (yaml_file, e))

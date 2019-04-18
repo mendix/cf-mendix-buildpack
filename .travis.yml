@@ -9,13 +9,13 @@ python:
 install: 'pip3 install -r tests/requirements.txt'
 
 before_script:
-  - wget --quiet "https://cli.run.pivotal.io/stable?release=debian64&version=6.30.0&source=github-rel" -O cli.deb
+  - wget --quiet "https://packages.cloudfoundry.org/stable?release=debian64&version=6.43.0&source=github-rel" -O cli.deb
   - sudo dpkg -i cli.deb
   - sudo curl -s https://download.mendix.com/Mendix-CA-G2.crt -o /usr/local/share/ca-certificates/ca.crt
   - sudo update-ca-certificates
 
 script:
-  - make test
+  - travis_wait 45 make test
 
 notifications:
   email: false

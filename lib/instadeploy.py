@@ -295,3 +295,4 @@ def send_metadata_to_cloudportal():
         }
         # We don't care about the response.
         requests.post(target_url, files=files, headers=headers)
+        logger.info("Updated metadata in CloudPortal")
