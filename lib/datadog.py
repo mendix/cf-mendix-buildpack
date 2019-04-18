@@ -233,27 +233,6 @@ def update_config(m2ee, app_name):
             ],
         }
         fh.write(yaml.safe_dump(config))
-        # NGINX access logging to Datadog
-        subprocess.check_call(('mkdir', '-p', '.local/datadog/conf.d/nginx.d'))
-        with open(".local/datadog/conf.d/nginx.d/conf.yaml", "w") as fh:
-            config = {
-                "logs": [{
-                    "type": "file",
-                    "path": "/tmp/nginx.access.log",
-                    "service": _get_service(),
-                    "source": "nginx",
-                    "tags": tags,
-                    "sourcecategory": "http_web_access",
-                }, {
-                    "type": "file",
-                    "path": "/tmp/nginx.error.log",
-                    "service": _get_service(),
-                    "source": "nginx",
-                    "tags": tags,
-                    "sourcecategory": "http_web_access",
-                }]
-            }
-            fh.write(yaml.safe_dump(config))
 
     _set_up_postgres()
 
