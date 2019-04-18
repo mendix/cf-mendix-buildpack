@@ -26,7 +26,8 @@ m2ee:
 
  jetty:
    max_form_content_size: 10485760
-
+   runtime_max_threads: 1024
+ 
  allow_destroy_db: true
 
  database_dump_path: 'BUILD_PATH/database'
