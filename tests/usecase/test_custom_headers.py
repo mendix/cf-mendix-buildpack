@@ -27,7 +27,7 @@ class TestCaseCustomHeaderConfig(unittest.TestCase):
         os.environ["HTTP_RESPONSE_HEADERS"] = "{}"
         os.environ["X_FRAME_OPTIONS"] = "DENY"
         header_config = start.parse_headers()
-        assert "add_header X-Frame-Options 'DENY';" in header_config
+        self.assertIn("add_header X-Frame-Options 'DENY';", header_config)
 
     def test_valid_header_referrerPolicy(self):
         os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps(
