@@ -215,3 +215,17 @@ class BaseTest(unittest.TestCase):
         except subprocess.CalledProcessError as e:
             print(e.output.decode("utf-8"))
             raise
+
+    def assert_certificate_in_cacert(self, cert_alias):
+        env = dict(os.environ)
+        output = self.cmd(
+            (
+                "cf",
+                "ssh",
+                self.app_name,
+                "-c",
+                "app/.local/usr/lib/jvm/*/bin/keytool -list -storepass changeit -keystore app/.local/usr/lib/jvm/*/lib/security/cacerts",  # noqa: E501
+            ),
+            env=env,
+        )
+        self.assertIn(cert_alias, output)

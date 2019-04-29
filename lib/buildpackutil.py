@@ -209,7 +209,7 @@ def ensure_mxbuild_in_directory(directory, mx_version, cache_dir):
 
     url = os.environ.get("FORCED_MXBUILD_URL")
     if url:
-        # don't ever cache with a FORCED_MXBUILD_URL
+        # don"t ever cache with a FORCED_MXBUILD_URL
         download_and_unpack(url, directory, cache_dir="/tmp/downloads")
     else:
         try:
@@ -387,6 +387,56 @@ def ensure_and_get_jvm(
         ],
         "Java not found",
     )
+
+
+def update_java_cacert(buildpack_dir, jvm_location):
+    logging.debug("Applying Mozilla CA certificates update to JVM cacerts...")
+    cacerts_file = os.path.join(jvm_location, "lib", "security", "cacerts")
+    if not os.path.exists(cacerts_file):
+        logging.warning(
+            "Cannot locate cacerts file {}. Skippiung update of CA certiticates.".format(
+                cacerts_file
+            )
+        )
+        return
+
+    update_cacert_path = os.path.join(buildpack_dir, "lib", "cacert")
+    if not os.path.exists(update_cacert_path):
+        logging.warning(
+            "Cannot locate cacert lib folder {}. Skipping  update of CA certificates.".format(
+                update_cacert_path
+            )
+        )
+        return
+
+    cacert_merged = "cacerts.merged"
+    env = dict(os.environ)
+
+    try:
+        subprocess.check_output(
+            (
+                os.path.join(jvm_location, "bin", "java"),
+                "-jar",
+                os.path.join(update_cacert_path, "keyutil-0.4.0.jar"),
+                "-i",
+                "--new-keystore",
+                cacert_merged,
+                "--password",
+                "changeit",
+                "--import-pem-file",
+                os.path.join(update_cacert_path, "cacert.pem"),
+                "--import-jks-file",
+                "{}:changeit".format(cacerts_file),
+            ),
+            env=env,
+            stderr=subprocess.STDOUT,
+        )
+    except Exception as ex:
+        logging.error("Error applying cacert update: {}".format(ex.output), ex)
+        raise ex
+
+    os.rename(cacert_merged, cacerts_file)
+    logging.debug("Update of cacerts file finished.")
 
 
 def i_am_primary_instance():

@@ -15,7 +15,10 @@ before_script:
   - sudo update-ca-certificates
 
 script:
-  - travis_wait 45 make test
+  - make test &
+  - MAKE_PID=$!
+  - while [ -e /proc/$MAKE_PID ]; do echo -n "."  && sleep 60; done
+  - wait $MAKE_PID && sleep 15
 
 notifications:
   email: false

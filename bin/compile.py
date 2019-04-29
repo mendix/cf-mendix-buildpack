@@ -125,6 +125,8 @@ def set_up_java():
         ),
         os.path.join(DOT_LOCAL_LOCATION, "bin", "java"),
     )
+    # update cacert file
+    buildpackutil.update_java_cacert(BUILDPACK_DIR, jvm_location)
     logging.debug("end download and install java")
 
 
