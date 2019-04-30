@@ -65,7 +65,7 @@ class BaseTest(unittest.TestCase):
             )
         )
 
-    def startApp(self, start_timeout=None, expect_failure=False):
+    def startApp(self, start_timeout=15, expect_failure=False):
         try:
             env = {}
             if start_timeout:
