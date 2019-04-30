@@ -17,7 +17,7 @@ before_script:
 script:
 
   - make test &
-  - MAKE_PID = $!
+  - MAKE_PID=$!
   - while [ -e /proc/$MAKE_PID ]; do echo -n "."  && sleep 60; done
   - wait $MAKE_PID
 
