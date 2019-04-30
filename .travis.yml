@@ -15,8 +15,11 @@ before_script:
   - sudo update-ca-certificates
 
 script:
+
   - make test &
-  - while [ -e /proc/$! ]; do echo -n "."  && sleep 60; done
+  - MAKE_PID = $!
+  - while [ -e /proc/$MAKE_PID ]; do echo -n "."  && sleep 60; done
+  - wait $MAKE_PID
 
 notifications:
   email: false
