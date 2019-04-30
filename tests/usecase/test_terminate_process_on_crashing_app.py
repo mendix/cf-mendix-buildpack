@@ -5,7 +5,7 @@ class TestCaseTerminateChildProcessesCompleteOnCrashingApp(basetest.BaseTest):
     def setUp(self):
         super().setUp()
         self.setUpCF(
-            "Sample-StartError.mpk",
+            "Sample-StartError-7.23.2.mda",
             health_timeout=60,
             env_vars={
                 "DEPLOY_PASSWORD": self.mx_password,
