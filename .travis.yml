@@ -15,7 +15,8 @@ before_script:
   - sudo update-ca-certificates
 
 script:
-  - travis_wait 60 make test
+  - make test &
+  - while [ -e /proc/$! ]; do echo -n "."  && sleep 60; done
 
 notifications:
   email: false
