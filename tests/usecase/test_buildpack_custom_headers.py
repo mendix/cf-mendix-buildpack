@@ -30,17 +30,17 @@ class TestCaseBuildPackCustomHeaderConfig(basetest.BaseTest):
     def test_custom_header_settings(self):
         self.assert_app_running()
         response = self._httpget()
-        assert "DENY" in response.headers["X-Frame-Options"]
-        assert (
-            "https://this.is.mydomain.nl"
-            in response.headers["Access-Control-Allow-Origin"]
+        self.assertIn("DENY", response.headers["X-Frame-Options"])
+        self.assertIn(
+            "https://this.is.mydomain.nl",
+            response.headers["Access-Control-Allow-Origin"],
         )
-        assert "nosniff" in response.headers["X-Content-Type-Options"]
-        assert (
-            "by-content-type"
-            in response.headers["X-Permitted-Cross-Domain-Policies"]
+        self.assertIn("nosniff", response.headers["X-Content-Type-Options"])
+        self.assertIn(
+            "by-content-type",
+            response.headers["X-Permitted-Cross-Domain-Policies"],
         )
-        assert (
-            "1; report=https://domainwithnewstyle.tld.consultancy"
-            in response.headers["X-XSS-Protection"]
+        self.assertIn(
+            "1; report=https://domainwithnewstyle.tld.consultancy",
+            response.headers["X-XSS-Protection"],
         )
