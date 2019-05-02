@@ -1,3 +1,4 @@
+import base64
 import os
 import json
 import subprocess
@@ -32,7 +33,9 @@ class BaseTest(unittest.TestCase):
         self.branch_name = os.environ.get("TRAVIS_BRANCH", current_branch)
 
         self.cf_domain = os.environ.get("CF_DOMAIN")
-        assert self.cf_domain
+        self.assertIsNotNone(
+            self.cf_domain, "CF_DOMAIN env variable is not configured"
+        )
         self.buildpack_repo = os.environ.get(
             "BUILDPACK_REPO",
             "https://github.com/mendix/cf-mendix-buildpack.git",
@@ -182,7 +185,11 @@ class BaseTest(unittest.TestCase):
     def assert_app_running(self, path="/xas/", code=401):
         full_uri = "https://" + self.app_name + path
         r = requests.get(full_uri)
-        assert r.status_code == code
+        self.assertEqual(
+            r.status_code,
+            code,
+            "unexpected response code for assert_app_running",
+        )
 
     def get_recent_logs(self):
         return self.cmd(("cf", "logs", self.app_name, "--recent"))
@@ -229,3 +236,18 @@ class BaseTest(unittest.TestCase):
             env=env,
         )
         self.assertIn(cert_alias, output)
+
+    def query_mxadmin(self, command):
+        basic_auth = "mxadmin:{}".format(self.mx_password)
+        basic_auth_base64 = base64.encode(basic_auth)
+        m2ee_auth_base64 = base64.encode(self.mx_password)
+
+        return requests.post(
+            "https://{}/_mxadmin/".format(self.app_name),
+            data=json.dumps(command),
+            headers={
+                "Authorization": "Basic {}".format(basic_auth_base64),
+                "X-M2EE-Authorization": m2ee_auth_base64,
+            },
+            timeout=15,
+        )
