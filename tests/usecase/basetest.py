@@ -1,4 +1,4 @@
-import base64
+from base64 import b64encode
 import os
 import json
 import subprocess
@@ -237,17 +237,23 @@ class BaseTest(unittest.TestCase):
         )
         self.assertIn(cert_alias, output)
 
+    def bytes(self, s):
+        return s.encode("utf-8")
+
     def query_mxadmin(self, command):
-        basic_auth = "mxadmin:{}".format(self.mx_password)
-        basic_auth_base64 = base64.encode(basic_auth)
-        m2ee_auth_base64 = base64.encode(self.mx_password)
+        basic_auth = "MxAdmin:{}".format(self.mx_password)
+        basic_auth_base64 = b64encode(self.bytes(basic_auth)).decode("utf-8")
+        m2ee_auth_base64 = b64encode(self.bytes(self.mx_password)).decode(
+            "utf-8"
+        )
 
         return requests.post(
             "https://{}/_mxadmin/".format(self.app_name),
             data=json.dumps(command),
             headers={
+                "Content-Type": "application/json",
                 "Authorization": "Basic {}".format(basic_auth_base64),
-                "X-M2EE-Authorization": m2ee_auth_base64,
+                "X-M2EE-Authentication": m2ee_auth_base64,
             },
             timeout=15,
         )
