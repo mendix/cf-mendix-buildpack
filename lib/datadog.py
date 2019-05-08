@@ -97,7 +97,9 @@ def update_config(m2ee, app_name):
                 "name": "DataDogSubscriber",
                 "autosubscribe": "INFO",
                 "host": "localhost",
-                "port": 9032,
+                # For MX8 integer is supported again, this change needs to be
+                # made when MX8 is GA
+                "port": "9032",
             }
         )
     enable_runtime_agent(m2ee)

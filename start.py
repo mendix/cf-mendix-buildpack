@@ -78,7 +78,7 @@ def get_current_buildpack_commit():
 
 
 logger.info(
-    "Started Mendix Cloud Foundry Buildpack v3.2.1 [commit:%s]",
+    "Started Mendix Cloud Foundry Buildpack v3.2.2 [commit:%s]",
     get_current_buildpack_commit(),
 )
 logging.getLogger("m2ee").propagate = False
