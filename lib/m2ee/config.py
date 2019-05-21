@@ -328,15 +328,22 @@ class M2EEConfig:
     def fix_permissions(self):
         basepath = self._conf['m2ee']['app_base']
         for directory, mode in {
-                "model": 0o700,
-                "web": 0o755,
-                "data": 0o700}.items():
+                "model": 0o0700,
+                "web": 0o0755,
+                "data": 0o0700}.items():
             fullpath = os.path.join(basepath, directory)
-            if not os.path.exists(fullpath):
-                logger.critical("Directory %s does not exist!" % fullpath)
-                sys.exit(1)
-            # TODO: detect permissions and tell user if changing is needed
-            os.chmod(fullpath, mode)
+            if not os.path.isdir(fullpath):
+                logger.warn("Directory '%s' does not exist, unable to fixup permissions!" %
+                            fullpath)
+                continue
+            try:
+                if os.stat(fullpath).st_mode & 0xFFF != mode:
+                    os.chmod(fullpath, mode)
+                    logger.info("Fixing up permissions of directory '%s' "
+                                "with mode %s" % (directory, oct(mode)[-3:]))
+            except Exception as e:
+                logger.error("Unable to fixup permissions of directory '%s' "
+                             "with mode %s: %s, Ignoring." % (directory, oct(mode)[-3:], e))
 
     def get_felix_config_file(self):
         return self._conf['m2ee'].get(
