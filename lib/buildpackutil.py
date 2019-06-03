@@ -161,7 +161,12 @@ class NotFoundException(Exception):
 
 
 def get_java_version(mx_version):
-    if mx_version >= MXVersion("7.23.1"):
+    if mx_version >= MXVersion("8.0.0"):
+        java_version = {
+            "version": os.getenv("JAVA_VERSION", "11"),
+            "vendor": "AdoptOpenJDK",
+        }
+    elif mx_version >= MXVersion("7.23.1"):
         java_version = {
             "version": os.getenv("JAVA_VERSION", "8u202"),
             "vendor": "AdoptOpenJDK",
