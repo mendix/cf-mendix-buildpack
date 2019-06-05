@@ -187,7 +187,7 @@ def get_java_version(mx_version):
             "vendor": "oracle",
         }
 
-    if not re.match(r"^\d+u\d+$", java_version["version"]):
+    if not re.match(r"^\d+[u\d+]?$", java_version["version"]):
         raise Exception(
             "Invalid Java version specified: {}".format(
                 java_version["version"]
