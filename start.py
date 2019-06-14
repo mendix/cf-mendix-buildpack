@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 import atexit
 import base64
-import codecs
 import datetime
-import itertools
 import json
 import logging
 import os
@@ -30,30 +28,6 @@ from m2ee import M2EE, logger  # noqa: E402
 from nginx import get_path_config, gen_htpasswd  # noqa: E402
 from buildpackutil import i_am_primary_instance  # noqa: E402
 
-HEARTBEAT_SOURCE_STRING = """Gur Mra bs Clguba, ol Gvz Crgref
-Ornhgvshy vf orggre guna htyl.
-Rkcyvpvg vf orggre guna vzcyvpvg.
-Fvzcyr vf orggre guna pbzcyrk.
-Pbzcyrk vf orggre guna pbzcyvpngrq.
-Syng vf orggre guna arfgrq.
-Fcnefr vf orggre guna qrafr.
-Ernqnovyvgl pbhagf.
-Fcrpvny pnfrf nera'g fcrpvny rabhtu gb oernx gur ehyrf.
-Nygubhtu cenpgvpnyvgl orngf chevgl.
-Reebef fubhyq arire cnff fvyragyl.
-Hayrff rkcyvpvgyl fvyraprq.
-Va gur snpr bs nzovthvgl, ershfr gur grzcgngvba gb thrff.
-Gurer fubhyq or bar-- naq cersrenoyl bayl bar --boivbhf jnl gb qb vg.
-Nygubhtu gung jnl znl abg or boivbhf ng svefg hayrff lbh'er Qhgpu.
-Abj vf orggre guna arire.
-Nygubhtu arire vf bsgra orggre guna *evtug* abj.
-Vs gur vzcyrzragngvba vf uneq gb rkcynva, vg'f n onq vqrn.
-Vs gur vzcyrzragngvba vf rnfl gb rkcynva, vg znl or n tbbq vqrn.
-Anzrfcnprf ner bar ubaxvat terng vqrn -- yrg'f qb zber bs gubfr!"""
-HEARTBEAT_STRING_LIST = codecs.encode(HEARTBEAT_SOURCE_STRING, "rot13").split(
-    "\n"
-)
-
 DEFAULT_HEADERS = {
     "X-Frame-Options": "(?i)(^allow-from https?://([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*(:\d+)?$|^deny$|^sameorigin$)",  # noqa: E501
     "Referrer-Policy": "(?i)(^no-referrer$|^no-referrer-when-downgrade$|^origin|origin-when-cross-origin$|^same-origin|strict-origin$|^strict-origin-when-cross-origin$|^unsafe-url$)",  # noqa: E501
@@ -78,7 +52,7 @@ def get_current_buildpack_commit():
 
 
 logger.info(
-    "Started Mendix Cloud Foundry Buildpack v3.2.4 [commit:%s]",
+    "Started Mendix Cloud Foundry Buildpack v3.3.0 [commit:%s]",
     get_current_buildpack_commit(),
 )
 logging.getLogger("m2ee").propagate = False
@@ -1262,9 +1236,13 @@ class LoggingHeartbeatEmitterThread(threading.Thread):
         logger.debug(
             "Starting metrics emitter with interval %d", self.interval
         )
-        for line in itertools.cycle(HEARTBEAT_STRING_LIST):
-            logger.info("MENDIX-LOGGING-HEARTBEAT: %s", line)
+        counter = 1
+        while True:
+            logger.info(
+                "MENDIX-LOGGING-HEARTBEAT: Heartbeat number %s", counter
+            )
             time.sleep(self.interval)
+            counter += 1
 
 
 def start_logging_heartbeat():
