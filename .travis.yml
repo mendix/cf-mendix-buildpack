@@ -18,7 +18,8 @@ script:
   - make test &
   - MAKE_PID=$!
   - while [ -e /proc/$MAKE_PID ]; do echo -n "."  && sleep 60; done
-  - wait $MAKE_PID && sleep 15
+  - sleep 15
+  - wait $MAKE_PID
 
 notifications:
   email: false
