@@ -2,7 +2,6 @@ import errno
 import json
 import logging
 import os
-import re
 import subprocess
 import sys
 from distutils.util import strtobool
@@ -163,7 +162,7 @@ class NotFoundException(Exception):
 def get_java_version(mx_version):
     if mx_version >= MXVersion("8.0.0"):
         java_version = {
-            "version": os.getenv("JAVA_VERSION", "11"),
+            "version": os.getenv("JAVA_VERSION", "11.0.3"),
             "vendor": "AdoptOpenJDK",
         }
     elif mx_version >= MXVersion("7.23.1"):
@@ -186,13 +185,6 @@ def get_java_version(mx_version):
             "version": os.getenv("JAVA_VERSION", "7u80"),
             "vendor": "oracle",
         }
-
-    if not re.match(r"^\d+[u\d+]?$", java_version["version"]):
-        raise Exception(
-            "Invalid Java version specified: {}".format(
-                java_version["version"]
-            )
-        )
 
     return java_version
 

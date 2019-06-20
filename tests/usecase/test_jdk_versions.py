@@ -76,15 +76,17 @@ class TestJDKVersions(basetest.BaseTest):
         self.assert_certificate_in_cacert("staat der nederlanden root ca - g3")
 
     def test_adopt_jdk_11(self):
-        self.setUpCF("AdoptOpenJDKTest_8beta2.mda", health_timeout=60)
+        self.setUpCF("AdoptOpenJDKTest_8beta3.mda", health_timeout=60)
         self.startApp()
 
         jdk = buildpackutil._determine_jdk("8.0.0", "jre")
         target_dir = buildpackutil._compose_jvm_target_dir(jdk)
 
-        assert jdk["version"] == "11"
-        assert target_dir == "usr/lib/jvm/AdoptOpenJDK-jre-11-AdoptOpenJDK-x64"
-
+        assert jdk["version"] == "11.0.3"
+        assert (
+            target_dir
+            == "usr/lib/jvm/AdoptOpenJDK-jre-11.0.3-AdoptOpenJDK-x64"
+        )
         self._check_java_presence(target_dir)
         self.assert_certificate_in_cacert("staat der nederlanden root ca - g3")
 
