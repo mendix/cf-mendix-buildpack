@@ -334,8 +334,8 @@ def get_constants(metadata):
 def set_jvm_locale(m2ee_section, java_version):
     javaopts = m2ee_section["javaopts"]
 
-    # enable locale for java8 or later
-    if not java_version.startswith("7"):
+    # override locale providers for java8
+    if java_version.startswith("8"):
         javaopts.append("-Djava.locale.providers=JRE,SPI,CLDR")
 
 
