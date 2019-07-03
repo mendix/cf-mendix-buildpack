@@ -28,6 +28,8 @@ from m2ee import M2EE, logger  # noqa: E402
 from nginx import get_path_config, gen_htpasswd  # noqa: E402
 from buildpackutil import i_am_primary_instance  # noqa: E402
 
+BUILDPACK_VERSION = "3.4.0"
+
 DEFAULT_HEADERS = {
     "X-Frame-Options": "(?i)(^allow-from https?://([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*(:\d+)?$|^deny$|^sameorigin$)",  # noqa: E501
     "Referrer-Policy": "(?i)(^no-referrer$|^no-referrer-when-downgrade$|^origin|origin-when-cross-origin$|^same-origin|strict-origin$|^strict-origin-when-cross-origin$|^unsafe-url$)",  # noqa: E501
@@ -52,7 +54,8 @@ def get_current_buildpack_commit():
 
 
 logger.info(
-    "Started Mendix Cloud Foundry Buildpack v3.3.0 [commit:%s]",
+    "Started Mendix Cloud Foundry Buildpack v%s [commit:%s]",
+    BUILDPACK_VERSION,
     get_current_buildpack_commit(),
 )
 logging.getLogger("m2ee").propagate = False
@@ -1162,6 +1165,20 @@ def configure_logging(m2ee):
             )
 
 
+def display_java_version():
+    java_version = (
+        subprocess.check_output(
+            [".local/bin/java", "-version"], stderr=subprocess.STDOUT
+        )
+        .decode("utf8")
+        .strip()
+        .split("\n")
+    )
+    logger.info("Using Java version:")
+    for line in java_version:
+        logger.info(line)
+
+
 def display_running_version(m2ee):
     if m2ee.config.get_runtime_version() >= 4.4:
         feedback = m2ee.client.about().get_feedback()
@@ -1255,6 +1272,7 @@ def start_logging_heartbeat():
 
 
 def complete_start_procedure_safe_to_use_for_restart(m2ee):
+    display_java_version()
     buildpackutil.mkdir_p("model/lib/userlib")
     set_up_logging_file()
     start_app(m2ee)
