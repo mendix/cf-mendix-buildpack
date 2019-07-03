@@ -1216,15 +1216,14 @@ def set_up_instadeploy_if_deploy_password_is_set(m2ee):
 
 def start_metrics(m2ee):
     metrics_interval = os.getenv("METRICS_INTERVAL")
-    profile = os.getenv("PROFILE")
-    if metrics_interval and profile != "free":
+    if metrics_interval:
         import metrics
 
         thread = metrics.MetricsEmitterThread(int(metrics_interval), m2ee)
         thread.setDaemon(True)
         thread.start()
     else:
-        logger.info("MENDIX-INTERNAL: Metrics are disabled.")
+        logger.info("MENDIX-INTERVAL not set: Metrics are disabled.")
 
 
 class LoggingHeartbeatEmitterThread(threading.Thread):
