@@ -472,5 +472,5 @@ def get_metrics_url():
     return os.getenv("TRENDS_STORAGE_URL")
 
 
-def is_paid_app():
-    return os.getenv("PROFILE") != "free"
+def is_free_app():
+    return os.getenv("PROFILE") == "free"

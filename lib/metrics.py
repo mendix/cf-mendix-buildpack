@@ -102,7 +102,7 @@ class MetricsEmitterThread(threading.Thread):
 
                 if (
                     buildpackutil.i_am_primary_instance()
-                    and buildpackutil.is_paid_app()
+                    and not buildpackutil.is_free_app()
                 ):
                     stats = self._inject_database_stats(stats)
                     stats = self._inject_storage_stats(stats)
@@ -184,7 +184,7 @@ class MetricsEmitterThread(threading.Thread):
         if "sessions" in m2ee_stats:
             m2ee_stats["sessions"]["user_sessions"] = {}
             # Only push sessions metrics for free apps
-            if not buildpackutil.is_paid_app():
+            if buildpackutil.is_free_app():
                 return m2ee_stats["sessions"]
         m2ee_stats = munin.augment_and_fix_stats(
             m2ee_stats, self.m2ee.runner.get_pid(), java_version
