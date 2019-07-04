@@ -53,7 +53,7 @@ class TestCaseAccessRestrictions(basetest.BaseTest):
         print("my ip ranges are", ",".join(myips))
 
         self.setUpCF(
-            "sample-6.2.0.mda",
+            "BuildpackTestApp-mx-7-16.mda",
             env_vars={
                 "ACCESS_RESTRICTIONS": json.dumps(
                     {

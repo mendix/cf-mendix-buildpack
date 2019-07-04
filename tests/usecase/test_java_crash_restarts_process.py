@@ -6,7 +6,7 @@ class TestCaseJavaCrashRestartsProcess(basetest.BaseTest):
     def setUp(self):
         super().setUp()
         self.setUpCF(
-            "sample-6.2.0.mda",
+            "BuildpackTestApp-mx-7-16.mda",
             env_vars={
                 "DEPLOY_PASSWORD": self.mx_password,
                 "METRICS_INTERVAL": "10",

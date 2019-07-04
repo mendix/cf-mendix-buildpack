@@ -5,7 +5,7 @@ import time
 class TestCaseEmitMetrics(basetest.BaseTest):
     def setUp(self):
         super().setUp()
-        self.setUpCF("sample-6.2.0.mda", env_vars={"METRICS_INTERVAL": "10"})
+        self.setUpCF("BuildpackTestApp-mx-7-16.mda", env_vars={"METRICS_INTERVAL": "10"})
         self.startApp()
 
     def test_read_metrics_in_logs(self):
@@ -17,7 +17,7 @@ class TestCaseEmitMetrics(basetest.BaseTest):
 
     def test_free_apps_metrics(self):
         self.setUpCF(
-            "sample-6.2.0.mda",
+            "BuildpackTestApp-mx-7-16.mda",
             env_vars={
                 "METRICS_INTERVAL": "10",
                 "PROFILE": "free",
@@ -34,7 +34,7 @@ class TestCaseEmitMetrics(basetest.BaseTest):
 class TestNewMetricsFlows(basetest.BaseTest):
     def test_fallback_flow_when_server_unreachable(self):
         self.setUpCF(
-            "sample-6.2.0.mda",
+            "BuildpackTestApp-mx-7-16.mda",
             env_vars={
                 "METRICS_INTERVAL": "10",
                 "BYPASS_LOGGREGATOR": "True",
@@ -53,7 +53,7 @@ class TestNewMetricsFlows(basetest.BaseTest):
 
     def test_fallback_when_no_url_set(self):
         self.setUpCF(
-            "sample-6.2.0.mda",
+            "BuildpackTestApp-mx-7-16.mda",
             env_vars={"METRICS_INTERVAL": "10", "BYPASS_LOGGREGATOR": "True"},
         )
         self.startApp()
@@ -67,7 +67,7 @@ class TestNewMetricsFlows(basetest.BaseTest):
 
     def test_fallback_with_bad_environment_variables(self):
         self.setUpCF(
-            "sample-6.2.0.mda",
+            "BuildpackTestApp-mx-7-16.mda",
             env_vars={
                 "METRICS_INTERVAL": "10",
                 "BYPASS_LOGGREGATOR": "this will not coerce to a boolean",
@@ -83,7 +83,7 @@ class TestNewMetricsFlows(basetest.BaseTest):
 
     def test_posting_metrics_works(self):
         self.setUpCF(
-            "sample-6.2.0.mda",
+            "BuildpackTestApp-mx-7-16.mda",
             env_vars={
                 "METRICS_INTERVAL": "10",
                 "BYPASS_LOGGREGATOR": "True",
