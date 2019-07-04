@@ -5,7 +5,9 @@ import time
 class TestCaseEmitMetrics(basetest.BaseTest):
     def setUp(self):
         super().setUp()
-        self.setUpCF("BuildpackTestApp-mx-7-16.mda", env_vars={"METRICS_INTERVAL": "10"})
+        self.setUpCF(
+            "BuildpackTestApp-mx-7-16.mda", env_vars={"METRICS_INTERVAL": "10"}
+        )
         self.startApp()
 
     def test_read_metrics_in_logs(self):
@@ -18,10 +20,7 @@ class TestCaseEmitMetrics(basetest.BaseTest):
     def test_free_apps_metrics(self):
         self.setUpCF(
             "BuildpackTestApp-mx-7-16.mda",
-            env_vars={
-                "METRICS_INTERVAL": "10",
-                "PROFILE": "free",
-            },
+            env_vars={"METRICS_INTERVAL": "10", "PROFILE": "free"},
         )
         self.startApp()
 
@@ -30,6 +29,7 @@ class TestCaseEmitMetrics(basetest.BaseTest):
         self.assert_string_in_recent_logs("named_users")
         self.assert_string_in_recent_logs("anonymous_sessions")
         self.assert_string_in_recent_logs("named_user_sessions")
+
 
 class TestNewMetricsFlows(basetest.BaseTest):
     def test_fallback_flow_when_server_unreachable(self):

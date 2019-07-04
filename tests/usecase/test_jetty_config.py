@@ -17,7 +17,8 @@ class TestCaseJettyConfig(basetest.BaseTest):
 
     def test_invalid_jetty_config(self):
         self.setUpCF(
-            "BuildpackTestApp-mx-7-16.mda", env_vars={"JETTY_CONFIG": "invalid json"}
+            "BuildpackTestApp-mx-7-16.mda",
+            env_vars={"JETTY_CONFIG": "invalid json"},
         )
         self.startApp()
         self.assert_string_in_recent_logs("Failed to configure jetty")

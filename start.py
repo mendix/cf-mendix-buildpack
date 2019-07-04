@@ -1236,7 +1236,12 @@ def start_metrics(m2ee):
     if metrics_interval:
         import metrics
 
-        thread = metrics.MetricsEmitterThread(int(metrics_interval), m2ee)
+        if buildpackutil.is_free_app():
+            thread = metrics.FreeAppsMetricsEmitterThread(
+                int(metrics_interval), m2ee
+            )
+        else:
+            thread = metrics.MetricsEmitterThread(int(metrics_interval), m2ee)
         thread.setDaemon(True)
         thread.start()
     else:
