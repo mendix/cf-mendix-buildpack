@@ -286,10 +286,12 @@ def _detect_mono_version(mx_version):
         "Detecting Mono Runtime using mendix version: " + str(mx_version)
     )
 
-    if mx_version < 7:
-        target = "mono-3.10.0"
-    else:
+    if mx_version >= 8:
+        target = "mono-5.20.1.27"
+    elif mx_version >= 7:
         target = "mono-4.6.2.16"
+    else:
+        target = "mono-3.10.0"
     logging.info("Selecting Mono Runtime: " + target)
     return target
 
