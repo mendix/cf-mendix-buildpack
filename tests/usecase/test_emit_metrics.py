@@ -15,6 +15,21 @@ class TestCaseEmitMetrics(basetest.BaseTest):
         self.assert_string_in_recent_logs("number_of_files")
         self.assert_string_in_recent_logs("critical_logs_count")
 
+    def test_free_apps_metrics(self):
+        self.setUpCF(
+            "sample-6.2.0.mda",
+            env_vars={
+                "METRICS_INTERVAL": "10",
+                "PROFILE": "free",
+            },
+        )
+        self.startApp()
+
+        time.sleep(10)
+        self.assert_string_in_recent_logs("MENDIX-METRICS: ")
+        self.assert_string_in_recent_logs("named_users")
+        self.assert_string_in_recent_logs("anonymous_sessions")
+        self.assert_string_in_recent_logs("named_user_sessions")
 
 class TestNewMetricsFlows(basetest.BaseTest):
     def test_fallback_flow_when_server_unreachable(self):
