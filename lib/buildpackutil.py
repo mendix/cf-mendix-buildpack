@@ -2,7 +2,6 @@ import errno
 import json
 import logging
 import os
-import re
 import subprocess
 import sys
 from distutils.util import strtobool
@@ -161,7 +160,12 @@ class NotFoundException(Exception):
 
 
 def get_java_version(mx_version):
-    if mx_version >= MXVersion("7.23.1"):
+    if mx_version >= MXVersion("8.0.0"):
+        java_version = {
+            "version": os.getenv("JAVA_VERSION", "11.0.3"),
+            "vendor": "AdoptOpenJDK",
+        }
+    elif mx_version >= MXVersion("7.23.1"):
         java_version = {
             "version": os.getenv("JAVA_VERSION", "8u202"),
             "vendor": "AdoptOpenJDK",
@@ -181,13 +185,6 @@ def get_java_version(mx_version):
             "version": os.getenv("JAVA_VERSION", "7u80"),
             "vendor": "oracle",
         }
-
-    if not re.match(r"^\d+u\d+$", java_version["version"]):
-        raise Exception(
-            "Invalid Java version specified: {}".format(
-                java_version["version"]
-            )
-        )
 
     return java_version
 
@@ -289,10 +286,12 @@ def _detect_mono_version(mx_version):
         "Detecting Mono Runtime using mendix version: " + str(mx_version)
     )
 
-    if mx_version < 7:
-        target = "mono-3.10.0"
-    else:
+    if mx_version >= 8:
+        target = "mono-5.20.1.27"
+    elif mx_version >= 7:
         target = "mono-4.6.2.16"
+    else:
+        target = "mono-3.10.0"
     logging.info("Selecting Mono Runtime: " + target)
     return target
 
