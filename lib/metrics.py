@@ -67,9 +67,14 @@ class MetricsServerEmitter(MetricsEmitter):
             self.fallback_emitter.emit(stats)
 
 
-class MetricsEmitterThread(threading.Thread):
+class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
+    """
+    This base class contains all boilerplate code needed to emit metrics.
+    Only thing left to implement in subclass is `_selected_stats_to_emit` method.
+    """
+
     def __init__(self, interval, m2ee):
-        super(MetricsEmitterThread, self).__init__()
+        super(BaseMetricsEmitterThread, self).__init__()
         self.interval = interval
         self.m2ee = m2ee
         self.db = None
@@ -82,49 +87,54 @@ class MetricsEmitterThread(threading.Thread):
             logger.info("Metrics are logged to stdout.")
             self.emitter = LoggingEmitter()
 
-    def emit(self, stats):
+    @staticmethod
+    def _set_stats_info(stats):
         stats["version"] = "1.0"
         stats["timestamp"] = datetime.datetime.now().isoformat()
         stats["instance_index"] = os.getenv("CF_INSTANCE_INDEX", 0)
+        return stats
+
+    def emit(self, stats):
         self.emitter.emit(stats)
+
+    @abstractmethod
+    def _selected_stats_to_emit(self):
+        """
+        This method should return a list of subclass methods.
+        Those methods must return and accept, as a parameter, the 'stats' dictionary.
+        :return: [self.func1, self.func2]
+        """
+        pass
 
     def run(self):
         logger.debug(
             "Starting metrics emitter with interval %d" % self.interval
         )
+        stats_to_emit = self._selected_stats_to_emit()
         while True:
             stats = {}
             try:
-                if buildpackutil.i_am_primary_instance():
-                    stats = self._inject_database_stats(stats)
-                    stats = self._inject_storage_stats(stats)
-                    stats = self._inject_health(stats)
-                try:
-                    stats = self._inject_m2ee_stats(stats)
-                except Exception:
-                    logger.debug("Unable to get metrics from runtime")
-
-                self.emit(stats)
+                for inject_method in stats_to_emit:
+                    stats = inject_method(stats)
             except psycopg2.OperationalError as up:
                 logger.exception("METRICS: error while gathering metrics")
-                self.emit(
-                    {
-                        "health": {
-                            "health": 0,
-                            "diagnosis": "Database error: %s" % str(up),
-                        }
+                stats = {
+                    "health": {
+                        "health": 0,
+                        "diagnosis": "Database error: %s" % str(up),
                     }
-                )
+                }
             except Exception as e:
                 logger.exception("METRICS: error while gathering metrics")
-                self.emit(
-                    {
-                        "health": {
-                            "health": 4,
-                            "diagnosis": "Unable to retrieve metrics",
-                        }
+                stats = {
+                    "health": {
+                        "health": 4,
+                        "diagnosis": "Unable to retrieve metrics",
                     }
-                )
+                }
+            finally:
+                stats = self._set_stats_info(stats)
+                self.emit(stats)
 
             time.sleep(self.interval)
 
