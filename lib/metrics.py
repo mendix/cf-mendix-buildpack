@@ -360,39 +360,31 @@ WHERE t.schemaname='public';
         return self.db
 
 
-class FreeAppsMetricsEmitterThread(MetricsEmitterThread):
-    def run(self):
-        logger.debug(
-            "Starting free apps metrics emitter with interval %d"
-            % self.interval
-        )
-        while True:
-            stats = {}
-            try:
-                try:
-                    stats = self._inject_m2ee_stats(stats)
-                except Exception:
-                    logger.debug("Unable to get metrics from runtime")
-                # Only push session metrics for free apps
-                self.emit(stats["mendix_runtime"]["sessions"])
-            except psycopg2.OperationalError as up:
-                logger.exception("METRICS: error while gathering metrics")
-                self.emit(
-                    {
-                        "health": {
-                            "health": 0,
-                            "diagnosis": "Database error: %s" % str(up),
-                        }
-                    }
-                )
-            except Exception as e:
-                logger.exception("METRICS: error while gathering metrics")
-                self.emit(
-                    {
-                        "health": {
-                            "health": 4,
-                            "diagnosis": "Unable to retrieve metrics",
-                        }
-                    }
-                )
-            time.sleep(self.interval)
+class PaidAppsMetricsEmitterThread(BaseMetricsEmitterThread):
+    def _selected_stats_to_emit(self):
+        selected_stats = []
+        if buildpackutil.i_am_primary_instance():
+            selected_stats = [
+                self._inject_database_stats,
+                self._inject_storage_stats,
+                self._inject_health,
+            ]
+        selected_stats.append(self._inject_m2ee_stats)
+        return selected_stats
+
+
+class FreeAppsMetricsEmitterThread(BaseMetricsEmitterThread):
+    def _extract_session_metrics(self, stats):
+
+        try:
+            session_metrics = stats["mendix_runtime"]["sessions"]
+        except KeyError:
+            session_metrics = {}
+        return session_metrics
+
+    def _selected_stats_to_emit(self):
+        """
+        For free apps metrics we only care about sessions metrics.
+        We use `self._extract_session_metrics` to shrink original stats object before emitting.
+        """
+        return [self._inject_m2ee_stats, self._extract_session_metrics]

@@ -1241,7 +1241,9 @@ def start_metrics(m2ee):
                 int(metrics_interval), m2ee
             )
         else:
-            thread = metrics.MetricsEmitterThread(int(metrics_interval), m2ee)
+            thread = metrics.PaidAppsMetricsEmitterThread(
+                int(metrics_interval), m2ee
+            )
         thread.setDaemon(True)
         thread.start()
     else:
