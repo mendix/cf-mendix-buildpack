@@ -25,6 +25,11 @@ cleanup
 echo 'starting test run, tests will run in parallel and output shown at the end'
 
 export PYTHONPATH=$PWD/..:$PWD/../lib/
-nosetests --verbosity=3 --processes=10 --process-timeout=3600 --with-timer --timer-no-color usecase/test_*.py
+nosetests --verbosity=3 --processes=10 --process-timeout=3600 --timer-no-color usecase/test_*.py &
+
+# Wait for tests to finish
+MAKE_PID=$!
+./waitdot.sh $MAKE_PID
+
 
 cleanup
