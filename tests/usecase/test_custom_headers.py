@@ -151,7 +151,5 @@ class TestCaseCustomHeaderConfig(unittest.TestCase):
 
     def test_invalid_header_json(self):
         os.environ["HTTP_RESPONSE_HEADERS"] = "invalid"
-        try:
+        with self.assertRaises(ValueError):
             start.parse_headers()
-        except json.JSONDecodeError as e:
-            pass
