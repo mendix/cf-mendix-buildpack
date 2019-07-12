@@ -5,7 +5,7 @@ import json
 class TestCaseJettyConfig(basetest.BaseTest):
     def test_jetty_config(self):
         self.setUpCF(
-            "BuildpackTestApp-mx-7-16.mda",
+            "sample-6.2.0.mda",
             env_vars={
                 "BUILDPACK_XTRACE": "true",
                 "JETTY_CONFIG": json.dumps({"runtime_max_threads": 500}),
@@ -17,8 +17,7 @@ class TestCaseJettyConfig(basetest.BaseTest):
 
     def test_invalid_jetty_config(self):
         self.setUpCF(
-            "BuildpackTestApp-mx-7-16.mda",
-            env_vars={"JETTY_CONFIG": "invalid json"},
+            "sample-6.2.0.mda", env_vars={"JETTY_CONFIG": "invalid json"}
         )
         self.startApp()
         self.assert_string_in_recent_logs("Failed to configure jetty")

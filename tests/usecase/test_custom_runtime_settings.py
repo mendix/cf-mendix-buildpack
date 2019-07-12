@@ -6,7 +6,7 @@ class TestCaseCustomRuntimeSettings(basetest.BaseTest):
     def setUp(self):
         super().setUp()
         self.setUpCF(
-            "BuildpackTestApp-mx-7-16.mda",
+            "sample-6.2.0.mda",
             health_timeout=60,
             env_vars={
                 "MXRUNTIME_PersistentSessions": "True",

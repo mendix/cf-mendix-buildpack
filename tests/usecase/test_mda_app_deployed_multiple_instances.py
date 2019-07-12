@@ -4,7 +4,7 @@ import basetest
 class TestCaseMdaAppDeployed(basetest.BaseTest):
     def setUp(self):
         super().setUp()
-        self.setUpCF("BuildpackTestApp-mx-7-16.mda", instances=3)
+        self.setUpCF("sample-6.2.0.mda", instances=3)
         self.startApp()
 
     def test_mda_app_deployed_unauthorized(self):

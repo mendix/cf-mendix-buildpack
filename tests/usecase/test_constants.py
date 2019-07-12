@@ -6,7 +6,7 @@ class TestCaseConstants(basetest.BaseTest):
     def setUp(self):
         super().setUp()
         self.setUpCF(
-            "BuildpackTestApp-mx-7-16.mda",
+            "sample-6.2.0.mda",
             env_vars={
                 # has more precedence
                 "MX_AppCloudServices_OpenIdProvider": "http://localhost",
