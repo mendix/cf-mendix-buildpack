@@ -18,10 +18,7 @@ class TestCaseEmitMetrics(basetest.BaseTest):
     def test_free_apps_metrics(self):
         self.setUpCF(
             "sample-6.2.0.mda",
-            env_vars={
-                "METRICS_INTERVAL": "10",
-                "PROFILE": "free",
-            },
+            env_vars={"METRICS_INTERVAL": "10", "PROFILE": "free"},
         )
         self.startApp()
 

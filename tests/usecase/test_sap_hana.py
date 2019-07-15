@@ -78,9 +78,9 @@ class TestCaseSapHanaDryRun:
         ), "hostname mismatch. got: {}".format(config["DatabaseHost"])
         assert "DatabaseJdbcUrl" in config
         split_url = urllib.parse.urlsplit(config["DatabaseJdbcUrl"])
-        assert ("jdbc" == split_url.scheme)
-        assert ("" == split_url.netloc)
-        assert ("sap://hostname.region.subdomain.domain:21863" == split_url.path)
+        assert "jdbc" == split_url.scheme
+        assert "" == split_url.netloc
+        assert "sap://hostname.region.subdomain.domain:21863" == split_url.path
 
         queryparams = urllib.parse.parse_qs(split_url.query)
         assert expected_query_params == queryparams
@@ -102,9 +102,9 @@ class TestCaseSapHanaDryRun:
         assert "DatabaseJdbcUrl" in config
 
         split_url = urllib.parse.urlsplit(config["DatabaseJdbcUrl"])
-        assert ("jdbc" == split_url.scheme)
-        assert ("" == split_url.netloc)
-        assert ("sap://hostname.region.subdomain.domain:21863" == split_url.path)
+        assert "jdbc" == split_url.scheme
+        assert "" == split_url.netloc
+        assert "sap://hostname.region.subdomain.domain:21863" == split_url.path
 
         queryparams = urllib.parse.parse_qs(split_url.query)
         assert expected_query_params == queryparams
