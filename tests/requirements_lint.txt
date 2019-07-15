@@ -1,2 +1,2 @@
-black==18.6b4
+black==19.3b0
 flake8==3.5.0
