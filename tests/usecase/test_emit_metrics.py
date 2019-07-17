@@ -1,5 +1,11 @@
 import basetest
+import copy
 import time
+
+from unittest import TestCase
+from unittest.mock import Mock
+
+from metrics import FreeAppsMetricsEmitterThread
 
 
 class TestCaseEmitMetrics(basetest.BaseTest):
@@ -27,6 +33,16 @@ class TestCaseEmitMetrics(basetest.BaseTest):
         self.assert_string_in_recent_logs("named_users")
         self.assert_string_in_recent_logs("anonymous_sessions")
         self.assert_string_in_recent_logs("named_user_sessions")
+
+
+mock_user_session_metrics = {
+    "sessions": {
+        "named_users": 0,
+        "anonymous_sessions": 0,
+        "named_user_sessions": 0,
+        "user_sessions": {},
+    }
+}
 
 
 class TestNewMetricsFlows(basetest.BaseTest):
@@ -92,3 +108,51 @@ class TestNewMetricsFlows(basetest.BaseTest):
 
         time.sleep(10)
         self.assert_string_not_in_recent_logs("MENDIX-METRICS: ")
+
+
+class TestFreeAppsMetricsEmitter(TestCase):
+    def setUp(self):
+        interval = 10
+        m2ee = Mock()
+
+        self.metrics_emitter = FreeAppsMetricsEmitterThread(interval, m2ee)
+        self.metrics_emitter._get_munin_stats = Mock(
+            return_value=copy.deepcopy(mock_user_session_metrics)
+        )
+        self.metrics_emitter.emit = Mock()
+        self.metrics_emitter.setDaemon(True)
+
+    def test_inject_user_session_metrics(self):
+        stats = {"key": "value"}
+        expected_stats = copy.deepcopy(stats)
+        expected_stats["mendix_runtime"] = mock_user_session_metrics
+
+        stats = self.metrics_emitter._inject_user_session_metrics(stats)
+        self.assertTrue(self.metrics_emitter._get_munin_stats.called)
+        self.assertEqual(expected_stats, stats)
+
+    def test_inject_user_session_metrics_when_mendix_runtime_metrics_already_present(
+        self
+    ):
+        stats = {
+            "key": "value",
+            "mendix_runtime": {"other_key": "other_value"},
+        }
+        expected_stats = copy.deepcopy(stats)
+        expected_stats["mendix_runtime"].update(mock_user_session_metrics)
+
+        stats = self.metrics_emitter._inject_user_session_metrics(stats)
+        self.assertTrue(self.metrics_emitter._get_munin_stats.called)
+        self.assertEqual(expected_stats, stats)
+
+    def test_inject_user_session_metrics_when_exception_raised(self):
+        stats = {"key": "value"}
+        expected_stats = copy.deepcopy(stats)
+
+        with self.assertRaises(Exception):
+            self.metrics_emitter._get_munin_stats = Mock(
+                side_effect=Exception("M2EE Exception!")
+            )
+            stats = self.metrics_emitter._inject_user_session_metrics(stats)
+        self.assertTrue(self.metrics_emitter._get_munin_stats.called)
+        self.assertEqual(stats, expected_stats)
