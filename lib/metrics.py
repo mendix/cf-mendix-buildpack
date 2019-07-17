@@ -97,12 +97,22 @@ class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
     def emit(self, stats):
         self.emitter.emit(stats)
 
+    @property
     @abstractmethod
-    def _selected_stats_to_emit(self):
+    def _select_stats_to_emit(self):
         """
         This method should return a list of subclass methods.
         Those methods must return and accept, as a parameter, the 'stats' dictionary.
+        This should be later used in `_gather_metrics` method.
         :return: [self.func1, self.func2]
+        """
+        pass
+
+    @abstractmethod
+    def _gather_metrics(self):
+        """
+        This method should return a dictionary containing all metrics to be emitted.
+        :return: dict
         """
         pass
 
@@ -110,32 +120,10 @@ class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
         logger.debug(
             "Starting metrics emitter with interval %d" % self.interval
         )
-        stats_to_emit = self._selected_stats_to_emit()
         while True:
-            stats = {}
-            try:
-                for inject_method in stats_to_emit:
-                    stats = inject_method(stats)
-            except psycopg2.OperationalError as up:
-                logger.exception("METRICS: error while gathering metrics")
-                stats = {
-                    "health": {
-                        "health": 0,
-                        "diagnosis": "Database error: %s" % str(up),
-                    }
-                }
-            except Exception as e:
-                logger.exception("METRICS: error while gathering metrics")
-                stats = {
-                    "health": {
-                        "health": 4,
-                        "diagnosis": "Unable to retrieve metrics",
-                    }
-                }
-            finally:
-                stats = self._set_stats_info(stats)
-                self.emit(stats)
-
+            stats = self._gather_metrics()
+            stats = self._set_stats_info(stats)
+            self.emit(stats)
             time.sleep(self.interval)
 
     def _inject_health(self, stats):
@@ -361,7 +349,8 @@ WHERE t.schemaname='public';
 
 
 class PaidAppsMetricsEmitterThread(BaseMetricsEmitterThread):
-    def _selected_stats_to_emit(self):
+    @property
+    def _select_stats_to_emit(self):
         selected_stats = []
         if buildpackutil.i_am_primary_instance():
             selected_stats = [
@@ -372,19 +361,62 @@ class PaidAppsMetricsEmitterThread(BaseMetricsEmitterThread):
         selected_stats.append(self._inject_m2ee_stats)
         return selected_stats
 
+    def _gather_metrics(self):
+        stats = {}
+        try:
+            for inject_method in self._select_stats_to_emit:
+                stats = inject_method(stats)
+        except psycopg2.OperationalError as up:
+            logger.exception("METRICS: error while gathering metrics")
+            stats = {
+                "health": {
+                    "health": 0,
+                    "diagnosis": "Database error: {}".format(str(up)),
+                }
+            }
+        except Exception:
+            logger.exception("METRICS: error while gathering metrics")
+            stats = {
+                "health": {
+                    "health": 4,
+                    "diagnosis": "Unable to retrieve metrics",
+                }
+            }
+        finally:
+            return stats
+
 
 class FreeAppsMetricsEmitterThread(BaseMetricsEmitterThread):
-    def _extract_session_metrics(self, stats):
+    def _get_munin_stats(self):
+        m2ee_stats, _ = munin.get_stats_from_runtime(
+            self.m2ee.client, self.m2ee.config
+        )
+        return m2ee_stats
 
+    def _inject_user_session_metrics(self, stats):
+        session_metrics = {}
         try:
-            session_metrics = stats["mendix_runtime"]["sessions"]
-        except KeyError:
-            session_metrics = {}
-        return session_metrics
+            m2ee_stats = self._get_munin_stats()
+            if "sessions" in m2ee_stats.keys():
+                m2ee_stats["sessions"]["user_sessions"] = {}
+                session_metrics = m2ee_stats["sessions"]
+        except Exception:
+            logger.exception("METRICS: error while gathering runtime metrics")
+        finally:
+            # runtime metrics shouldn't be included,
+            # but if they were due to some upstream code changes,
+            # we would ensure to not override all of them.
+            if "mendix_runtime" not in stats.keys():
+                stats["mendix_runtime"] = {}
+            stats["mendix_runtime"]["sessions"] = session_metrics
+            return stats
 
-    def _selected_stats_to_emit(self):
-        """
-        For free apps metrics we only care about sessions metrics.
-        We use `self._extract_session_metrics` to shrink original stats object before emitting.
-        """
-        return [self._inject_m2ee_stats, self._extract_session_metrics]
+    @property
+    def _select_stats_to_emit(self):
+        return [self._inject_user_session_metrics]
+
+    def _gather_metrics(self):
+        stats = {}
+        for inject_method in self._select_stats_to_emit:
+            stats = inject_method(stats)
+        return stats
