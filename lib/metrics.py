@@ -372,12 +372,12 @@ class PaidAppsMetricsEmitterThread(BaseMetricsEmitterThread):
         try:
             for inject_method in self._select_stats_to_emit:
                 stats = inject_method(stats)
-        except psycopg2.OperationalError as up:
+        except psycopg2.OperationalError as exc:
             logger.exception("METRICS: error while gathering metrics")
             stats = {
                 "health": {
                     "health": 0,
-                    "diagnosis": "Database error: {}".format(str(up)),
+                    "diagnosis": "Database error: {}".format(str(exc)),
                 }
             }
         except Exception:
