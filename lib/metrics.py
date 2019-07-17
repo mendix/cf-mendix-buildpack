@@ -70,7 +70,7 @@ class MetricsServerEmitter(MetricsEmitter):
 class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
     """
     This base class contains all boilerplate code needed to emit metrics.
-    Only thing left to implement in subclass is `_selected_stats_to_emit` method.
+    One must implement in subclass `_select_stats_to_emit` property and `_gather_metrics`.
     """
 
     def __init__(self, interval, m2ee):
