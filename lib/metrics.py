@@ -172,19 +172,25 @@ class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
         return stats
 
     def _inject_m2ee_stats(self, stats):
-        m2ee_stats, java_version = munin.get_stats_from_runtime(
-            self.m2ee.client, self.m2ee.config
-        )
-        if "sessions" in m2ee_stats:
-            m2ee_stats["sessions"]["user_sessions"] = {}
-        m2ee_stats = munin.augment_and_fix_stats(
-            m2ee_stats, self.m2ee.runner.get_pid(), java_version
-        )
+        try:
+            m2ee_stats, java_version = munin.get_stats_from_runtime(
+                self.m2ee.client, self.m2ee.config
+            )
+            if "sessions" in m2ee_stats:
+                m2ee_stats["sessions"]["user_sessions"] = {}
+            m2ee_stats = munin.augment_and_fix_stats(
+                m2ee_stats, self.m2ee.runner.get_pid(), java_version
+            )
 
-        critical_logs_count = len(self.m2ee.client.get_critical_log_messages())
-        m2ee_stats["critical_logs_count"] = critical_logs_count
-        stats["mendix_runtime"] = m2ee_stats
-        return stats
+            critical_logs_count = len(
+                self.m2ee.client.get_critical_log_messages()
+            )
+            m2ee_stats["critical_logs_count"] = critical_logs_count
+            stats["mendix_runtime"] = m2ee_stats
+        except Exception:
+            logger.debug("Unable to get metrics from runtime")
+        finally:
+            return stats
 
     def _inject_storage_stats(self, stats):
         storage_stats = {}
