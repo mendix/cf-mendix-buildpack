@@ -74,7 +74,7 @@ class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
     """
 
     def __init__(self, interval, m2ee):
-        super(BaseMetricsEmitterThread, self).__init__()
+        super().__init__()
         self.interval = interval
         self.m2ee = m2ee
         self.db = None
