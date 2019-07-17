@@ -403,7 +403,7 @@ class FreeAppsMetricsEmitterThread(BaseMetricsEmitterThread):
         session_metrics = {}
         try:
             m2ee_stats = self._get_munin_stats()
-            if "sessions" in m2ee_stats.keys():
+            if "sessions" in m2ee_stats:
                 m2ee_stats["sessions"]["user_sessions"] = {}
                 session_metrics = m2ee_stats["sessions"]
         except Exception:
@@ -414,7 +414,7 @@ class FreeAppsMetricsEmitterThread(BaseMetricsEmitterThread):
             # runtime metrics shouldn't be included,
             # but if they were due to some upstream code changes,
             # we would ensure to not override all of them.
-            if "mendix_runtime" not in stats.keys():
+            if "mendix_runtime" not in stats:
                 stats["mendix_runtime"] = {}
             stats["mendix_runtime"]["sessions"] = session_metrics
             return stats
