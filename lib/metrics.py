@@ -407,7 +407,9 @@ class FreeAppsMetricsEmitterThread(BaseMetricsEmitterThread):
                 m2ee_stats["sessions"]["user_sessions"] = {}
                 session_metrics = m2ee_stats["sessions"]
         except Exception:
-            logger.exception("METRICS: error while gathering runtime metrics")
+            logger.debug(
+                "METRICS: error while gathering runtime metrics", exc_info=True
+            )
         finally:
             # runtime metrics shouldn't be included,
             # but if they were due to some upstream code changes,

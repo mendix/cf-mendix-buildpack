@@ -148,11 +148,11 @@ class TestFreeAppsMetricsEmitter(TestCase):
     def test_inject_user_session_metrics_when_exception_raised(self):
         stats = {"key": "value"}
         expected_stats = copy.deepcopy(stats)
+        expected_stats["mendix_runtime"] = {"sessions": {}}
 
-        with self.assertRaises(Exception):
-            self.metrics_emitter._get_munin_stats = Mock(
-                side_effect=Exception("M2EE Exception!")
-            )
-            stats = self.metrics_emitter._inject_user_session_metrics(stats)
+        self.metrics_emitter._get_munin_stats = Mock(
+            side_effect=Exception("M2EE Exception!")
+        )
+        stats = self.metrics_emitter._inject_user_session_metrics(stats)
         self.assertTrue(self.metrics_emitter._get_munin_stats.called)
         self.assertEqual(stats, expected_stats)
