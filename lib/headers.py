@@ -2,7 +2,7 @@ import json
 import os
 import re
 
-from m2ee import logger  # noqa: E402
+from m2ee import logger
 
 
 DEFAULT_HEADERS = {
