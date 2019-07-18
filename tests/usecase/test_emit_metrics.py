@@ -35,16 +35,6 @@ class TestCaseEmitMetrics(basetest.BaseTest):
         self.assert_string_in_recent_logs("named_user_sessions")
 
 
-mock_user_session_metrics = {
-    "sessions": {
-        "named_users": 0,
-        "anonymous_sessions": 0,
-        "named_user_sessions": 0,
-        "user_sessions": {},
-    }
-}
-
-
 class TestNewMetricsFlows(basetest.BaseTest):
     def test_fallback_flow_when_server_unreachable(self):
         self.setUpCF(
@@ -112,12 +102,20 @@ class TestNewMetricsFlows(basetest.BaseTest):
 
 class TestFreeAppsMetricsEmitter(TestCase):
     def setUp(self):
+        self.mock_user_session_metrics = {
+            "sessions": {
+                "named_users": 0,
+                "anonymous_sessions": 0,
+                "named_user_sessions": 0,
+                "user_sessions": {},
+            }
+        }
         interval = 10
         m2ee = Mock()
 
         self.metrics_emitter = FreeAppsMetricsEmitterThread(interval, m2ee)
         self.metrics_emitter._get_munin_stats = Mock(
-            return_value=copy.deepcopy(mock_user_session_metrics)
+            return_value=copy.deepcopy(self.mock_user_session_metrics)
         )
         self.metrics_emitter.emit = Mock()
         self.metrics_emitter.setDaemon(True)
@@ -125,7 +123,7 @@ class TestFreeAppsMetricsEmitter(TestCase):
     def test_inject_user_session_metrics(self):
         stats = {"key": "value"}
         expected_stats = copy.deepcopy(stats)
-        expected_stats["mendix_runtime"] = mock_user_session_metrics
+        expected_stats["mendix_runtime"] = self.mock_user_session_metrics
 
         stats = self.metrics_emitter._inject_user_session_metrics(stats)
         self.assertTrue(self.metrics_emitter._get_munin_stats.called)
@@ -139,7 +137,7 @@ class TestFreeAppsMetricsEmitter(TestCase):
             "mendix_runtime": {"other_key": "other_value"},
         }
         expected_stats = copy.deepcopy(stats)
-        expected_stats["mendix_runtime"].update(mock_user_session_metrics)
+        expected_stats["mendix_runtime"].update(self.mock_user_session_metrics)
 
         stats = self.metrics_emitter._inject_user_session_metrics(stats)
         self.assertTrue(self.metrics_emitter._get_munin_stats.called)
