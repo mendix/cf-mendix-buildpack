@@ -9,6 +9,17 @@ from metrics import FreeAppsMetricsEmitterThread
 
 
 class TestCaseEmitMetrics(basetest.BaseTest):
+    """Integration tests for metrics emission.
+
+    At the moment these tests rely on the fact that metrics are emitted via
+    stdout, when BYPASS_LOGGREGATOR and the trends-storage-server URL
+    environment variables are both set. In production we don't actually emit
+    metrics over stdout, so these tests don't accurately test the production
+    situation. However it is sufficient to prove that the metrics emitter
+    threads work as expected, just not that the metrics get to the right
+    destination.
+    """
+
     def setUp(self):
         super().setUp()
         self.setUpCF("sample-6.2.0.mda", env_vars={"METRICS_INTERVAL": "10"})
