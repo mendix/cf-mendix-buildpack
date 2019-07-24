@@ -405,7 +405,22 @@ cf restart <YOUR_APP>
 Contributing
 ====
 
-Make sure your code complies with pep8 and that no pyflakes errors/warnings are present.
+Make sure your code complies with PEP8. Make sure your code is styled using [Black](https://github.com/psf/black). 
+We enforce this using `flake8` and `black` in our travis CI. 
+
+This simplest way to use these tools is by installing them as a plugin for
+your editor; for example in Vim, one can auto-format files with `black` on writing out a buffer, and it will also display `flake8` errors.
+
+Should you prefer using the tools manually, you can invoke them using `make lint`.
+It is important to note that `black` requires a Python version > 3.6 to run, whilst the cf-mendix-buildpack currently targets
+Python 3.4.3. We aim to resolve this discrepancy soon, by making the cf-mendix-buildpack target a Python version > 3.6.
+
+In the meantime, we suggest that you run linting tools in a separate virtualenv that you use for testing/developing the buildpack.
+
+To install only the linting requirements:
+```
+pip3 install -r tests/requirements_lint.txt
+```
 
 Rebase your git history in such a way that each commit makes one consistent change. Don't include separate "fixup" commits later on.
 
