@@ -54,7 +54,7 @@ In our trial we found the service `elephantsql` which offered the free `turtle` 
 
     cf bind-service <YOUR_APP> <SERVICE_NAME>
 
-Note that not all databases are automatically picked up by the buildpack. If `cf push` returns an error like `Could not parse database credentials`, you need to set the `DATABASE_URL` variable manually using the details included in the service.
+Note that not all databases are automatically picked up by the buildpack. If `cf push` returns an error like `Could not parse database credentials`, you need to set the `DATABASE_URL` variable manually or set database [Mendix custom runtime variables](https://docs.mendix.com/refguide/custom-settings) to configure a database. Note these need to be prefixed with `MXRUNTIME_`. 
 
 Now we need to push the application once more.
 

@@ -252,6 +252,11 @@ def _set_up_postgres():
         "DatabaseHost",
     ):
         if k not in dbconfig:
+            logger.warn(
+                "Skipping database configuration for DataDog because "
+                "configuration is not found. See database_config.py "
+                "for details"
+            )
             return
     if dbconfig["DatabaseType"] != "PostgreSQL":
         return

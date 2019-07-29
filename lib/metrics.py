@@ -231,6 +231,7 @@ class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
     def _get_database_mutations(self):
         conn = self._get_db_conn()
         db_config = database_config.get_database_config()
+
         with conn.cursor() as cursor:
             cursor.execute(
                 "SELECT xact_commit, "
@@ -327,12 +328,19 @@ WHERE t.schemaname='public';
             self.db = None
 
         if not self.db:
+            # get_database config may return None or empty
             db_config = database_config.get_database_config()
+            if db_config is None or "DatabaseType" not in db_config:
+                raise Exception(
+                    "Database not set as VCAP or DATABASE_URL. Check "
+                    "documentation to see supported configuration options."
+                )
             if db_config["DatabaseType"] != "PostgreSQL":
                 raise Exception(
                     "Metrics only supports postgresql, not %s"
                     % db_config["DatabaseType"]
                 )
+
             host_and_port = db_config["DatabaseHost"].split(":")
             host = host_and_port[0]
             if len(host_and_port) > 1:
