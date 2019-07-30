@@ -470,3 +470,7 @@ def bypass_loggregator_logging():
 
 def get_metrics_url():
     return os.getenv("TRENDS_STORAGE_URL")
+
+
+def is_free_app():
+    return os.getenv("PROFILE") == "free"
