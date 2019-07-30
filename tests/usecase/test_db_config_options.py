@@ -1,11 +1,8 @@
-import logging
 import os
-from nose import with_setup
 from database_config import get_database_config
 
 
 class TestDatabaseConfigOptions:
-
     def clean_env(self):
         """
         Setting different environment variables for test in the same process
@@ -14,25 +11,26 @@ class TestDatabaseConfigOptions:
         if "DATABASE_URL" in os.environ.keys():
             del os.environ["DATABASE_URL"]
 
-        for key in filter(lambda x: x.startswith("MXRUNTIME_Database"), list(os.environ.keys())):
+        for key in filter(
+            lambda x: x.startswith("MXRUNTIME_Database"),
+            list(os.environ.keys()),
+        ):
             del os.environ[key]
 
-
     def test_no_setup(self):
-        self.clean_env();
+        self.clean_env()
         try:
             config = get_database_config()
             assert config is None
         except Exception as e:
             assert "Can't find database configuration" in str(e)
 
-
     def test_mx_runtime_db_config(self):
         """
         Test is MXRUNTIME variables are set up no database configuration is returned
         based on DATABASE_URL or VCAP_SERVICES
         """
-        self.clean_env();
+        self.clean_env()
         os.environ["MXRUNTIME_DatabaseType"] = "PostgreSQL"
         os.environ[
             "MXRUNTIME_DatabaseJdbcUrl"
@@ -41,18 +39,20 @@ class TestDatabaseConfigOptions:
         config = get_database_config()
         assert config is None
 
-
     def test_database_url(self):
-        self.clean_env();
-        os.environ["DATABASE_URL"] = "jdbc:postgres://user:secret@host/database"
+        self.clean_env()
+        os.environ[
+            "DATABASE_URL"
+        ] = "jdbc:postgres://user:secret@host/database"
 
         config = get_database_config()
         assert config is not None
 
-
     def test_vcap(self):
-        self.clean_env();
-        os.environ["VCAP_SERVICES"] = """
+        self.clean_env()
+        os.environ[
+            "VCAP_SERVICES"
+        ] = """
 {
  "rds-testfree": [
    {
