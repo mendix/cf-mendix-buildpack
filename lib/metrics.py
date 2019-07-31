@@ -331,7 +331,7 @@ WHERE t.schemaname='public';
             # get_database config may return None or empty
             db_config = database_config.get_database_config()
             if not db_config or "DatabaseType" not in db_config:
-                raise Exception(
+                raise ValueError(
                     "Database not set as VCAP or DATABASE_URL. Check "
                     "documentation to see supported configuration options."
                 )
