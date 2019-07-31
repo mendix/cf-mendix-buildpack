@@ -673,7 +673,7 @@ def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
     runtime_db_config = database_config.get_database_config(
         development_mode=is_development_mode()
     )
-    if runtime_db_config is not None:
+    if runtime_db_config:
         mxruntime_config.update(runtime_db_config)
 
     mxruntime_config.update(get_filestore_config(m2ee))

@@ -58,10 +58,10 @@ class DatabaseConfigurationFactory:
 
         # fallback to original configuration
         url = self.get_database_uri_from_vcap(self.vcap_services)
-        if url is None and "DATABASE_URL" in os.environ:
+        if not url and "DATABASE_URL" in os.environ:
             url = os.environ["DATABASE_URL"]
 
-        if url is not None:
+        if url:
             return UrlDatabaseConfiguration(url)
 
         return None
