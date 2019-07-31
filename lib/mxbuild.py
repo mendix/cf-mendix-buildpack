@@ -1,8 +1,8 @@
 import buildpackutil
-import logger
 import os
 import subprocess
 import time
+from m2ee import logger
 
 
 def start_mxbuild_server(dot_local_location, mx_version):
