@@ -9,13 +9,15 @@ from m2ee import logger  # noqa: E402
 
 
 def get_database_config(development_mode=False):
-    # the following options are validated to get database credentials
-    # 1) existence of custom runtime settings Database.... values
-    # 2) VCAP with database credentials
-    # 3) existence of DATABASE_URL
-    #
-    # In case we find MXRUNTIME_Database.... values we don't interfere and
-    # return nothing. VCAP or DATABASE_URL return m2ee configuration
+    """
+    the following options are validated to get database credentials
+    1) existence of custom runtime settings Database.... values
+    2) VCAP with database credentials
+    3) existence of DATABASE_URL env var
+
+    In case we find MXRUNTIME_Database.... values we don't interfere and
+    return nothing. VCAP or DATABASE_URL return m2ee configuration
+    """
     if any(
         [x.startswith("MXRUNTIME_Database") for x in list(os.environ.keys())]
     ):
@@ -29,10 +31,10 @@ def get_database_config(development_mode=False):
 
     if configuration:
         m2ee_config = configuration.get_m2ee_configuration()
-        if m2ee_config is not None and "DatabaseType" in m2ee_config:
+        if m2ee_config and "DatabaseType" in m2ee_config:
             return m2ee_config
 
-    raise Exception(
+    raise RuntimeError(
         "Can't find database configuration from environment variables. "
         "Check README for supported configuration options."
     )

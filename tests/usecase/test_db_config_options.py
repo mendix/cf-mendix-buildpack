@@ -1,8 +1,9 @@
 import os
+import unittest
 from database_config import get_database_config
 
 
-class TestDatabaseConfigOptions:
+class TestDatabaseConfigOptions(unittest.TestCase):
     def clean_env(self):
         """
         Setting different environment variables for test in the same process
@@ -19,11 +20,8 @@ class TestDatabaseConfigOptions:
 
     def test_no_setup(self):
         self.clean_env()
-        try:
-            config = get_database_config()
-            assert config is None
-        except Exception as e:
-            assert "Can't find database configuration" in str(e)
+        with self.assertRaises(RuntimeError):
+            get_database_config()
 
     def test_mx_runtime_db_config(self):
         """

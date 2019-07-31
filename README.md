@@ -54,7 +54,12 @@ In our trial we found the service `elephantsql` which offered the free `turtle` 
 
     cf bind-service <YOUR_APP> <SERVICE_NAME>
 
-Note that not all databases are automatically picked up by the buildpack. If `cf push` returns an error like `Could not parse database credentials`, you need to set the `DATABASE_URL` variable manually or set database [Mendix custom runtime variables](https://docs.mendix.com/refguide/custom-settings) to configure a database. Note these need to be prefixed with `MXRUNTIME_`. 
+Note that not all databases are automatically picked up by the buildpack. If `cf push` returns an error like `Could not parse database credentials`, you need to set the `DATABASE_URL` variable manually or set database [Mendix custom runtime variables](https://docs.mendix.com/refguide/custom-settings) to configure a database. Note these variables need to be prefixed with `MXRUNTIME_`, as per example:
+
+    cf set-env <YOUR_APP> MXRUNTIME_DatabaseType PostgreSQL
+    cf set-env <YOUR_APP> MXRUNTIME_DatabaseJdbcUrl postgres://host/databasename
+    cf set-env <YOUR_APP> MXRUNTIME_DatabaseUsername user
+    cf set-env <YOUR_APP> MXRUNTIME_DatabasePassword password
 
 Now we need to push the application once more.
 
@@ -405,8 +410,8 @@ cf restart <YOUR_APP>
 Contributing
 ====
 
-Make sure your code complies with PEP8. Make sure your code is styled using [Black](https://github.com/psf/black). 
-We enforce this using `flake8` and `black` in our travis CI. 
+Make sure your code complies with PEP8. Make sure your code is styled using [Black](https://github.com/psf/black).
+We enforce this using `flake8` and `black` in our travis CI.
 
 This simplest way to use these tools is by installing them as a plugin for
 your editor; for example in Vim, one can auto-format files with `black` on writing out a buffer, and it will also display `flake8` errors.
