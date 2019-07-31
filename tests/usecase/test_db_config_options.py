@@ -35,7 +35,7 @@ class TestDatabaseConfigOptions(unittest.TestCase):
         ] = "postgres://username:password@rdsbroker-testfree-nonprod-1-eu-west-1.asdbjasdg.eu-west-1.rds.amazonaws.com:5432/testdatabase"  # noqa E501
 
         config = get_database_config()
-        assert config is None
+        assert not config
 
     def test_database_url(self):
         self.clean_env()
@@ -44,7 +44,8 @@ class TestDatabaseConfigOptions(unittest.TestCase):
         ] = "jdbc:postgres://user:secret@host/database"
 
         config = get_database_config()
-        assert config is not None
+        assert config
+        assert config["DatabaseType"] == "PostgreSQL"
 
     def test_vcap(self):
         self.clean_env()
@@ -80,4 +81,5 @@ class TestDatabaseConfigOptions(unittest.TestCase):
     """  # noqa
 
         config = get_database_config()
-        assert config is not None
+        assert config
+        assert config["DatabaseType"] == "PostgreSQL"
