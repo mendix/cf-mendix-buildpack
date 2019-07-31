@@ -10,6 +10,7 @@ class TestCaseJavaCrashRestartsProcess(basetest.BaseTest):
             env_vars={
                 "DEPLOY_PASSWORD": self.mx_password,
                 "METRICS_INTERVAL": "10",
+                "BUILDPACK_XTRACE": "false",
             },
         )
         self.startApp()
