@@ -96,6 +96,7 @@ class TestJDKVersions(basetest.BaseTest):
             env_vars={"DEPLOY_PASSWORD": self.mx_password},
         )
         self.startApp()
+        self.wait_for_mxbuild()
 
         self.cmd(
             (

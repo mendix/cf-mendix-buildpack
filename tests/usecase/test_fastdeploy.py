@@ -1,6 +1,5 @@
 import basetest
 import requests
-import time
 
 
 class TestCaseFastdeploy(basetest.BaseTest):
@@ -16,6 +15,8 @@ class TestCaseFastdeploy(basetest.BaseTest):
         self.startApp()
 
     def test_fast_deploy(self):
+        self.wait_for_mxbuild()
+
         self.cmd(
             (
                 "wget",
@@ -24,20 +25,8 @@ class TestCaseFastdeploy(basetest.BaseTest):
                 "/mx-buildpack-ci/ci-buildpack-test-app-mx7-18-3.mpk",
             )
         )
+
         full_uri = "https://" + self.app_name + "/_mxbuild/"
-
-        max = 12
-        for attempt in range(0, max):
-            time.sleep(10)
-            r = requests.get(full_uri, auth=("deploy", self.mx_password))
-            if r.status_code == 501:
-                break
-            if attempt == max - 1:
-                raise Exception("Starting MxBuild takes too long")
-
-        # making sure mxbuild is ready
-        time.sleep(10)
-
         r = requests.post(
             full_uri,
             auth=("deploy", self.mx_password),

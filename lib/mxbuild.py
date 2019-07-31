@@ -1,6 +1,8 @@
 import buildpackutil
-import subprocess
+import logger
 import os
+import subprocess
+import time
 
 
 def start_mxbuild_server(dot_local_location, mx_version):
@@ -17,7 +19,7 @@ def start_mxbuild_server(dot_local_location, mx_version):
     jvm_location = buildpackutil.ensure_and_get_jvm(
         mx_version, cache, dot_local_location, package="jdk"
     )
-    subprocess.Popen(
+    process = subprocess.Popen(
         [
             os.path.join(mono_location, "bin/mono"),
             "--config",
@@ -30,3 +32,11 @@ def start_mxbuild_server(dot_local_location, mx_version):
         ],
         env=mono_env,
     )
+    # give mxbuild a few seconds to init, then check if we are still running
+    time.sleep(5)
+    poll = process.poll()
+    if poll is not None:
+        raise Exception(
+            "MxBuild did not start and returned code %d".format(poll)
+        )
+    logger.info("MxBuild is running and warming up")

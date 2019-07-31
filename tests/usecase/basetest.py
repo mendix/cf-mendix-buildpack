@@ -6,6 +6,7 @@ import unittest
 import uuid
 import requests
 import tempfile
+import time
 
 
 class BaseTest(unittest.TestCase):
@@ -161,6 +162,7 @@ class BaseTest(unittest.TestCase):
             "DEVELOPMENT_MODE": "true",
             "S3_USE_SSE": "true",
             "USE_DATA_SNAPSHOT": "true",
+            "BUILDPACK_XTRACE": "true",
         }
 
         if env_vars is not None:
@@ -177,6 +179,22 @@ class BaseTest(unittest.TestCase):
                 json.dumps({"environment_json": environment}),
             )
         )
+
+    def wait_for_mxbuild(self):
+        """Wait for mxbuild to start, raise exception after ~2 minutes"""
+        mxbuild_uri = "https://" + self.app_name + "/_mxbuild/"
+
+        max = 12
+        for attempt in range(0, max):
+            time.sleep(10)
+            r = requests.get(mxbuild_uri, auth=("deploy", self.mx_password))
+            if r.status_code == 501:
+                break
+            if attempt == max - 1:
+                raise Exception("Starting MxBuild takes too long")
+
+        # give mxbuild a little more time
+        time.sleep(10)
 
     def tearDown(self):
         self.cmd(("./delete-app.sh", self.app_name))

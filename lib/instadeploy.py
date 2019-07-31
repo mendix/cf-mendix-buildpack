@@ -63,7 +63,7 @@ class InstaDeployThread(threading.Thread):
         self.mx_version = mx_version
 
     def run(self):
-        logger.debug("Going to start mxbuild in serve mode")
+        logger.info("Launching mxbuild in server mode")
         mxbuild.start_mxbuild_server(
             os.path.join(os.getcwd(), ".local"), self.mx_version
         )
