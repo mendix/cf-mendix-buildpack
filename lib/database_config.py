@@ -9,15 +9,35 @@ from m2ee import logger  # noqa: E402
 
 
 def get_database_config(development_mode=False):
+    """
+    the following options are validated to get database credentials
+    1) existence of custom runtime settings Database.... values
+    2) VCAP with database credentials
+    3) existence of DATABASE_URL env var
+
+    In case we find MXRUNTIME_Database.... values we don't interfere and
+    return nothing. VCAP or DATABASE_URL return m2ee configuration
+    """
     if any(
         [x.startswith("MXRUNTIME_Database") for x in list(os.environ.keys())]
     ):
+        logging.debug(
+            "Detected database configuration using custom runtime settings."
+        )
         return None
 
     factory = DatabaseConfigurationFactory()
     configuration = factory.get_instance()
 
-    return configuration.get_m2ee_configuration()
+    if configuration:
+        m2ee_config = configuration.get_m2ee_configuration()
+        if m2ee_config and "DatabaseType" in m2ee_config:
+            return m2ee_config
+
+    raise RuntimeError(
+        "Can't find database configuration from environment variables. "
+        "Check README for supported configuration options."
+    )
 
 
 class DatabaseConfigurationFactory:
@@ -38,10 +58,10 @@ class DatabaseConfigurationFactory:
 
         # fallback to original configuration
         url = self.get_database_uri_from_vcap(self.vcap_services)
-        if url is None:
+        if not url and "DATABASE_URL" in os.environ:
             url = os.environ["DATABASE_URL"]
 
-        if url is not None:
+        if url:
             return UrlDatabaseConfiguration(url)
 
         return None

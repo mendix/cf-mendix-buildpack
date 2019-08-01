@@ -29,7 +29,7 @@ from m2ee import M2EE, logger  # noqa: E402
 from nginx import get_path_config, gen_htpasswd  # noqa: E402
 from buildpackutil import i_am_primary_instance  # noqa: E402
 
-BUILDPACK_VERSION = "3.5.0"
+BUILDPACK_VERSION = "3.6.0"
 
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
@@ -667,11 +667,15 @@ def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
 
     buildpackutil.mkdir_p(os.path.join(os.getcwd(), "model", "resources"))
     mxruntime_config.update(app_config)
-    mxruntime_config.update(
-        database_config.get_database_config(
-            development_mode=is_development_mode()
-        )
+
+    # db configuration might be None, database should then be set up with
+    # MXRUNTIME_Database... custom runtime settings.
+    runtime_db_config = database_config.get_database_config(
+        development_mode=is_development_mode()
     )
+    if runtime_db_config:
+        mxruntime_config.update(runtime_db_config)
+
     mxruntime_config.update(get_filestore_config(m2ee))
     mxruntime_config.update(get_certificate_authorities())
     mxruntime_config.update(get_client_certificates())
