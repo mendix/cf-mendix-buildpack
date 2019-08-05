@@ -45,7 +45,9 @@ class BaseTest(unittest.TestCase):
         )
         self.mx_password = os.environ.get("MX_PASSWORD", "Y0l0lop13#123")
         self.app_id = str(uuid.uuid4()).split("-")[0]
-        self.subdomain = "ops-" + self.app_id
+
+        self.app_prefix = os.environ.get("TEST_PREFIX", "ops-")
+        self.subdomain = "{}-{}".format(self.app_prefix, self.app_id)
         self.app_name = "%s.%s" % (self.subdomain, self.cf_domain)
 
     def setUp(self):
