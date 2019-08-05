@@ -48,7 +48,7 @@ class BaseTest(unittest.TestCase):
 
         self.app_prefix = os.environ.get("TEST_PREFIX", "ops-")
         self.subdomain = "{}-{}".format(self.app_prefix, self.app_id)
-        self.app_name = "%s.%s" % (self.subdomain, self.cf_domain)
+        self.app_name = "{}.{}".format(self.subdomain, self.cf_domain)
 
     def setUp(self):
         self.cf_home = tempfile.TemporaryDirectory()
