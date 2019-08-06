@@ -1093,7 +1093,7 @@ def configure_debugger(m2ee):
     response.display_error()
     if not response.has_error():
         logger.info(
-            "The remote debugger is now enabled as set with "
+            "The remote debugger is now enabled with the value from "
             "environment variable DEBUGGER_PASSWORD."
         )
         logger.debug("The password to use is %s" % debugger_password)
