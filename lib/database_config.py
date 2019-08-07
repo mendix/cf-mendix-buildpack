@@ -4,7 +4,7 @@ import os
 import re
 import buildpackutil
 from abc import abstractmethod, ABC
-from urllib.parse import parse_qs, urlencode
+from urllib.parse import parse_qs, urlencode, unquote
 from m2ee import logger  # noqa: E402
 
 
@@ -139,8 +139,8 @@ class DatabaseConfiguration(ABC):
         m2ee_config = {
             "DatabaseType": self.get_database_type(),
             "DatabaseHost": self.get_database_host(),
-            "DatabaseUserName": self.get_database_username(),
-            "DatabasePassword": self.get_database_password(),
+            "DatabaseUserName": unquote(self.get_database_username()),
+            "DatabasePassword": unquote(self.get_database_password()),
             "DatabaseName": self.get_database_name(),
             "DatabaseJdbcUrl": self.get_database_jdbc_url(),
         }
