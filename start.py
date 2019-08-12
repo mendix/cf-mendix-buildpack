@@ -1093,8 +1093,11 @@ def configure_debugger(m2ee):
     response.display_error()
     if not response.has_error():
         logger.info(
-            "The remote debugger is now enabled, the password to "
-            "use is %s" % debugger_password
+            "The remote debugger is now enabled with the value from "
+            "environment variable DEBUGGER_PASSWORD."
+        )
+        logger.debug(
+            "The password to use is {}".format(debugger_password)
         )
         logger.info(
             "You can use the remote debugger option in the Mendix "
