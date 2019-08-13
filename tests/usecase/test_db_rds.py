@@ -80,7 +80,6 @@ class TestCaseRdsDryRun:
         assert config["DatabaseName"] == "dbuajsdhkasdhaks"
         assert config["DatabaseJdbcUrl"].find("tcpKeepAlive") >= 0
 
-
     def test_rds_testfree_postgres_urlencoded(self):
         os.environ["VCAP_SERVICES"] = self.urlencoded_rds_vcap_example
 
