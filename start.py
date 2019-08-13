@@ -1096,9 +1096,7 @@ def configure_debugger(m2ee):
             "The remote debugger is now enabled with the value from "
             "environment variable DEBUGGER_PASSWORD."
         )
-        logger.debug(
-            "The password to use is {}".format(debugger_password)
-        )
+        logger.debug("The password to use is {}".format(debugger_password))
         logger.info(
             "You can use the remote debugger option in the Mendix "
             "Business Modeler to connect to the /debugger/ sub "
