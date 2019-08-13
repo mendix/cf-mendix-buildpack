@@ -29,7 +29,7 @@ from m2ee import M2EE, logger  # noqa: E402
 from nginx import get_path_config, gen_htpasswd  # noqa: E402
 from buildpackutil import i_am_primary_instance  # noqa: E402
 
-BUILDPACK_VERSION = "3.6.0"
+BUILDPACK_VERSION = "3.6.1"
 
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
@@ -1093,9 +1093,10 @@ def configure_debugger(m2ee):
     response.display_error()
     if not response.has_error():
         logger.info(
-            "The remote debugger is now enabled, the password to "
-            "use is %s" % debugger_password
+            "The remote debugger is now enabled with the value from "
+            "environment variable DEBUGGER_PASSWORD."
         )
+        logger.debug("The password to use is {}".format(debugger_password))
         logger.info(
             "You can use the remote debugger option in the Mendix "
             "Business Modeler to connect to the /debugger/ sub "

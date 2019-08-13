@@ -13,9 +13,11 @@ fi
 cf login -a "$CF_ENDPOINT" -u "$CF_USER" -p "$CF_PASSWORD" -o "$CF_ORG" -s "$CF_SPACE" > /dev/null
 
 function cleanup {
+    PREFIX=`echo ${TEST_PREFIX:-ops} | sed -e 's/-$//'`
+
     echo "begin clean up of environment"
-    cf apps 2>&1 | grep ops- | awk '{print $1}' | xargs -n 1 -P 5 --no-run-if-empty cf delete -r -f | grep -v 'OK' || true
-    cf s 2>&1 | grep ops- | awk '{print $1}' | xargs -n 1 -P 5 --no-run-if-empty cf ds -f $service | grep -v 'OK' || true
+    cf apps 2>&1 | grep "${PREFIX}-" | awk '{print $1}' | xargs -n 1 -P 5 --no-run-if-empty cf delete -r -f | grep -v 'OK' || true
+    cf s 2>&1 | grep "${PREFIX}-" | awk '{print $1}' | xargs -n 1 -P 5 --no-run-if-empty cf ds -f $service | grep -v 'OK' || true
     cf delete-orphaned-routes -f 2>&1 | grep -i deleting || true
     echo "completed environment clean up"
 }
