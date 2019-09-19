@@ -59,10 +59,7 @@ def enable_runtime_agent(m2ee):
                 )
         jar = os.path.abspath(".local/datadog/{}".format(MX_AGENT_JAR))
         m2ee.config._conf["m2ee"]["javaopts"].extend(
-            [
-                "-javaagent:{}{}".format(jar, agent_config),
-                "-Xbootclasspath/a:{}".format(jar),
-            ]
+            ["-javaagent:{}{}".format(jar, agent_config)]
         )
         # if not explicitly set, default to statsd
         m2ee.config._conf["mxruntime"].setdefault(
