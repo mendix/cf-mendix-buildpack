@@ -29,7 +29,7 @@ from m2ee import M2EE, logger  # noqa: E402
 from nginx import get_path_config, gen_htpasswd  # noqa: E402
 from buildpackutil import i_am_primary_instance  # noqa: E402
 
-BUILDPACK_VERSION = "3.6.1"
+BUILDPACK_VERSION = "3.6.2"
 
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
