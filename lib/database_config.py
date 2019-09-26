@@ -401,7 +401,7 @@ class SapHanaDatabaseConfiguration(DatabaseConfiguration):
     def get_database_jdbc_url(self):
         """Return the database jdbc url for the M2EE configuration"""
         url = self.credentials.get("url", "")
-        pattern = r"jdbc:sap://(?P<host>[^:]+):(?P<port>[0-9]+)(?P<q>\?(?P<params>.*))?$"
+        pattern = r"jdbc:sap://(?P<host>[^:]+):(?P<port>[0-9]+)/?(?P<q>\?(?P<params>.*))?$"
         match = re.search(pattern, url)
         if match is None:
             logger.error("Unable to parse Hana JDBC url string for parameters")
