@@ -126,9 +126,15 @@ class DatabaseConfigurationFactory:
 class DatabaseConfiguration(ABC):
     """Base clase for database configurations. Implements only the basics."""
 
-    def __init__(self):
+    def __init__(self, env_vars=None):
+        """env_vars may be copy of the environment variables, os.environ, for unit testing"""
+        if env_vars:
+            self.env_vars = env_vars
+        else:
+            self.env_vars = os.environ
+
         self.development_mode = (
-            os.getenv("DEVELOPMENT_MODE", "").lower() == "true"
+            self.env_vars.get("DEVELOPMENT_MODE", "").lower() == "true"
         )
 
     def get_m2ee_configuration(self):
@@ -169,7 +175,7 @@ class DatabaseConfiguration(ABC):
         return filter_m2ee_config
 
     def get_override_connection_parameters(self):
-        params_str = os.getenv("DATABASE_CONNECTION_PARAMS", "{}")
+        params_str = self.env_vars.get("DATABASE_CONNECTION_PARAMS", "{}")
         try:
             params = json.loads(params_str)
             return params
@@ -227,8 +233,8 @@ class DatabaseConfiguration(ABC):
 class UrlDatabaseConfiguration(DatabaseConfiguration):
     """Returns a database configuration based on the original code from buildpackutil."""
 
-    def __init__(self, url):
-        super().__init__()
+    def __init__(self, url, env_vars=None):
+        super().__init__(env_vars)
         logging.debug("Detected URL based database configuration.")
         self.url = url
 
@@ -284,7 +290,9 @@ class UrlDatabaseConfiguration(DatabaseConfiguration):
         if database_type == "PostgreSQL":
             jdbc_params.update({"tcpKeepAlive": "true"})
 
-        extra_url_params_str = os.getenv("DATABASE_CONNECTION_PARAMS", "{}")
+        extra_url_params_str = self.env_vars.get(
+            "DATABASE_CONNECTION_PARAMS", "{}"
+        )
         if extra_url_params_str is not None:
             try:
                 extra_url_params = json.loads(extra_url_params_str)
@@ -368,8 +376,8 @@ class SapHanaDatabaseConfiguration(DatabaseConfiguration):
 
     database_type = "SAPHANA"
 
-    def __init__(self, credentials):
-        super().__init__()
+    def __init__(self, credentials, env_vars=None):
+        super().__init__(env_vars)
         logging.debug("Detected SAP Hana configuration.")
         self.credentials = credentials
 
@@ -393,7 +401,7 @@ class SapHanaDatabaseConfiguration(DatabaseConfiguration):
     def get_database_jdbc_url(self):
         """Return the database jdbc url for the M2EE configuration"""
         url = self.credentials.get("url", "")
-        pattern = r"jdbc:sap://(?P<host>[^:]+):(?P<port>[0-9]+)(?P<q>\?(?P<params>.*))?$"
+        pattern = r"jdbc:sap://(?P<host>[^:]+):(?P<port>[0-9]+)/?(?P<q>\?(?P<params>.*))?$"
         match = re.search(pattern, url)
         if match is None:
             logger.error("Unable to parse Hana JDBC url string for parameters")
