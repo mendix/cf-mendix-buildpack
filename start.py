@@ -29,7 +29,7 @@ from m2ee import M2EE, logger  # noqa: E402
 from nginx import get_path_config, gen_htpasswd  # noqa: E402
 from buildpackutil import i_am_primary_instance  # noqa: E402
 
-BUILDPACK_VERSION = "3.6.3"
+BUILDPACK_VERSION = "3.6.4"
 
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
@@ -1244,36 +1244,36 @@ def complete_start_procedure_safe_to_use_for_restart(m2ee):
 
 
 if __name__ == "__main__":
-    if os.getenv("CF_INSTANCE_INDEX") is None:
-        logger.warning(
-            "CF_INSTANCE_INDEX environment variable not found. Assuming "
-            "responsibility for scheduled events execution and database "
-            "synchronization commands."
-        )
-    pre_process_m2ee_yaml()
-    activate_license()
-    m2ee = set_up_m2ee_client(buildpackutil.get_vcap_data())
-
-    def sigterm_handler(_signo, _stack_frame):
-        m2ee.stop()
-        sys.exit(0)
-
-    def sigusr_handler(_signo, _stack_frame):
-        if _signo == signal.SIGUSR1:
-            emit(jvm={"errors": 1.0})
-        elif _signo == signal.SIGUSR2:
-            emit(jvm={"ooms": 1.0})
-        else:
-            # Should not happen
-            pass
-        m2ee.stop()
-        sys.exit(1)
-
-    signal.signal(signal.SIGTERM, sigterm_handler)
-    signal.signal(signal.SIGUSR1, sigusr_handler)
-    signal.signal(signal.SIGUSR2, sigusr_handler)
-
     try:
+        if os.getenv("CF_INSTANCE_INDEX") is None:
+            logger.warning(
+                "CF_INSTANCE_INDEX environment variable not found. Assuming "
+                "responsibility for scheduled events execution and database "
+                "synchronization commands."
+            )
+        pre_process_m2ee_yaml()
+        activate_license()
+        m2ee = set_up_m2ee_client(buildpackutil.get_vcap_data())
+
+        def sigterm_handler(_signo, _stack_frame):
+            m2ee.stop()
+            sys.exit(0)
+
+        def sigusr_handler(_signo, _stack_frame):
+            if _signo == signal.SIGUSR1:
+                emit(jvm={"errors": 1.0})
+            elif _signo == signal.SIGUSR2:
+                emit(jvm={"ooms": 1.0})
+            else:
+                # Should not happen
+                pass
+            m2ee.stop()
+            sys.exit(1)
+
+        signal.signal(signal.SIGTERM, sigterm_handler)
+        signal.signal(signal.SIGUSR1, sigusr_handler)
+        signal.signal(signal.SIGUSR2, sigusr_handler)
+
         service_backups()
         set_up_nginx_files(m2ee)
         telegraf.run()
