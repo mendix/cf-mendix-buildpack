@@ -2,6 +2,7 @@ import errno
 import json
 import logging
 import os
+import platform
 import subprocess
 import sys
 from distutils.util import strtobool
@@ -327,8 +328,13 @@ def ensure_and_get_mono(mx_version, cache_dir):
         mono_location = _get_mono_path("/tmp/opt", mono_version)
     except NotFoundException:
         logging.debug("Mono not found in default locations")
+        linux_version = platform.linux_distribution()[2]
+        if linux_version == "bionic":
+          cdn_path = "/mx-buildserver/"
+        else:
+          cdn_path = "/mx-buildpack/"
         download_and_unpack(
-            get_blobstore_url("/mx-buildpack/" + mono_version + "-mx.tar.gz"),
+            get_blobstore_url(cdn_path + mono_version + "-mx.tar.gz"),
             os.path.join(fallback_location, mono_version),
             cache_dir,
         )
