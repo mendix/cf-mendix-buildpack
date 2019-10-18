@@ -45,6 +45,7 @@ class TestCaseAccessRestrictions(basetest.BaseTest):
         for ip in r.json()["results"]["records"]:
             myips.add("%s/32" % ip)
         try:
+            myips.add(requests.get("https://myipv4.mendix.com/").text + "/32")
             myips.add(requests.get("https://myipv6.mendix.com/").text + "/128")
         except Exception:
             pass
