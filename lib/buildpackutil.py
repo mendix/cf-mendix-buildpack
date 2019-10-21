@@ -330,9 +330,9 @@ def ensure_and_get_mono(mx_version, cache_dir):
         logging.debug("Mono not found in default locations")
         linux_version = platform.linux_distribution()[2]
         if linux_version == "bionic":
-          cdn_path = "/mx-buildserver/"
+            cdn_path = "/mx-buildserver/"
         else:
-          cdn_path = "/mx-buildpack/"
+            cdn_path = "/mx-buildpack/"
         download_and_unpack(
             get_blobstore_url(cdn_path + mono_version + "-mx.tar.gz"),
             os.path.join(fallback_location, mono_version),
