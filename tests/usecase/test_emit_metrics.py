@@ -1,8 +1,25 @@
 import basetest
+import copy
 import time
+
+from unittest import TestCase
+from unittest.mock import Mock
+
+from metrics import FreeAppsMetricsEmitterThread
 
 
 class TestCaseEmitMetrics(basetest.BaseTest):
+    """Integration tests for metrics emission.
+
+    At the moment these tests rely on the fact that metrics are emitted via
+    stdout, when BYPASS_LOGGREGATOR and the trends-storage-server URL
+    environment variables are both set. In production we don't actually emit
+    metrics over stdout, so these tests don't accurately test the production
+    situation. However it is sufficient to prove that the metrics emitter
+    threads work as expected, just not that the metrics get to the right
+    destination.
+    """
+
     def setUp(self):
         super().setUp()
         self.setUpCF("sample-6.2.0.mda", env_vars={"METRICS_INTERVAL": "10"})
@@ -14,6 +31,19 @@ class TestCaseEmitMetrics(basetest.BaseTest):
         self.assert_string_in_recent_logs("storage")
         self.assert_string_in_recent_logs("number_of_files")
         self.assert_string_in_recent_logs("critical_logs_count")
+
+    def test_free_apps_metrics(self):
+        self.setUpCF(
+            "sample-6.2.0.mda",
+            env_vars={"METRICS_INTERVAL": "10", "PROFILE": "free"},
+        )
+        self.startApp()
+
+        time.sleep(10)
+        self.assert_string_in_recent_logs("MENDIX-METRICS: ")
+        self.assert_string_in_recent_logs("named_users")
+        self.assert_string_in_recent_logs("anonymous_sessions")
+        self.assert_string_in_recent_logs("named_user_sessions")
 
 
 class TestNewMetricsFlows(basetest.BaseTest):
@@ -79,3 +109,59 @@ class TestNewMetricsFlows(basetest.BaseTest):
 
         time.sleep(10)
         self.assert_string_not_in_recent_logs("MENDIX-METRICS: ")
+
+
+class TestFreeAppsMetricsEmitter(TestCase):
+    def setUp(self):
+        self.mock_user_session_metrics = {
+            "sessions": {
+                "named_users": 0,
+                "anonymous_sessions": 0,
+                "named_user_sessions": 0,
+                "user_sessions": {},
+            }
+        }
+        interval = 10
+        m2ee = Mock()
+
+        self.metrics_emitter = FreeAppsMetricsEmitterThread(interval, m2ee)
+        self.metrics_emitter._get_munin_stats = Mock(
+            return_value=copy.deepcopy(self.mock_user_session_metrics)
+        )
+        self.metrics_emitter.emit = Mock()
+        self.metrics_emitter.setDaemon(True)
+
+    def test_inject_user_session_metrics(self):
+        stats = {"key": "value"}
+        expected_stats = copy.deepcopy(stats)
+        expected_stats["mendix_runtime"] = self.mock_user_session_metrics
+
+        stats = self.metrics_emitter._inject_user_session_metrics(stats)
+        self.assertTrue(self.metrics_emitter._get_munin_stats.called)
+        self.assertEqual(expected_stats, stats)
+
+    def test_inject_user_session_metrics_when_mendix_runtime_metrics_already_present(
+        self
+    ):
+        stats = {
+            "key": "value",
+            "mendix_runtime": {"other_key": "other_value"},
+        }
+        expected_stats = copy.deepcopy(stats)
+        expected_stats["mendix_runtime"].update(self.mock_user_session_metrics)
+
+        stats = self.metrics_emitter._inject_user_session_metrics(stats)
+        self.assertTrue(self.metrics_emitter._get_munin_stats.called)
+        self.assertEqual(expected_stats, stats)
+
+    def test_inject_user_session_metrics_when_exception_raised(self):
+        stats = {"key": "value"}
+        expected_stats = copy.deepcopy(stats)
+        expected_stats["mendix_runtime"] = {"sessions": {}}
+
+        self.metrics_emitter._get_munin_stats = Mock(
+            side_effect=Exception("M2EE Exception!")
+        )
+        stats = self.metrics_emitter._inject_user_session_metrics(stats)
+        self.assertTrue(self.metrics_emitter._get_munin_stats.called)
+        self.assertEqual(stats, expected_stats)

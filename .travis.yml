@@ -3,19 +3,30 @@ dist: trusty
 
 language: python
 
-python:
-  - "3.6"
+stages:
+  - lint
+  - test
 
-install: 'pip3 install -r tests/requirements.txt'
-
-before_script:
-  - wget --quiet "https://packages.cloudfoundry.org/stable?release=debian64&version=6.43.0&source=github-rel" -O cli.deb
-  - sudo dpkg -i cli.deb
-  - sudo curl -s https://download.mendix.com/Mendix-CA-G2.crt -o /usr/local/share/ca-certificates/ca.crt
-  - sudo update-ca-certificates
-
-script:
-  - travis_wait 45 make test
+jobs:
+  include:
+    - stage: lint
+      python: "3.6"
+      install: 'pip3 install -r tests/requirements_lint.txt'
+      script: make lint
+    - stage: test
+      python: "3.4.3"
+      install: 'pip3 install -r tests/requirements.txt'
+      before_script:
+        - wget --quiet "https://packages.cloudfoundry.org/stable?release=debian64&version=6.43.0&source=github-rel" -O cli.deb
+        - sudo dpkg -i cli.deb
+        - sudo curl -s https://download.mendix.com/Mendix-CA-G2.crt -o /usr/local/share/ca-certificates/ca.crt
+        - sudo update-ca-certificates
+      script:
+        - make test &
+        - MAKE_PID=$!
+        - while [ -e /proc/$MAKE_PID ]; do echo -n "."  && sleep 60; done
+        - sleep 15
+        - wait $MAKE_PID
 
 notifications:
   email: false

@@ -67,9 +67,14 @@ class MetricsServerEmitter(MetricsEmitter):
             self.fallback_emitter.emit(stats)
 
 
-class MetricsEmitterThread(threading.Thread):
+class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
+    """
+    This base class contains all boilerplate code needed to emit metrics.
+    One must implement in subclass `_select_stats_to_emit` property and `_gather_metrics`.
+    """
+
     def __init__(self, interval, m2ee):
-        super(MetricsEmitterThread, self).__init__()
+        super().__init__()
         self.interval = interval
         self.m2ee = m2ee
         self.db = None
@@ -82,50 +87,43 @@ class MetricsEmitterThread(threading.Thread):
             logger.info("Metrics are logged to stdout.")
             self.emitter = LoggingEmitter()
 
-    def emit(self, stats):
+    @staticmethod
+    def _set_stats_info(stats):
         stats["version"] = "1.0"
         stats["timestamp"] = datetime.datetime.now().isoformat()
         stats["instance_index"] = os.getenv("CF_INSTANCE_INDEX", 0)
+        return stats
+
+    def emit(self, stats):
         self.emitter.emit(stats)
+
+    @property
+    @abstractmethod
+    def _select_stats_to_emit(self):
+        """
+        This method should return a list of subclass methods.
+        Those methods must return and accept, as a parameter, the 'stats' dictionary.
+        This should be later used in `_gather_metrics` method.
+        :return: [self.func1, self.func2]
+        """
+        pass
+
+    @abstractmethod
+    def _gather_metrics(self):
+        """
+        This method should return a dictionary containing all metrics to be emitted.
+        :return: dict
+        """
+        pass
 
     def run(self):
         logger.debug(
             "Starting metrics emitter with interval %d" % self.interval
         )
         while True:
-            stats = {}
-            try:
-                if buildpackutil.i_am_primary_instance():
-                    stats = self._inject_database_stats(stats)
-                    stats = self._inject_storage_stats(stats)
-                    stats = self._inject_health(stats)
-                try:
-                    stats = self._inject_m2ee_stats(stats)
-                except Exception:
-                    logger.debug("Unable to get metrics from runtime")
-
-                self.emit(stats)
-            except psycopg2.OperationalError as up:
-                logger.exception("METRICS: error while gathering metrics")
-                self.emit(
-                    {
-                        "health": {
-                            "health": 0,
-                            "diagnosis": "Database error: %s" % str(up),
-                        }
-                    }
-                )
-            except Exception as e:
-                logger.exception("METRICS: error while gathering metrics")
-                self.emit(
-                    {
-                        "health": {
-                            "health": 4,
-                            "diagnosis": "Unable to retrieve metrics",
-                        }
-                    }
-                )
-
+            stats = self._gather_metrics()
+            stats = self._set_stats_info(stats)
+            self.emit(stats)
             time.sleep(self.interval)
 
     def _inject_health(self, stats):
@@ -174,19 +172,25 @@ class MetricsEmitterThread(threading.Thread):
         return stats
 
     def _inject_m2ee_stats(self, stats):
-        m2ee_stats, java_version = munin.get_stats_from_runtime(
-            self.m2ee.client, self.m2ee.config
-        )
-        if "sessions" in m2ee_stats:
-            m2ee_stats["sessions"]["user_sessions"] = {}
-        m2ee_stats = munin.augment_and_fix_stats(
-            m2ee_stats, self.m2ee.runner.get_pid(), java_version
-        )
+        try:
+            m2ee_stats, java_version = munin.get_stats_from_runtime(
+                self.m2ee.client, self.m2ee.config
+            )
+            if "sessions" in m2ee_stats:
+                m2ee_stats["sessions"]["user_sessions"] = {}
+            m2ee_stats = munin.augment_and_fix_stats(
+                m2ee_stats, self.m2ee.runner.get_pid(), java_version
+            )
 
-        critical_logs_count = len(self.m2ee.client.get_critical_log_messages())
-        m2ee_stats["critical_logs_count"] = critical_logs_count
-        stats["mendix_runtime"] = m2ee_stats
-        return stats
+            critical_logs_count = len(
+                self.m2ee.client.get_critical_log_messages()
+            )
+            m2ee_stats["critical_logs_count"] = critical_logs_count
+            stats["mendix_runtime"] = m2ee_stats
+        except Exception:
+            logger.debug("Unable to get metrics from runtime")
+        finally:
+            return stats
 
     def _inject_storage_stats(self, stats):
         storage_stats = {}
@@ -227,6 +231,7 @@ class MetricsEmitterThread(threading.Thread):
     def _get_database_mutations(self):
         conn = self._get_db_conn()
         db_config = database_config.get_database_config()
+
         with conn.cursor() as cursor:
             cursor.execute(
                 "SELECT xact_commit, "
@@ -323,12 +328,19 @@ WHERE t.schemaname='public';
             self.db = None
 
         if not self.db:
+            # get_database config may return None or empty
             db_config = database_config.get_database_config()
+            if not db_config or "DatabaseType" not in db_config:
+                raise ValueError(
+                    "Database not set as VCAP or DATABASE_URL. Check "
+                    "documentation to see supported configuration options."
+                )
             if db_config["DatabaseType"] != "PostgreSQL":
                 raise Exception(
                     "Metrics only supports postgresql, not %s"
                     % db_config["DatabaseType"]
                 )
+
             host_and_port = db_config["DatabaseHost"].split(":")
             host = host_and_port[0]
             if len(host_and_port) > 1:
@@ -348,3 +360,79 @@ WHERE t.schemaname='public';
                 psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT
             )
         return self.db
+
+
+class PaidAppsMetricsEmitterThread(BaseMetricsEmitterThread):
+    @property
+    def _select_stats_to_emit(self):
+        selected_stats = []
+        if buildpackutil.i_am_primary_instance():
+            selected_stats = [
+                self._inject_database_stats,
+                self._inject_storage_stats,
+                self._inject_health,
+            ]
+        selected_stats.append(self._inject_m2ee_stats)
+        return selected_stats
+
+    def _gather_metrics(self):
+        stats = {}
+        try:
+            for inject_method in self._select_stats_to_emit:
+                stats = inject_method(stats)
+        except psycopg2.OperationalError as exc:
+            logger.exception("METRICS: error while gathering metrics")
+            stats = {
+                "health": {
+                    "health": 0,
+                    "diagnosis": "Database error: {}".format(str(exc)),
+                }
+            }
+        except Exception:
+            logger.exception("METRICS: error while gathering metrics")
+            stats = {
+                "health": {
+                    "health": 4,
+                    "diagnosis": "Unable to retrieve metrics",
+                }
+            }
+        finally:
+            return stats
+
+
+class FreeAppsMetricsEmitterThread(BaseMetricsEmitterThread):
+    def _get_munin_stats(self):
+        m2ee_stats, _ = munin.get_stats_from_runtime(
+            self.m2ee.client, self.m2ee.config
+        )
+        return m2ee_stats
+
+    def _inject_user_session_metrics(self, stats):
+        session_metrics = {}
+        try:
+            m2ee_stats = self._get_munin_stats()
+            if "sessions" in m2ee_stats:
+                m2ee_stats["sessions"]["user_sessions"] = {}
+                session_metrics = m2ee_stats["sessions"]
+        except Exception:
+            logger.debug(
+                "METRICS: error while gathering runtime metrics", exc_info=True
+            )
+        finally:
+            # runtime metrics shouldn't be included,
+            # but if they were due to some upstream code changes,
+            # we would ensure to not override all of them.
+            if "mendix_runtime" not in stats:
+                stats["mendix_runtime"] = {}
+            stats["mendix_runtime"]["sessions"] = session_metrics
+            return stats
+
+    @property
+    def _select_stats_to_emit(self):
+        return [self._inject_user_session_metrics]
+
+    def _gather_metrics(self):
+        stats = {}
+        for inject_method in self._select_stats_to_emit:
+            stats = inject_method(stats)
+        return stats

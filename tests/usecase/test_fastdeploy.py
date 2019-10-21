@@ -35,6 +35,9 @@ class TestCaseFastdeploy(basetest.BaseTest):
             if attempt == max - 1:
                 raise Exception("Starting MxBuild takes too long")
 
+        # making sure mxbuild is ready
+        time.sleep(10)
+
         r = requests.post(
             full_uri,
             auth=("deploy", self.mx_password),

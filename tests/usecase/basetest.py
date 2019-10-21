@@ -1,3 +1,4 @@
+from base64 import b64encode
 import os
 import json
 import subprocess
@@ -32,7 +33,9 @@ class BaseTest(unittest.TestCase):
         self.branch_name = os.environ.get("TRAVIS_BRANCH", current_branch)
 
         self.cf_domain = os.environ.get("CF_DOMAIN")
-        assert self.cf_domain
+        self.assertIsNotNone(
+            self.cf_domain, "CF_DOMAIN env variable is not configured"
+        )
         self.buildpack_repo = os.environ.get(
             "BUILDPACK_REPO",
             "https://github.com/mendix/cf-mendix-buildpack.git",
@@ -42,8 +45,10 @@ class BaseTest(unittest.TestCase):
         )
         self.mx_password = os.environ.get("MX_PASSWORD", "Y0l0lop13#123")
         self.app_id = str(uuid.uuid4()).split("-")[0]
-        self.subdomain = "ops-" + self.app_id
-        self.app_name = "%s.%s" % (self.subdomain, self.cf_domain)
+
+        self.app_prefix = os.environ.get("TEST_PREFIX", "ops-")
+        self.subdomain = "{}-{}".format(self.app_prefix, self.app_id)
+        self.app_name = "{}.{}".format(self.subdomain, self.cf_domain)
 
     def setUp(self):
         self.cf_home = tempfile.TemporaryDirectory()
@@ -65,7 +70,7 @@ class BaseTest(unittest.TestCase):
             )
         )
 
-    def startApp(self, start_timeout=None, expect_failure=False):
+    def startApp(self, start_timeout=25, expect_failure=False):
         try:
             env = {}
             if start_timeout:
@@ -182,7 +187,11 @@ class BaseTest(unittest.TestCase):
     def assert_app_running(self, path="/xas/", code=401):
         full_uri = "https://" + self.app_name + path
         r = requests.get(full_uri)
-        assert r.status_code == code
+        self.assertEqual(
+            r.status_code,
+            code,
+            "unexpected response code for assert_app_running",
+        )
 
     def get_recent_logs(self):
         return self.cmd(("cf", "logs", self.app_name, "--recent"))
@@ -215,3 +224,38 @@ class BaseTest(unittest.TestCase):
         except subprocess.CalledProcessError as e:
             print(e.output.decode("utf-8"))
             raise
+
+    def assert_certificate_in_cacert(self, cert_alias):
+        env = dict(os.environ)
+        output = self.cmd(
+            (
+                "cf",
+                "ssh",
+                self.app_name,
+                "-c",
+                "app/.local/usr/lib/jvm/*/bin/keytool -list -storepass changeit -keystore app/.local/usr/lib/jvm/*/lib/security/cacerts",  # noqa: E501
+            ),
+            env=env,
+        )
+        self.assertIn(cert_alias, output)
+
+    def bytes(self, s):
+        return s.encode("utf-8")
+
+    def query_mxadmin(self, command):
+        basic_auth = "MxAdmin:{}".format(self.mx_password)
+        basic_auth_base64 = b64encode(self.bytes(basic_auth)).decode("utf-8")
+        m2ee_auth_base64 = b64encode(self.bytes(self.mx_password)).decode(
+            "utf-8"
+        )
+
+        return requests.post(
+            "https://{}/_mxadmin/".format(self.app_name),
+            data=json.dumps(command),
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": "Basic {}".format(basic_auth_base64),
+                "X-M2EE-Authentication": m2ee_auth_base64,
+            },
+            timeout=15,
+        )

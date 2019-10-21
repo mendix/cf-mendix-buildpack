@@ -251,7 +251,12 @@ def build():
 
 
 def sync_project_files():
-    for name in ("web", "model"):
+    sync_folders = ["web", "model"]
+    # check for mx8 native folder, copy that as well
+    if os.path.exists(os.path.join(DEPLOYMENT_DIR, "native")):
+        sync_folders.append("native")
+
+    for name in sync_folders:
         subprocess.check_call(
             (
                 "rsync",

@@ -15,6 +15,9 @@ export CF_DOMAIN="cf-test.example.com"
 export MX_PASSWORD="sebaiNgooyiyoh9cheuquueghoongo@!"
 ```
 
+
+## Selecting the build pack repo and branch
+
 By default the test asumes you pushed your changes to a public git repository. The definitive
 url is based on the branch you are using. The following can be done to change the default
 location of the build pack:
@@ -27,6 +30,14 @@ build pack uploaded to the Cloud Foundry cluster. This can be used if you want t
 you changes but don't want to make it public yet.
 
 
+## Simultanious runs
+
+All tests applications deployed have a prefix so that the test script can clean up before and after any applications that are left behind. This however limits the number or runs into the same org and space to one (1).   
+To overcome this you can specify `TEST_PREFIX` as environment variable to change  the naming of the test apps. `TEST_PREFIX` defaults to `ops`. 
+
+
+## Running tests
+
 To run all the tests locally you need to do is to go to the root folder.
 
 ```
@@ -34,3 +45,4 @@ make test
 ```
 
 To run a singe test take look at `run.sh`, e.g. you need to PYTHONPATH.
+

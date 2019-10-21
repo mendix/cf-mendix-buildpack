@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 import atexit
 import base64
-import codecs
 import datetime
-import itertools
 import json
 import logging
 import os
@@ -25,34 +23,14 @@ import database_config  # noqa: E402
 import datadog  # noqa: E402
 import instadeploy  # noqa: E402
 import telegraf  # noqa: E402
+from headers import parse_headers  # noqa: E402
 
 from m2ee import M2EE, logger  # noqa: E402
 from nginx import get_path_config, gen_htpasswd  # noqa: E402
 from buildpackutil import i_am_primary_instance  # noqa: E402
 
-HEARTBEAT_SOURCE_STRING = """Gur Mra bs Clguba, ol Gvz Crgref
-Ornhgvshy vf orggre guna htyl.
-Rkcyvpvg vf orggre guna vzcyvpvg.
-Fvzcyr vf orggre guna pbzcyrk.
-Pbzcyrk vf orggre guna pbzcyvpngrq.
-Syng vf orggre guna arfgrq.
-Fcnefr vf orggre guna qrafr.
-Ernqnovyvgl pbhagf.
-Fcrpvny pnfrf nera'g fcrpvny rabhtu gb oernx gur ehyrf.
-Nygubhtu cenpgvpnyvgl orngf chevgl.
-Reebef fubhyq arire cnff fvyragyl.
-Hayrff rkcyvpvgyl fvyraprq.
-Va gur snpr bs nzovthvgl, ershfr gur grzcgngvba gb thrff.
-Gurer fubhyq or bar-- naq cersrenoyl bayl bar --boivbhf jnl gb qb vg.
-Nygubhtu gung jnl znl abg or boivbhf ng svefg hayrff lbh'er Qhgpu.
-Abj vf orggre guna arire.
-Nygubhtu arire vf bsgra orggre guna *evtug* abj.
-Vs gur vzcyrzragngvba vf uneq gb rkcynva, vg'f n onq vqrn.
-Vs gur vzcyrzragngvba vf rnfl gb rkcynva, vg znl or n tbbq vqrn.
-Anzrfcnprf ner bar ubaxvat terng vqrn -- yrg'f qb zber bs gubfr!"""
-HEARTBEAT_STRING_LIST = codecs.encode(HEARTBEAT_SOURCE_STRING, "rot13").split(
-    "\n"
-)
+BUILDPACK_VERSION = "3.6.4"
+
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
@@ -68,7 +46,8 @@ def get_current_buildpack_commit():
 
 
 logger.info(
-    "Started Mendix Cloud Foundry Buildpack v3.1.3 [commit:%s]",
+    "Started Mendix Cloud Foundry Buildpack v%s [commit:%s]",
+    BUILDPACK_VERSION,
     get_current_buildpack_commit(),
 )
 logging.getLogger("m2ee").propagate = False
@@ -164,17 +143,14 @@ def get_m2ee_password():
 
 def set_up_nginx_files(m2ee):
     lines = ""
-    x_frame_options = os.environ.get("X_FRAME_OPTIONS", "ALLOW")
-    if x_frame_options == "ALLOW":
-        x_frame_options = ""
-    else:
-        x_frame_options = "add_header X-Frame-Options '%s';" % x_frame_options
+
     if use_instadeploy(m2ee.config.get_runtime_version()):
         mxbuild_upstream = "proxy_pass http://mendix_mxbuild"
     else:
         mxbuild_upstream = "return 501"
     with open("nginx/conf/nginx.conf") as fh:
         lines = "".join(fh.readlines())
+    http_headers = parse_headers()
     lines = (
         lines.replace("CONFIG", get_path_config())
         .replace("NGINX_PORT", str(get_nginx_port()))
@@ -182,7 +158,7 @@ def set_up_nginx_files(m2ee):
         .replace("ADMIN_PORT", str(get_admin_port()))
         .replace("DEPLOY_PORT", str(get_deploy_port()))
         .replace("ROOT", os.getcwd())
-        .replace("XFRAMEOPTIONS", x_frame_options)
+        .replace("HTTP_HEADERS", http_headers)
         .replace("MXBUILD_UPSTREAM", mxbuild_upstream)
     )
     for line in lines.split("\n"):
@@ -311,8 +287,8 @@ def get_constants(metadata):
 def set_jvm_locale(m2ee_section, java_version):
     javaopts = m2ee_section["javaopts"]
 
-    # enable locale for java8 or later
-    if not java_version.startswith("7"):
+    # override locale providers for java8
+    if java_version.startswith("8"):
         javaopts.append("-Djava.locale.providers=JRE,SPI,CLDR")
 
 
@@ -691,11 +667,15 @@ def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
 
     buildpackutil.mkdir_p(os.path.join(os.getcwd(), "model", "resources"))
     mxruntime_config.update(app_config)
-    mxruntime_config.update(
-        database_config.get_database_config(
-            development_mode=is_development_mode()
-        )
+
+    # db configuration might be None, database should then be set up with
+    # MXRUNTIME_Database... custom runtime settings.
+    runtime_db_config = database_config.get_database_config(
+        development_mode=is_development_mode()
     )
+    if runtime_db_config:
+        mxruntime_config.update(runtime_db_config)
+
     mxruntime_config.update(get_filestore_config(m2ee))
     mxruntime_config.update(get_certificate_authorities())
     mxruntime_config.update(get_client_certificates())
@@ -1113,9 +1093,10 @@ def configure_debugger(m2ee):
     response.display_error()
     if not response.has_error():
         logger.info(
-            "The remote debugger is now enabled, the password to "
-            "use is %s" % debugger_password
+            "The remote debugger is now enabled with the value from "
+            "environment variable DEBUGGER_PASSWORD."
         )
+        logger.debug("The password to use is {}".format(debugger_password))
         logger.info(
             "You can use the remote debugger option in the Mendix "
             "Business Modeler to connect to the /debugger/ sub "
@@ -1137,6 +1118,20 @@ def configure_logging(m2ee):
             m2ee.set_log_levels(
                 "*", nodes=_transform_logging(json.loads(v)), force=True
             )
+
+
+def display_java_version():
+    java_version = (
+        subprocess.check_output(
+            [".local/bin/java", "-version"], stderr=subprocess.STDOUT
+        )
+        .decode("utf8")
+        .strip()
+        .split("\n")
+    )
+    logger.info("Using Java version:")
+    for line in java_version:
+        logger.info(line)
 
 
 def display_running_version(m2ee):
@@ -1193,11 +1188,17 @@ def set_up_instadeploy_if_deploy_password_is_set(m2ee):
 
 def start_metrics(m2ee):
     metrics_interval = os.getenv("METRICS_INTERVAL")
-    profile = os.getenv("PROFILE")
-    if metrics_interval and profile != "free":
+    if metrics_interval:
         import metrics
 
-        thread = metrics.MetricsEmitterThread(int(metrics_interval), m2ee)
+        if buildpackutil.is_free_app():
+            thread = metrics.FreeAppsMetricsEmitterThread(
+                int(metrics_interval), m2ee
+            )
+        else:
+            thread = metrics.PaidAppsMetricsEmitterThread(
+                int(metrics_interval), m2ee
+            )
         thread.setDaemon(True)
         thread.start()
     else:
@@ -1213,9 +1214,13 @@ class LoggingHeartbeatEmitterThread(threading.Thread):
         logger.debug(
             "Starting metrics emitter with interval %d", self.interval
         )
-        for line in itertools.cycle(HEARTBEAT_STRING_LIST):
-            logger.info("MENDIX-LOGGING-HEARTBEAT: %s", line)
+        counter = 1
+        while True:
+            logger.info(
+                "MENDIX-LOGGING-HEARTBEAT: Heartbeat number %s", counter
+            )
             time.sleep(self.interval)
+            counter += 1
 
 
 def start_logging_heartbeat():
@@ -1228,6 +1233,7 @@ def start_logging_heartbeat():
 
 
 def complete_start_procedure_safe_to_use_for_restart(m2ee):
+    display_java_version()
     buildpackutil.mkdir_p("model/lib/userlib")
     set_up_logging_file()
     start_app(m2ee)
@@ -1238,36 +1244,36 @@ def complete_start_procedure_safe_to_use_for_restart(m2ee):
 
 
 if __name__ == "__main__":
-    if os.getenv("CF_INSTANCE_INDEX") is None:
-        logger.warning(
-            "CF_INSTANCE_INDEX environment variable not found. Assuming "
-            "responsibility for scheduled events execution and database "
-            "synchronization commands."
-        )
-    pre_process_m2ee_yaml()
-    activate_license()
-    m2ee = set_up_m2ee_client(buildpackutil.get_vcap_data())
-
-    def sigterm_handler(_signo, _stack_frame):
-        m2ee.stop()
-        sys.exit(0)
-
-    def sigusr_handler(_signo, _stack_frame):
-        if _signo == signal.SIGUSR1:
-            emit(jvm={"errors": 1.0})
-        elif _signo == signal.SIGUSR2:
-            emit(jvm={"ooms": 1.0})
-        else:
-            # Should not happen
-            pass
-        m2ee.stop()
-        sys.exit(1)
-
-    signal.signal(signal.SIGTERM, sigterm_handler)
-    signal.signal(signal.SIGUSR1, sigusr_handler)
-    signal.signal(signal.SIGUSR2, sigusr_handler)
-
     try:
+        if os.getenv("CF_INSTANCE_INDEX") is None:
+            logger.warning(
+                "CF_INSTANCE_INDEX environment variable not found. Assuming "
+                "responsibility for scheduled events execution and database "
+                "synchronization commands."
+            )
+        pre_process_m2ee_yaml()
+        activate_license()
+        m2ee = set_up_m2ee_client(buildpackutil.get_vcap_data())
+
+        def sigterm_handler(_signo, _stack_frame):
+            m2ee.stop()
+            sys.exit(0)
+
+        def sigusr_handler(_signo, _stack_frame):
+            if _signo == signal.SIGUSR1:
+                emit(jvm={"errors": 1.0})
+            elif _signo == signal.SIGUSR2:
+                emit(jvm={"ooms": 1.0})
+            else:
+                # Should not happen
+                pass
+            m2ee.stop()
+            sys.exit(1)
+
+        signal.signal(signal.SIGTERM, sigterm_handler)
+        signal.signal(signal.SIGUSR1, sigusr_handler)
+        signal.signal(signal.SIGUSR2, sigusr_handler)
+
         service_backups()
         set_up_nginx_files(m2ee)
         telegraf.run()

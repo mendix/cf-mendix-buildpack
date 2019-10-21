@@ -4,20 +4,40 @@ import os
 import re
 import buildpackutil
 from abc import abstractmethod, ABC
-from urllib.parse import parse_qs, urlencode
+from urllib.parse import parse_qs, urlencode, unquote
 from m2ee import logger  # noqa: E402
 
 
 def get_database_config(development_mode=False):
+    """
+    the following options are validated to get database credentials
+    1) existence of custom runtime settings Database.... values
+    2) VCAP with database credentials
+    3) existence of DATABASE_URL env var
+
+    In case we find MXRUNTIME_Database.... values we don't interfere and
+    return nothing. VCAP or DATABASE_URL return m2ee configuration
+    """
     if any(
         [x.startswith("MXRUNTIME_Database") for x in list(os.environ.keys())]
     ):
+        logging.debug(
+            "Detected database configuration using custom runtime settings."
+        )
         return None
 
     factory = DatabaseConfigurationFactory()
     configuration = factory.get_instance()
 
-    return configuration.get_m2ee_configuration()
+    if configuration:
+        m2ee_config = configuration.get_m2ee_configuration()
+        if m2ee_config and "DatabaseType" in m2ee_config:
+            return m2ee_config
+
+    raise RuntimeError(
+        "Can't find database configuration from environment variables. "
+        "Check README for supported configuration options."
+    )
 
 
 class DatabaseConfigurationFactory:
@@ -38,10 +58,10 @@ class DatabaseConfigurationFactory:
 
         # fallback to original configuration
         url = self.get_database_uri_from_vcap(self.vcap_services)
-        if url is None:
+        if not url and "DATABASE_URL" in os.environ:
             url = os.environ["DATABASE_URL"]
 
-        if url is not None:
+        if url:
             return UrlDatabaseConfiguration(url)
 
         return None
@@ -106,9 +126,15 @@ class DatabaseConfigurationFactory:
 class DatabaseConfiguration(ABC):
     """Base clase for database configurations. Implements only the basics."""
 
-    def __init__(self):
+    def __init__(self, env_vars=None):
+        """env_vars may be copy of the environment variables, os.environ, for unit testing"""
+        if env_vars:
+            self.env_vars = env_vars
+        else:
+            self.env_vars = os.environ
+
         self.development_mode = (
-            os.getenv("DEVELOPMENT_MODE", "").lower() == "true"
+            self.env_vars.get("DEVELOPMENT_MODE", "").lower() == "true"
         )
 
     def get_m2ee_configuration(self):
@@ -119,8 +145,8 @@ class DatabaseConfiguration(ABC):
         m2ee_config = {
             "DatabaseType": self.get_database_type(),
             "DatabaseHost": self.get_database_host(),
-            "DatabaseUserName": self.get_database_username(),
-            "DatabasePassword": self.get_database_password(),
+            "DatabaseUserName": unquote(self.get_database_username()),
+            "DatabasePassword": unquote(self.get_database_password()),
             "DatabaseName": self.get_database_name(),
             "DatabaseJdbcUrl": self.get_database_jdbc_url(),
         }
@@ -149,7 +175,7 @@ class DatabaseConfiguration(ABC):
         return filter_m2ee_config
 
     def get_override_connection_parameters(self):
-        params_str = os.getenv("DATABASE_CONNECTION_PARAMS", "{}")
+        params_str = self.env_vars.get("DATABASE_CONNECTION_PARAMS", "{}")
         try:
             params = json.loads(params_str)
             return params
@@ -207,8 +233,8 @@ class DatabaseConfiguration(ABC):
 class UrlDatabaseConfiguration(DatabaseConfiguration):
     """Returns a database configuration based on the original code from buildpackutil."""
 
-    def __init__(self, url):
-        super().__init__()
+    def __init__(self, url, env_vars=None):
+        super().__init__(env_vars)
         logging.debug("Detected URL based database configuration.")
         self.url = url
 
@@ -264,7 +290,9 @@ class UrlDatabaseConfiguration(DatabaseConfiguration):
         if database_type == "PostgreSQL":
             jdbc_params.update({"tcpKeepAlive": "true"})
 
-        extra_url_params_str = os.getenv("DATABASE_CONNECTION_PARAMS", "{}")
+        extra_url_params_str = self.env_vars.get(
+            "DATABASE_CONNECTION_PARAMS", "{}"
+        )
         if extra_url_params_str is not None:
             try:
                 extra_url_params = json.loads(extra_url_params_str)
@@ -348,8 +376,8 @@ class SapHanaDatabaseConfiguration(DatabaseConfiguration):
 
     database_type = "SAPHANA"
 
-    def __init__(self, credentials):
-        super().__init__()
+    def __init__(self, credentials, env_vars=None):
+        super().__init__(env_vars)
         logging.debug("Detected SAP Hana configuration.")
         self.credentials = credentials
 
@@ -373,7 +401,7 @@ class SapHanaDatabaseConfiguration(DatabaseConfiguration):
     def get_database_jdbc_url(self):
         """Return the database jdbc url for the M2EE configuration"""
         url = self.credentials.get("url", "")
-        pattern = r"jdbc:sap://(?P<host>[^:]+):(?P<port>[0-9]+)(?P<q>\?(?P<params>.*))?$"
+        pattern = r"jdbc:sap://(?P<host>[^:]+):(?P<port>[0-9]+)/?(?P<q>\?(?P<params>.*))?$"
         match = re.search(pattern, url)
         if match is None:
             logger.error("Unable to parse Hana JDBC url string for parameters")

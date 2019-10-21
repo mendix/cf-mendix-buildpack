@@ -2,7 +2,6 @@ import errno
 import json
 import logging
 import os
-import re
 import subprocess
 import sys
 from distutils.util import strtobool
@@ -161,7 +160,12 @@ class NotFoundException(Exception):
 
 
 def get_java_version(mx_version):
-    if mx_version >= MXVersion("7.23.1"):
+    if mx_version >= MXVersion("8.0.0"):
+        java_version = {
+            "version": os.getenv("JAVA_VERSION", "11.0.3"),
+            "vendor": "AdoptOpenJDK",
+        }
+    elif mx_version >= MXVersion("7.23.1"):
         java_version = {
             "version": os.getenv("JAVA_VERSION", "8u202"),
             "vendor": "AdoptOpenJDK",
@@ -181,13 +185,6 @@ def get_java_version(mx_version):
             "version": os.getenv("JAVA_VERSION", "7u80"),
             "vendor": "oracle",
         }
-
-    if not re.match(r"^\d+u\d+$", java_version["version"]):
-        raise Exception(
-            "Invalid Java version specified: {}".format(
-                java_version["version"]
-            )
-        )
 
     return java_version
 
@@ -209,7 +206,7 @@ def ensure_mxbuild_in_directory(directory, mx_version, cache_dir):
 
     url = os.environ.get("FORCED_MXBUILD_URL")
     if url:
-        # don't ever cache with a FORCED_MXBUILD_URL
+        # don"t ever cache with a FORCED_MXBUILD_URL
         download_and_unpack(url, directory, cache_dir="/tmp/downloads")
     else:
         try:
@@ -289,10 +286,12 @@ def _detect_mono_version(mx_version):
         "Detecting Mono Runtime using mendix version: " + str(mx_version)
     )
 
-    if mx_version < 7:
-        target = "mono-3.10.0"
-    else:
+    if mx_version >= 8:
+        target = "mono-5.20.1.27"
+    elif mx_version >= 7:
         target = "mono-4.6.2.16"
+    else:
+        target = "mono-3.10.0"
     logging.info("Selecting Mono Runtime: " + target)
     return target
 
@@ -389,6 +388,56 @@ def ensure_and_get_jvm(
     )
 
 
+def update_java_cacert(buildpack_dir, jvm_location):
+    logging.debug("Applying Mozilla CA certificates update to JVM cacerts...")
+    cacerts_file = os.path.join(jvm_location, "lib", "security", "cacerts")
+    if not os.path.exists(cacerts_file):
+        logging.warning(
+            "Cannot locate cacerts file {}. Skippiung update of CA certiticates.".format(
+                cacerts_file
+            )
+        )
+        return
+
+    update_cacert_path = os.path.join(buildpack_dir, "lib", "cacert")
+    if not os.path.exists(update_cacert_path):
+        logging.warning(
+            "Cannot locate cacert lib folder {}. Skipping  update of CA certificates.".format(
+                update_cacert_path
+            )
+        )
+        return
+
+    cacert_merged = "cacerts.merged"
+    env = dict(os.environ)
+
+    try:
+        subprocess.check_output(
+            (
+                os.path.join(jvm_location, "bin", "java"),
+                "-jar",
+                os.path.join(update_cacert_path, "keyutil-0.4.0.jar"),
+                "-i",
+                "--new-keystore",
+                cacert_merged,
+                "--password",
+                "changeit",
+                "--import-pem-file",
+                os.path.join(update_cacert_path, "cacert.pem"),
+                "--import-jks-file",
+                "{}:changeit".format(cacerts_file),
+            ),
+            env=env,
+            stderr=subprocess.STDOUT,
+        )
+    except Exception as ex:
+        logging.error("Error applying cacert update: {}".format(ex.output), ex)
+        raise ex
+
+    os.rename(cacert_merged, cacerts_file)
+    logging.debug("Update of cacerts file finished.")
+
+
 def i_am_primary_instance():
     return os.getenv("CF_INSTANCE_INDEX", "0") == "0"
 
@@ -421,3 +470,7 @@ def bypass_loggregator_logging():
 
 def get_metrics_url():
     return os.getenv("TRENDS_STORAGE_URL")
+
+
+def is_free_app():
+    return os.getenv("PROFILE") == "free"

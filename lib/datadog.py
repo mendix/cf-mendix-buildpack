@@ -6,9 +6,8 @@ import buildpackutil
 import database_config
 from m2ee import logger
 
-DD_SIDECAR = "dd-v0.10.0.tar.gz"
-MX_AGENT_JAR = "mx-agent-v0.10.1.jar"
-
+DD_SIDECAR = "cf-datadog-sidecar-v0.11.0_master_69793.tar.gz"
+MX_AGENT_JAR = "mx-agent-v0.12.0.jar"
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
@@ -60,10 +59,7 @@ def enable_runtime_agent(m2ee):
                 )
         jar = os.path.abspath(".local/datadog/{}".format(MX_AGENT_JAR))
         m2ee.config._conf["m2ee"]["javaopts"].extend(
-            [
-                "-javaagent:{}{}".format(jar, agent_config),
-                "-Xbootclasspath/a:{}".format(jar),
-            ]
+            ["-javaagent:{}{}".format(jar, agent_config)]
         )
         # if not explicitly set, default to statsd
         m2ee.config._conf["mxruntime"].setdefault(
@@ -97,7 +93,9 @@ def update_config(m2ee, app_name):
                 "name": "DataDogSubscriber",
                 "autosubscribe": "INFO",
                 "host": "localhost",
-                "port": 9032,
+                # For MX8 integer is supported again, this change needs to be
+                # made when MX8 is GA
+                "port": "9032",
             }
         )
     enable_runtime_agent(m2ee)
@@ -250,6 +248,11 @@ def _set_up_postgres():
         "DatabaseHost",
     ):
         if k not in dbconfig:
+            logger.warn(
+                "Skipping database configuration for DataDog because "
+                "configuration is not found. See database_config.py "
+                "for details"
+            )
             return
     if dbconfig["DatabaseType"] != "PostgreSQL":
         return
