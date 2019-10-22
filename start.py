@@ -29,7 +29,7 @@ from m2ee import M2EE, logger  # noqa: E402
 from nginx import get_path_config, gen_htpasswd  # noqa: E402
 from buildpackutil import i_am_primary_instance  # noqa: E402
 
-BUILDPACK_VERSION = "3.6.4"
+BUILDPACK_VERSION = "3.6.5"
 
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
@@ -1277,7 +1277,7 @@ if __name__ == "__main__":
         service_backups()
         set_up_nginx_files(m2ee)
         telegraf.run()
-        datadog.run()
+        datadog.run(m2ee.config.get_runtime_version())
         complete_start_procedure_safe_to_use_for_restart(m2ee)
         set_up_instadeploy_if_deploy_password_is_set(m2ee)
         start_metrics(m2ee)
