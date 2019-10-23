@@ -312,14 +312,16 @@ def _compose_mono_url_path(mono_version):
     distrib_id = platform.linux_distribution()[0].lower()
     if distrib_id != "ubuntu":
         raise Exception(
-            "Only Ubuntu is supported at present, requested distribution: %s"
-            % distrib_id
+            "Only Ubuntu is supported at present, requested distribution: {}".format(
+                distrib_id
+            )
         )
     distrib_codename = platform.linux_distribution()[2].lower()
     if distrib_codename not in ["trusty", "bionic"]:
         raise Exception(
-            "Buildpack supports Trusty and Bionic at the moment, requested version: %s"
-            % distrib_codename
+            "Buildpack supports Trusty and Bionic at the moment, requested version: {}".format(
+                distrib_codename
+            )
         )
     return "/mx-buildpack/mono/{}-mx-{}-{}.tar.gz".format(
         mono_version, distrib_id, distrib_codename
