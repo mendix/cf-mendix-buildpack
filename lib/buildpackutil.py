@@ -308,6 +308,24 @@ def _get_mono_path(directory, mono_version):
     )
 
 
+def _compose_mono_url_path(mono_version):
+    distrib_id = platform.linux_distribution()[0].lower()
+    if distrib_id != "ubuntu":
+        raise Exception(
+            "Only Ubuntu is supported at present, requested distribution: %s"
+            % distrib_id
+        )
+    distrib_codename = platform.linux_distribution()[2].lower()
+    if distrib_codename not in ["trusty", "bionic"]:
+        raise Exception(
+            "Buildpack supports Trusty and Bionic at the moment, requested version: %s"
+            % distrib_codename
+        )
+    return "/mx-buildpack/mono/{}-mx-{}-{}.tar.gz".format(
+        mono_version, distrib_id, distrib_codename
+    )
+
+
 def lazy_remove_file(filename):
     try:
         os.remove(filename)
@@ -328,13 +346,8 @@ def ensure_and_get_mono(mx_version, cache_dir):
         mono_location = _get_mono_path("/tmp/opt", mono_version)
     except NotFoundException:
         logging.debug("Mono not found in default locations")
-        linux_version = platform.linux_distribution()[2]
-        if linux_version == "bionic":
-            cdn_path = "/mx-buildserver/"
-        else:
-            cdn_path = "/mx-buildpack/"
         download_and_unpack(
-            get_blobstore_url(cdn_path + mono_version + "-mx.tar.gz"),
+            get_blobstore_url(_compose_mono_url_path(mono_version)),
             os.path.join(fallback_location, mono_version),
             cache_dir,
         )
