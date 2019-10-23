@@ -25,6 +25,17 @@ class TestCaseDeployWithDatadog(basetest.BaseTest):
         assert output is not None
         assert str(output).find("datadog") >= 0
 
+    def test_datadog_failure_mx6(self):
+        super().setUp()
+        self.setUpCF(
+            "sample-6.2.0.mda", env_vars={"DD_API_KEY": "NON-VALID-TEST-KEY"}
+        )
+        self.startApp()
+        self.assert_app_running()
+        self.assert_string_in_recent_logs(
+            "Datadog integration requires Mendix 7.14 or newer"
+        )
+
     def test_datadog_running_mx7(self):
         self._test_datadog_running("BuildpackTestApp-mx-7-16.mda")
 
