@@ -305,9 +305,14 @@ def compile(install_path, cache_dir):
     download(install_path, cache_dir)
 
 
-def run():
+def run(runtime_version):
     if not is_enabled():
         return
+
+    if runtime_version < 7.14:
+        logger.warning(
+            "Datadog integration requires Mendix 7.14 or newer. The Datadog agent is not enabled."
+        )
 
     if not _is_installed():
         logger.warn(

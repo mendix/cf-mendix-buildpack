@@ -319,6 +319,17 @@ If you have any environment variable that starts with `APPDYNAMICS_`, the AppDyn
 
 Please note that AppDynamics requires Mendix 6.2 or higher.
 
+### Datadog
+
+To enable Datadog, configure the following environment variables:
+
+    DD_API_KEY
+    DD_LOG_LEVEL
+
+* The `DD_API_KEY` environment variable should refer to the Datadog API key that can be configured in the Integrations -> API screen of the Datadog user interface.
+* The `DD_LOG_LEVEL` environment ensures that messages are sent to Datadog. A safe level would be `INFO`, but it can be later adjusted to different levels: `CRITICAL`, `ERROR`, `WARNING`, or `DEBUG`.
+
+Please note that Datadog integration requires Mendix 7.14 or higher. If an older version is used, then a warning will be displayed in the logs and the Datadog integration will not be enabled.
 
 Data Snapshots
 ====
