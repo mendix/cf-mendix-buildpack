@@ -2,6 +2,7 @@ import errno
 import json
 import logging
 import os
+import platform
 import subprocess
 import sys
 from distutils.util import strtobool
@@ -307,6 +308,26 @@ def _get_mono_path(directory, mono_version):
     )
 
 
+def _compose_mono_url_path(mono_version):
+    distrib_id = platform.linux_distribution()[0].lower()
+    if distrib_id != "ubuntu":
+        raise Exception(
+            "Only Ubuntu is supported at present, requested distribution: {}".format(
+                distrib_id
+            )
+        )
+    distrib_codename = platform.linux_distribution()[2].lower()
+    if distrib_codename not in ["trusty", "bionic"]:
+        raise Exception(
+            "Buildpack supports Trusty and Bionic at the moment, requested version: {}".format(
+                distrib_codename
+            )
+        )
+    return "/mx-buildpack/mono/{}-mx-{}-{}.tar.gz".format(
+        mono_version, distrib_id, distrib_codename
+    )
+
+
 def lazy_remove_file(filename):
     try:
         os.remove(filename)
@@ -328,7 +349,7 @@ def ensure_and_get_mono(mx_version, cache_dir):
     except NotFoundException:
         logging.debug("Mono not found in default locations")
         download_and_unpack(
-            get_blobstore_url("/mx-buildpack/" + mono_version + "-mx.tar.gz"),
+            get_blobstore_url(_compose_mono_url_path(mono_version)),
             os.path.join(fallback_location, mono_version),
             cache_dir,
         )

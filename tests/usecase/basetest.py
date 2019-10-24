@@ -43,6 +43,7 @@ class BaseTest(unittest.TestCase):
         self.buildpack = os.environ.get(
             "BUILDPACK", "{}#{}".format(self.buildpack_repo, self.branch_name)
         )
+        self.cf_stack = os.environ.get("CF_STACK", "cflinuxfs3")
         self.mx_password = os.environ.get("MX_PASSWORD", "Y0l0lop13#123")
         self.app_id = str(uuid.uuid4()).split("-")[0]
 
@@ -143,6 +144,8 @@ class BaseTest(unittest.TestCase):
                     str(instances),
                     "-b",
                     self.buildpack,
+                    "-s",
+                    self.cf_stack,
                 )
             )
 
