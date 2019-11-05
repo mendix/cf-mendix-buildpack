@@ -6,7 +6,7 @@ import buildpackutil
 import database_config
 from m2ee import logger
 
-DD_SIDECAR = "cf-datadog-sidecar-v0.11.0_master_69793.tar.gz"
+DD_SIDECAR = "cf-datadog-sidecar-v0.11.1_master_78318.tar.gz"
 MX_AGENT_JAR = "mx-agent-v0.12.0.jar"
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
