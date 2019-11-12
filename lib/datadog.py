@@ -39,18 +39,29 @@ def enable_runtime_agent(m2ee):
         return
 
     if m2ee.config.get_runtime_version() >= 7.14:
-        # This is a dirty way to make it self-service until we pick up DEP-59.
-        # After DEP-59 we can pick this up from a dedicated env var.
         agent_config = ""
-        if "MetricsAgentConfig" in m2ee.config._conf["mxruntime"]:
-            v = m2ee.config._conf["mxruntime"]["MetricsAgentConfig"]
+        agent_config_str = None
+
+        if "METRICS_AGENT_CONFIG" in os.environ:
+            agent_config_str = os.environ.get("METRICS_AGENT_CONFIG")
+        elif "MetricsAgentConfig" in m2ee.config._conf["mxruntime"]:
+            logger.warn(
+                "Passing MetricsAgentConfig with Mendix Custom Runtime Setting is deprecated. "
+                + "Please use METRICS_AGENT_CONFIG as environment variable."
+            )
+            agent_config_str = m2ee.config._conf["mxruntime"][
+                "MetricsAgentConfig"
+            ]
+
+        if agent_config_str:
             try:
-                json.loads(v)  # ensure that this contains valid json
+                # ensure that this contains valid json
+                json.loads(agent_config_str)
                 config_file_path = os.path.abspath(
                     ".local/MetricsAgentConfig.json"
                 )
                 with open(config_file_path, "w") as fh:
-                    fh.write(v)
+                    fh.write(agent_config_str)
                 agent_config = "=config=" + config_file_path
             except ValueError:
                 logger.error(
