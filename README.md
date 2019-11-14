@@ -323,13 +323,14 @@ Please note that AppDynamics requires Mendix 6.2 or higher.
 
 To enable Datadog, configure the following environment variables:
 
-    DD_API_KEY
-    DD_LOG_LEVEL
+|            |         |
+| ----------- | -------- |
+| DD\_API_KEY | The `DD_API_KEY` environment variable should refer to the Datadog API key that can be configured in the Integrations -> API screen of the Datadog user interface. |
+| DD\_LOG_LEVEL | The `DD_LOG_LEVEL` environment ensures that messages are sent to Datadog. A safe level would be `INFO`, but it can be later adjusted to different levels: `CRITICAL`, `ERROR`, `WARNING`, or `DEBUG`. |
 
-* The `DD_API_KEY` environment variable should refer to the Datadog API key that can be configured in the Integrations -> API screen of the Datadog user interface.
-* The `DD_LOG_LEVEL` environment ensures that messages are sent to Datadog. A safe level would be `INFO`, but it can be later adjusted to different levels: `CRITICAL`, `ERROR`, `WARNING`, or `DEBUG`.
+To receive metrics from the runtime, the Mendix Agent is added to the runtime as Java agent. This agent can be configured by passing a JSON in the environment variable `METRICS_AGENT_CONFIG` as described in [Datadog for v4 Mendix Cloud](https://docs.mendix.com/developerportal/operate/datadog-metrics). 
 
-Please note that Datadog integration requires Mendix 7.14 or higher. If an older version is used, then a warning will be displayed in the logs and the Datadog integration will not be enabled.
+Please note that Datadog integration **requires Mendix 7.14 or higher**. If an older version is used, then a warning will be displayed in the logs and the Datadog integration will not be enabled.
 
 Data Snapshots
 ====
