@@ -163,3 +163,49 @@ class TestCaseSapHanaDryRun:
 
         queryparams = urllib.parse.parse_qs(split_url.query)
         assert expected_query_params == queryparams
+
+    sap_hanatrial_vcap_example = """
+{
+    "hanatrial": [
+       {
+            "binding_name": null,
+            "credentials": {
+                 "certificate": "-----BEGIN CERTIFICATE-----\\nCERTIFICATE\\n-----END CERTIFICATE-----\\n",
+                 "driver": "com.sap.db.jdbc.Driver",
+                 "host": "zeus.hana.prod.eu-central-1.whitney.dbaas.ondemand.com",
+                 "password": "XXXX",
+                 "port": "23803",
+                 "schema": "USR_73C3QB3CVKLOMV4WDVNROQY623rtfdsafaI",
+                 "url": "jdbc:sap://zeus.hana.prod.eu-central-1.whitney.dbaas.ondemand.com:23803?encrypt=true\u0026validateCertificate=true\u0026currentschema=USR_73C3QB3CVKLOMV4WDVNROQY6I",
+                 "user": "USR_73C3QB3CVKLOMV4WDVNROQY6I2sdf"
+            },
+            "instance_name": "hanatrialtest",
+            "label": "hanatrial",
+            "name": "hanatrialtest",
+            "plan": "schema",
+            "provider": null,
+            "syslog_drain_url": null,
+            "tags": [
+             "hana",
+             "database",
+             "relational"
+            ],
+            "volume_mounts": []
+       }
+    ]
+}
+    """  # noqa
+
+    def test_sap_hanatrial_selection(self):
+        os.environ["VCAP_SERVICES"] = self.sap_hanatrial_vcap_example
+
+        factory = DatabaseConfigurationFactory()
+        assert factory.present_in_vcap("hanatrial") is not None
+        assert factory.present_in_vcap(
+            "hanatrial", tags=["hana", "database", "relational"]
+        )
+        assert factory.present_in_vcap(
+            None, tags=["hana", "database", "relational"]
+        )
+
+        assert factory.get_instance().database_type == "SAPHANA"

@@ -56,6 +56,13 @@ class DatabaseConfigurationFactory:
                 self.vcap_services["hana"][0]["credentials"]
             )
 
+        if self.present_in_vcap(
+            "hanatrial", tags=["hana", "database", "relational"]
+        ):
+            return SapHanaDatabaseConfiguration(
+                self.vcap_services["hanatrial"][0]["credentials"]
+            )
+
         # fallback to original configuration
         url = self.get_database_uri_from_vcap(self.vcap_services)
         if not url and "DATABASE_URL" in os.environ:
