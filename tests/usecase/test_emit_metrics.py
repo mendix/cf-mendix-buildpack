@@ -141,7 +141,7 @@ class TestFreeAppsMetricsEmitter(TestCase):
         self.assertEqual(expected_stats, stats)
 
     def test_inject_user_session_metrics_when_mendix_runtime_metrics_already_present(
-        self
+        self,
     ):
         stats = {
             "key": "value",
