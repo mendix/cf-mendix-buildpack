@@ -29,7 +29,7 @@ from m2ee import M2EE, logger  # noqa: E402
 from nginx import get_path_config, gen_htpasswd  # noqa: E402
 from buildpackutil import i_am_primary_instance  # noqa: E402
 
-BUILDPACK_VERSION = "3.8.0"
+BUILDPACK_VERSION = "4.0.0"
 
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
@@ -449,7 +449,7 @@ def _get_s3_specific_config(vcap_services, m2ee):
         config["com.mendix.storage.s3.UseV2Auth"] = v2_auth
     if endpoint:
         config["com.mendix.storage.s3.EndPoint"] = endpoint
-    if m2ee.config.get_runtime_version() >= 5.17 and encryption_keys:
+    if m2ee.config.get_runtime_version() >= 6 and encryption_keys:
         config["com.mendix.storage.s3.EncryptionKeys"] = encryption_keys
     if m2ee.config.get_runtime_version() >= 6 and sse:
         config["com.mendix.storage.s3.UseSSE"] = sse
@@ -659,7 +659,7 @@ def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
     if m2ee.config.get_runtime_version() >= 7 and not i_am_primary_instance():
         app_config["com.mendix.core.isClusterSlave"] = "true"
     elif (
-        m2ee.config.get_runtime_version() >= 5.15
+        m2ee.config.get_runtime_version() >= 6
         and os.getenv("ENABLE_STICKY_SESSIONS", "false").lower() == "true"
     ):
         logger.info("Enabling sticky sessions")
@@ -1135,7 +1135,7 @@ def display_java_version():
 
 
 def display_running_version(m2ee):
-    if m2ee.config.get_runtime_version() >= 4.4:
+    if m2ee.config.get_runtime_version() >= 6.0:
         feedback = m2ee.client.about().get_feedback()
         if "model_version" in feedback:
             logger.info("Model version: %s" % feedback["model_version"])

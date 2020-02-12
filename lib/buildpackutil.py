@@ -14,6 +14,15 @@ import requests  # noqa: E402
 from m2ee.version import MXVersion  # noqa: E402
 
 
+def check_deprecation(version):
+    if version >= MXVersion("5.0.0") and version < MXVersion("6.0.0"):
+        logging.error("Mendix Runtime 5.x is no longer supported.")
+        logging.error("You can version pin on v3.8.0.")
+        return False
+
+    return True
+
+
 def get_vcap_services_data():
     if os.environ.get("VCAP_SERVICES"):
         return json.loads(os.environ.get("VCAP_SERVICES"))
@@ -176,7 +185,7 @@ def get_java_version(mx_version):
             "version": os.getenv("JAVA_VERSION", "8u202"),
             "vendor": "oracle",
         }
-    elif mx_version >= MXVersion("5.18"):
+    elif mx_version >= MXVersion("6.0"):
         java_version = {
             "version": os.getenv("JAVA_VERSION", "8u51"),
             "vendor": "oracle",

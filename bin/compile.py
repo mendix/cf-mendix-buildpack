@@ -135,6 +135,12 @@ def preflight_check():
     if not check_database_environment_variable():
         raise Exception("Missing environment variables")
 
+    mx_version_str = get_runtime_version()
+    logging.info("Preflight check on version {}".format(mx_version_str))
+    mx_version = MXVersion(str(mx_version_str))
+    if not buildpackutil.check_deprecation(mx_version):
+        raise Exception("Version {} is deprecated.".format(mx_version_str))
+
 
 def set_up_directory_structure():
     logging.debug("making directory structure")

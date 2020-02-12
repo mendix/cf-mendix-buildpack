@@ -133,17 +133,14 @@ The Java heap size is configured automatically based on best practices. You can 
 
 ### Configuring the Java version
 
-The build pack will automatically determine the Java version to use based on the runtime version of the app being deployed. The default Java version is 8 for Mendix 5.18 and higher. For Mendix 8 and above the default Java version is 11. In most cases it is not needed to change the Java version determined by the build pack.
+The build pack will automatically determine the Java version to use based on the runtime version of the app being deployed. The default Java version is 8 for Mendix 6 and higher. For Mendix 8 and above the default Java version is 11. In most cases it is not needed to change the Java version determined by the build pack.
 
 *Note*: Starting from Mendix 7.23.1 we changed to use AdoptOpenJDK. The buildpack will automatically determine the vendor based on the Mendix version. The `JAVA_VERSION` variable can be used to select a version number only, not the vendor.
-
-**For Mendix 5** the major java version can be changed by setting `JAVA_VERSION`.  
-For all other versions **the major version number should be respected** and the `JAVA_VERSION` can be used to switch to a different patch version. 
 
 If you want to force Java 7 or 8, you can set the environment variable `JAVA_VERSION` to `7` or `8`:
 
     cf set-env <YOUR_APP> JAVA_VERSION 8
-    
+
 Or to switch patch version for Java 11:
 
 	cf set-env <YOUR_APP> JAVA_VERSION 11.0.3
@@ -177,7 +174,7 @@ to configure multiple supported headers, you can set it like below:
 
 ### Horizontal Scaling
 
-There are two ways for horizontal scaling in Mendix. In Mendix 5.15+ you can use sticky sessions. Mendix 7 brings this even further by no longer requiring a state store. See below on how to activate these settings, based on the Mendix version you use.
+There are two ways for horizontal scaling in Mendix. In Mendix 6 you can use sticky sessions. Mendix 7 brings this even further by no longer requiring a state store. See below on how to activate these settings, based on the Mendix version you use.
 
 #### Things to keep in mind when scaling horizontally
 
@@ -189,7 +186,7 @@ In all horizontal scaling scenarios, extra care needs to be taken when programmi
 * relying on singleton variables to keep global application state
 * relying on scheduled events to make changes in memory, scheduled events will only run on the primary instance
 
-#### Enabling Sticky Sessions (Mendix 5.15+)
+#### Enabling Sticky Sessions (Mendix 6)
 
 If you want to enable sticky sessions, the only change that is needed is to set the environment variable `ENABLE_STICKY_SESSIONS` to `true`. This will replace the Mendix session cookie name from `XASSESSIONID` to `JSESSIONID` which will trigger sticky session detection in the Cloud Foundry http router. Watch out: custom login code might break if it still injects the `XASSESSIONID` cookie.
 
@@ -328,7 +325,7 @@ To enable Datadog, configure the following environment variables:
 | DD\_API_KEY | The `DD_API_KEY` environment variable should refer to the Datadog API key that can be configured in the Integrations -> API screen of the Datadog user interface. |
 | DD\_LOG_LEVEL | The `DD_LOG_LEVEL` environment ensures that messages are sent to Datadog. A safe level would be `INFO`, but it can be later adjusted to different levels: `CRITICAL`, `ERROR`, `WARNING`, or `DEBUG`. |
 
-To receive metrics from the runtime, the Mendix Agent is added to the runtime as Java agent. This agent can be configured by passing a JSON in the environment variable `METRICS_AGENT_CONFIG` as described in [Datadog for v4 Mendix Cloud](https://docs.mendix.com/developerportal/operate/datadog-metrics). 
+To receive metrics from the runtime, the Mendix Agent is added to the runtime as Java agent. This agent can be configured by passing a JSON in the environment variable `METRICS_AGENT_CONFIG` as described in [Datadog for v4 Mendix Cloud](https://docs.mendix.com/developerportal/operate/datadog-metrics).
 
 Please note that Datadog integration **requires Mendix 7.14 or higher**. If an older version is used, then a warning will be displayed in the logs and the Datadog integration will not be enabled.
 
