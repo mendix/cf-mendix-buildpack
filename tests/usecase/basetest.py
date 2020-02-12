@@ -27,7 +27,7 @@ class BaseTest(unittest.TestCase):
                     "--abbrev-ref",
                     "HEAD",
                 )
-            ).decode("utf-8")
+            ).decode("utf-8").rstrip()
         else:
             current_branch = "master"
         self.branch_name = os.environ.get("TRAVIS_BRANCH", current_branch)
