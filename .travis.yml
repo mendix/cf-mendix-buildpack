@@ -4,8 +4,8 @@ language: python
 
 stages:
   - lint
-  - test-cflinuxfs2
   - test-cflinuxfs3
+  - test-cflinuxfs2
 
 jobs:
   include:
