@@ -19,15 +19,19 @@ class BaseTest(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if not os.environ.get("TRAVIS_BRANCH"):
-            current_branch = subprocess.check_output(
-                (
-                    "git",
-                    "rev-parse",
-                    "--symbolic-full-name",
-                    "--abbrev-ref",
-                    "HEAD",
+            current_branch = (
+                subprocess.check_output(
+                    (
+                        "git",
+                        "rev-parse",
+                        "--symbolic-full-name",
+                        "--abbrev-ref",
+                        "HEAD",
+                    )
                 )
-            ).decode("utf-8")
+                .decode("utf-8")
+                .rstrip()
+            )
         else:
             current_branch = "master"
         self.branch_name = os.environ.get("TRAVIS_BRANCH", current_branch)
@@ -47,7 +51,7 @@ class BaseTest(unittest.TestCase):
         self.mx_password = os.environ.get("MX_PASSWORD", "Y0l0lop13#123")
         self.app_id = str(uuid.uuid4()).split("-")[0]
 
-        self.app_prefix = os.environ.get("TEST_PREFIX", "ops-")
+        self.app_prefix = os.environ.get("TEST_PREFIX", "ops")
         self.subdomain = "{}-{}".format(self.app_prefix, self.app_id)
         self.app_name = "{}.{}".format(self.subdomain, self.cf_domain)
 
@@ -156,7 +160,7 @@ class BaseTest(unittest.TestCase):
             # remove the downloaded file
             os.remove(self.app_id + self.package_name)
 
-        self.cmd(("./create-app-services.sh", self.app_name))
+        self.cmd(("tests/create-app-services.sh", self.app_name))
 
         app_guid = self.cmd(("cf", "app", self.app_name, "--guid")).strip()
 
@@ -184,7 +188,7 @@ class BaseTest(unittest.TestCase):
         )
 
     def tearDown(self):
-        self.cmd(("./delete-app.sh", self.app_name))
+        self.cmd(("tests/delete-app.sh", self.app_name))
         self.cf_home.cleanup()
 
     def assert_app_running(self, path="/xas/", code=401):
@@ -222,7 +226,7 @@ class BaseTest(unittest.TestCase):
             effective_env.update(env)
         try:
             return subprocess.check_output(
-                command, stderr=subprocess.PIPE, env=effective_env
+                command, stderr=subprocess.STDOUT, env=effective_env
             ).decode("utf-8")
         except subprocess.CalledProcessError as e:
             print(e.output.decode("utf-8"))

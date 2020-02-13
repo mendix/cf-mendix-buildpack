@@ -4,7 +4,7 @@ pids=""
 RESULT=0
 APPNAME=$1
 
-cf create-service schnapps-testfree basic-testfree $APPNAME-schnapps 2>&1 &
+cf create-service schnapps-testfree basic-testfree $APPNAME-schnapps -c '{"app_name":"$APPNAME"}' 2>&1 &
 pids="$pids $!"
 cf create-service rds-testfree shared-psql-testfree $APPNAME-database 2>&1 &
 pids="$pids $!"

@@ -1,56 +1,51 @@
-sudo: required
+os: linux
+
+dist: bionic
 
 language: python
 
-stages:
-  - lint
-  - test-cflinuxfs2
-  - test-cflinuxfs3
+env:
+  global:
+    - TEST_PREFIX=travis-$TRAVIS_JOB_ID
+    - CF_DIAL_TIMEOUT=30
+
+before_install:
+  - wget -q -O - https://packages.cloudfoundry.org/debian/cli.cloudfoundry.org.key | sudo apt-key add -
+  - echo "deb https://packages.cloudfoundry.org/debian stable main" | sudo tee /etc/apt/sources.list.d/cloudfoundry-cli.list
+  - sudo apt-get update && sudo apt-get install -y cf-cli
+  - sudo curl -s https://download.mendix.com/Mendix-CA-G2.crt -o /usr/local/share/ca-certificates/ca.crt && sudo update-ca-certificates
+
+install:
+  - pip3 install -r tests/requirements.txt
+
+before_script:
+  - make login
+
+script:
+  - make test &
+  - MAKE_PID=$!
+  - while [ -e /proc/$MAKE_PID ]; do sleep 60 && echo -n "."; done
+  - sleep 15
+  - wait $MAKE_PID
+
+after_script:
+  - make clean
 
 jobs:
   include:
-    - os: linux
-      dist: bionic
-      stage: lint
+    - stage: lint
       python: "3.6"
-      install: 'pip3 install -r tests/requirements_lint.txt'
+      before_install: []
+      install: pip3 install -r tests/requirements_lint.txt
+      before_script: []
       script: make lint
-    - os: linux
+      after_script: []
+    - stage: test
       dist: trusty
-      stage: test-cflinuxfs2
       python: "3.4.3"
-      env:
-        - CF_STACK=cflinuxfs2
-      install: 'pip3 install -r tests/requirements.txt'
-      before_script:
-        - wget --quiet "https://packages.cloudfoundry.org/stable?release=debian64&version=6.43.0&source=github-rel" -O cli.deb
-        - sudo dpkg -i cli.deb
-        - sudo curl -s https://download.mendix.com/Mendix-CA-G2.crt -o /usr/local/share/ca-certificates/ca.crt
-        - sudo update-ca-certificates
-      script:
-        - make test &
-        - MAKE_PID=$!
-        - while [ -e /proc/$MAKE_PID ]; do echo -n "."  && sleep 60; done
-        - sleep 15
-        - wait $MAKE_PID
-    - os: linux
-      dist: bionic
-      stage: test-cflinuxfs3
-      python: "3.6.8"
-      env:
-        - CF_STACK=cflinuxfs3
-      install: 'pip3 install -r tests/requirements.txt'
-      before_script:
-        - wget --quiet "https://packages.cloudfoundry.org/stable?release=debian64&version=6.43.0&source=github-rel" -O cli.deb
-        - sudo dpkg -i cli.deb
-        - sudo curl -s https://download.mendix.com/Mendix-CA-G2.crt -o /usr/local/share/ca-certificates/ca.crt
-        - sudo update-ca-certificates
-      script:
-        - make test &
-        - MAKE_PID=$!
-        - while [ -e /proc/$MAKE_PID ]; do echo -n "."  && sleep 60; done
-        - sleep 15
-        - wait $MAKE_PID
+      env: CF_STACK=cflinuxfs2
+    - python: "3.6.8"
+      env: CF_STACK=cflinuxfs3
 
 notifications:
   email: false

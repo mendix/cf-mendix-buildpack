@@ -188,7 +188,7 @@ def update_config(m2ee, app_name):
         _write_http_output_config(http_configs)
 
     # Enable Java Agent on MxRuntime to
-    datadog.enable_runtime_agent(m2ee)
+    datadog.enable_mx_java_agent(m2ee)
 
 
 def compile(install_path, cache_dir):

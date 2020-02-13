@@ -62,12 +62,19 @@ def get_tags():
     return json.loads(os.getenv("TAGS", os.getenv("DD_TAGS", "[]")))
 
 
+def get_domain():
+    return get_vcap_data()["application_uris"][0].split("/")[0]
+
+
 def get_hostname():
     dd_hostname = os.environ.get("DD_HOSTNAME")
     if dd_hostname is None:
-        domain = get_vcap_data()["application_uris"][0].split("/")[0]
-        dd_hostname = domain + "-" + os.getenv("CF_INSTANCE_INDEX", "")
+        dd_hostname = get_domain() + "-" + os.getenv("CF_INSTANCE_INDEX", "")
     return dd_hostname
+
+
+def get_appname():
+    return get_domain().split("-")[0]
 
 
 def get_blobstore_url(filename):

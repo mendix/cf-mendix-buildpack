@@ -1,8 +1,9 @@
+import os
+import backoff
+import requests
+
 import basetest
 import buildpackutil
-import os
-import requests
-import time
 
 
 class TestJDKVersions(basetest.BaseTest):
@@ -91,33 +92,29 @@ class TestJDKVersions(basetest.BaseTest):
         self.assert_certificate_in_cacert("staat der nederlanden root ca - g3")
 
     def test_fast_deploy_7_23_1(self):
-        self.setUpCF(
-            "AdoptOpenJDKTest_7.23.1.mpk",
-            env_vars={"DEPLOY_PASSWORD": self.mx_password},
-        )
+        FILENAME = "AdoptOpenJDKTest_7.23.1.mpk"
+        self.setUpCF(FILENAME, env_vars={"DEPLOY_PASSWORD": self.mx_password})
+
         self.startApp()
 
         self.cmd(
             (
                 "wget",
                 "--quiet",
+                "-N",
+                "-O",
+                self.app_id + FILENAME,
                 "https://s3-eu-west-1.amazonaws.com"
-                "/mx-buildpack-ci/AdoptOpenJDKTest_7.23.1.mpk",
+                "/mx-buildpack-ci/" + FILENAME,
             )
         )
-        full_uri = "https://" + self.app_name + "/_mxbuild/"
-        time.sleep(60)
-        r = requests.post(
-            full_uri,
-            auth=("deploy", self.mx_password),
-            files={"file": open("AdoptOpenJDKTest_7.23.1.mpk", "rb")},
-        )
+
+        r = self._await_fast_deploy(self.app_id + FILENAME)
 
         if r.status_code != 200:
             print(self.get_recent_logs())
-            print(r.text)
-        assert r.status_code == 200
-        assert "STARTED" in r.text
+        assert r.status_code == 200 and "STARTED" in r.text
+        os.remove(self.app_id + FILENAME)
 
         jdk = buildpackutil._determine_jdk("7.23.1")
         target_dir = buildpackutil._compose_jvm_target_dir(jdk)
@@ -128,3 +125,14 @@ class TestJDKVersions(basetest.BaseTest):
         )
 
         self._check_java_presence(target_dir)
+
+    @backoff.on_predicate(
+        backoff.expo, lambda x: x.status_code != 200, max_time=180
+    )
+    def _await_fast_deploy(self, filename):
+        url = "https://" + self.app_name + "/_mxbuild/"
+        return requests.post(
+            url,
+            auth=("deploy", self.mx_password),
+            files={"file": open(os.path.abspath(filename), "rb")},
+        )
