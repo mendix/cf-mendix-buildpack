@@ -384,6 +384,14 @@ cf unset-env <YOUR_APP> DEBUG_CONTAINER
 cf restart <YOUR_APP>
 ```
 
+# Limitations
+
+These are known limitations for the Mendix buildpack.
+
+## Pushing MPKs produced by Mendix Studio Pro 6.x
+
+When it is desired to push MPKs produced by Mendix Studio Pro 6.x to containers using `cflinuxfs3` as root filesystem, the staging phase is likely going to fail when the default settings are used. As a workaround, more disk space needs to be allocated for the cache. Consult the [Deploying a Large App](https://docs.cloudfoundry.org/devguide/deploy-apps/large-app-deploy.html) section in the official CloudFoundry documentation for more information.
+
 # Contributing
 Make sure your code complies with PEP8. Make sure your code is styled using [Black](https://github.com/psf/black).
 We enforce this using `flake8` and `black` in our travis CI.

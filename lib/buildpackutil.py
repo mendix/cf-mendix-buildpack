@@ -5,6 +5,7 @@ import os
 import platform
 import subprocess
 import sys
+import glob
 from distutils.util import strtobool
 
 sys.path.insert(0, "lib")
@@ -293,8 +294,13 @@ def _checkout_from_git_rootfs(directory, mx_version):
 
 def _get_env_with_monolib(mono_dir):
     env = dict(os.environ)
+
     env["LD_LIBRARY_PATH"] = mono_dir + "/lib"
     env["MONO_STRICT_MS_COMPLIANT"] = "yes"
+
+    if os.path.basename(mono_dir) == "mono-3.10.0":
+        env["LC_ALL"] = "C"
+
     if not os.path.isfile(os.path.join(mono_dir, "lib", "libgdiplus.so")):
         raise Exception("libgdiplus.so not found in dir %s" % mono_dir)
     return env
@@ -362,18 +368,45 @@ def ensure_and_get_mono(mx_version, cache_dir):
     )
     mono_version = _detect_mono_version(mx_version)
     fallback_location = "/tmp/opt"
-    try:
-        mono_location = _get_mono_path("/tmp/opt", mono_version)
-    except NotFoundException:
-        logging.debug("Mono not found in default locations")
+
+    if (
+        mono_version == "mono-3.10.0"
+        and platform.linux_distribution()[2].lower() == "bionic"
+    ):
         download_and_unpack(
             get_blobstore_url(_compose_mono_url_path(mono_version)),
-            os.path.join(fallback_location, mono_version),
+            os.path.join(fallback_location, "store"),
             cache_dir,
         )
-        mono_location = _get_mono_path(fallback_location, mono_version)
-    logging.debug("Using {mono_location}".format(mono_location=mono_location))
-    return mono_location
+        mono_subpath = glob.glob("/tmp/opt/store/*-mono-env-3.10.0")
+        mono_location = "/tmp/opt/mono-3.10.0"
+        os.symlink(mono_subpath[0], mono_location)
+        logging.debug(
+            "Using {mono_location}".format(mono_location=mono_location)
+        )
+        logging.warning(
+            "The staging phase is likely going to fail when the default "
+            + "settings are used. As a workaround, more disk space needs to be "
+            + "allocated for the cache. Consult "
+            + "https://docs.cloudfoundry.org/devguide/deploy-apps/large-app-deploy.html "
+            + "for more information."
+        )
+        return mono_location
+    else:
+        try:
+            mono_location = _get_mono_path("/tmp/opt", mono_version)
+        except NotFoundException:
+            logging.debug("Mono not found in default locations")
+            download_and_unpack(
+                get_blobstore_url(_compose_mono_url_path(mono_version)),
+                os.path.join(fallback_location, mono_version),
+                cache_dir,
+            )
+            mono_location = _get_mono_path(fallback_location, mono_version)
+        logging.debug(
+            "Using {mono_location}".format(mono_location=mono_location)
+        )
+        return mono_location
 
 
 def _determine_jdk(mx_version, package="jdk"):
