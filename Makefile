@@ -10,9 +10,9 @@ clean: clean-cf clean-files
 
 clean-cf:
 	@echo "Cleaning up CF environment..."
-	@-$(shell cf apps 2>&1 | awk -v s="$(PREFIX)" 'index($$0, s) == 1' | (cut -f 1 -d ' ' || ':') | xargs -n 1 cf delete -r -f  | grep -v 'OK' || true)
-	@-$(shell cf s 2>&1 | awk -v s="$(PREFIX)" 'index($$0, s) == 1' | (cut -f 1 -d ' ' || ':') | xargs -n 1 cf ds -f | grep -v 'OK' || true)
-	@-cf delete-orphaned-routes -f 2>&1 | grep -i Deleting || true
+	$(shell cf apps 2>&1 | awk -v s="$(PREFIX)" 'index($$0, s) == 1' | cut -f 1 -d ' ' | xargs -n 1 cf delete -r -f  | grep -v 'OK' || true)
+	$(shell cf s 2>&1 | awk -v s="$(PREFIX)" 'index($$0, s) == 1' | cut -f 1 -d ' ' | xargs -n 1 cf ds -f | grep -v 'OK' || true)
+	@cf delete-orphaned-routes -f 2>&1 | grep -i Deleting || true
 	@echo "Completed CF environment cleanup"	
 
 clean-files:
