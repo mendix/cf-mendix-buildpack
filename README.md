@@ -1,5 +1,4 @@
-Run Mendix in Cloud Foundry
-=====
+# Run Mendix in Cloud Foundry
 [![Build Status](https://travis-ci.org/mendix/cf-mendix-buildpack.svg?branch=master)](https://travis-ci.org/mendix/cf-mendix-buildpack)
 
 The Mendix Buildpack for Cloud Foundry has two main phases:
@@ -10,18 +9,13 @@ The compile phase accepts archives in `.mda` format (Mendix Deployment Archive).
 
 There are specific guides for deploying Mendix apps to the [Pivotal](https://docs.mendix.com/deployment/cloud-foundry/deploy-a-mendix-app-to-pivotal) and [IBM Bluemix](https://docs.mendix.com/deployment/cloud-foundry/deploy-a-mendix-app-to-ibm-bluemix) Cloud Foundry platforms on our [documentation page](https://docs.mendix.com/deployment/cloud-foundry). This buildpack readme documents the more low-level details and CLI instructions.
 
-
-Deploying using the CLI
-----
-
+## Deploying using the CLI
 
 ### Install cloud foundry command line
 
 Install the Cloud Foundry command line executable. You can find this on the [releases page](https://github.com/cloudfoundry/cli#stable-release). Set up the connection to your preferred Cloud Foundry environment with `cf login` and `cf target`.
 
-
 ### Push your app
-
 We push an mda (Mendix Deployment Archive) that was built by the Mendix Business Modeler to Cloud Foundry.
 
     cf push <YOUR_APP> -b https://github.com/mendix/cf-mendix-buildpack -p <YOUR_MDA>.mda -t 180
@@ -34,16 +28,12 @@ Note that you might need to increase the startup timeout to prevent the database
 
 Also note that building the project in Cloud Foundry takes more time and requires enough memory in the compile step.
 
-
 ### Configuring admin password
-
 The first push generates a new app. In order to login to your application as admin you can set the password using the `ADMIN_PASSWORD` environment variable. Keep in mind that the admin password should comply with the policy you have set in the Mendix Modeler. For security reasons it is recommended to set this environment variable once to create the admin user, then remove the environment variable and restart the app. Finally log in to the app and change the password via the web interface. Similarly, the setting can be used to reset the password of an administrator.
 
     cf set-env <YOUR_APP> ADMIN_PASSWORD "<YOURSECRETPASSWORD>"
 
-
 ### Connecting a Database
-
 You also need to connect a PostgreSQL, MySQL or any other Mendix supported database instance which allows at least 5 connections to the database. Find out which services are available in your Cloud Foundry foundation with the `marketplace` command.
 
     cf marketplace
@@ -75,9 +65,7 @@ cf set-env <YOUR_APP> DATABASE_CONNECTION_PARAMS '{"tcpKeepAlive": "true", "conn
 
 Note: if you set `DATABASE_URL` provide it as JDBC connection string (prefixed with `jdbc:` and including parameters, `DATABASE_CONNECTION_PARAMS` is not needed then.
 
-
 ### Configuring Constants
-
 The default values for constants will be used as defined in your project. However, you can override them with environment variables. You need to replace the dot with an underscore and prefix it with `MX_`. So a constant like `Module.Constant` with value `ABC123` could be set like this:
 
     cf set-env <YOUR_APP> MX_Module_Constant "ABC123"
@@ -86,30 +74,23 @@ After changing environment variables you need to restart your app. A full push i
 
     cf restart <YOUR_APP>
 
-
 ### Configuring Scheduled Events
-
 The scheduled events can be configured using environment variable `SCHEDULED_EVENTS`.
 
 Possible values are `ALL`, `NONE` or a comma separated list of the scheduled events that you would like to enable. For example: `ModuleA.ScheduledEvent,ModuleB.OtherScheduledEvent`
 
 When scaling to multiple instances, the scheduled events that are enabled via the settings above will only be executed on instance `0`. The other instances will not execute scheduled events at all.
 
-
 ### Configuring External Filestore
-
 Mendix supports multiple external file stores: AWS S3 compatible file stores, Azure Storage and Swift, used in Bluemix Object Storage. All of these can be configured manually via [Custom Runtime Settings](#configuring-custom-runtime-settings), but S3, Azure Storage and Swift (Bluemix Object Storage) can be configured in easier ways:
 
 #### Swift (Bluemix Object Storage) Settings
-
 When deploying Mendix 6.7 or higher to Bluemix, you can simply create an [Object Storage service](https://console.ng.bluemix.net/catalog/services/object-storage) and attach it to your app. No further configuration in necessary, you just need to restart your app. By default, a storage container will be created for you called `mendix`. If you want to use a different container name (for example if you are sharing the Object Storage service between multiple apps), you can configure the container name with the environment variable `SWIFT_CONTAINER_NAME`.
 
 #### Azure Storage Service Settings
-
 When deploying Mendix 6.7 or higher to CF on Azure with the Azure Service Broker, you can simply create an Azure Storage Service instance and attach it to your app. No further configuration in necessary, you just need to restart your app. By default, a storage container will be created for you called `mendix`. If you want to use a different container name (for example if you are sharing the Azure Storage service between multiple apps), you can configure the container name with the environment variable `AZURE_CONTAINER_NAME`.
 
 #### S3 Settings
-
 Mendix can use external file stores with an S3 compatible api. Use the following environment variables to enable this.
 
 * `S3_ACCESS_KEY_ID`: credentials access key
@@ -123,17 +104,13 @@ The following environment variables are optional:
 * `S3_USE_V2_AUTH`: use Signature Version 2 Signing Process, this is useful for connecting to S3 compatible object stores like Riak-CS, or Ceph.
 * `S3_USE_SSE`: if set to `true` this will enable Server Side Encryption in S3, available from Mendix 6.0
 
-
-### Configuring the Java heap size
-
+### Configuring the Java Heap Size
 The Java heap size is configured automatically based on best practices. You can tweak this to your needs by using another environment variable in which case it is used directly.
 
     cf set-env <YOUR_APP> HEAP_SIZE 512M
 
-
-### Configuring the Java version
-
-The build pack will automatically determine the Java version to use based on the runtime version of the app being deployed. The default Java version is 8 for Mendix 6 and higher. For Mendix 8 and above the default Java version is 11. In most cases it is not needed to change the Java version determined by the build pack.
+### Configuring the Java Version
+The build pack will automatically determine the Java version to use based on the runtime version of the app being deployed. The default Java version is 8 for Mendix 5.18 and higher. For Mendix 8 and above the default Java version is 11. In most cases it is not needed to change the Java version determined by the build pack.
 
 *Note*: Starting from Mendix 7.23.1 we changed to use AdoptOpenJDK. The buildpack will automatically determine the vendor based on the Mendix version. The `JAVA_VERSION` variable can be used to select a version number only, not the vendor.
 
@@ -145,9 +122,7 @@ Or to switch patch version for Java 11:
 
 	cf set-env <YOUR_APP> JAVA_VERSION 11.0.3
 
-
 ### Configuring Custom Runtime Settings
-
 To configure any of the advanced [Custom Runtime Settings](https://docs.mendix.com/refguide/custom-settings) you can use setting name prefixed with `MXRUNTIME_` as an environment variable.
 
 For example, to configure the `ConnectionPoolingMinIdle` setting to value `10`, you can set the following environment variable:
@@ -158,9 +133,7 @@ If the setting contains a dot `.` you can use an underscore `_` in the environme
 
     cf set-env <YOUR_APP> MXRUNTIME_com_mendix_storage_s3_EndPoint foo
 
-
-### Configuring HTTP headers
-
+### Configuring HTTP Headers
 HTTP headers allow the client and the server to pass additional information with the request or the response which defines the operating parameters of an HTTP transaction. Few of the response headers can be configured via `HTTP_RESPONSE_HEADERS` environment variable and setting a JSON string value to configure multiple supported headers. See [Environment Details - Developer Portal Guide | Mendix Documentation Section 4.2](https://docs.mendix.com/developerportal/deploy/environments-details) for all supported headers and options.
 
 For example, to configure `X-Frame-Options`, you can set `HTTP_RESPONSE_HEADERS` environment variable like below:
@@ -171,13 +144,10 @@ to configure multiple supported headers, you can set it like below:
 
     cf set-env <YOUR_APP> HTTP_RESPONSE_HEADERS '{"Referrer-Policy": "no-referrer-when-downgrade", "X-Content-Type-Options": "nosniff"}'
 
-
 ### Horizontal Scaling
-
 There are two ways for horizontal scaling in Mendix. In Mendix 6 you can use sticky sessions. Mendix 7 brings this even further by no longer requiring a state store. See below on how to activate these settings, based on the Mendix version you use.
 
 #### Things to keep in mind when scaling horizontally
-
 When you make changes to your domain model, the Mendix Runtime will need to synchronize data model changes with the database on startup. This will only happen on instance `0`. The other instances will wait until the database is fully synchronized. This is determined via the `CF_INSTANCE_INDEX` environment variable. This is a built-in variable in Cloud Foundry, you do not need to set it yourself. If the environment variable is not present (this is the case older Cloud Foundry versions) every instance will attempt to synchronize the database. A warning containing the text `CF_INSTANCE_INDEX environment variable not found` will be printed in the log.
 
 Scheduled events will also only be executed on instance `0`, see the section [Configuring Scheduled Events](#configuring-scheduled-events).
@@ -187,7 +157,6 @@ In all horizontal scaling scenarios, extra care needs to be taken when programmi
 * relying on scheduled events to make changes in memory, scheduled events will only run on the primary instance
 
 #### Enabling Sticky Sessions (Mendix 6)
-
 If you want to enable sticky sessions, the only change that is needed is to set the environment variable `ENABLE_STICKY_SESSIONS` to `true`. This will replace the Mendix session cookie name from `XASSESSIONID` to `JSESSIONID` which will trigger sticky session detection in the Cloud Foundry http router. Watch out: custom login code might break if it still injects the `XASSESSIONID` cookie.
 
 When using sticky sessions, clients need to support http cookies. Webservice integrations typically don't do this, so each request can end up on a different instance.
@@ -195,13 +164,11 @@ When using sticky sessions, clients need to support http cookies. Webservice int
 With sticky sessions there is an increase in resiliency. If one instance crashes, only 1/n-th of the users will be affected. These users will lose their session state and will have to sign in again.
 
 #### Configuring Clustering for Mendix 7
-
 Mendix 7 makes it easier to scale out. The absence of the need for a state store results in the fact that nothing needs to be configured for running Mendix 7 in clustering mode. Based on the `CF_INSTANCE_INDEX` variable, the runtime starts either in leader or slave mode. The leader mode will do the database synchronization activities (when necessary), while the slaves will automatically wait until that is finished.
 
 NOTE: The previously documented setting `CLUSTER_ENABLED` and the REDIS related settings for Mendix 6 will have no effect anymore in Mendix 7 and are ignored.
 
-### Offline buildpack settings
-
+### Offline Buildpack Settings
 If you are running Cloud Foundry without a connection to the Internet, you should specify an on-premises web server that hosts Mendix Runtime files and other buildpack resources. You can set the endpoint with the following environment variable:
 
 `BLOBSTORE: https://my-intranet-webserver.my-company.com/mendix/`
@@ -216,9 +183,7 @@ And for [Mendix \< 6.6](https://docs.mendix.com/releasenotes/desktop-modeler/6.6
 * `BLOBSTORE/mx-buildpack/jre-8u51-linux-x64.tar.gz`
 * `BLOBSTORE/mx-buildpack/jdk-8u51-linux-x64.tar.gz`
 
-
 ### Certificate Management
-
 To import Certificate Authorities (CAs) into the Java truststore, use the `CERTIFICATE_AUTHORITIES` environment variable.
 
 The contents of this variable should be a concatenated string containing a the additional CAs in PEM format that are trusted. Example:
@@ -289,16 +254,12 @@ The contents of this variable should be a concatenated string containing a the a
 
 Please note, these are two internal Mendix CAs which you should not actually add to your trust store.
 
-
-Monitoring Tools
-====
+## Monitoring Tools
 
 ### New Relic
-
 To enable New Relic, simply bind a New Relic service to this app and settings will be picked up automatically. Afterwards you have to restage your application to enable the New Relic agent.
 
 ### AppDynamics
-
 To enable AppDynamics, configure the following environment variables:
 
     APPDYNAMICS_CONTROLLER_PORT
@@ -317,27 +278,35 @@ If you have any environment variable that starts with `APPDYNAMICS_`, the AppDyn
 Please note that AppDynamics requires Mendix 6.2 or higher.
 
 ### Datadog
-
 To enable Datadog, configure the following environment variables:
 
-|            |         |
-| ----------- | -------- |
-| DD\_API_KEY | The `DD_API_KEY` environment variable should refer to the Datadog API key that can be configured in the Integrations -> API screen of the Datadog user interface. |
-| DD\_LOG_LEVEL | The `DD_LOG_LEVEL` environment ensures that messages are sent to Datadog. A safe level would be `INFO`, but it can be later adjusted to different levels: `CRITICAL`, `ERROR`, `WARNING`, or `DEBUG`. |
+| Environment Variable | Description |
+|-|-|
+| `DD_API_KEY` | The Datadog API key. Can can be configured in the `Integrations -> API` screen of the user interface for your Datadog organization. |
+| `DD_LOG_LEVEL`| Ensures that log messages are sent to Datadog. A safe level would be `INFO`, but it can be later adjusted to different levels: `CRITICAL`, `ERROR`, `WARNING`, or `DEBUG`. |
 
-To receive metrics from the runtime, the Mendix Agent is added to the runtime as Java agent. This agent can be configured by passing a JSON in the environment variable `METRICS_AGENT_CONFIG` as described in [Datadog for v4 Mendix Cloud](https://docs.mendix.com/developerportal/operate/datadog-metrics).
+To receive metrics from the runtime, the Mendix Java Agent is added to the runtime as Java agent. This agent can be configured by passing a JSON in the environment variable `METRICS_AGENT_CONFIG` as described in [Datadog for v4 Mendix Cloud](https://docs.mendix.com/developerportal/operate/datadog-metrics).
 
 Please note that Datadog integration **requires Mendix 7.14 or higher**. If an older version is used, then a warning will be displayed in the logs and the Datadog integration will not be enabled.
 
-Data Snapshots
-====
+The Datadog integration features a full Datadog Agent installation inspired by the [official Datadog Cloud Foundry Buildpack](https://github.com/DataDog/datadog-cloudfoundry-buildpack). Specific agent checks are enabled and configured specifically for Mendix applications. Additionally, we configure the following Datadog environment variables for you:
 
+| Environment Variable | Value | Can Be Overridden? | Description |
+|-|-|-|-|
+| `DD_ENABLE_CHECKS` | `true`| No | Enables integrated Datadog Agent Checks (logs, system metrics, PostgreSQL and JMX) |
+| `DD_HOSTNAME` |`<app>-<env>.mendixcloud.com-<instance>` | No | Human-readable host name for your application |
+| `DD_JMXFETCH_ENABLED`| `false`| No | Disables Datadog Java Trace Agent JMX metrics fetching, since this is already handled by the Mendix Runtime. |
+| `DD_LOGS_ENABLED`| `true` | No | Enables sending your application logs directly to Datadog |
+| `DD_SERVICE_NAME`| `<app>` | Yes | Defaults to your application name. Is only set when `DD_TRACE_ENABLED` is set to `true`. |
+| `DD_TAGS`| Various Cloud Foundry tags | Yes | If set, your tags will be added to the list of supplied Cloud Foundry tags |
+| `DD_TRACE_ENABLED`| `false` | Yes | Disables Datadog APM by default. **Enabling Datadog APM is experimental and enables the [Datadog Java Trace Agent](https://docs.datadoghq.com/tracing/setup/java/) alongside the Mendix Java Agent.**. |
+
+The `DD_LOG_FILE`, `DD_PROCESS_CONFIG_LOG_FILE` and `DD_DOGSTATSD_PORT` environment variables are also configured specifically with buildpack-specific system values. Other environment variables can be set as per the [Datadog Agent documentation](https://docs.datadoghq.com/agent/).
+
+# Data Snapshots
 If you want to enable initializing your database and files from an existing data snapshot included in the MDA, set the environment variable `USE_DATA_SNAPSHOT` to `true`. Please note: this only works when the database is completely empty. If there are any Mendix tables defined in the database already, the Runtime will refuse the overwrite it. So, if you have ever started an app before setting this environment variable (thereby initializing the database), you will not be able to import a data snapshot.
 
-
-License Activation
-====
-
+# License Activation
 To activate a license on your application you need license credentials. These credentials can be obtained by contacting Mendix Support.
 
 ```
@@ -347,13 +316,10 @@ cf set-env <YOUR_APP> LICENSE_KEY <LicenseKey>
 
 An example `UUID` is `aab8a0a1-1370-467e-918d-3a243b0ae160` and `LicenseKey` is a very long base64 string. The app needs to be restarted for the license to be effective.
 
-Logging and Debugging
-====
-
+# Logging and Debugging
 To debug the code of the buildpack itself, set the `BUILDPACK_XTRACE` environment variable to `true`.
 
-### App log levels
-
+### App Log Levels
 From Mendix 6 onwards it is possible to configure log levels using environment variables. This allows getting a better insight in the behavior of your Mendix app. Configuring environment variables happens by adding one or more environment variables starting with the name `LOGGING_CONFIG` (the part of the name after that is not relevant and only used to distinguish between multiple entries if necessary). Its value should be valid JSON, in the format:
 
     {
@@ -368,13 +334,11 @@ You can see the available Log Nodes in your application in the Mendix Modeler. T
  * `DEBUG`
  * `TRACE`
 
-
 Example:
 
     cf set-env <YOUR_APP> LOGGING_CONFIG '{ "<LOG NODE VALUE>": "DEBUG"}'
 
-### Rate-limiting of log output
-
+### Rate-limiting of Log Output
 The buildpack has the ability to rate-limit the amount of log lines from the Mendix Runtime. This can be useful for apps that misbehave and cause problems for other users in a multi-tenant environment. Rate-limiting is done in log lines per second. Extra lines are dropped and the number of dropped messages is printed on `stderr`.
 
 Example (1000 loglines/second):
@@ -382,13 +346,9 @@ Example (1000 loglines/second):
     cf set-env <YOUR_APP> LOG_RATELIMIT '1000'
 
 ### Enabling the Mendix Debugger
-
 You can enable the Mendix Debugger by setting a `DEBUGGER_PASSWORD` environment variable. This will enable and open up the debugger for the lifetime of this process and is to be used with caution. The debugger is reachable on https://DOMAIN/debugger/. You can follow the second half of this [How To](https://docs.mendix.com/howto/monitoring-troubleshooting/debug-microflows) to connect with the Mendix Business Modeler. To stop the debugger, unset the environment variable and restart the application.
 
-
-Buildpack Version Pinning
-====
-
+# Buildpack Version Pinning
 If you use the `cf push` commands as described above, you will always use the latest version of the buildpack, i.e. the most recent commit to the master branch. We recommend this for the majority of use cases, as you will always have the latest features and fixes.
 
 However, if you need to exercise a high degree of control over your deployments, it is possible to pin a specific version of the buildpack. This will prevent you from being affected by bugs that are inadvertently introduced, but you will need to set up a procedure to regularly move to new versions of the buildpack.
@@ -399,10 +359,7 @@ To push with a specific version of the buildpack, append `#<tag>` to the buildpa
 
 You can find the list of available tags here: https://github.com/mendix/cf-mendix-buildpack/tags
 
-
-Troubleshooting (Rescue mode)
-====
-
+# Troubleshooting (Rescue Mode)
 Sometimes the app won't run because it exits with status code 143. Or, for any reason, the app is unable to start, leaving you unable to debug the issue from within the container. For these cases we have introduced a `DEBUG_CONTAINER` mode. To enable it:
 
 ```
@@ -410,7 +367,7 @@ cf set-env <YOUR_APP> DEBUG_CONTAINER true
 cf restart <YOUR_APP>
 ```
 
-Now your app will start in CloudFoundry (n.b. - the Mendix Runtime will not start yet) and you can troubleshoot the problem with:
+Now your app will start in CloudFoundry (i.e. the Mendix Runtime will not start yet) and you can troubleshoot the problem with:
 ```
 cf ssh <YOUR_APP>
 export HOME=$HOME/app # this should not be needed but for now it is
@@ -426,10 +383,7 @@ cf unset-env <YOUR_APP> DEBUG_CONTAINER
 cf restart <YOUR_APP>
 ```
 
-
-Contributing
-====
-
+# Contributing
 Make sure your code complies with PEP8. Make sure your code is styled using [Black](https://github.com/psf/black).
 We enforce this using `flake8` and `black` in our travis CI.
 
@@ -451,7 +405,5 @@ Rebase your git history in such a way that each commit makes one consistent chan
 
 For new code changes going live, the version has to bumped at the top of `start.py`, and a new tag with that version number needs to be pushed to github.
 
-License
-====
-
+# License
 This project is licensed under the Apache License v2 (for details, see the [LICENSE](LICENSE) file).

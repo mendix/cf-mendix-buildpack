@@ -1,5 +1,5 @@
+import backoff
 import basetest
-import time
 
 
 class TestCaseJavaCrashRestartsProcess(basetest.BaseTest):
@@ -18,8 +18,12 @@ class TestCaseJavaCrashRestartsProcess(basetest.BaseTest):
         self.assert_app_running()
         print("killing java to see if app will actually restart")
         self.cmd(("cf", "ssh", self.app_name, "-c", "killall java"))
-        time.sleep(10)
-        cf_events = self.cmd(("cf", "events", self.app_name))
-        print("checking if process has crashed in cf events")
-        print(cf_events)
-        assert "app.crash" in cf_events
+
+        found = self._await_crash_in_cf_events("app.crash")
+        if not found:
+            print(self.cmd(("cf", "events", self.app_name)))
+        assert found
+
+    @backoff.on_predicate(backoff.expo, lambda x: not x, max_time=180)
+    def _await_crash_in_cf_events(self, needle):
+        return needle in self.cmd(("cf", "events", self.app_name))

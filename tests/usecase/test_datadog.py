@@ -5,25 +5,31 @@ import json
 class TestCaseDeployWithDatadog(basetest.BaseTest):
     def _deploy_app(self, mda_file):
         super().setUp()
-        self.setUpCF(mda_file, env_vars={"DD_API_KEY": "NON-VALID-TEST-KEY"})
+        self.setUpCF(
+            mda_file,
+            env_vars={
+                "DD_API_KEY": "NON-VALID-TEST-KEY",
+                "DD_TRACE_ENABLED": "true",
+            },
+        )
         self.startApp()
 
     def _test_datadog_running(self, mda_file):
         self._deploy_app(mda_file)
         self.assert_app_running()
 
-        # Validate telegraf is running and has port 8125 opened for StatsD
+        # Validate Datadog is running and has port 8125 opened for StatsD
         output = self.cmd(
             (
                 "cf",
                 "ssh",
                 self.app_name,
                 "-c",
-                "lsof -i | grep '^datadog.*:8125'",
+                "lsof -i | grep '^agent.*:8125'",
             )
         )
         assert output is not None
-        assert str(output).find("datadog") >= 0
+        assert str(output).find("agent") >= 0
 
     def test_datadog_failure_mx6(self):
         super().setUp()

@@ -1,6 +1,6 @@
+import backoff
 import basetest
 import requests
-import time
 
 
 class TestCaseFastdeploy(basetest.BaseTest):
@@ -26,17 +26,9 @@ class TestCaseFastdeploy(basetest.BaseTest):
         )
         full_uri = "https://" + self.app_name + "/_mxbuild/"
 
-        max = 12
-        for attempt in range(0, max):
-            time.sleep(10)
-            r = requests.get(full_uri, auth=("deploy", self.mx_password))
-            if r.status_code == 501:
-                break
-            if attempt == max - 1:
-                raise Exception("Starting MxBuild takes too long")
-
-        # making sure mxbuild is ready
-        time.sleep(10)
+        r = self._await_mxbuild(full_uri)
+        if r.status_code > 501:
+            raise Exception("Starting MxBuild takes too long")
 
         r = requests.post(
             full_uri,
@@ -49,3 +41,9 @@ class TestCaseFastdeploy(basetest.BaseTest):
             print(r.text)
         assert r.status_code == 200
         assert "STARTED" in r.text
+
+    @backoff.on_predicate(
+        backoff.expo, lambda x: x.status_code > 501, max_time=180
+    )
+    def _await_mxbuild(self, url):
+        return requests.get(url, auth=("deploy", self.mx_password))
