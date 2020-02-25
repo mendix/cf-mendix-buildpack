@@ -74,7 +74,9 @@ def get_hostname():
 
 
 def get_appname():
-    return get_domain().split("-")[0]
+    return "".join(
+        filter(lambda x: not x.isdigit(), get_domain().split("-")[0])
+    )
 
 
 def get_blobstore_url(filename):
