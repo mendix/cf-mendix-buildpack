@@ -297,9 +297,10 @@ The Datadog integration features a full Datadog Agent installation inspired by t
 | `DD_HOSTNAME` |`<app>-<env>.mendixcloud.com-<instance>` | No | Human-readable host name for your application |
 | `DD_JMXFETCH_ENABLED`| `false`| No | Disables Datadog Java Trace Agent JMX metrics fetching, since this is already handled by the Mendix Runtime. |
 | `DD_LOGS_ENABLED`| `true` | No | Enables sending your application logs directly to Datadog |
-| `DD_SERVICE_NAME`| `<app>` | Yes | Defaults to your application name. Is only set when `DD_TRACE_ENABLED` is set to `true`. |
+| `DD_SERVICE_MAPPING`| `<database>:<app>:db` | No | Links your database to your app in Datadog APM. Is only set when `DD_TRACE_ENABLED` is set to `true`. |
+| `DD_SERVICE_NAME`| `<app>` | No | Defaults to your application name. Is only set when `DD_TRACE_ENABLED` is set to `true`. |
 | `DD_TAGS`| Various Cloud Foundry tags | Yes | If set, your tags will be added to the list of supplied Cloud Foundry tags |
-| `DD_TRACE_ENABLED`| `false` | Yes | Disables Datadog APM by default. **Enabling Datadog APM is experimental and enables the [Datadog Java Trace Agent](https://docs.datadoghq.com/tracing/setup/java/) alongside the Mendix Java Agent.**. |
+| `DD_TRACE_ENABLED`| `false` | Yes | Disables Datadog APM by default. **Enabling Datadog APM is experimental and enables the [Datadog Java Trace Agent](https://docs.datadoghq.com/tracing/setup/java/) alongside the Mendix Java Agent.** |
 
 The `DD_LOG_FILE`, `DD_PROCESS_CONFIG_LOG_FILE` and `DD_DOGSTATSD_PORT` environment variables are also configured specifically with buildpack-specific system values. Other environment variables can be set as per the [Datadog Agent documentation](https://docs.datadoghq.com/agent/).
 

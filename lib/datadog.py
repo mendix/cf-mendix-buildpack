@@ -35,7 +35,16 @@ def _is_installed():
 
 
 def _get_service():
-    return os.environ.get("DD_SERVICE_NAME", buildpackutil.get_appname())
+    return os.environ.get("DD_SERVICE_NAME", _get_application())
+
+
+def _get_application():
+    return (
+        list(filter(lambda x: "app:" in x, buildpackutil.get_tags()))[0].split(
+            ":"
+        )[1]
+        or buildpackutil.get_appname()
+    )
 
 
 def _get_statsd_port():
@@ -250,6 +259,17 @@ def _set_up_postgres():
 
 
 def _set_up_environment():
+
+    # Trace variables need to be set in the global environment
+    # since the Datadog Java Trace Agent does not live inside the Datadog Agent process
+    if _is_dd_tracing_enabled():
+        os.environ["DD_SERVICE_NAME"] = _get_service()
+        os.environ["DD_JMXFETCH_ENABLED"] = "false"
+        os.environ["DD_SERVICE_MAPPING"] = "{}:{}.db".format(
+            database_config.get_database_config()["DatabaseType"].lower(),
+            _get_service(),
+        )
+
     e = dict(os.environ.copy())
 
     # Everything in datadog.yaml can be configured with environment variables
@@ -258,12 +278,8 @@ def _set_up_environment():
     e["DD_HOSTNAME"] = buildpackutil.get_hostname()
 
     # Explicitly turn off tracing to ensure backward compatibility
-    # If tracing is enabled, disable JMX fetching by trace agent
     if not _is_dd_tracing_enabled():
         e["DD_TRACE_ENABLED"] = "false"
-    else:
-        e["DD_SERVICE_NAME"] = _get_service()
-        e["DD_JMXFETCH_ENABLED"] = "false"
     e["DD_LOGS_ENABLED"] = "true"
     e["DD_LOG_FILE"] = "/dev/null"
     tags = buildpackutil.get_tags()
@@ -275,8 +291,6 @@ def _set_up_environment():
     # Include for forward-compatibility with DD buildpack
     e["DD_ENABLE_CHECKS"] = "true"
     e["DATADOG_DIR"] = str(os.path.abspath(DD_AGENT_DIR))
-
-    print(e)
 
     return e
 

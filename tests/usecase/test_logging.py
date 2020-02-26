@@ -18,7 +18,11 @@ class TestCaseLogging(basetest.BaseTest):
         self.assert_string_in_recent_logs("TRACE - Jetty")
 
     def test_commit_hash_in_logs(self):
-        commit_hash = os.getenv("TRAVIS_COMMIT")
+        commit_hash = None
+        if os.getenv("TRAVIS_PULL_REQUEST") == "false":
+            commit_hash = os.getenv("TRAVIS_COMMIT")
+        else:
+            commit_hash = os.getenv("TRAVIS_COMMIT_RANGE").split("...")[0]
         if commit_hash:
             short_commit_hash = commit_hash[:7]
             self.assert_string_in_recent_logs(short_commit_hash)
