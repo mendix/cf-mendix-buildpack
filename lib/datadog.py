@@ -39,12 +39,11 @@ def _get_service():
 
 
 def _get_application():
-    return (
-        list(filter(lambda x: "app:" in x, buildpackutil.get_tags()))[0].split(
-            ":"
-        )[1]
-        or buildpackutil.get_appname()
-    )
+    app_tags = list(filter(lambda x: "app:" in x, buildpackutil.get_tags()))
+    if app_tags:
+        return app_tags[0].split(":")[1]
+    else:
+        return buildpackutil.get_appname()
 
 
 def _get_statsd_port():
