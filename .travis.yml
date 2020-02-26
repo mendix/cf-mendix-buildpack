@@ -16,6 +16,13 @@ before_install:
   - sudo curl -s https://download.mendix.com/Mendix-CA-G2.crt -o /usr/local/share/ca-certificates/ca.crt && sudo update-ca-certificates
 
 install:
+  - |
+    ( set -euo pipefail
+      if [[ "${TRAVIS_COMMIT}" != "$(git rev-parse HEAD)" ]]; then
+        echo "Commit $(git rev-parse HEAD) doesn't match expected commit ${TRAVIS_COMMIT}"
+        git checkout "${TRAVIS_COMMIT}"
+      fi
+    )
   - pip3 install -r tests/requirements.txt
 
 before_script:
