@@ -29,7 +29,7 @@ from m2ee import M2EE, logger  # noqa: E402
 from nginx import get_path_config, gen_htpasswd  # noqa: E402
 from buildpackutil import i_am_primary_instance  # noqa: E402
 
-BUILDPACK_VERSION = "4.3.0"
+BUILDPACK_VERSION = "4.3.1"
 
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
@@ -543,7 +543,7 @@ def get_certificate_authorities():
     return config
 
 
-def get_client_certificates():
+def get_client_certificates(version):
     config = {}
     client_certificates_json = os.getenv("CLIENT_CERTIFICATES", "[]")
     """
@@ -575,7 +575,11 @@ def get_client_certificates():
     if len(files) > 0:
         config["ClientCertificates"] = ",".join(files)
         config["ClientCertificatePasswords"] = ",".join(passwords)
-        config["WebServiceClientCertificates"] = pins
+        if version < 7.20:
+            config["WebServiceClientCertificates"] = pins
+        else:
+            # Deprecated in 7.20
+            config["ClientCertificateUsages"] = pins
     return config
 
 
@@ -678,7 +682,9 @@ def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
 
     mxruntime_config.update(get_filestore_config(m2ee))
     mxruntime_config.update(get_certificate_authorities())
-    mxruntime_config.update(get_client_certificates())
+    mxruntime_config.update(
+        get_client_certificates(m2ee.config.get_runtime_version())
+    )
     mxruntime_config.update(get_custom_settings(metadata, mxruntime_config))
     mxruntime_config.update(get_license_subscription())
     mxruntime_config.update(get_custom_runtime_settings())
