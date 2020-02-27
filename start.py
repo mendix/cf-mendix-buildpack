@@ -29,7 +29,7 @@ from m2ee import M2EE, logger  # noqa: E402
 from nginx import get_path_config, gen_htpasswd  # noqa: E402
 from buildpackutil import i_am_primary_instance  # noqa: E402
 
-BUILDPACK_VERSION = "4.2.0"
+BUILDPACK_VERSION = "4.1.2"
 
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
@@ -575,11 +575,7 @@ def get_client_certificates():
     if len(files) > 0:
         config["ClientCertificates"] = ",".join(files)
         config["ClientCertificatePasswords"] = ",".join(passwords)
-        if m2ee.config.get_runtime_version() < 7.20:
-            # Deprecated in 7.20
-            config["WebServiceClientCertificates"] = pins
-        else:
-            config["ClientCertificateUsages"] = pins
+        config["WebServiceClientCertificates"] = pins
     return config
 
 
