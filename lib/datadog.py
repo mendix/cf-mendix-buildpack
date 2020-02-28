@@ -4,6 +4,7 @@ import yaml
 import subprocess
 import buildpackutil
 import database_config
+import time
 from m2ee import logger
 
 DD_SIDECAR = "cf-datadog-sidecar-v0.21.1_master_98363.tar.gz"
@@ -395,3 +396,5 @@ def run(runtime_version):
     subprocess.Popen(
         DD_AGENT_DIR + "/run-datadog.sh", env=_set_up_environment()
     )
+
+    time.sleep(5)
