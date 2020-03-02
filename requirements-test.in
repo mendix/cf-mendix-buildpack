@@ -1,0 +1,4 @@
+backoff==1.6.0
+nose-timer==0.7.4
+pyopenssl==19.1.0
+requests==2.21.0
