@@ -289,7 +289,14 @@ To receive metrics from the runtime, the Mendix Java Agent is added to the runti
 
 Please note that Datadog integration **requires Mendix 7.14 or higher**. If an older version is used, then a warning will be displayed in the logs and the Datadog integration will not be enabled.
 
-The Datadog integration features a full Datadog Agent installation inspired by the [official Datadog Cloud Foundry Buildpack](https://github.com/DataDog/datadog-cloudfoundry-buildpack). Specific agent checks are enabled and configured specifically for Mendix applications. Additionally, we configure the following Datadog environment variables for you:
+The Datadog integration features a full Datadog Agent installation inspired by the [official Datadog Cloud Foundry Buildpack](https://github.com/DataDog/datadog-cloudfoundry-buildpack). Specific agent checks are enabled and configured specifically for Mendix applications.
+
+#### Presets
+For correlation purposes, we set the Datadog `service` for you to match your **application name**. This name is derived in the following order:
+1. Your Mendix `app:` tag if you have set this in the runtime settings.<br/>*Example:* for `app:myfirstapp`, `service` will be set to `myfirstapp`.
+2. The first part of the Cloud Foundry route URI configured for your application, without numeric characters.<br/>*Example:* for a route URI `myfirstapp1000-test.example.com`, `service` will be set to `myfirstapp`.
+
+Additionally, we configure the following Datadog environment variables for you:
 
 | Environment Variable | Value | Can Be Overridden? | Description |
 |-|-|-|-|
@@ -297,8 +304,8 @@ The Datadog integration features a full Datadog Agent installation inspired by t
 | `DD_HOSTNAME` |`<app>-<env>.mendixcloud.com-<instance>` | No | Human-readable host name for your application |
 | `DD_JMXFETCH_ENABLED`| `false`| No | Disables Datadog Java Trace Agent JMX metrics fetching, since this is already handled by the Mendix Runtime. |
 | `DD_LOGS_ENABLED`| `true` | No | Enables sending your application logs directly to Datadog |
-| `DD_SERVICE_MAPPING`| `<database>:<app>:db` | No | Links your database to your app in Datadog APM. Is only set when `DD_TRACE_ENABLED` is set to `true`. |
-| `DD_SERVICE_NAME`| `<app>` | No | Defaults to your application name. Is only set when `DD_TRACE_ENABLED` is set to `true`. |
+| `DD_SERVICE_MAPPING`| `<database>:<app>.db` | No | Links your database to your app in Datadog APM. Is only set when `DD_TRACE_ENABLED` is set to `true`. |
+| `DD_SERVICE_NAME`| `<app>` | No | Defaults to your application name as described before. Is only set when `DD_TRACE_ENABLED` is set to `true`. |
 | `DD_TAGS`| Various Cloud Foundry tags | Yes | If set, your tags will be added to the list of supplied Cloud Foundry tags |
 | `DD_TRACE_ENABLED`| `false` | Yes | Disables Datadog APM by default. **Enabling Datadog APM is experimental and enables the [Datadog Java Trace Agent](https://docs.datadoghq.com/tracing/setup/java/) alongside the Mendix Java Agent.** |
 

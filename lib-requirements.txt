@@ -1,4 +1,5 @@
-# lists libraries in the build pack lib folder
+# lists libraries in the build pack lib folder, plus imports
+backoff==1.10.0
 certifi==2019.3.9
 chardet==3.0.4
 httplib2==0.10.3

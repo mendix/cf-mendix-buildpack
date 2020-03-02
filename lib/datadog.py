@@ -1,10 +1,13 @@
-import os
 import json
-import yaml
+import os
+import socket
 import subprocess
+
+import backoff
+import yaml
+
 import buildpackutil
 import database_config
-import time
 from m2ee import logger
 
 DD_SIDECAR = "cf-datadog-sidecar-v0.21.1_master_98363.tar.gz"
@@ -15,6 +18,8 @@ SIDECAR_ROOT_DIR = ".local/datadog"
 DD_AGENT_DIR = SIDECAR_ROOT_DIR + "/datadog"
 DD_AGENT_CONF_DIR = DD_AGENT_DIR + "/etc/datadog-agent"
 DD_AGENT_CHECKS_DIR = "/home/vcap/app/datadog_integrations"
+
+DD_LOGS_PORT = 9032
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
 
@@ -71,7 +76,7 @@ def enable_mx_java_agent(m2ee):
         if "METRICS_AGENT_CONFIG" in os.environ:
             agent_config_str = os.environ.get("METRICS_AGENT_CONFIG")
         elif "MetricsAgentConfig" in m2ee.config._conf["mxruntime"]:
-            logger.warn(
+            logger.warning(
                 "Passing MetricsAgentConfig with Mendix Custom Runtime Setting is deprecated. "
                 + "Please use METRICS_AGENT_CONFIG as environment variable."
             )
@@ -232,8 +237,8 @@ def _set_up_postgres():
         "DatabaseHost",
     ):
         if k not in dbconfig:
-            logger.warn(
-                "Skipping database configuration for DataDog because "
+            logger.warning(
+                "Skipping database configuration for Datadog because "
                 "configuration is not found. See database_config.py "
                 "for details"
             )
@@ -330,12 +335,12 @@ def update_config(m2ee, app_name):
         m2ee.config._conf["logging"].append(
             {
                 "type": "tcpjsonlines",
-                "name": "DataDogSubscriber",
+                "name": "DatadogSubscriber",
                 "autosubscribe": "INFO",
                 "host": "localhost",
                 # For MX8 integer is supported again, this change needs to be
                 # made when MX8 is GA
-                "port": "9032",
+                "port": str(DD_LOGS_PORT),
             }
         )
 
@@ -353,7 +358,7 @@ def update_config(m2ee, app_name):
             "logs": [
                 {
                     "type": "tcp",
-                    "port": "9032",
+                    "port": str(DD_LOGS_PORT),
                     "service": _get_service(),
                     "source": "mendix",
                     "tags": buildpackutil.get_tags(),  # TODO Check if this is required here
@@ -380,21 +385,35 @@ def run(runtime_version):
 
     if runtime_version < 7.14:
         logger.warning(
-            "Datadog integration requires Mendix 7.14 or newer. The Datadog agent is not enabled."
+            "Datadog integration requires Mendix 7.14 or newer. The Datadog Agent is not enabled."
         )
         return
 
     if not _is_installed():
-        logger.warn(
-            "DataDog agent isn"
-            "t installed yet but DD_API_KEY is set. "
-            + "Please push or restage your app to complete Datadog installation."
+        logger.warning(
+            "Datadog Agent isn't installed yet but DD_API_KEY is set."
+            "Please push or restage your app to complete Datadog installation."
         )
         return
 
-    # Start the run script "borrowed" from the official DD buildpack and include "datadog.yaml" as environment variables
+    # Start the run script "borrowed" from the official DD buildpack and include settings as environment variables
+    logger.info("Starting Datadog Agent...")
     subprocess.Popen(
         DD_AGENT_DIR + "/run-datadog.sh", env=_set_up_environment()
     )
 
-    time.sleep(5)
+    # The runtime does not handle a non-open logs endpoint socket gracefully, so wait until it's up
+    logger.info("Awaiting Datadog Agent log subscriber...")
+    if _await_logging_endpoint() == 0:
+        logger.info("Datadog Agent log subscriber is ready")
+    else:
+        logger.error(
+            "Datadog Agent log subscriber was not initialized correctly."
+            "Application logs will not be shipped to Datadog."
+        )
+
+
+@backoff.on_predicate(backoff.expo, lambda x: x > 0, max_time=10)
+def _await_logging_endpoint():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    return s.connect_ex(("localhost", DD_LOGS_PORT))
