@@ -6,6 +6,8 @@ dist: bionic
 
 language: python
 
+python: 3.6.8
+
 env:
   global:
     - TEST_PREFIX=travis-$TRAVIS_JOB_ID
@@ -18,7 +20,7 @@ before_install:
   - sudo curl -s https://download.mendix.com/Mendix-CA-G2.crt -o /usr/local/share/ca-certificates/ca.crt && sudo update-ca-certificates
 
 install:
-  - pip3 install -r tests/requirements.txt
+  - make install_build_requirements install_test_requirements
 
 before_script:
   - curl ifconfig.co
@@ -33,23 +35,21 @@ script:
   - sleep 5
 
 after_script:
-  - make clean
+  - make clean_cf
 
 jobs:
   include:
     - stage: lint
-      python: "3.6"
-      before_install: []
-      install: pip3 install -r tests/requirements_lint.txt
-      before_script: []
+      before_install: skip
+      install: make install_lint_requirements install_build_requirements install_test_requirements
+      before_script: skip
       script: make lint
-      after_script: []
+      after_script: skip
     - stage: test
       dist: trusty
       python: "3.4.3"
       env: CF_STACK=cflinuxfs2
-    - python: "3.6.8"
-      env: CF_STACK=cflinuxfs3
+    - env: CF_STACK=cflinuxfs3
 
 notifications:
   email: false

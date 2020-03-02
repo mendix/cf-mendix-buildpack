@@ -1,9 +1,11 @@
 # Run Mendix in Cloud Foundry
 [![Build Status](https://travis-ci.org/mendix/cf-mendix-buildpack.svg?branch=master)](https://travis-ci.org/mendix/cf-mendix-buildpack)
 
+This document contains general information on the Mendix Buildpack.
+
 The Mendix Buildpack for Cloud Foundry has two main phases:
-* compile: Fetch the JRE, Mendix Runtime, and nginx and bundle these together with the application model into a `droplet`. This is handled by `bin/compile`.
-* run: Start the various processes and run the application. `python start.py` is for orchestration, the JVM is for executing the Mendix Model, and nginx is used as reverse proxy including handling access restrictions.
+* `compile`: Fetch the JRE, Mendix Runtime, and nginx and bundle these together with the application model into a `droplet`. This is handled by `buildpack/compile.py`.
+* `run`: Start the various processes and run the application. `buildpack/start.py` is for orchestration, the JVM is for executing the Mendix Model, and nginx is used as reverse proxy including handling access restrictions.
 
 The compile phase accepts archives in `.mda` format (Mendix Deployment Archive). There is experimental support for `.mpk` archives (Mendix Project Package). If an `.mpk` file is pushed, `mxbuild` is executed using Mono in the compile phase as well, the run phase stays the same.
 
@@ -11,8 +13,7 @@ There are specific guides for deploying Mendix apps to the [Pivotal](https://doc
 
 ## Deploying using the CLI
 
-### Install cloud foundry command line
-
+### Install Cloud Foundry CLI
 Install the Cloud Foundry command line executable. You can find this on the [releases page](https://github.com/cloudfoundry/cli#stable-release). Set up the connection to your preferred Cloud Foundry environment with `cf login` and `cf target`.
 
 ### Push your app
@@ -406,27 +407,8 @@ These are known limitations for the Mendix buildpack.
 
 When it is desired to push MPKs produced by Mendix Studio Pro 6.x to containers using `cflinuxfs3` as root filesystem, the staging phase is likely going to fail when the default settings are used. As a workaround, more disk space needs to be allocated for the cache. Consult the [Deploying a Large App](https://docs.cloudfoundry.org/devguide/deploy-apps/large-app-deploy.html) section in the official CloudFoundry documentation for more information.
 
-# Contributing
-Make sure your code complies with PEP8. Make sure your code is styled using [Black](https://github.com/psf/black).
-We enforce this using `flake8` and `black` in our travis CI.
-
-This simplest way to use these tools is by installing them as a plugin for
-your editor; for example in Vim, one can auto-format files with `black` on writing out a buffer, and it will also display `flake8` errors.
-
-Should you prefer using the tools manually, you can invoke them using `make lint`.
-It is important to note that `black` requires a Python version > 3.6 to run, whilst the cf-mendix-buildpack currently targets
-Python 3.4.3. We aim to resolve this discrepancy soon, by making the cf-mendix-buildpack target a Python version > 3.6.
-
-In the meantime, we suggest that you run linting tools in a separate virtualenv that you use for testing/developing the buildpack.
-
-To install only the linting requirements:
-```
-pip3 install -r tests/requirements_lint.txt
-```
-
-Rebase your git history in such a way that each commit makes one consistent change. Don't include separate "fixup" commits later on.
-
-For new code changes going live, the version has to bumped at the top of `start.py`, and a new tag with that version number needs to be pushed to github.
+# Developing and Contributing
+Please see [`DEVELOPING.md`](DEVELOPING.md) and [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 # License
-This project is licensed under the Apache License v2 (for details, see the [LICENSE](LICENSE) file).
+This project is licensed under the Apache License v2 (for details, see the [`LICENSE`](LICENSE) file).
