@@ -1,5 +1,6 @@
-import basetest
 import json
+
+import basetest
 
 
 class TestCaseDeployWithDatadog(basetest.BaseTest):
@@ -18,18 +19,49 @@ class TestCaseDeployWithDatadog(basetest.BaseTest):
         self._deploy_app(mda_file)
         self.assert_app_running()
 
-        # Validate Datadog is running and has port 8125 opened for StatsD
+        # Validate Datadog is running and has expected ports open
+        # Agent: 8125
+        self._test_listening_on_port(8125)
+        # Trace Agent: 8126
+        self._test_listening_on_port(8126, "trace")
+        # Mendix Logs: 9032
+        self._test_listening_on_port(9032)
+
+    def _test_listening_on_port(self, port, agent_string="agent"):
         output = self.cmd(
             (
                 "cf",
                 "ssh",
                 self.app_name,
                 "-c",
-                "lsof -i | grep '^agent.*:8125'",
+                "lsof -i | grep '^{}.*:{}'".format(agent_string, port),
             )
         )
         assert output is not None
-        assert str(output).find("agent") >= 0
+        assert str(output).find(agent_string) >= 0
+
+    def _test_datadog(self, mda_file):
+        self._test_datadog_running(mda_file)
+        self._test_logsubscriber_active(mda_file)
+
+    def _test_logsubscriber_active(self, mda_file):
+        self.assert_string_in_recent_logs(
+            "Datadog Agent log subscriber is ready"
+        )
+
+        logsubscribers_json = self.query_mxadmin(
+            {"action": "get_log_settings", "params": {"sort": "subscriber"}}
+        )
+        self.assertIsNotNone(logsubscribers_json)
+
+        logsubscribers = json.loads(logsubscribers_json.text)
+        self.assertTrue("DatadogSubscriber" in logsubscribers["feedback"])
+
+    def test_datadog_mx7(self):
+        self._test_datadog("BuildpackTestApp-mx-7-16.mda")
+
+    def test_datadog_mx8(self):
+        self._test_datadog("Mendix8.1.1.58432_StarterApp.mda")
 
     def test_datadog_failure_mx6(self):
         super().setUp()
@@ -41,27 +73,3 @@ class TestCaseDeployWithDatadog(basetest.BaseTest):
         self.assert_string_in_recent_logs(
             "Datadog integration requires Mendix 7.14 or newer"
         )
-
-    def test_datadog_running_mx7(self):
-        self._test_datadog_running("BuildpackTestApp-mx-7-16.mda")
-
-    def test_datadog_running_mx8(self):
-        self._test_datadog_running("Mendix8.1.1.58432_StarterApp.mda")
-
-    def _test_logsubscriber_active(self, mda_file):
-        self._deploy_app(mda_file)
-        self.assert_app_running()
-
-        logsubscribers_json = self.query_mxadmin(
-            {"action": "get_log_settings", "params": {"sort": "subscriber"}}
-        )
-        self.assertIsNotNone(logsubscribers_json)
-
-        logsubscribers = json.loads(logsubscribers_json.text)
-        self.assertTrue("DataDogSubscriber" in logsubscribers["feedback"])
-
-    def test_logsubscriber_active_mx7(self):
-        self._test_logsubscriber_active("BuildpackTestApp-mx-7-16.mda")
-
-    def test_logsubscriber_active_mx8(self):
-        self._test_logsubscriber_active("Mendix8.1.1.58432_StarterApp.mda")
