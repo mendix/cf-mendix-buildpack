@@ -120,7 +120,14 @@ If you want to force Java 7 or 8, you can set the environment variable `JAVA_VER
 
 Or to switch patch version for Java 11:
 
-	cf set-env <YOUR_APP> JAVA_VERSION 11.0.3
+    cf set-env <YOUR_APP> JAVA_VERSION 11.0.3
+
+### Customizing the Java Virtual Machine (JVM) Settings
+You can configure the Java properties by providing the `JAVA_OPTS` enviroment variable to the application.
+
+Configure the `JAVA_OPTS` environment variable by using the `cf set-env` command.
+
+    cf set-env <YOUR_APP> JAVA_OPTS '["-Djava.rmi.server.hostname=127.0.0.1", "-Dcom.sun.management.jmxremote.authenticate=false", "-Dcom.sun.management.jmxremote.ssl=false", "-Dcom.sun.management.jmxremote.port=5000", "-Dcom.sun.management.jmxremote.rmi.port=5000"]'
 
 ### Configuring Custom Runtime Settings
 To configure any of the advanced [Custom Runtime Settings](https://docs.mendix.com/refguide/custom-settings) you can use setting name prefixed with `MXRUNTIME_` as an environment variable.
