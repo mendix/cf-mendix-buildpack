@@ -120,7 +120,12 @@ If you want to force Java 7 or 8, you can set the environment variable `JAVA_VER
 
 Or to switch patch version for Java 11:
 
-	cf set-env <YOUR_APP> JAVA_VERSION 11.0.3
+    cf set-env <YOUR_APP> JAVA_VERSION 11.0.3
+
+### Configuring Java Options
+To configure any other Java options you can send a string containing a list of Java options. For example:
+
+    cf set-env <YOUR_APP> JAVA_OPTS '["-XX:+HeapDumpOnOutOfMemoryError", "-XX:+UseG1GC"]'
 
 ### Configuring Custom Runtime Settings
 To configure any of the advanced [Custom Runtime Settings](https://docs.mendix.com/refguide/custom-settings) you can use setting name prefixed with `MXRUNTIME_` as an environment variable.
