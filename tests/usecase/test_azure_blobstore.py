@@ -1,8 +1,16 @@
 import os
 import json
 import start
-from m2ee import M2EE
-from m2ee.config import M2EEConfig
+
+
+class M2EEConfigStub:
+    def get_runtime_version(self):
+        return 7.13
+
+
+class M2EEStub:
+    def __init__(self):
+        self.config = M2EEConfigStub()
 
 
 class TestCaseAzureBlobStoreDryRun:
@@ -38,10 +46,12 @@ class TestCaseAzureBlobStoreDryRun:
     def test_azure_blob_store(self):
         vcap = json.loads(self.azure_storage_vcap_example)
         os.environ["MENDIX_BLOBSTORE_TYPE"] = "azure"
-        m2ee = M2EE.__new__(M2EE)
-        m2ee.config = M2EEConfig()
+        m2ee = M2EEStub()
         config = start._get_azure_storage_specific_config(vcap, m2ee)
-        assert config["com.mendix.storage.azure.Container"] == "mendix"
+        assert (
+            config["com.mendix.storage.azure.Container"]
+            == "sapcp-osaas-2d2d2d2d-cccc-4444-8888-4ed76dca688e"  # noqa
+        )
         assert (
             config["com.mendix.storage.azure.SharedAccessSignature"]
             == "sig=JC1hALu1%2FOFA%1FzyuCzuZKivlb%1IIYktBYxHKPF2OJz3U%3D\u0026sv=2017-01-17\u0026spr=https\u0026si=77777777-ffff-4444-bbbb-bdeafdd87d00\u0026sr=c"  # noqa
