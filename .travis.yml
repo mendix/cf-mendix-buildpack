@@ -30,6 +30,7 @@ script:
   - while [ -e /proc/$MAKE_PID ]; do sleep 60 && echo -n "."; done
   - sleep 15
   - wait $MAKE_PID
+  - sleep 5
 
 after_script:
   - make clean
