@@ -29,7 +29,7 @@ from m2ee import M2EE, logger  # noqa: E402
 from nginx import get_path_config, gen_htpasswd  # noqa: E402
 from buildpackutil import i_am_primary_instance  # noqa: E402
 
-BUILDPACK_VERSION = "4.3.4"
+BUILDPACK_VERSION = "4.4.0"
 
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
@@ -376,9 +376,13 @@ def _get_s3_specific_config(vcap_services, m2ee):
     endpoint = None
     v2_auth = ""
     amazon_s3 = None
+    blobstore_type = os.getenv("MENDIX_BLOBSTORE_TYPE")
 
     for key in vcap_services:
-        if key.startswith("amazon-s3") or key == "objectstore":
+        if key.startswith("amazon-s3") or (
+            key == "objectstore"
+            and (blobstore_type is None or blobstore_type == "s3")
+        ):
             amazon_s3 = key
 
     if amazon_s3:
@@ -481,23 +485,63 @@ def _get_swift_specific_config(vcap_services, m2ee):
 
 
 def _get_azure_storage_specific_config(vcap_services, m2ee):
-    if "azure-storage" not in vcap_services:
+    azure_storage = None
+
+    for key in vcap_services:
+        if key.startswith("azure-storage") or (
+            key == "objectstore"
+            and os.getenv("MENDIX_BLOBSTORE_TYPE") == "azure"
+        ):
+            azure_storage = vcap_services[key][0]
+
+    if azure_storage:
+        if m2ee.config.get_runtime_version() < 6.7:
+            logger.warning("Can not configure Azure Storage with Mendix < 6.7")
+            return None
+
+        creds = azure_storage["credentials"]
+
+        container_name = os.getenv("AZURE_CONTAINER_NAME", "mendix")
+
+        config_object = {
+            "com.mendix.core.StorageService": "com.mendix.storage.azure",
+            "com.mendix.storage.azure.Container": container_name,
+            "com.mendix.storage.azure.CreateContainerIfNotExists": False,
+        }
+
+        if "primary_access_key" in creds:
+            config_object["com.mendix.storage.azure.AccountKey"] = creds[
+                "primary_access_key"
+            ]
+
+        if "storage_account_name" in creds:
+            config_object["com.mendix.storage.azure.AccountName"] = creds[
+                "storage_account_name"
+            ]
+
+        if "account_name" in creds:
+            config_object["com.mendix.storage.azure.AccountName"] = creds[
+                "account_name"
+            ]
+
+        if "sas_token" in creds:
+            config_object[
+                "com.mendix.storage.azure.SharedAccessSignature"
+            ] = creds["sas_token"]
+
+        if "container_uri" in creds:
+            config_object["com.mendix.storage.azure.BlobEndpoint"] = creds[
+                "container_uri"
+            ]
+
+        if "container_name" in creds:
+            config_object["com.mendix.storage.azure.Container"] = creds[
+                "container_name"
+            ]
+
+        return config_object
+    else:
         return None
-
-    if m2ee.config.get_runtime_version() < 6.7:
-        logger.warning("Can not configure Azure Storage with Mendix < 6.7")
-        return None
-
-    creds = vcap_services["azure-storage"][0]["credentials"]
-
-    container_name = os.getenv("AZURE_CONTAINER_NAME", "mendix")
-
-    return {
-        "com.mendix.core.StorageService": "com.mendix.storage.azure",
-        "com.mendix.storage.azure.Container": container_name,
-        "com.mendix.storage.azure.AccountName": creds["storage_account_name"],
-        "com.mendix.storage.azure.AccountKey": creds["primary_access_key"],
-    }
 
 
 def get_filestore_config(m2ee):
