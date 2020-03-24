@@ -1,6 +1,10 @@
 import os
 import json
 import start
+import atexit
+
+
+atexit.unregister(start.terminate_process)
 
 
 class M2EEConfigStub:
