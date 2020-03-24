@@ -21,6 +21,7 @@ install:
   - pip3 install -r tests/requirements.txt
 
 before_script:
+  - curl ifconfig.co
   - make login
 
 script:
