@@ -80,8 +80,11 @@ def get_appname():
     )
 
 
-def get_blobstore_url(filename):
-    main_url = os.environ.get("BLOBSTORE", "https://cdn.mendix.com")
+def get_blobstore_url(filename, is_runtime=False):
+    site = "https://cdn.mendix.com"
+    if is_runtime:
+        site = "https://download.mendix.com"
+    main_url = os.environ.get("BLOBSTORE", site)
     if main_url[-1] == "/":
         main_url = main_url[0:-1]
     return main_url + filename
@@ -235,7 +238,7 @@ def ensure_mxbuild_in_directory(directory, mx_version, cache_dir):
             logging.debug(str(e))
             download_and_unpack(
                 get_blobstore_url(
-                    "/runtime/mxbuild-%s.tar.gz" % str(mx_version)
+                    "/runtimes/mxbuild-%s.tar.gz" % str(mx_version), True
                 ),
                 directory,
                 cache_dir=cache_dir,

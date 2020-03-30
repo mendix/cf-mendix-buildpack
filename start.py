@@ -29,7 +29,7 @@ from m2ee import M2EE, logger  # noqa: E402
 from nginx import get_path_config, gen_htpasswd  # noqa: E402
 from buildpackutil import i_am_primary_instance  # noqa: E402
 
-BUILDPACK_VERSION = "4.4.0"
+BUILDPACK_VERSION = "4.4.1"
 
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
@@ -857,7 +857,7 @@ def set_up_m2ee_client(vcap_data):
                     "Unable to fetch Mendix {} using git".format(version)
                 )
                 url = buildpackutil.get_blobstore_url(
-                    "/runtime/mendix-%s.tar.gz" % str(version)
+                    "/runtimes/mendix-%s.tar.gz" % str(version), True
                 )
                 logger.info(
                     "Fallback (2): downloading Mendix {} from {}".format(

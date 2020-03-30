@@ -166,7 +166,7 @@ def download_mendix_version():
     else:
         cache_dir = CACHE_DIR
         url = buildpackutil.get_blobstore_url(
-            "/runtime/mendix-%s.tar.gz" % str(get_runtime_version())
+            "/runtimes/mendix-%s.tar.gz" % str(get_runtime_version()), True
         )
     logging.debug(
         "rootfs without mendix runtimes detected, "
