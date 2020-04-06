@@ -1,13 +1,13 @@
+import crypt
 import json
 import logging
-import crypt
 import os
 import re
 import subprocess
 
 from buildpack import util
 from buildpack.runtime_components import security
-
+from lib.m2ee.version import MXVersion
 
 DEFAULT_HEADERS = {
     "X-Frame-Options": r"(?i)(^allow-from https?://([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*(:\d+)?$|^deny$|^sameorigin$)",  # noqa: E501
@@ -41,7 +41,13 @@ def set_up_files(m2ee):
         lines = "".join(fh.readlines())
     http_headers = parse_headers()
     lines = (
-        lines.replace("CONFIG", get_path_config())
+        lines.replace(
+            "CONFIG",
+            get_path_config(
+                MXVersion(str(m2ee.config.get_runtime_version()))
+                < MXVersion("8.10")
+            ),
+        )
         .replace("NGINX_PORT", str(util.get_nginx_port()))
         .replace("RUNTIME_PORT", str(util.get_runtime_port()))
         .replace("ADMIN_PORT", str(util.get_admin_port()))
@@ -125,7 +131,7 @@ def gen_htpasswd(users_passwords, file_name_suffix=""):
                 )
 
 
-def get_path_config():
+def get_path_config(samesite_cookie_workaround=False):
     # Example for ACCESS_RESTRICTIONS
     # {
     #     "/": {'ipfilter': ['10.0.0.0/8'], 'client_cert': true, 'satisfy': 'any'},
@@ -141,6 +147,7 @@ location %s {
         expires 1y;
     }
     proxy_pass http://mendix;
+    %s
     proxy_intercept_errors %s;
     satisfy %s;
     %s
@@ -158,6 +165,7 @@ location %s {
             add_header Cache-Control "no-cache";
     }
     proxy_pass http://mendix;
+    %s
 }
 proxy_intercept_errors %s;
 satisfy %s;
@@ -219,10 +227,16 @@ satisfy %s;
         if config.get("client-cert") or config.get("client_cert"):
             client_cert = "auth_request /client-cert-check-internal;"
 
+        # Temporary fix for SameSite enforcement (runtime will set this cookie from 8.10 onwards)
+        proxy_cookie_samesite = None
+        if samesite_cookie_workaround:
+            proxy_cookie_samesite = 'proxy_cookie_path ~(.*) "$1; SameSite=None; Secure; HttpOnly";'
+
         template = root_template if path == "/" else location_template
         indent = "\n" + " " * (0 if path == "/" else 4)
         result += template % (
             path,
+            proxy_cookie_samesite,
             proxy_intercept_errors,
             satisfy,
             indent.join(ipfilter),
@@ -230,7 +244,3 @@ satisfy %s;
             indent.join(basic_auth),
         )
     return "\n        ".join(result.split("\n"))
-
-
-if __name__ == "__main__":
-    print(get_path_config())
