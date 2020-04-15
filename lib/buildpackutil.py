@@ -97,19 +97,19 @@ def _delete_other_versions(directory, file_name):
     expression = (
         r"^((?:[a-zA-Z]+-)+)((?:v*[0-9]+\.{0,1})+.*)(\.(?:tar\.gz|tgz|zip))$"
     )
-    groups = re.search(expression, file_name)
+    pattern = re.sub(expression, "\\1*\\3", file_name)
 
-    file_pattern = "%s/%s*%s" % (directory, groups[1], groups[3])
-    files = glob.glob(file_pattern)
+    if pattern:
+        files = glob.glob("{}/{}".format(directory, pattern))
 
-    for f in files:
-        if os.path.basename(f) != file_name:
-            logging.debug(
-                "Deleting version {} from {}...".format(
-                    os.path.basename(f), directory
+        for f in files:
+            if os.path.basename(f) != file_name:
+                logging.debug(
+                    "Deleting version {} from {}...".format(
+                        os.path.basename(f), directory
+                    )
                 )
-            )
-            os.remove(f)
+                os.remove(f)
 
 
 def download_and_unpack(url, destination, cache_dir="/tmp/downloads"):
