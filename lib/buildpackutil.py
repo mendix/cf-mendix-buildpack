@@ -1,11 +1,12 @@
 import errno
 import json
+import glob
 import logging
 import os
 import platform
+import re
 import subprocess
 import sys
-import glob
 from distutils.util import strtobool
 
 sys.path.insert(0, "lib")
@@ -87,11 +88,37 @@ def get_blobstore_url(filename):
     return main_url + filename
 
 
+def _delete_other_versions(directory, file_name):
+    logging.debug(
+        "Deleting other versions than {} from {}...".format(
+            file_name, directory
+        )
+    )
+    expression = (
+        r"^((?:[a-zA-Z]+-)+)((?:v*[0-9]+\.{0,1})+.*)(\.(?:tar\.gz|tgz|zip))$"
+    )
+    pattern = re.sub(expression, "\\1*\\3", file_name)
+
+    if pattern:
+        files = glob.glob("{}/{}".format(directory, pattern))
+
+        for f in files:
+            if os.path.basename(f) != file_name:
+                logging.debug(
+                    "Deleting version {} from {}...".format(
+                        os.path.basename(f), directory
+                    )
+                )
+                os.remove(f)
+
+
 def download_and_unpack(url, destination, cache_dir="/tmp/downloads"):
     file_name = url.split("/")[-1]
     mkdir_p(cache_dir)
     mkdir_p(destination)
     cached_location = os.path.join(cache_dir, file_name)
+
+    _delete_other_versions(cache_dir, file_name)
 
     logging.debug(
         "Looking for {cached_location}".format(cached_location=cached_location)
