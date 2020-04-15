@@ -89,7 +89,7 @@ def set_up_appdynamics():
     if buildpackutil.appdynamics_used():
         buildpackutil.download_and_unpack(
             buildpackutil.get_blobstore_url(
-                "/mx-buildpack/appdynamics-agent-4.3.5.7.tar.gz"
+                "/mx-buildpack/appdynamics-agent-20.3.0.29587.zip"
             ),
             DOT_LOCAL_LOCATION,
             CACHE_DIR,
