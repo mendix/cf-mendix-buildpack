@@ -29,7 +29,7 @@ from m2ee import M2EE, logger  # noqa: E402
 from nginx import get_path_config, gen_htpasswd  # noqa: E402
 from buildpackutil import i_am_primary_instance  # noqa: E402
 
-BUILDPACK_VERSION = "4.4.1"
+BUILDPACK_VERSION = "4.4.2"
 
 
 logger.setLevel(buildpackutil.get_buildpack_loglevel())
@@ -740,17 +740,20 @@ def set_application_name(m2ee, name):
 
 
 def activate_appdynamics(m2ee, app_name):
+    APPDYNAMICS_VERSION = "20.3.0.29587"
     if not buildpackutil.appdynamics_used():
         return
     logger.info("Adding app dynamics")
     m2ee.config._conf["m2ee"]["javaopts"].append(
         "-javaagent:{path}".format(
-            path=os.path.abspath(".local/ver4.3.5.7/javaagent.jar")
+            path=os.path.abspath(
+                ".local/ver" + APPDYNAMICS_VERSION + "/javaagent.jar"
+            )
         )
     )
     m2ee.config._conf["m2ee"]["javaopts"].append(
         "-Dappagent.install.dir={path}".format(
-            path=os.path.abspath(".local/ver4.3.5.7")
+            path=os.path.abspath(".local/ver" + APPDYNAMICS_VERSION)
         )
     )
     APPDYNAMICS_AGENT_NODE_NAME = "APPDYNAMICS_AGENT_NODE_NAME"
