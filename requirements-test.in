@@ -1,0 +1,6 @@
+cryptography==2.8
+backoff==1.6.0
+nose-timer==0.7.4
+pyopenssl==19.1.0
+requests==2.21.0
+certifi==2019.11.28
