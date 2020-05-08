@@ -41,7 +41,7 @@ def set_up_files(m2ee):
         lines = "".join(fh.readlines())
 
     samesite_cookie_workaround = get_path_config(
-        MXVersion(str(m2ee.config.get_runtime_version())) < MXVersion("8.10")
+        MXVersion(str(m2ee.config.get_runtime_version())) < MXVersion("8.11")
     )
     http_headers = parse_headers(samesite_cookie_workaround)
     lines = (
