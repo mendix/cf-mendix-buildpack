@@ -19,6 +19,8 @@ DEFAULT_HEADERS = {
     "X-XSS-Protection": r"(?i)(^0$|^1$|^1; mode=block$|^1; report=https?://([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*(:\d+)?$)",  # noqa: E501
 }
 
+SAMESITE_COOKIE_WORKAROUND_HEADER = 'add_header Set-Cookie "mx-cookie-test=allowed; SameSite=None; Secure; Path=/" always;\n'
+
 
 def compile(build_path, cache_path):
     util.download_and_unpack(
@@ -103,9 +105,7 @@ def parse_headers(samesite_cookie_workaround=False):
             )
 
     if samesite_cookie_workaround:
-        header_value = 'add_header Set-Cookie "mx-cookie-test=allowed; SameSite=None; Secure; Path=/" always;\n'
-        escaped_value = header_value.replace('"', '\\"').replace("'", "\\'")
-        header_config += escaped_value
+        header_config += SAMESITE_COOKIE_WORKAROUND_HEADER
 
     return header_config
 
