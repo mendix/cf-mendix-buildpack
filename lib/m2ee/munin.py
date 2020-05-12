@@ -26,6 +26,7 @@ except ImportError:
         )
         raise
 
+
 default_stats = {
     "languages": ["en_US"],
     "entities": 0,
@@ -125,20 +126,53 @@ def print_values(m2ee, name):
 
 
 def guess_java_version(client, runtime_version, stats):
-    m2eeresponse = client.about()
-    if not m2eeresponse.has_error():
-        about = m2eeresponse.get_feedback()
+    m2ee_response = client.about()
+    return _guess_java_version(m2ee_response, runtime_version, stats)
+
+
+def _get_jre_major_version_from_version_string(version_string):
+    """Java changed their versioning scheme for JRE/JDK greater than 9,
+    as per https://openjdk.java.net/jeps/223
+    """
+    # *_ captures all remaining tuple elements
+    major, minor, *_ = version_string.split(".")
+    if major == "1":
+        return int(minor)
+    return int(major)
+
+
+def _guess_java_version(m2ee_response, runtime_version, m2ee_stats):
+    # type: ("lib.m2ee.client.M2EEResponse", "lib.m2ee.version.MXVersion", dict) -> "Optional[int]"
+    """"This internal function has a more unit-testable API than
+    `guess_java_version`, which enables us to preserve compatibility, whilst
+    simultaneously adding unit testing.
+    """
+    if not m2ee_response.has_error():
+        about = m2ee_response.get_feedback()
         if "java_version" in about:
-            java_version = about["java_version"]
-            java_major, java_minor, _ = java_version.split(".")
-            return int(java_minor)
-    if runtime_version // 6:
+            java_version_string = about["java_version"]
+            return _get_jre_major_version_from_version_string(
+                java_version_string
+            )
+
+    # This happens for some older Mendix 6 versions, but not all, the
+    # java_version field was added somewhere between Mendix 6.5 (not present)
+    # and Mendix 6.10.10 (present). The exact version that it was added in
+    # is probably not important.
+    # Anyway, all Mendix 6 runtimes run on Java 8.
+    if runtime_version.major == 6:
         return 8
-    if runtime_version // 5:
-        m = stats["memory"]
+
+    # This branch should never be reached for Mendix versions in the Mendix
+    # Cloud, see also https://github.com/mendix/m2ee-tools/issues/51
+    if runtime_version.major == 5:
+        m = m2ee_stats["memory"]
         if m["used_nonheap"] - m["code"] - m["permanent"] == 0:
             return 7
         return 8
+
+    # If we have reached here, just return none as we were not
+    # able to guess the java version based on the available data.
     return None
 
 
