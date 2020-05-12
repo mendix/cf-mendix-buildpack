@@ -11,12 +11,11 @@ import sys
 
 # register trace logging possibility
 LOG_TRACE = 5
-logging.addLevelName(LOG_TRACE, 'TRACE')
+logging.addLevelName(LOG_TRACE, "TRACE")
 
 
 # subclass Logger to provide trace convenience method
 class M2EELogger(logging.Logger):
-
     def __init__(self, name=None):
         logging.Logger.__init__(self, name)
 

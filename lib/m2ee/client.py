@@ -12,8 +12,10 @@ from .log import logger
 try:
     import httplib2
 except ImportError:
-    logger.critical("Failed to import httplib2. This module is needed by "
-                    "m2ee. Please povide it on the python library path")
+    logger.critical(
+        "Failed to import httplib2. This module is needed by "
+        "m2ee. Please povide it on the python library path"
+    )
     raise
 
 # Use json if available. If not (python 2.5) we need to import
@@ -24,19 +26,22 @@ except ImportError:
     try:
         import simplejson as json
     except ImportError as ie:
-        logger.critical("Failed to import json as well as simplejson. If "
-                        "using python 2.5, you need to provide the simplejson "
-                        "module in your python library path.")
+        logger.critical(
+            "Failed to import json as well as simplejson. If "
+            "using python 2.5, you need to provide the simplejson "
+            "module in your python library path."
+        )
         raise
 
 
 class M2EEClient:
-
     def __init__(self, url, password):
         self._url = url
         self._headers = {
-            'Content-Type': 'application/json',
-            'X-M2EE-Authentication': b64encode(password.encode('utf-8')).decode('ascii'),
+            "Content-Type": "application/json",
+            "X-M2EE-Authentication": b64encode(
+                password.encode("utf-8")
+            ).decode("ascii"),
         }
 
     def request(self, action, params=None, timeout=None):
@@ -44,16 +49,23 @@ class M2EEClient:
         if params:
             body["params"] = params
         body = json.dumps(body)
-        h = httplib2.Http(timeout=timeout, proxy_info=None)  # httplib does not like os.fork
+        h = httplib2.Http(
+            timeout=timeout, proxy_info=None
+        )  # httplib does not like os.fork
         logger.trace("M2EE request body: %s" % body)
-        (response_headers, response_body) = h.request(self._url, "POST", body,
-                                                      headers=self._headers)
-        if (response_headers['status'] == "200"):
+        (response_headers, response_body) = h.request(
+            self._url, "POST", body, headers=self._headers
+        )
+        if response_headers["status"] == "200":
             logger.trace("M2EE response: %s" % response_body)
-            return M2EEResponse(action, json.loads(response_body.decode('utf-8')))
+            return M2EEResponse(
+                action, json.loads(response_body.decode("utf-8"))
+            )
         else:
-            logger.error("non-200 http status code: %s %s" %
-                         (response_headers, response_body))
+            logger.error(
+                "non-200 http status code: %s %s"
+                % (response_headers, response_body)
+            )
 
     def ping(self, timeout=5):
         try:
@@ -69,6 +81,7 @@ class M2EEClient:
         except Exception as e:
             logger.error("Got %s: %s" % (type(e), e))
             import traceback
+
             logger.error(traceback.format_exc())
         return False
 
@@ -80,28 +93,30 @@ class M2EEClient:
 
     def get_critical_log_messages(self):
         echo_feedback = self.echo().get_feedback()
-        if echo_feedback['echo'] != "pong":
-            errors = echo_feedback['errors']
+        if echo_feedback["echo"] != "pong":
+            errors = echo_feedback["errors"]
             # default to 3.0 format [{"message":"Hello,
             # world!","timestamp":1315316488958,"cause":""}, ...]
             if type(errors[0]) != dict:
                 return errors
             from datetime import datetime
+
             result = []
             for error in errors:
                 errorline = []
-                if 'message' in error and error['message'] != '':
-                    errorline.append("- %s" % error['message'])
-                if 'cause' in error and error['cause'] != '':
-                    errorline.append("- Caused by: %s" % error['cause'])
+                if "message" in error and error["message"] != "":
+                    errorline.append("- %s" % error["message"])
+                if "cause" in error and error["cause"] != "":
+                    errorline.append("- Caused by: %s" % error["cause"])
                 if len(errorline) == 0:
                     errorline.append("- [No message or cause was logged]")
                 errorline.insert(
                     0,
-                    datetime.fromtimestamp(error['timestamp'] / 1000)
-                    .strftime("%Y-%m-%d %H:%M:%S")
+                    datetime.fromtimestamp(error["timestamp"] / 1000).strftime(
+                        "%Y-%m-%d %H:%M:%S"
+                    ),
                 )
-                result.append(' '.join(errorline))
+                result.append(" ".join(errorline))
             return result
         return []
 
@@ -171,8 +186,9 @@ class M2EEClient:
     def get_profiler_logs(self):
         return self.request("get_profiler_logs")
 
-    def start_profiler(self, minimum_duration_to_log=None,
-                       flush_interval=None):
+    def start_profiler(
+        self, minimum_duration_to_log=None, flush_interval=None
+    ):
         params = {}
         if minimum_duration_to_log is not None:
             params["minimum_duration_to_log"] = minimum_duration_to_log
@@ -244,11 +260,11 @@ class M2EEResponse:
     def __init__(self, action, json):
         self._action = action
         self._json = json
-        self._result = self._json['result']
-        self._feedback = self._json.get('feedback', {})
-        self._message = self._json.get('message', None)
-        self._cause = self._json.get('cause', None)
-        self._stacktrace = self._json.get('stacktrace', None)
+        self._result = self._json["result"]
+        self._feedback = self._json.get("feedback", {})
+        self._message = self._json.get("message", None)
+        self._cause = self._json.get("cause", None)
+        self._stacktrace = self._json.get("stacktrace", None)
 
     def get_result(self):
         return self._result
@@ -276,9 +292,12 @@ class M2EEResponse:
 
     def get_error(self):
         error = "Executing %s did not succeed: result: %s, message: %s" % (
-            self._action, self._json['result'], self._json['message'])
-        if self._json.get('cause', None) is not None:
-            error = "%s, caused by: %s" % (error, self._json['cause'])
+            self._action,
+            self._json["result"],
+            self._json["message"],
+        )
+        if self._json.get("cause", None) is not None:
+            error = "%s, caused by: %s" % (error, self._json["cause"])
         return error
 
     def __str__(self):

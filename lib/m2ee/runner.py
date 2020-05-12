@@ -25,7 +25,7 @@ class M2EERunner:
     def _read_pidfile(self):
         pidfile = self._config.get_pidfile()
         try:
-            with open(pidfile, 'r') as pf:
+            with open(pidfile, "r") as pf:
                 self._pid = int(pf.read().strip())
         except IOError as e:
             if e.errno != errno.ENOENT:
@@ -39,7 +39,7 @@ class M2EERunner:
         if self._pid:
             pidfile = self._config.get_pidfile()
             try:
-                with open(pidfile, 'w+') as pf:
+                with open(pidfile, "w+") as pf:
                     pf.write("%s\n" % self._pid)
             except IOError as e:
                 logger.error("Cannot write pidfile: %s" % e)
@@ -103,8 +103,10 @@ class M2EERunner:
             pid = os.fork()
             if pid > 0:
                 self._pid = None
-                logger.trace("[%s] Waiting for intermediate process to "
-                             "exit..." % os.getpid())
+                logger.trace(
+                    "[%s] Waiting for intermediate process to "
+                    "exit..." % os.getpid()
+                )
                 # prevent zombie process
                 (waitpid, result) = os.waitpid(pid, 0)
                 if result == 0:
@@ -113,48 +115,52 @@ class M2EERunner:
                 logger.error("Starting the JVM process did not succeed...")
                 return False
         except OSError as e:
-            logger.error("Forking subprocess failed: %d (%s)\n" %
-                         (e.errno, e.strerror))
+            logger.error(
+                "Forking subprocess failed: %d (%s)\n" % (e.errno, e.strerror)
+            )
             return
-        logger.trace("[%s] Now in intermediate forked process..." %
-                     os.getpid())
+        logger.trace(
+            "[%s] Now in intermediate forked process..." % os.getpid()
+        )
         # decouple from parent environment
         os.chdir("/")
         os.setsid()
         os.umask(0o022)
 
-        logger.debug("Environment to be used when starting the JVM: %s" %
-                     ' '.join(["%s='%s'" % (k, v)
-                               for k, v in env.items()]))
-        logger.debug("Command line to be used when starting the JVM: %s" %
-                     ' '.join(cmd))
+        logger.debug(
+            "Environment to be used when starting the JVM: %s"
+            % " ".join(["%s='%s'" % (k, v) for k, v in env.items()])
+        )
+        logger.debug(
+            "Command line to be used when starting the JVM: %s" % " ".join(cmd)
+        )
 
         # start java subprocess (second fork)
         logger.trace("[%s] Starting the JVM..." % os.getpid())
         try:
-            proc = subprocess.Popen(
-                cmd,
-                close_fds=True,
-                cwd='/',
-                env=env,
-            )
+            proc = subprocess.Popen(cmd, close_fds=True, cwd="/", env=env,)
         except OSError as ose:
             if ose.errno == errno.ENOENT:
-                logger.error("The java binary cannot be found in the default "
-                             "search path!")
-                logger.error("By default, when starting the JVM, the "
-                             "environment is not preserved. If you don't set "
-                             "preserve_environment to true or specify PATH in "
-                             "preserve_environment or custom_environment in "
-                             "the m2ee section of your m2ee.yaml "
-                             "configuration file, the search path is likely a "
-                             "very basic default list like '/bin:/usr/bin'")
+                logger.error(
+                    "The java binary cannot be found in the default "
+                    "search path!"
+                )
+                logger.error(
+                    "By default, when starting the JVM, the "
+                    "environment is not preserved. If you don't set "
+                    "preserve_environment to true or specify PATH in "
+                    "preserve_environment or custom_environment in "
+                    "the m2ee section of your m2ee.yaml "
+                    "configuration file, the search path is likely a "
+                    "very basic default list like '/bin:/usr/bin'"
+                )
                 os._exit(1)
         # always write pid asap, so that monitoring can detect apps that should
         # be started but fail to do so
         self._pid = proc.pid
-        logger.trace("[%s] Writing JVM pid to pidfile: %s" %
-                     (os.getpid(), self._pid))
+        logger.trace(
+            "[%s] Writing JVM pid to pidfile: %s" % (os.getpid(), self._pid)
+        )
         self._write_pidfile()
         # wait for m2ee to become available
         t = 0
@@ -162,18 +168,23 @@ class M2EERunner:
             sleep(step)
             dead = proc.poll()
             if dead is not None:
-                logger.error("Java subprocess terminated with errorcode %s" %
-                             dead)
-                logger.debug("[%s] Doing unclean exit from intermediate "
-                             "process now." % os.getpid())
+                logger.error(
+                    "Java subprocess terminated with errorcode %s" % dead
+                )
+                logger.debug(
+                    "[%s] Doing unclean exit from intermediate "
+                    "process now." % os.getpid()
+                )
                 os._exit(1)
             if self.check_pid(proc.pid) and self._client.ping():
                 break
             t += step
         if t >= timeout:
             logger.error("Timeout: Java subprocess takes too long to start.")
-            logger.trace("[%s] Doing unclean exit from intermediate process "
-                         "now." % os.getpid())
+            logger.trace(
+                "[%s] Doing unclean exit from intermediate process "
+                "now." % os.getpid()
+            )
             os._exit(1)
         logger.trace("[%s] Exiting intermediate process..." % os.getpid())
         os._exit(0)
@@ -190,8 +201,10 @@ class M2EERunner:
                     break
                 t += step
             if t >= timeout:
-                logger.trace("Timeout: Process %s takes too long to "
-                             "disappear." % self._pid)
+                logger.trace(
+                    "Timeout: Process %s takes too long to "
+                    "disappear." % self._pid
+                )
                 return False
         self.cleanup_pid()
         return True

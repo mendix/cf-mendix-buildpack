@@ -10,18 +10,18 @@ def __to_mx_version__(version):
 
 
 class MXVersion:
-
     def __init__(self, version):
         if isinstance(version, (int, float)):
             version = str(version)
         parsed = re.match(
-            "(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:\.(\d+))?(?:-(.*))?",
-            version
+            "(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:\.(\d+))?(?:-(.*))?", version
         )
         if parsed is None:
             raise Exception("Could not parse version string '%s'" % version)
         groups = parsed.groups()
-        self.major, self.minor, self.patch, self.hotfix = [int(x) if x else None for x in groups[:-1]]
+        self.major, self.minor, self.patch, self.hotfix = [
+            int(x) if x else None for x in groups[:-1]
+        ]
         self.addendum = groups[-1]
 
     def _numbers(self):
@@ -49,8 +49,9 @@ class MXVersion:
     def __lt__(self, other):
         if isinstance(other, tuple):
             mxother = list(map(__to_mx_version__, other))
-            return (self < min(mxother) or
-                    any([self // x.major and self < x for x in mxother]))
+            return self < min(mxother) or any(
+                [self // x.major and self < x for x in mxother]
+            )
         return self._numbers() < __to_mx_version__(other)._numbers()
 
     def __le__(self, other):
@@ -64,8 +65,9 @@ class MXVersion:
     def __ge__(self, other):
         if isinstance(other, tuple):
             mxother = list(map(__to_mx_version__, other))
-            return (self >= max(mxother) or
-                    any([self // x.major and self >= x for x in mxother]))
+            return self >= max(mxother) or any(
+                [self // x.major and self >= x for x in mxother]
+            )
         return self._numbers() >= __to_mx_version__(other)._numbers()
 
     def __gt__(self, other):

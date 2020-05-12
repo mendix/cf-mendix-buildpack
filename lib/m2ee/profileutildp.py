@@ -38,8 +38,9 @@
 #     for phylogenetic computing. Bioinformatics 26: 1569-1571.
 
 
-def format_dict_table(rows, column_names=None, max_column_width=None,
-                      border_style=2):
+def format_dict_table(
+    rows, column_names=None, max_column_width=None, border_style=2
+):
     """
     Returns a string representation of a tuple of dictionaries in a
     table format. This method can read the column names directly off the
@@ -62,27 +63,27 @@ def format_dict_table(rows, column_names=None, max_column_width=None,
             border_style = int(border_style)
             # border_style = 0
             if border_style == 0:
-                vertical_rule = '  '
-                horizontal_rule = ''
-                rule_junction = ''
+                vertical_rule = "  "
+                horizontal_rule = ""
+                rule_junction = ""
             elif border_style == 1:
-                vertical_rule = ' '
-                horizontal_rule = '-'
-                rule_junction = '-'
+                vertical_rule = " "
+                horizontal_rule = "-"
+                rule_junction = "-"
             else:
-                vertical_rule = ' | '
-                horizontal_rule = '-'
-                rule_junction = '-+-'
+                vertical_rule = " | "
+                horizontal_rule = "-"
+                rule_junction = "-+-"
             if border_style >= 3:
-                left_table_edge_rule = '| '
-                right_table_edge_rule = ' |'
-                left_table_edge_rule_junction = '+-'
-                right_table_edge_rule_junction = '-+'
+                left_table_edge_rule = "| "
+                right_table_edge_rule = " |"
+                left_table_edge_rule_junction = "+-"
+                right_table_edge_rule_junction = "-+"
             else:
-                left_table_edge_rule = ''
-                right_table_edge_rule = ''
-                left_table_edge_rule_junction = ''
-                right_table_edge_rule_junction = ''
+                left_table_edge_rule = ""
+                right_table_edge_rule = ""
+                left_table_edge_rule_junction = ""
+                right_table_edge_rule_junction = ""
 
             if max_column_width:
                 column_list = [c[:max_column_width] for c in column_list]
@@ -90,16 +91,16 @@ def format_dict_table(rows, column_names=None, max_column_width=None,
                 for row in rows:
                     new_row = {}
                     for k in row.keys():
-                        new_row[k[:max_column_width]] = (
-                            str(row[k])[:max_column_width]
-                        )
+                        new_row[k[:max_column_width]] = str(row[k])[
+                            :max_column_width
+                        ]
                     trunc_rows.append(new_row)
                 rows = trunc_rows
 
             for col in column_list:
                 rls = [len(str(row[col])) for row in rows]
-                lengths[col] = max(rls+[len(col)])
-                rules[col] = horizontal_rule*lengths[col]
+                lengths[col] = max(rls + [len(col)])
+                rules[col] = horizontal_rule * lengths[col]
 
             template_elements = [
                 "%%(%s)-%ss" % (col, lengths[col]) for col in column_list
@@ -107,30 +108,30 @@ def format_dict_table(rows, column_names=None, max_column_width=None,
             row_template = vertical_rule.join(template_elements)
             border_template = rule_junction.join(template_elements)
             full_line = (
-                left_table_edge_rule_junction +
-                (border_template % rules) +
-                right_table_edge_rule_junction
+                left_table_edge_rule_junction
+                + (border_template % rules)
+                + right_table_edge_rule_junction
             )
             display = []
             if border_style > 0:
                 display.append(full_line)
             display.append(
-                left_table_edge_rule +
-                (row_template % dict(zip(column_list, column_list))) +
-                right_table_edge_rule
+                left_table_edge_rule
+                + (row_template % dict(zip(column_list, column_list)))
+                + right_table_edge_rule
             )
             if border_style > 0:
                 display.append(full_line)
             for row in rows:
                 display.append(
-                    left_table_edge_rule +
-                    (row_template % row) +
-                    right_table_edge_rule
+                    left_table_edge_rule
+                    + (row_template % row)
+                    + right_table_edge_rule
                 )
             if border_style > 0:
                 display.append(full_line)
             return "\n".join(display)
         else:
-            return ''
+            return ""
     else:
-        return ''
+        return ""
