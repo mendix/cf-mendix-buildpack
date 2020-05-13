@@ -146,6 +146,7 @@ location %s {
     %s
     %s
     %s
+    %s
 }
 """
     root_template = """
@@ -161,6 +162,7 @@ location %s {
 }
 proxy_intercept_errors %s;
 satisfy %s;
+%s
 %s
 %s
 %s
@@ -219,6 +221,20 @@ satisfy %s;
         if config.get("client-cert") or config.get("client_cert"):
             client_cert = "auth_request /client-cert-check-internal;"
 
+        # This scenario isn't covered by integration tests. Please test manually if Nginx is properly matching the
+        # SSL-Client-I-DN HTTP header with the configuration in the ACCESS_RESTRICTIONS environment variable.
+        issuer_dn = ""
+        if "issuer_dn" in config:
+            issuer_dn_regex = ""
+            for i in config["issuer_dn"]:
+                issuer = i.replace(" ", "\\040")
+                issuer = issuer.replace(".", "\\.")
+                issuer_dn_regex += "{}|".format(issuer)
+            issuer_dn_regex = issuer_dn_regex[:-1]
+            issuer_dn = "if ($http_ssl_client_i_dn ~* ^(?!({})$)(\w*)) {{ \n        return 403;\n    }}".format(
+                issuer_dn_regex
+            )
+
         template = root_template if path == "/" else location_template
         indent = "\n" + " " * (0 if path == "/" else 4)
         result += template % (
@@ -226,6 +242,7 @@ satisfy %s;
             proxy_intercept_errors,
             satisfy,
             indent.join(ipfilter),
+            issuer_dn,
             client_cert,
             indent.join(basic_auth),
         )
