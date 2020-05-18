@@ -1,13 +1,13 @@
+import crypt
 import json
 import logging
-import crypt
 import os
 import re
 import subprocess
 
 from buildpack import util
 from buildpack.runtime_components import security
-
+from lib.m2ee.version import MXVersion
 
 DEFAULT_HEADERS = {
     "X-Frame-Options": r"(?i)(^allow-from https?://([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*(:\d+)?$|^deny$|^sameorigin$)",  # noqa: E501
@@ -18,6 +18,13 @@ DEFAULT_HEADERS = {
     "X-Permitted-Cross-Domain-Policies": r"(?i)(^all$|^none$|^master-only$|^by-content-type$|^by-ftp-filename$)",  # noqa: E501
     "X-XSS-Protection": r"(?i)(^0$|^1$|^1; mode=block$|^1; report=https?://([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*(:\d+)?$)",  # noqa: E501
 }
+
+# Fix for Chrome SameSite enforcement (runtime will set this cookie in newer runtime versions)
+SAMESITE_COOKIE_WORKAROUND_LESS_MX_VERSION = "8.11"
+SAMESITE_COOKIE_WORKAROUND_HEADER = 'add_header Set-Cookie "mx-cookie-test=allowed; SameSite=None; Secure; Path=/" always;'
+SAMESITE_COOKIE_WORKAROUND_PROXY_PASS = (
+    'proxy_cookie_path ~(.*) "$1; SameSite=None; Secure; HttpOnly";'
+)
 
 
 def compile(build_path, cache_path):
@@ -39,9 +46,14 @@ def set_up_files(m2ee):
         mxbuild_upstream = "return 501"
     with open("nginx/conf/nginx.conf") as fh:
         lines = "".join(fh.readlines())
-    http_headers = parse_headers()
+
+    samesite_cookie_workaround = MXVersion(
+        str(m2ee.config.get_runtime_version())
+    ) < MXVersion(SAMESITE_COOKIE_WORKAROUND_LESS_MX_VERSION)
+
+    http_headers = parse_headers(samesite_cookie_workaround)
     lines = (
-        lines.replace("CONFIG", get_path_config())
+        lines.replace("CONFIG", get_path_config(samesite_cookie_workaround))
         .replace("NGINX_PORT", str(util.get_nginx_port()))
         .replace("RUNTIME_PORT", str(util.get_runtime_port()))
         .replace("ADMIN_PORT", str(util.get_admin_port()))
@@ -61,7 +73,7 @@ def set_up_files(m2ee):
     )
 
 
-def parse_headers():
+def parse_headers(samesite_cookie_workaround=False):
     header_config = ""
     headers_from_json = {}
 
@@ -98,6 +110,9 @@ def parse_headers():
                 )
             )
 
+    if samesite_cookie_workaround:
+        header_config += SAMESITE_COOKIE_WORKAROUND_HEADER + "\n"
+
     return header_config
 
 
@@ -125,7 +140,7 @@ def gen_htpasswd(users_passwords, file_name_suffix=""):
                 )
 
 
-def get_path_config():
+def get_path_config(samesite_cookie_workaround=False):
     # Example for ACCESS_RESTRICTIONS
     # {
     #     "/": {'ipfilter': ['10.0.0.0/8'], 'client_cert': true, 'satisfy': 'any'},
@@ -141,6 +156,7 @@ location %s {
         expires 1y;
     }
     proxy_pass http://mendix;
+    %s
     proxy_intercept_errors %s;
     satisfy %s;
     %s
@@ -158,6 +174,7 @@ location %s {
             add_header Cache-Control "no-cache";
     }
     proxy_pass http://mendix;
+    %s
 }
 proxy_intercept_errors %s;
 satisfy %s;
@@ -219,10 +236,15 @@ satisfy %s;
         if config.get("client-cert") or config.get("client_cert"):
             client_cert = "auth_request /client-cert-check-internal;"
 
+        proxy_cookie_samesite = None
+        if samesite_cookie_workaround:
+            proxy_cookie_samesite = SAMESITE_COOKIE_WORKAROUND_PROXY_PASS
+
         template = root_template if path == "/" else location_template
         indent = "\n" + " " * (0 if path == "/" else 4)
         result += template % (
             path,
+            proxy_cookie_samesite,
             proxy_intercept_errors,
             satisfy,
             indent.join(ipfilter),
@@ -230,7 +252,3 @@ satisfy %s;
             indent.join(basic_auth),
         )
     return "\n        ".join(result.split("\n"))
-
-
-if __name__ == "__main__":
-    print(get_path_config())
