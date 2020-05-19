@@ -25,6 +25,7 @@ class TestCaseEmitMetrics(basetest.BaseTest):
         self.assert_string_in_recent_logs("storage")
         self.assert_string_in_recent_logs("number_of_files")
         self.assert_string_in_recent_logs("critical_logs_count")
+        self.assert_string_in_recent_logs("tcp_latency")
 
     def test_free_apps_metrics(self):
         self.setUpCF(
