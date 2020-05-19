@@ -399,6 +399,24 @@ cf unset-env <YOUR_APP> DEBUG_CONTAINER
 cf restart <YOUR_APP>
 ```
 
+Similarly, if you need to use `m2ee-tools` inside the container for debugging
+purposes, you can do the following:
+
+```
+cf ssh <YOUR_APP>
+export PYTHONPATH=/home/vcap/app/.local/lib/python3.4/site-packages/:/home/vcap/app/lib/
+python3
+```
+
+and in the interactive python console:
+
+```
+import os
+from m2ee.client import M2EEClient
+client = M2EEClient('http://localhost:8082', os.environ['M2EE_PASSWORD'])
+```
+
+
 # Limitations
 
 These are known limitations for the Mendix buildpack.

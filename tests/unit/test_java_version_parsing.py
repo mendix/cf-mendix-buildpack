@@ -57,9 +57,8 @@ class TestGuessJavaVersion(TestCase):
     def test_guess_mendix_6_with_missing_java_version(self):
         """All Mendix 6 versions are supposed to use Java 8.
 
-        This code is deprecated, but I am including unit tests against the
-        theoretical implementation to be on the safe side.
-        This may be overly defensive.
+        This is reachable in CloudV4 for Mendix runtimes <= 6.5.0, as the
+        runtime there does not expose the Java version from the about response.
         """
         m2ee_about = M2EEResponse(
             action="about", json={"feedback": {}, "result": 0}
@@ -105,6 +104,17 @@ class TestGuessJavaVersion(TestCase):
         runtime_version = MXVersion("5.21.0")
         # Non-matching values means Java 8. Apparently!
         stats = {"memory": {"used_nonheap": 0, "code": 123, "permanent": 345}}
+        guessed_version = _guess_java_version(
+            m2ee_about, runtime_version, stats
+        )
+        self.assertEqual(8, guessed_version)
+
+    def test_guess_future_mendix_versions_doesnt_error(self):
+        m2ee_about = M2EEResponse(
+            action="about", json={"feedback": {}, "result": 0}
+        )
+        runtime_version = MXVersion("6.1.0")
+        stats = {}
         guessed_version = _guess_java_version(
             m2ee_about, runtime_version, stats
         )
