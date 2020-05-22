@@ -19,12 +19,7 @@ DEFAULT_HEADERS = {
     "X-XSS-Protection": r"(?i)(^0$|^1$|^1; mode=block$|^1; report=https?://([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*(:\d+)?$)",  # noqa: E501
 }
 
-# Fix for Chrome SameSite enforcement (runtime will set this cookie in newer runtime versions)
-SAMESITE_COOKIE_WORKAROUND_LESS_MX_VERSION = "8.11"
-SAMESITE_COOKIE_WORKAROUND_HEADER = 'add_header Set-Cookie "mx-cookie-test=allowed; SameSite=None; Secure; Path=/" always;'
-SAMESITE_COOKIE_WORKAROUND_PROXY_PASS = (
-    'proxy_cookie_path ~(.*) "$1; SameSite=None; Secure; HttpOnly";'
-)
+SAMESITE_COOKIE_WORKAROUND_HEADER = 'add_header Set-Cookie "mx-cookie-test=allowed; SameSite=None; Secure; Path=/" always;\n'
 
 
 def compile(build_path, cache_path):
@@ -47,13 +42,12 @@ def set_up_files(m2ee):
     with open("nginx/conf/nginx.conf") as fh:
         lines = "".join(fh.readlines())
 
-    samesite_cookie_workaround = MXVersion(
-        str(m2ee.config.get_runtime_version())
-    ) < MXVersion(SAMESITE_COOKIE_WORKAROUND_LESS_MX_VERSION)
-
+    samesite_cookie_workaround = get_path_config(
+        MXVersion(str(m2ee.config.get_runtime_version())) < MXVersion("8.11")
+    )
     http_headers = parse_headers(samesite_cookie_workaround)
     lines = (
-        lines.replace("CONFIG", get_path_config(samesite_cookie_workaround))
+        lines.replace("CONFIG", samesite_cookie_workaround,)
         .replace("NGINX_PORT", str(util.get_nginx_port()))
         .replace("RUNTIME_PORT", str(util.get_runtime_port()))
         .replace("ADMIN_PORT", str(util.get_admin_port()))
@@ -111,7 +105,7 @@ def parse_headers(samesite_cookie_workaround=False):
             )
 
     if samesite_cookie_workaround:
-        header_config += SAMESITE_COOKIE_WORKAROUND_HEADER + "\n"
+        header_config += SAMESITE_COOKIE_WORKAROUND_HEADER
 
     return header_config
 
@@ -236,9 +230,10 @@ satisfy %s;
         if config.get("client-cert") or config.get("client_cert"):
             client_cert = "auth_request /client-cert-check-internal;"
 
+        # Temporary fix for SameSite enforcement (runtime will set this cookie from 8.10 onwards)
         proxy_cookie_samesite = None
         if samesite_cookie_workaround:
-            proxy_cookie_samesite = SAMESITE_COOKIE_WORKAROUND_PROXY_PASS
+            proxy_cookie_samesite = 'proxy_cookie_path ~(.*) "$1; SameSite=None; Secure; HttpOnly";'
 
         template = root_template if path == "/" else location_template
         indent = "\n" + " " * (0 if path == "/" else 4)
