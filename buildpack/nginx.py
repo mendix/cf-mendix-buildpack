@@ -39,13 +39,15 @@ def set_up_files(m2ee):
         mxbuild_upstream = "return 501"
     with open("nginx/conf/nginx.conf") as fh:
         lines = "".join(fh.readlines())
-
-    samesite_cookie_workaround = get_path_config(
-        MXVersion(str(m2ee.config.get_runtime_version())) < MXVersion("8.10")
-    )
-    http_headers = parse_headers(samesite_cookie_workaround)
+    http_headers = parse_headers()
     lines = (
-        lines.replace("CONFIG", samesite_cookie_workaround,)
+        lines.replace(
+            "CONFIG",
+            get_path_config(
+                MXVersion(str(m2ee.config.get_runtime_version()))
+                < MXVersion("8.10")
+            ),
+        )
         .replace("NGINX_PORT", str(util.get_nginx_port()))
         .replace("RUNTIME_PORT", str(util.get_runtime_port()))
         .replace("ADMIN_PORT", str(util.get_admin_port()))
@@ -65,7 +67,7 @@ def set_up_files(m2ee):
     )
 
 
-def parse_headers(samesite_cookie_workaround=False):
+def parse_headers():
     header_config = ""
     headers_from_json = {}
 
@@ -101,11 +103,6 @@ def parse_headers(samesite_cookie_workaround=False):
                     header_key, header_value
                 )
             )
-
-    if samesite_cookie_workaround:
-        header_value = 'add_header Set-Cookie "mx-cookie-test=allowed; SameSite=None; Secure; Path=/" always;\n'
-        escaped_value = header_value.replace('"', '\\"').replace("'", "\\'")
-        header_config += escaped_value
 
     return header_config
 
