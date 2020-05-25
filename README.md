@@ -206,6 +206,14 @@ to configure multiple supported headers, you can set it like below:
 cf set-env <YOUR_APP> HTTP_RESPONSE_HEADERS '{"Referrer-Policy": "no-referrer-when-downgrade", "X-Content-Type-Options": "nosniff"}'
 ```
 
+### Enabling SameSite / Secure Cookie Header Injection for Runtime < 8.11
+
+Google Chrome will - at a certain moment - [enforce cookie security](https://www.chromium.org/updates/same-site) by requiring the `SameSite` and `Secure` atrributes for all cookies. Mendix runtime versions < 8.11 do not include these properties in cookies.
+
+The buildpack can inject these two properties into all cookies for affected runtime versions.
+
+This workaround is disabled by default. If your application supports injecting these cookies, you can choose to enable cookie header injection by setting the `SAMESITE_COOKIE_WORKAROUND` environment variable to `true`.
+
 ### Horizontal Scaling
 
 There are two ways for horizontal scaling in Mendix. In Mendix 6 you can use sticky sessions. Mendix 7 brings this even further by no longer requiring a state store. See below on how to activate these settings, based on the Mendix version you use.

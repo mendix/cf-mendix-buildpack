@@ -26,7 +26,7 @@ create_build_dirs:
 build: create_build_dirs vendor write_commit
 	# git archive -o source.tar HEAD
 	git ls-files | tar Tcf - source.tar
-	tar xf source.tar -C build/
+	tar xf source.tar -C build/ --exclude=.commit
 	rm source.tar
 	cd build && rm -rf .gitignore .pylintrc .travis.yml* Makefile *.in tests/ dev/
 	cd build && zip -r  -9 ../dist/${PACKAGE_NAME}.zip .
