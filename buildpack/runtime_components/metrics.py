@@ -2,10 +2,12 @@ import datetime
 import json
 import logging
 import os
+import socket
 import sys
 import threading
 import time
 from abc import ABCMeta, abstractmethod
+from timeit import default_timer as timer
 
 import psycopg2
 import requests
@@ -235,6 +237,9 @@ class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
         if mutations_stats:
             database_stats.update(mutations_stats)
         stats["database"] = database_stats
+        tcp_latency = self._get_database_tcp_latency()
+        if tcp_latency:
+            database_stats["tcp_latency"] = tcp_latency
         return stats
 
     def _get_database_storage(self):
@@ -243,6 +248,34 @@ class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
                 return float(os.environ["DATABASE_DISKSTORAGE"])
             except ValueError:
                 return None
+
+    def _get_database_tcp_latency(self, timeout: float = 5):
+        db_config = database.get_config()
+        host, port = self._get_db_host_and_port(db_config["DatabaseHost"])
+        # New Socket and Time out
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+
+        # Start a timer
+        s_start = timer()
+
+        # Try to Connect
+        try:
+            sock.connect((host, int(port)))
+            sock.shutdown(socket.SHUT_RD)
+            sock.close()
+
+        # If something bad happens, the latency is None
+        except socket.timeout:
+            return None
+        except OSError:
+            return None
+
+        # Stop Timer
+        s_stop = timer()
+        s_runtime = "%.2f" % (1000 * (s_stop - s_start))
+
+        return s_runtime
 
     def _get_database_mutations(self):
         conn = self._get_db_conn()
@@ -357,12 +390,7 @@ WHERE t.schemaname='public';
                     % db_config["DatabaseType"]
                 )
 
-            host_and_port = db_config["DatabaseHost"].split(":")
-            host = host_and_port[0]
-            if len(host_and_port) > 1:
-                port = int(host_and_port[1])
-            else:
-                port = 5432
+            host, port = self._get_db_host_and_port(db_config["DatabaseHost"])
             self.db = psycopg2.connect(
                 "options='-c statement_timeout=60s'",
                 database=db_config["DatabaseName"],
@@ -376,6 +404,16 @@ WHERE t.schemaname='public';
                 psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT
             )
         return self.db
+
+    @staticmethod
+    def _get_db_host_and_port(database_host):
+        host_and_port = database_host.split(":")
+        host = host_and_port[0]
+        if len(host_and_port) > 1:
+            port = int(host_and_port[1])
+        else:
+            port = 5432
+        return host, port
 
 
 class PaidAppsMetricsEmitterThread(BaseMetricsEmitterThread):
