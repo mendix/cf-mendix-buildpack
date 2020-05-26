@@ -2,7 +2,49 @@ import copy
 from unittest import TestCase
 from unittest.mock import Mock
 
-from buildpack.runtime_components.metrics import FreeAppsMetricsEmitterThread
+from buildpack.runtime_components.metrics import (
+    FreeAppsMetricsEmitterThread,
+    PaidAppsMetricsEmitterThread,
+)
+
+
+class TestNegativeMemoryMetricsThrowError(TestCase):
+    def test_validating_bad_metrics(self):
+        m2ee_stats = {"memory": {"javaheap": -12345}}
+        with self.assertRaises(RuntimeError):
+            PaidAppsMetricsEmitterThread._sanity_check_m2ee_stats(m2ee_stats)
+
+    def test_non_ints_dont_cause_problems(self):
+        m2ee_stats = {
+            "memory": {
+                "javaheap": 123,
+                "memorypools": {"blah": "stuff"},
+                "foo": "bar",
+            }
+        }
+        self.assertIsNone(
+            PaidAppsMetricsEmitterThread._sanity_check_m2ee_stats(m2ee_stats)
+        )
+
+    def test_non_ints_dont_cause_problems_when_raising(self):
+        m2ee_stats = {
+            "memory": {
+                "javaheap": -123,
+                "memorypools": {"blah": "stuff"},
+                "foo": "bar",
+            }
+        }
+        with self.assertRaises(RuntimeError):
+            PaidAppsMetricsEmitterThread._sanity_check_m2ee_stats(m2ee_stats)
+
+    def uderlying_log_message_propagates_upwards(self):
+        m2ee = Mock()
+        interval = 1  # TODO: check
+        metrics_emitter = PaidAppsMetricsEmitterThread(interval, m2ee)
+        # TODO: mock munin.get_stats_from_runtime
+        metrics_emitter._get_munin_stats = Mock(
+            return_value=copy.deepcopy(self.mock_user_session_metrics)
+        )
 
 
 class TestFreeAppsMetricsEmitter(TestCase):

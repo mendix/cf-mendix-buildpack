@@ -187,6 +187,27 @@ class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
             health["diagnosis"] = "Health check failed unexpectedly: %s" % e
         return stats
 
+    @staticmethod
+    def _sanity_check_m2ee_stats(m2ee_stats):
+        """Memory usage can never be negative. If this happens, throw a warning
+        and ask the customer to contact support, so that we can debug.
+        """
+        for memory_type, memory_value in m2ee_stats["memory"].items():
+            if not isinstance(memory_value, int):
+                # Memorypools are here and are stored as a dict
+                continue
+
+            if memory_value <= 0:
+                logging.error(
+                    "Memory stats with non-logical values: %s",
+                    m2ee_stats["memory"],
+                )
+                raise RuntimeError(
+                    "Memory statistics have non-logical values. This will "
+                    "cause incorrect data in your application's metrics. "
+                    "Please contact support!"
+                )
+
     def _inject_m2ee_stats(self, stats):
         try:
             m2ee_stats, java_version = munin.get_stats_from_runtime(
@@ -202,6 +223,7 @@ class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
                 self.m2ee.client.get_critical_log_messages()
             )
             m2ee_stats["critical_logs_count"] = critical_logs_count
+            self._sanity_check_m2ee_stats(m2ee_stats)
             stats["mendix_runtime"] = m2ee_stats
         except Exception:
             logging.debug("Unable to get metrics from runtime")
