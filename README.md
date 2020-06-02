@@ -390,7 +390,7 @@ export HOME=$HOME/app # this should not be needed but for now it is
 export DEBUG_CONTAINER=false # while we are in the container turn it off, we could try to make this optional by detecting other environment variables that are present over ssh but not regular start
 export PORT=1234 # so that nginx can start correctly
 cd app
-python3 start.py
+PYTHONPATH=:buildpack:lib python3 buildpack/start.py
 ```
 
 After you are done, you can disable debug mode with:

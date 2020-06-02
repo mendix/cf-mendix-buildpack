@@ -21,6 +21,16 @@ For developing the buildpack, `pyenv` must be set up, and the dependencies for t
 
 Beware that an older file system is also supported which includes Python 3.4, so please take that into account while introducing additional dependencies or new dependency version.
 
+### Developing in `Docker`
+As an alternative to running Python on your host you can run it in Docker container.
+* set up required environment variables
+* go to `./dev` folder
+* execute `bash run-locally.sh`
+
+This will start the Docker container with preinstalled Python and "ssh" you into it.
+The project folder will be mapped to the current folder in the Docker container, so if you edit files on you host 
+the changes will be immediately available in the container.
+
 ### Installing testing and linting requirements
 The buildpack makes use of the `make` system. For dependency management, `pip-compile` is used under the hood.
 
@@ -90,4 +100,10 @@ If your tests fail, be sure to clean up the Cloud Foundry environment with:
 
 ```
 make clean_cf
+```
+
+To run a one separate test do:
+
+```
+nosetests --nocapture --verbosity=3 --processes=10 --process-timeout=3600 --with-timer --timer-no-color tests/integration/test-file-name.py
 ```
