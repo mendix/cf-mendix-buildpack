@@ -31,11 +31,14 @@ import os
 import subprocess
 
 from buildpack import datadog, util
+from buildpack.runtime_components import database
 
 
 def _get_appmetrics_target():
     return os.getenv("APPMETRICS_TARGET")
 
+def include_db_metrics():
+    return os.getenv("APPMETRICS_INCLUDE_DB", "true").lower() == "true"
 
 def is_enabled():
     return _get_appmetrics_target() is not None
@@ -182,6 +185,19 @@ def update_config(m2ee, app_name):
             "percentile_limit": 1000,
         },
     )
+
+    # Configure postgreSQL input plugin
+    if include_db_metrics():
+        db_config = database.get_config()
+        _write_config(
+            "[[inputs.postgresql]]",
+            {
+                "address": "postgres://{}:{}@{}/{}".format(
+                    db_config["DatabaseUserName"],
+                    db_config["DatabasePassword"],
+                    db_config["DatabaseHost"],
+                    db_config["DatabaseName"])
+            })
 
     # Forward metrics also to DataDog when enabled
     if datadog.is_enabled():
