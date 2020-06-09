@@ -270,7 +270,7 @@ def _set_up_environment():
         os.environ["DD_SERVICE_NAME"] = _get_service()
         os.environ["DD_JMXFETCH_ENABLED"] = "false"
         os.environ["DD_SERVICE_MAPPING"] = "{}:{}.db".format(
-            database.get_config()["DatabaseType"].lower(), _get_service(),
+            database.get_config()["DatabaseType"].lower(), _get_service()
         )
 
     e = dict(os.environ.copy())

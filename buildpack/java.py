@@ -11,7 +11,7 @@ def compile(buildpack_path, cache_path, local_path, java_version):
     logging.debug("begin download and install java")
     util.mkdir_p(os.path.join(local_path, "bin"))
     jvm_location = ensure_and_get_jvm(
-        java_version, cache_path, local_path, package="jre",
+        java_version, cache_path, local_path, package="jre"
     )
     # create a symlink in .local/bin/java
     os.symlink(

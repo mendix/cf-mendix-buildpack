@@ -37,8 +37,10 @@ from buildpack.runtime_components import database
 def _get_appmetrics_target():
     return os.getenv("APPMETRICS_TARGET")
 
+
 def include_db_metrics():
     return os.getenv("APPMETRICS_INCLUDE_DB", "true").lower() == "true"
+
 
 def is_enabled():
     return _get_appmetrics_target() is not None
@@ -196,8 +198,10 @@ def update_config(m2ee, app_name):
                     db_config["DatabaseUserName"],
                     db_config["DatabasePassword"],
                     db_config["DatabaseHost"],
-                    db_config["DatabaseName"])
-            })
+                    db_config["DatabaseName"],
+                )
+            },
+        )
 
     # Forward metrics also to DataDog when enabled
     if datadog.is_enabled():

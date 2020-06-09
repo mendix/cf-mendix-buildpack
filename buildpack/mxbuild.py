@@ -130,7 +130,7 @@ def start_mxbuild_server(local_path, runtime_version, java_version):
         path = os.path.join(local_path, "mxbuild")
 
     jvm_location = java.ensure_and_get_jvm(
-        java_version, cache, local_path, package="jdk",
+        java_version, cache, local_path, package="jdk"
     )
     subprocess.Popen(
         [
