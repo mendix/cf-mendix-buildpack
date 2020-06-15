@@ -113,7 +113,7 @@ def copy_buildpack_resources():
         os.path.join(BUILD_DIR, "buildpack"),
     )
     shutil.copytree(
-        os.path.join(BUILDPACK_DIR, "lib"), os.path.join(BUILD_DIR, "lib"),
+        os.path.join(BUILDPACK_DIR, "lib"), os.path.join(BUILD_DIR, "lib")
     )
     shutil.copy(
         os.path.join(BUILDPACK_DIR, "bin", "mendix-logfilter"),
