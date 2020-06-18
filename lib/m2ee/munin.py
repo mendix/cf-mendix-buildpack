@@ -295,6 +295,7 @@ def _standardize_memory_pools_output(runtime_memory_pools, java_version):
         "survivor": ("Survivor Space",),
         "tenured": ("Tenured Gen",),
     }
+
     if java_version == 8:
         pool_mapping = java_8_mapping
     elif java_version == 11:
@@ -310,8 +311,12 @@ def _standardize_memory_pools_output(runtime_memory_pools, java_version):
         )
 
     # Transform memorypools from a list of dicts, to a dict of memory usages,
-    # which is more what we want.
-    memory_pools_dict = {f["name"]: f["usage"] for f in runtime_memory_pools}
+    # which is more what we want. Additionally ensure we use a standard pool
+    # name. ie. For "PS Eden Space" use "Eden Space"
+    memory_pools_dict = {
+        _standard_pool_name(f["name"]): f["usage"]
+        for f in runtime_memory_pools
+    }
 
     output_stats = {}
     for our_memory_type, pool_names in pool_mapping.items():
@@ -335,6 +340,42 @@ def _standardize_memory_pools_output(runtime_memory_pools, java_version):
         output_stats[our_memory_type] = total
 
     return output_stats
+
+
+def _standard_pool_name(pool_name):
+    """Return a standard memory pool name.
+
+    The memory pool names could vary based on the garbage collector enabled.
+    This function returns a standard name we could refer to.
+
+    Available collectors :
+    https://docs.oracle.com/en/java/javase/11/gctuning/available-collectors.html
+
+    Here is an old gist listing the variations in the names:
+    https://gist.github.com/szegedi/1474365
+
+    """
+
+    # mapping of standard memory pool name to all known names.
+    pool_name_aliases = {
+        "Eden Space": ("PS Eden Space", "Par Eden Space", "G1 Eden Space",),
+        "Survivor Space": (
+            "PS Survivor Space",
+            "Par Survivor Space",
+            "G1 Survivor Space",
+        ),
+        "Tenured Gen": ("PS Old Gen", "CMS Old Gen", "G1 Old Gen",),
+    }
+
+    for standard_name, valid_names in pool_name_aliases.items():
+        for name in valid_names:
+            if name != pool_name:
+                continue
+            return standard_name
+
+    # If we can't find an alternative standard name,
+    # just return the given memory pool name.
+    return pool_name
 
 
 def _populate_stats_by_java_version_old(stats, java_version):

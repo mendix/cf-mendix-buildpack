@@ -185,11 +185,339 @@ MENDIX_8_JAVA_11_STATS = {
     ],
 }
 
+MENDIX_8_JAVA_11_STATS_PARALLELGC = {
+    "committed_heap": 514850816,
+    "committed_nonheap": 107937792,
+    "init_heap": 536870912,
+    "init_nonheap": 7667712,
+    "max_heap": 514850816,
+    "max_nonheap": 780140544,
+    "memorypools": [
+        {
+            "index": 0,
+            "is_heap": False,
+            "name": "CodeHeap 'non-nmethods'",
+            "usage": 1270400,
+        },
+        {"index": 1, "is_heap": False, "name": "Metaspace", "usage": 73971168},
+        {
+            "index": 2,
+            "is_heap": False,
+            "name": "CodeHeap 'profiled " "nmethods'",
+            "usage": 12205312,
+        },
+        {"index": 3, "is_heap": True, "name": "PS Old Gen", "usage": 25652192},
+        {
+            "index": 4,
+            "is_heap": False,
+            "name": "Compressed Class Space",
+            "usage": 10990064,
+        },
+        {
+            "index": 5,
+            "is_heap": True,
+            "name": "PS Survivor Space",
+            "usage": 7899720,
+        },
+        {
+            "index": 6,
+            "is_heap": True,
+            "name": "PS Eden Space",
+            "usage": 83522232,
+        },
+        {
+            "index": 7,
+            "is_heap": False,
+            "name": "CodeHeap 'non-profiled " "nmethods'",
+            "usage": 2661760,
+        },
+    ],
+    "used_heap": 117074144,
+    "used_nonheap": 101099024,
+}
+
+MENDIX_6_JAVA_8_STATS_PARALLELGC = {
+    "code": 0,
+    "committed_heap": 514850816,
+    "committed_nonheap": 57958400,
+    "eden": 0,
+    "init_heap": 536870912,
+    "init_nonheap": 2555904,
+    "max_heap": 514850816,
+    "max_nonheap": 780140544,
+    "memorypools": [
+        {
+            "index": 0,
+            "is_heap": False,
+            "name": "Code Cache",
+            "usage": 10762368,
+        },
+        {"index": 1, "is_heap": False, "name": "Metaspace", "usage": 37685080},
+        {
+            "index": 2,
+            "is_heap": False,
+            "name": "Compressed Class Space",
+            "usage": 5180720,
+        },
+        {
+            "index": 3,
+            "is_heap": True,
+            "name": "PS Eden Space",
+            "usage": 38463376,
+        },
+        {"index": 4, "is_heap": True, "name": "PS Survivor Space", "usage": 0},
+        {"index": 5, "is_heap": True, "name": "PS Old Gen", "usage": 23152144},
+    ],
+    "permanent": 0,
+    "survivor": 0,
+    "tenured": 0,
+    "used_heap": 61615520,
+    "used_nonheap": 53631816,
+}
+
+MENDIX_8_JAVA_11_STATS_CONCMARKSWEEPGC = {
+    "committed_heap": 528154624,
+    "committed_nonheap": 107659264,
+    "init_heap": 536870912,
+    "init_nonheap": 7667712,
+    "max_heap": 528154624,
+    "max_nonheap": 780140544,
+    "memorypools": [
+        {
+            "index": 0,
+            "is_heap": False,
+            "name": "CodeHeap 'non-nmethods'",
+            "usage": 1271040,
+        },
+        {"index": 1, "is_heap": False, "name": "Metaspace", "usage": 73892272},
+        {
+            "index": 2,
+            "is_heap": False,
+            "name": "CodeHeap 'profiled " "nmethods'",
+            "usage": 11977984,
+        },
+        {
+            "index": 3,
+            "is_heap": False,
+            "name": "Compressed Class Space",
+            "usage": 10985232,
+        },
+        {
+            "index": 4,
+            "is_heap": True,
+            "name": "Par Eden Space",
+            "usage": 3918912,
+        },
+        {
+            "index": 5,
+            "is_heap": True,
+            "name": "Par Survivor Space",
+            "usage": 5843056,
+        },
+        {
+            "index": 6,
+            "is_heap": False,
+            "name": "CodeHeap 'non-profiled " "nmethods'",
+            "usage": 2761600,
+        },
+        {
+            "index": 7,
+            "is_heap": True,
+            "name": "CMS Old Gen",
+            "usage": 33777304,
+        },
+    ],
+    "used_heap": 43539272,
+    "used_nonheap": 100888448,
+}
+
+MENDIX_8_JAVA_11_STATS_G1GC = {
+    "committed_heap": 536870912,
+    "committed_nonheap": 105177088,
+    "init_heap": 536870912,
+    "init_nonheap": 7667712,
+    "max_heap": 536870912,
+    "max_nonheap": 780140544,
+    "memorypools": [
+        {
+            "index": 0,
+            "is_heap": False,
+            "name": "CodeHeap 'non-nmethods'",
+            "usage": 1276032,
+        },
+        {
+            "index": 1,
+            "is_heap": False,
+            "name": "Metaspace",
+            "usage": 73520192,
+        },
+        {
+            "index": 2,
+            "is_heap": False,
+            "name": "CodeHeap 'profiled " "nmethods'",
+            "usage": 10392064,
+        },
+        {
+            "index": 3,
+            "is_heap": False,
+            "name": "Compressed Class Space",
+            "usage": 10979664,
+        },
+        {
+            "index": 4,
+            "is_heap": True,
+            "name": "G1 Eden Space",
+            "usage": 20971520,
+        },
+        {
+            "index": 5,
+            "is_heap": True,
+            "name": "G1 Old Gen",
+            "usage": 30598056,
+        },
+        {
+            "index": 6,
+            "is_heap": True,
+            "name": "G1 Survivor Space",
+            "usage": 6291456,
+        },
+        {
+            "index": 7,
+            "is_heap": False,
+            "name": "CodeHeap 'non-profiled " "nmethods'",
+            "usage": 2462464,
+        },
+    ],
+    "used_heap": 57861032,
+    "used_nonheap": 98630736,
+}
+
+MENDIX_6_JAVA_8_STATS_CONCMARKSWEEPGC = {
+    "code": 0,
+    "committed_heap": 528154624,
+    "committed_nonheap": 57221120,
+    "eden": 0,
+    "init_heap": 536870912,
+    "init_nonheap": 2555904,
+    "max_heap": 528154624,
+    "max_nonheap": 780140544,
+    "memorypools": [
+        {"index": 0, "is_heap": False, "name": "Code Cache", "usage": 9254400},
+        {"index": 1, "is_heap": False, "name": "Metaspace", "usage": 37936456},
+        {
+            "index": 2,
+            "is_heap": False,
+            "name": "Compressed Class Space",
+            "usage": 5207456,
+        },
+        {
+            "index": 3,
+            "is_heap": True,
+            "name": "Par Eden Space",
+            "usage": 62842368,
+        },
+        {
+            "index": 4,
+            "is_heap": True,
+            "name": "Par Survivor Space",
+            "usage": 8716280,
+        },
+        {
+            "index": 5,
+            "is_heap": True,
+            "name": "CMS Old Gen",
+            "usage": 15998320,
+        },
+    ],
+    "permanent": 0,
+    "survivor": 0,
+    "tenured": 0,
+    "used_heap": 87556968,
+    "used_nonheap": 52398816,
+}
+
+MENDIX_6_JAVA_8_STATS_G1GC = {
+    "code": 0,
+    "committed_heap": 536870912,
+    "committed_nonheap": 57614336,
+    "eden": 0,
+    "init_heap": 536870912,
+    "init_nonheap": 2555904,
+    "max_heap": 536870912,
+    "max_nonheap": 780140544,
+    "memorypools": [
+        {
+            "index": 0,
+            "is_heap": False,
+            "name": "Code Cache",
+            "usage": 10222400,
+        },
+        {"index": 1, "is_heap": False, "name": "Metaspace", "usage": 37641984},
+        {
+            "index": 2,
+            "is_heap": False,
+            "name": "Compressed Class Space",
+            "usage": 5181992,
+        },
+        {
+            "index": 3,
+            "is_heap": True,
+            "name": "G1 Eden Space",
+            "usage": 68157440,
+        },
+        {
+            "index": 4,
+            "is_heap": True,
+            "name": "G1 Survivor Space",
+            "usage": 6291456,
+        },
+        {"index": 5, "is_heap": True, "name": "G1 Old Gen", "usage": 13107208},
+    ],
+    "permanent": 0,
+    "survivor": 0,
+    "tenured": 0,
+    "used_heap": 87556104,
+    "used_nonheap": 53059800,
+}
+
 
 class TestMetricParsingPerJavaVersion(TestCase):
     def test_java_8_memorypools(self):
         java_version = 8
         stats = {"memory": MENDIX_6_JAVA_8_MEMORY_STATS}
+        old_stats = _populate_stats_by_java_version_old(
+            copy.deepcopy(stats), java_version
+        )
+        new_stats = _populate_stats_by_java_version(
+            copy.deepcopy(stats), java_version
+        )
+        self.assertEqual(old_stats, new_stats)
+
+    def test_mendix_6_java_8_stats_parallelgc(self):
+        java_version = 8
+        stats = {"memory": MENDIX_6_JAVA_8_STATS_PARALLELGC}
+        old_stats = _populate_stats_by_java_version_old(
+            copy.deepcopy(stats), java_version
+        )
+        new_stats = _populate_stats_by_java_version(
+            copy.deepcopy(stats), java_version
+        )
+        self.assertEqual(old_stats, new_stats)
+
+    def test_mendix_6_java_8_stats_g1gc(self):
+        java_version = 8
+        stats = {"memory": MENDIX_6_JAVA_8_STATS_G1GC}
+        old_stats = _populate_stats_by_java_version_old(
+            copy.deepcopy(stats), java_version
+        )
+        new_stats = _populate_stats_by_java_version(
+            copy.deepcopy(stats), java_version
+        )
+        self.assertEqual(old_stats, new_stats)
+
+    def test_mendix_6_java_8_stats_concmarksweepgc(self):
+        java_version = 8
+        stats = {"memory": MENDIX_6_JAVA_8_STATS_CONCMARKSWEEPGC}
         old_stats = _populate_stats_by_java_version_old(
             copy.deepcopy(stats), java_version
         )
@@ -254,6 +582,45 @@ class TestMetricParsingPerJavaVersion(TestCase):
         # but whatever.
         self.assertNotEqual(old_stats, new_stats)
 
+    def test_mendix_8_java_11_memory_stats_parallelgc(self):
+        java_version = 11
+        stats = {"memory": MENDIX_8_JAVA_11_STATS_PARALLELGC}
+        old_stats = _populate_stats_by_java_version_old(
+            copy.deepcopy(stats), java_version
+        )
+        new_stats = _populate_stats_by_java_version(
+            copy.deepcopy(stats), java_version
+        )
+        # if we have reached here without any exception
+        # means we do support the alternate memory pool names
+        self.assertNotEqual(old_stats, new_stats)
+
+    def test_mendix_8_java_11_memory_stats_g1gc(self):
+        java_version = 11
+        stats = {"memory": MENDIX_8_JAVA_11_STATS_PARALLELGC}
+        old_stats = _populate_stats_by_java_version_old(
+            copy.deepcopy(stats), java_version
+        )
+        new_stats = _populate_stats_by_java_version(
+            copy.deepcopy(stats), java_version
+        )
+        # if we have reached here without any exception
+        # means we do support the alternate memory pool names
+        self.assertNotEqual(old_stats, new_stats)
+
+    def test_mendix_8_java_11_memory_stats_concmarksweepgc(self):
+        java_version = 11
+        stats = {"memory": MENDIX_8_JAVA_11_STATS_CONCMARKSWEEPGC}
+        old_stats = _populate_stats_by_java_version_old(
+            copy.deepcopy(stats), java_version
+        )
+        new_stats = _populate_stats_by_java_version(
+            copy.deepcopy(stats), java_version
+        )
+        # if we have reached here without any exception
+        # means we do support the alternate memory pool names
+        self.assertNotEqual(old_stats, new_stats)
+
 
 class TestMemoryPoolParsing(TestCase):
     def test_java_11_combining(self):
@@ -310,3 +677,109 @@ class TestMemoryPoolParsing(TestCase):
         java_version = 12
         with self.assertRaises(NotImplementedError):
             _standardize_memory_pools_output(memory_pools, java_version)
+
+
+class TestMemoryPoolAliases(TestCase):
+    """Test for the variations in the pool names based on enabled GC."""
+
+    def test_poolnames_serialgc(self):
+        input = [
+            {"usage": 3, "name": "Code Cache"},
+            {"usage": 5, "name": "Metaspace"},
+            {"usage": 7, "name": "Compressed Class Space"},
+            {"usage": 11, "name": "Eden Space"},
+            {"usage": 13, "name": "Survivor Space"},
+            {"usage": 17, "name": "Tenured Gen"},
+        ]
+        expected = {
+            "code": 3,
+            "permanent": 5,
+            "eden": 11,
+            "survivor": 13,
+            "tenured": 17,
+        }
+        self.assertEqual(
+            expected, _standardize_memory_pools_output(input, java_version=8),
+        )
+
+    def test_poolnames_parallelgc(self):
+        input = [
+            {"usage": 3, "name": "Code Cache"},
+            {"usage": 5, "name": "Metaspace"},
+            {"usage": 7, "name": "Compressed Class Space"},
+            {"usage": 11, "name": "PS Eden Space"},
+            {"usage": 13, "name": "PS Survivor Space"},
+            {"usage": 17, "name": "PS Old Gen"},
+        ]
+        expected = {
+            "code": 3,
+            "permanent": 5,
+            "eden": 11,
+            "survivor": 13,
+            "tenured": 17,
+        }
+        self.assertEqual(
+            expected, _standardize_memory_pools_output(input, java_version=8),
+        )
+
+    def test_poolnames_java11_parallel_gc(self):
+        input = [
+            {"usage": 11, "name": "CodeHeap 'non-nmethods'"},
+            {"usage": 19, "name": "Metaspace"},
+            {"usage": 7, "name": "PS Old Gen"},
+            {"usage": 13, "name": "CodeHeap 'profiled nmethods'"},
+            {"usage": 5, "name": "PS Eden Space"},
+            {"usage": 3, "name": "PS Survivor Space"},
+            {"usage": -1, "name": "Compressed Class Space"},
+            {"usage": 17, "name": "CodeHeap 'non-profiled nmethods'"},
+        ]
+        expected = {
+            "code": 11 + 13 + 17,
+            "permanent": 19,
+            "eden": 5,
+            "survivor": 3,
+            "tenured": 7,
+        }
+        self.assertEqual(
+            expected, _standardize_memory_pools_output(input, java_version=11),
+        )
+
+    def test_poolnames_concmarksweepgc(self):
+        input = [
+            {"usage": 3, "name": "Code Cache"},
+            {"usage": 5, "name": "Metaspace"},
+            {"usage": 7, "name": "Compressed Class Space"},
+            {"usage": 11, "name": "Par Eden Space"},
+            {"usage": 13, "name": "Par Survivor Space"},
+            {"usage": 17, "name": "CMS Old Gen"},
+        ]
+        expected = {
+            "code": 3,
+            "permanent": 5,
+            "eden": 11,
+            "survivor": 13,
+            "tenured": 17,
+        }
+        self.assertEqual(
+            expected, _standardize_memory_pools_output(input, java_version=8),
+        )
+
+    def test_poolnames_g1gc(self):
+        input = [
+            {"usage": 3, "name": "Code Cache"},
+            {"usage": 5, "name": "Metaspace"},
+            {"usage": 7, "name": "Compressed Class Space"},
+            {"usage": 11, "name": "G1 Eden Space"},
+            {"usage": 13, "name": "G1 Survivor Space"},
+            {"usage": 17, "name": "G1 Old Gen"},
+        ]
+        expected = {
+            "code": 3,
+            "permanent": 5,
+            "eden": 11,
+            "survivor": 13,
+            "tenured": 17,
+        }
+        self.assertEqual(
+            expected, _standardize_memory_pools_output(input, java_version=8),
+        )
