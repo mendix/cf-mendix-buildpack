@@ -3,15 +3,18 @@
 
 This document contains general information on the Mendix Buildpack.
 
+## Requirements
+The Mendix Buildpack for Cloud Foundry requires a cluster which supports the `cflinuxfs3` stack.
+
+## Lifecycle
 The Mendix Buildpack for Cloud Foundry has two main phases:
 * `compile`: Fetch the JRE, Mendix Runtime, and nginx and bundle these together with the application model into a `droplet`. This is handled by `buildpack/compile.py`.
 * `run`: Start the various processes and run the application. `buildpack/start.py` is for orchestration, the JVM is for executing the Mendix Model, and nginx is used as reverse proxy including handling access restrictions.
 
 The compile phase accepts archives in `.mda` format (Mendix Deployment Archive). There is experimental support for `.mpk` archives (Mendix Project Package). If an `.mpk` file is pushed, `mxbuild` is executed using Mono in the compile phase as well, the run phase stays the same.
 
+## How to Deploy
 There are specific guides for deploying Mendix apps to the [Pivotal](https://docs.mendix.com/deployment/cloud-foundry/deploy-a-mendix-app-to-pivotal) and [IBM Bluemix](https://docs.mendix.com/deployment/cloud-foundry/deploy-a-mendix-app-to-ibm-bluemix) Cloud Foundry platforms on our [documentation page](https://docs.mendix.com/deployment/cloud-foundry). This buildpack readme documents the more low-level details and CLI instructions.
-
-## Deploying using the CLI
 
 ### Install Cloud Foundry CLI
 Install the Cloud Foundry command line executable. You can find this on the [releases page](https://github.com/cloudfoundry/cli#stable-release). Set up the connection to your preferred Cloud Foundry environment with `cf login` and `cf target`.
@@ -421,8 +424,10 @@ client = M2EEClient('http://localhost:8082', os.environ['M2EE_PASSWORD'])
 
 These are known limitations for the Mendix buildpack.
 
-## Pushing MPKs produced by Mendix Studio Pro 6.x
+## Using the `cflinuxfs2` root filesystem (stack)
+`cflinuxfs2` support was officially removed in version `4.7.0` of this buildpack. Please use an earlier buildpack version if you want to use this stack.
 
+## Pushing MPKs produced by Mendix Studio Pro 6.x
 When it is desired to push MPKs produced by Mendix Studio Pro 6.x to containers using `cflinuxfs3` as root filesystem, the staging phase is likely going to fail when the default settings are used. As a workaround, more disk space needs to be allocated for the cache. Consult the [Deploying a Large App](https://docs.cloudfoundry.org/devguide/deploy-apps/large-app-deploy.html) section in the official CloudFoundry documentation for more information.
 
 # Developing and Contributing

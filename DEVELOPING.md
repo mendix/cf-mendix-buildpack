@@ -17,9 +17,7 @@ The buildpack is a Python project, and you must have some experience in Python, 
 For developing the buildpack, `pyenv` must be set up, and the dependencies for testing and linting must be installed. Additionally, you must have a Cloud Foundry cluster available for testing with all the required service brokers installed, and configure your environment to point to that cluster.
 
 ### Installing `pyenv`
-[pyenv](https://github.com/pyenv/pyenv) in combination with [pyenv-virtualenv](https://github.com/pyenv/pyenv-virtualenv) can be used to create a local sandbox to develop in. Note that you'll have to create an environment with the latest version of Python 3.6 - the default in the Cloud Foundry root filesystem we use to deploy applications on.
-
-Beware that an older file system is also supported which includes Python 3.4, so please take that into account while introducing additional dependencies or new dependency version.
+[pyenv](https://github.com/pyenv/pyenv) in combination with [pyenv-virtualenv](https://github.com/pyenv/pyenv-virtualenv) can be used to create a local sandbox to develop in. Note that you'll have to create an environment with the latest version of Python 3.6 - the default in the Cloud Foundry root filesystem (`cflinuxfs3`) we use to deploy applications on.
 
 ### Developing in `Docker`
 As an alternative to running Python on your host you can run it in Docker container.
@@ -105,5 +103,5 @@ make clean_cf
 To run a one separate test do:
 
 ```
-nosetests --nocapture --verbosity=3 --processes=10 --process-timeout=3600 --with-timer --timer-no-color tests/integration/test-file-name.py
+nosetests --nocapture --verbosity=3 --process-timeout=3600 --with-timer --timer-no-color tests/integration/test-file-name.py
 ```
