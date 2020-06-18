@@ -5,8 +5,10 @@
 # http://www.mendix.com/
 #
 
+import itertools
 import os
 import string
+import warnings
 
 from m2ee.log import logger
 from . import smaps
@@ -229,21 +231,32 @@ def get_stats_from_runtime(client, config):
             stats["threads"] = len(m2eeresponse.get_feedback())
 
     java_version = guess_java_version(client, runtime_version, stats)
+    return _populate_stats_by_java_version(stats, java_version), java_version
+
+
+def _populate_stats_by_java_version(stats, java_version):
+    """Populate stats according to the java version.
+
+    The Mendix runtime uses the standard MemoryMXBean:
+    The values from the `MemoryPoolMXBean`s go into the memorypool field and
+    the values from the `MemoryMXBean` go into the init_, committed_, used_
+    and max_ fields, both for the _heap and the nonheap memory.
+
+    Since apparently in different Java versions these mean different things
+    or are in different places, we need to shuffle these around depending
+    on the Java version.
+
+    """
     if "memorypools" in stats["memory"]:
-        memorypools = stats["memory"]["memorypools"]
-        if java_version == 7:
-            stats["memory"]["code"] = memorypools[0]["usage"]
-            stats["memory"]["permanent"] = memorypools[4]["usage"]
-            stats["memory"]["eden"] = memorypools[1]["usage"]
-            stats["memory"]["survivor"] = memorypools[2]["usage"]
-            stats["memory"]["tenured"] = memorypools[3]["usage"]
-        else:
-            stats["memory"]["code"] = memorypools[0]["usage"]
-            stats["memory"]["permanent"] = memorypools[2]["usage"]
-            stats["memory"]["eden"] = memorypools[3]["usage"]
-            stats["memory"]["survivor"] = memorypools[4]["usage"]
-            stats["memory"]["tenured"] = memorypools[5]["usage"]
+        standardized_memory_pools = _standardize_memory_pools_output(
+            stats["memory"]["memorypools"], java_version
+        )
+        stats["memory"].update(standardized_memory_pools)
+        return stats
     elif java_version >= 8:
+        # This branch should only be reached with a Mendix runtime version
+        # <= 6.5 (i.e. before MemoryPools were added), and one using Java 8,
+        # which seems to include all Mendix 6 runtimes
         memory = stats["memory"]
         metaspace = memory["eden"]
         eden = memory["tenured"]
@@ -253,7 +266,122 @@ def get_stats_from_runtime(client, config):
         memory["eden"] = eden
         memory["survivor"] = survivor
         memory["tenured"] = old
-    return stats, java_version
+        return stats
+
+    # Mendix 5.x runtimes are no longer supported.
+    # So ideally we should never encounter a case where there are no
+    # memorypools and java version less than 8.
+    # However raise an exception, if we reach this point.
+    raise RuntimeError("Java version less than 8 not supported.")
+
+
+def _standardize_memory_pools_output(runtime_memory_pools, java_version):
+    # type: (list[Mapping], int) -> Mapping[str, int]
+    java_8_mapping = {
+        "code": ("Code Cache",),
+        "permanent": ("Metaspace",),
+        "eden": ("Eden Space",),
+        "survivor": ("Survivor Space",),
+        "tenured": ("Tenured Gen",),
+    }
+    java_11_mapping = {
+        "code": (
+            "CodeHeap 'non-nmethods'",
+            "CodeHeap 'profiled nmethods'",
+            "CodeHeap 'non-profiled nmethods'",
+        ),
+        "permanent": ("Metaspace",),
+        "eden": ("Eden Space",),
+        "survivor": ("Survivor Space",),
+        "tenured": ("Tenured Gen",),
+    }
+    if java_version == 8:
+        pool_mapping = java_8_mapping
+    elif java_version == 11:
+        pool_mapping = java_11_mapping
+    else:
+        # Why raise, instead of trying and "guess" based on known JVM/JREs?
+        # Because the mapping has changed in every supported JRE. Better to
+        # fail fast, so that mapping can be confirmed during testing of a new
+        # JVM/JRE version.
+        raise NotImplementedError(
+            "Java version {} does not yet have a memorypool mapping in "
+            "m2ee tools".format(java_version)
+        )
+
+    # Transform memorypools from a list of dicts, to a dict of memory usages,
+    # which is more what we want.
+    memory_pools_dict = {f["name"]: f["usage"] for f in runtime_memory_pools}
+
+    output_stats = {}
+    for our_memory_type, pool_names in pool_mapping.items():
+        try:
+            total = sum(
+                [memory_pools_dict[pool_name] for pool_name in pool_names]
+            )
+        except KeyError as exc:
+            got_fields = list(memory_pools_dict.keys())
+            required_fields = list(itertools.chain(*pool_mapping.values()))
+            logger.error(
+                "Collecting JVM memory pool stats failed. Memory pool "
+                "output did not match expected output. Needed: %s. Got: %s",
+                required_fields,
+                got_fields,
+            )
+            raise RuntimeError(
+                "Unable to collect JVM memory pool stats. "
+                "Please contact support!"
+            ) from exc
+        output_stats[our_memory_type] = total
+
+    return output_stats
+
+
+def _populate_stats_by_java_version_old(stats, java_version):
+    warnings.warn(
+        "This calculation method is deprecated! Use "
+        "m2ee.munin._populate_stats_by_java_version instead."
+    )
+    if "memorypools" in stats["memory"]:
+        memorypools = stats["memory"]["memorypools"]
+        if java_version == 7:
+            # This branch should never be reached - according to
+            # https://github.com/mendix/m2ee-tools/commit/95738d, MemoryPools
+            # were only added some time after Mendix 6.5, but all versions of
+            # Mendix 6 use Java 8.
+            raise NotImplementedError("This branch should never be reached.")
+            stats["memory"]["code"] = memorypools[0]["usage"]
+            stats["memory"]["permanent"] = memorypools[4]["usage"]
+            stats["memory"]["eden"] = memorypools[1]["usage"]
+            stats["memory"]["survivor"] = memorypools[2]["usage"]
+            stats["memory"]["tenured"] = memorypools[3]["usage"]
+        else:
+            stats["memory"]["code"] = memorypools[0]["usage"]
+            # In previous versions of this code, the "Compressed Class Space"
+            # pool at index 2 was erroneously used as "Permanent", when the
+            # correct pool is the "Metaspace" pool at index 1.
+            stats["memory"]["permanent"] = memorypools[1]["usage"]
+            stats["memory"]["eden"] = memorypools[3]["usage"]
+            stats["memory"]["survivor"] = memorypools[4]["usage"]
+            stats["memory"]["tenured"] = memorypools[5]["usage"]
+    elif java_version >= 8:
+        # This branch should only be reached with a Mendix runtime version
+        # <= 6.5 (i.e. before MemoryPools were added), and one using Java 8,
+        # which seems to include all Mendix 6 runtimes, and some (but not all)
+        # Mendix 5 runtimes.
+        memory = stats["memory"]
+        metaspace = memory["eden"]
+        eden = memory["tenured"]
+        survivor = memory["permanent"]
+        old = memory["used_heap"] - eden - survivor
+        memory["permanent"] = metaspace
+        memory["eden"] = eden
+        memory["survivor"] = survivor
+        memory["tenured"] = old
+    # Mendix 5 runtimes running on Java 7 already include the desired
+    # statistics in the response from the runtime, so we don't need to do
+    # anything.
+    return stats
 
 
 def write_last_known_good_stats_cache(stats, config_cache):
