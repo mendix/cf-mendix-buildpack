@@ -342,7 +342,7 @@ def _standardize_memory_pools_output(runtime_memory_pools, java_version):
     return output_stats
 
 
-def _standard_pool_name(pool_name):
+def _standard_pool_name(given_pool_name):
     """Return a standard memory pool name.
 
     The memory pool names could vary based on the garbage collector enabled.
@@ -369,13 +369,12 @@ def _standard_pool_name(pool_name):
 
     for standard_name, valid_names in pool_name_aliases.items():
         for name in valid_names:
-            if name != pool_name:
-                continue
-            return standard_name
+            if name == given_pool_name:
+                return standard_name
 
     # If we can't find an alternative standard name,
     # just return the given memory pool name.
-    return pool_name
+    return given_pool_name
 
 
 def _populate_stats_by_java_version_old(stats, java_version):
