@@ -272,8 +272,7 @@ class UrlDatabaseConfiguration(DatabaseConfiguration):
                 break
         else:
             raise Exception(
-                "Could not parse database credentials from database uri %s"
-                % self.url
+                "Could not parse database credentials from database URI"
             )
 
         database_type_input = match.group("type")
