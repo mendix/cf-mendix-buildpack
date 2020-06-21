@@ -7,7 +7,7 @@
 backoff==1.6.0            # via -r requirements.in
 certifi==2019.11.28       # via -r requirements.in, requests
 chardet==3.0.4            # via requests
-httplib2==0.10.3          # via -r requirements.in
+httplib2==0.18.0          # via -r requirements.in
 idna==2.8                 # via requests
 psycopg2-binary==2.7.3.2  # via -r requirements.in
 pyyaml==5.1               # via -r requirements.in
