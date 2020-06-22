@@ -823,24 +823,30 @@ def augment_and_fix_stats(stats, pid, java_version):
     memory["nativecode"] = totals[smaps.CATEGORY_CODE] * 1024
     memory["jar"] = totals[smaps.CATEGORY_JAR] * 1024
 
+    nativemem = totals[smaps.CATEGORY_NATIVE_HEAP_ARENA] * 1024
+    othermem = totals[smaps.CATEGORY_OTHER] * 1024
     javaheap_raw = totals[smaps.CATEGORY_JVM_HEAP] * 1024
     if java_version is not None and java_version >= 8:
-        javaheap = javaheap_raw - memory["used_heap"] - memory["code"]
+        # Permanent gen (known as metaspace since Java 8) and code cache
+        # are allocated out of the native memory and not heap.
+        # Previously, we were considering code cache as part of heap.
+        # The following doc details the memory spaces in JVM:
+        # https://www.oracle.com/webfolder/technetwork/tutorials/mooc/JVM_Troubleshooting/week1/lesson1.pdf
+        javaheap = javaheap_raw - memory["used_heap"]
+
+        nativemem = nativemem + othermem
+        othermem = 0
     else:
+        # This branch should never be reached, as java
+        # version less than 8 is no more supported.
         javaheap = (
             javaheap_raw
             - memory["used_heap"]
             - memory["code"]
             - memory["permanent"]
         )
+
     memory["javaheap"] = javaheap
-
-    nativemem = totals[smaps.CATEGORY_NATIVE_HEAP_ARENA] * 1024
-    othermem = totals[smaps.CATEGORY_OTHER] * 1024
-    if java_version is not None and java_version >= 8:
-        nativemem = nativemem + othermem - memory["permanent"]
-        othermem = 0
-
     memory["codecache"] = memory["code"]
     memory["nativemem"] = nativemem
     memory["other"] = othermem
