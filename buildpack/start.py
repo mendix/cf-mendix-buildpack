@@ -27,7 +27,7 @@ from buildpack import (
 from buildpack.runtime_components import security
 from lib.m2ee import M2EE as m2ee_class
 
-BUILDPACK_VERSION = "4.6.1"
+BUILDPACK_VERSION = "4.6.2"
 
 m2ee = None
 app_is_restarting = False
