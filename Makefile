@@ -34,16 +34,23 @@ download_wheels: install_build_requirements
 	pip3 download -d vendor/wheels/ --only-binary :all: pip==20.1.1 setuptools==47.3.1
 	pip3 download -d vendor/wheels/ --no-deps --platform manylinux1_x86_64 --python-version 36 -r requirements.txt
 
+.PHONY: create_build_dirs
+create_build_dirs:
+	mkdir -p build
+	mkdir -p dist
+
 .PHONY: build
-build: vendor
+build: create_build_dirs vendor write_commit
+	git archive -o source.tar HEAD 
+	tar xf source.tar -C build/
+	rm source.tar
+	cd build && rm -rf .gitignore .pylintrc .travis.yml Makefile *.in tests/ dev/
+	cd build && zip -r  -9 ../dist/cf-mendix-buildpack.zip .
 
-.PHONY: upload
-upload:
+.PHONY: deploy
+deploy: build
 	cf delete-buildpack -f ${BUILDPACK}
-	cf create-buildpack ${BUILDPACK} . 30
-
-.PHONY: install
-install: build upload
+	cf create-buildpack ${BUILDPACK} dist/cf-mendix-buildpack.zip 30
 
 .PHONY: install_piptools
 install_piptools:
@@ -66,6 +73,7 @@ install_test_requirements: install_piptools
 
 .PHONY: clean
 clean:
+	rm -rf build/ dist/
 	rm -rf .coverage
 	rm -rf .pytest_cache
 	rm -rf .mypy_cache
@@ -96,3 +104,7 @@ test: test_unit test_integration
 .PHONY: format
 format:
 	black --line-length=79 $(PACKAGE_NAME) tests lib/m2ee/*
+
+.PHONY: write_commit
+write_commit:
+	git rev-parse --short HEAD > build/.commit

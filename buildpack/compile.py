@@ -41,32 +41,6 @@ def check_environment_variable(variable, explanation):
         return True
 
 
-def get_current_git_commit():
-    try:
-        raw_commit = subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], cwd=BUILDPACK_DIR
-        )
-        commit = raw_commit.decode("utf-8").strip()
-        short_commit = commit[:7]
-        return short_commit
-    except (subprocess.CalledProcessError, UnicodeError, IndexError):
-        logging.warning(
-            "MENDIX BUILDPACK: Unable to determine exact version "
-            "in use. This is nothing to worry about",
-            exc_info=True,
-        )
-        return "unknown_commit"
-
-
-def write_current_git_commit():
-    short_commit = get_current_git_commit()
-    with open(
-        os.path.join(BUILD_DIR, ".buildpack_commit"), "w"
-    ) as version_file:
-        logging.debug("Building with commit %s", short_commit)
-        version_file.write(short_commit)
-
-
 def check_database_environment():
     try:
         database.get_config()
@@ -89,13 +63,21 @@ def preflight_check():
         raise Exception("Missing environment variables")
 
     mx_version_str = runtime.get_version(BUILD_DIR)
-    logging.info("Preflight check on version %s", mx_version_str)
-    mx_version = MXVersion(str(mx_version_str))
     stack = os.getenv("CF_STACK")
+    logging.info(
+        "Preflight check on Mendix runtime version [%s] and stack [%s]...",
+        mx_version_str,
+        stack,
+    )
+    mx_version = MXVersion(str(mx_version_str))
+
     if not stack in SUPPORTED_STACKS:
         raise Exception("Stack {} is not supported".format(stack))
     if not runtime.check_deprecation(mx_version):
-        raise Exception("Version {} is deprecated".format(mx_version_str))
+        raise Exception(
+            "Mendix runtime version {} is not supported".format(mx_version_str)
+        )
+    logging.info("Preflight check completed")
 
 
 def set_up_directory_structure():
@@ -126,6 +108,14 @@ def copy_buildpack_resources():
     shutil.copy(
         os.path.join(BUILDPACK_DIR, "bin", "mendix-logfilter"),
         os.path.join(BUILD_DIR, "bin", "mendix-logfilter"),
+    )
+    shutil.copy(
+        os.path.join(BUILDPACK_DIR, ".commit"),
+        os.path.join(BUILD_DIR, ".commit"),
+    )
+    shutil.copy(
+        os.path.join(BUILDPACK_DIR, ".version"),
+        os.path.join(BUILD_DIR, ".version"),
     )
 
 
@@ -163,7 +153,6 @@ if __name__ == "__main__":
             shutil.rmtree(path, ignore_errors=True)
     set_up_directory_structure()
     copy_buildpack_resources()
-    write_current_git_commit()
     java.compile(
         BUILDPACK_DIR,
         CACHE_DIR,
@@ -176,4 +165,4 @@ if __name__ == "__main__":
     datadog.compile(DOT_LOCAL_LOCATION, CACHE_DIR)
     runtime.compile(BUILD_DIR, CACHE_DIR)
     nginx.compile(BUILD_DIR, CACHE_DIR)
-    logging.info("Mendix Buildpack compile completed")
+    logging.info("Mendix Cloud Foundry Buildpack compile completed")

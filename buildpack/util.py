@@ -264,8 +264,16 @@ def is_development_mode():
 
 def get_current_buildpack_commit():
     try:
-        with open(".buildpack_commit", "r") as commit_file:
+        with open(".commit", "r") as commit_file:
             short_commit = commit_file.readline().strip()
             return short_commit
     except OSError:
         return "unknown_commit"
+
+
+def get_buildpack_version():
+    try:
+        with open(".version", "r") as version_file:
+            return version_file.readline().strip()
+    except OSError:
+        return "unversioned"

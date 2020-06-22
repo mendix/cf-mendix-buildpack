@@ -27,8 +27,6 @@ from buildpack import (
 from buildpack.runtime_components import security
 from lib.m2ee import M2EE as m2ee_class
 
-BUILDPACK_VERSION = "4.7.1"
-
 m2ee = None
 app_is_restarting = False
 nginx_process = None
@@ -255,13 +253,10 @@ if __name__ == "__main__":
         format="%(levelname)s: %(message)s",
     )
 
-    commit = util.get_current_buildpack_commit()
-    if commit == "unknown_commit":
-        logging.debug("Failed to read file", exc_info=True)
     logging.info(
-        "Started Mendix Cloud Foundry Buildpack v%s [commit:%s]",
-        BUILDPACK_VERSION,
-        commit,
+        "Mendix Cloud Foundry Buildpack %s [%s] starting...",
+        util.get_buildpack_version(),
+        util.get_current_buildpack_commit(),
     )
 
     try:
