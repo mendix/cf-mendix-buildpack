@@ -31,8 +31,7 @@ vendor: download_wheels
 download_wheels: install_build_requirements
 	rm -rf vendor/wheels
 	mkdir -p vendor/wheels
-	pip3 download -d vendor/wheels/ --only-binary :all: pip==18.1 setuptools==43.0.0
-	pip3 download -d vendor/wheels/ --no-deps --platform manylinux1_x86_64 --python-version 34 -r requirements.txt
+	pip3 download -d vendor/wheels/ --only-binary :all: pip==20.1.1 setuptools==47.3.1
 	pip3 download -d vendor/wheels/ --no-deps --platform manylinux1_x86_64 --python-version 36 -r requirements.txt
 
 .PHONY: build
@@ -48,7 +47,7 @@ install: build upload
 
 .PHONY: install_piptools
 install_piptools:
-	pip3 install pip-tools==4.5.1
+	pip3 install pip-tools==5.2.1
 
 .PHONY: install_lint_requirements
 install_lint_requirements: install_piptools

@@ -26,6 +26,11 @@ BUILD_DIR = sys.argv[1]
 CACHE_DIR = os.path.join(sys.argv[2], "bust")
 DOT_LOCAL_LOCATION = os.path.join(BUILD_DIR, ".local")
 
+SUPPORTED_STACKS = [
+    "cflinuxfs3",
+    None,
+]  # None is allowed, but not supported in Cloud V4
+
 
 def check_environment_variable(variable, explanation):
     value = os.environ.get(variable)
@@ -86,8 +91,11 @@ def preflight_check():
     mx_version_str = runtime.get_version(BUILD_DIR)
     logging.info("Preflight check on version %s", mx_version_str)
     mx_version = MXVersion(str(mx_version_str))
+    stack = os.getenv("CF_STACK")
+    if not stack in SUPPORTED_STACKS:
+        raise Exception("Stack {} is not supported".format(stack))
     if not runtime.check_deprecation(mx_version):
-        raise Exception("Version {} is deprecated.".format(mx_version_str))
+        raise Exception("Version {} is deprecated".format(mx_version_str))
 
 
 def set_up_directory_structure():

@@ -23,7 +23,7 @@ install:
   - make install_build_requirements install_test_requirements
 
 before_script:
-  - curl ifconfig.co
+  - curl ifconfig.co/ip
   - make login
 
 script:
@@ -46,10 +46,7 @@ jobs:
       script: make lint
       after_script: skip
     - stage: test
-      dist: trusty
-      python: "3.4.3"
-      env: CF_STACK=cflinuxfs2
-    - env: CF_STACK=cflinuxfs3
+      env: CF_STACK=cflinuxfs3
 
 notifications:
   email: false
