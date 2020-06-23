@@ -2,7 +2,66 @@ import copy
 from unittest import TestCase
 from unittest.mock import Mock
 
-from buildpack.runtime_components.metrics import FreeAppsMetricsEmitterThread
+from buildpack.runtime_components.metrics import (
+    FreeAppsMetricsEmitterThread,
+    PaidAppsMetricsEmitterThread,
+)
+
+
+class TestNegativeMemoryMetricsThrowError(TestCase):
+    def test_validating_bad_metrics(self):
+        m2ee_stats = {"memory": {"javaheap": -12345}}
+        with self.assertRaises(RuntimeError):
+            PaidAppsMetricsEmitterThread._sanity_check_m2ee_stats(m2ee_stats)
+
+    def test_no_memorypools_good_metrics(self):
+        m2ee_stats = {"memory": {"javaheap": 12345}}
+        self.assertIsNone(
+            PaidAppsMetricsEmitterThread._sanity_check_m2ee_stats(m2ee_stats)
+        )
+
+    def test_non_ints_dont_cause_problems(self):
+        m2ee_stats = {
+            "memory": {
+                "javaheap": 123,
+                "memorypools": {"blah": "stuff"},
+                "foo": "bar",
+            }
+        }
+        self.assertIsNone(
+            PaidAppsMetricsEmitterThread._sanity_check_m2ee_stats(m2ee_stats)
+        )
+
+    def test_non_ints_dont_cause_problems_when_raising(self):
+        m2ee_stats = {
+            "memory": {
+                "javaheap": -123,
+                "memorypools": {"blah": "stuff"},
+                "foo": "bar",
+            }
+        }
+        with self.assertRaises(RuntimeError):
+            PaidAppsMetricsEmitterThread._sanity_check_m2ee_stats(m2ee_stats)
+
+    def test_underlying_log_message_propagates_upwards(self):
+        m2ee = Mock()
+        m2ee_stats = {
+            "memory": {
+                "javaheap": -123,
+                "memorypools": {"blah": "stuff"},
+                "foo": "bar",
+            }
+        }
+        interval = 1
+        metrics_emitter = PaidAppsMetricsEmitterThread(interval, m2ee)
+
+        with self.assertRaises(RuntimeError):
+            # ensure we log the error, before we raise the exception
+            with self.assertLogs(level="ERROR") as cm:
+                metrics_emitter._sanity_check_m2ee_stats(m2ee_stats)
+
+        # check the output logs contain the following message
+        self.assertIn("Memory stats with non-logical values", cm.output[-1])
 
 
 class TestFreeAppsMetricsEmitter(TestCase):
