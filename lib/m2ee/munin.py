@@ -827,12 +827,14 @@ def augment_and_fix_stats(stats, pid, java_version):
     othermem = totals[smaps.CATEGORY_OTHER] * 1024
     javaheap_raw = totals[smaps.CATEGORY_JVM_HEAP] * 1024
     if java_version is not None and java_version >= 8:
-        # Permanent gen (known as metaspace since Java 8) and code cache
-        # are allocated out of the native memory and not heap.
-        # Previously, we were considering code cache as part of heap.
-        # The following doc details the memory spaces in JVM:
-        # https://www.oracle.com/webfolder/technetwork/tutorials/mooc/JVM_Troubleshooting/week1/lesson1.pdf
-        javaheap = javaheap_raw - memory["used_heap"]
+        # Free unused heap space can be calculated
+        # by subtracting used_heap from the committed_heap data
+        # gathered from the Java MemoryMxBean interface.
+        # https://docs.oracle.com/en/java/javase/11/docs/api/java.management/java/lang/management/MemoryUsage.html
+        # Previously, we were subtracting the used_heap from the
+        # javaheap_raw value(calculated using the smaps file),
+        # but it was resulting in negative unused javaheap metrics.
+        javaheap = memory["committed_heap"] - memory["used_heap"]
 
         nativemem = nativemem + othermem
         othermem = 0

@@ -1,13 +1,17 @@
 import copy
 from unittest import TestCase
+from unittest.mock import Mock
 
+from lib.m2ee import smaps
 from lib.m2ee.munin import (
     _populate_stats_by_java_version,
     _populate_stats_by_java_version_old,
     _standardize_memory_pools_output,
+    augment_and_fix_stats,
 )
 
-
+# Memory stats from the runtime
+# → client.runtime_statistics().get_feedback()["memory"]
 MENDIX_5_6_0_JAVA_7 = {
     "code": 2034048,
     "committed_heap": 518979584,
@@ -783,3 +787,110 @@ class TestMemoryPoolAliases(TestCase):
         self.assertEqual(
             expected, _standardize_memory_pools_output(input, java_version=8),
         )
+
+
+class TestAugmentStats(TestCase):
+    def test_unused_heap_java8(self):
+        """Test unused heap calculations for Java 8.
+
+        Ensure for Java 8;
+        - free java heap equals (committed - used)
+        """
+        stats = {}
+        java_version = 8
+        mock_smaps_output = {
+            0: 19460,
+            1: 71640,
+            2: 193744,
+            3: 3216,
+            4: 0,
+            5: 92176,
+            6: 0,
+        }
+
+        smaps.get_smaps_rss_by_category = Mock(return_value=mock_smaps_output)
+
+        # Check for following Java 8 scenarios:
+        # - with and without memorypools
+        # - with parallelGC
+        for mem_stats in [
+            MENDIX_6_JAVA_8_MEMORY_STATS,
+            MENDIX_6_5_0_JAVA_8_MEMORY_STATS,
+            MENDIX_6_JAVA_8_STATS_PARALLELGC,
+        ]:
+            stats["memory"] = mem_stats
+            mock_threadpool_stats = {
+                "threads_priority": 0,
+                "max_threads": 0,
+                "min_threads": 0,
+                "max_idle_time_s": 0,
+                "max_queued": -0,
+                "threads": 0,
+                "idle_threads": 0,
+                "max_stop_time_s": 0,
+            }
+            new_stats = _populate_stats_by_java_version(
+                copy.deepcopy(stats), java_version
+            )
+            new_stats["threadpool"] = mock_threadpool_stats
+            fixed_stats = augment_and_fix_stats(new_stats, 0, java_version)
+            javaheap = fixed_stats["memory"]["javaheap"]
+            self.assertEqual(
+                javaheap,
+                (
+                    stats["memory"]["committed_heap"]
+                    - stats["memory"]["used_heap"]
+                ),
+            )
+
+    def test_unused_heap_java11(self):
+        """Test unused heap calculations for Java 11.
+
+        Ensure for Java 11;
+        - free java heap equals (committed - used)
+        """
+        java_version = 11
+        stats = {}
+        mock_smaps_output = {
+            0: 19460,
+            1: 71640,
+            2: 193744,
+            3: 3216,
+            4: 0,
+            5: 92176,
+            6: 0,
+        }
+
+        smaps.get_smaps_rss_by_category = Mock(return_value=mock_smaps_output)
+
+        # Check for following Java 11 scenarios:
+        # - with serialgc
+        # - with parallelGC
+        for mem_stats in [
+            MENDIX_8_JAVA_11_STATS,
+            MENDIX_8_JAVA_11_STATS_PARALLELGC,
+        ]:
+            stats["memory"] = mem_stats
+            mock_threadpool_stats = {
+                "threads_priority": 0,
+                "max_threads": 0,
+                "min_threads": 0,
+                "max_idle_time_s": 0,
+                "max_queued": -0,
+                "threads": 0,
+                "idle_threads": 0,
+                "max_stop_time_s": 0,
+            }
+            new_stats = _populate_stats_by_java_version(
+                copy.deepcopy(stats), java_version
+            )
+            new_stats["threadpool"] = mock_threadpool_stats
+            fixed_stats = augment_and_fix_stats(new_stats, 0, java_version)
+            javaheap = fixed_stats["memory"]["javaheap"]
+            self.assertEqual(
+                javaheap,
+                (
+                    stats["memory"]["committed_heap"]
+                    - stats["memory"]["used_heap"]
+                ),
+            )
