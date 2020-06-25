@@ -2,7 +2,6 @@
 import logging
 import os
 import shutil
-import subprocess
 import sys
 
 from buildpack import (
@@ -58,9 +57,8 @@ def check_database_environment():
 
 
 def preflight_check():
-    logging.debug("pre-flight-check")
     if not check_database_environment():
-        raise Exception("Missing environment variables")
+        raise ValueError("Missing environment variables")
 
     mx_version_str = runtime.get_version(BUILD_DIR)
     stack = os.getenv("CF_STACK")
@@ -72,20 +70,22 @@ def preflight_check():
     mx_version = MXVersion(str(mx_version_str))
 
     if not stack in SUPPORTED_STACKS:
-        raise Exception("Stack {} is not supported".format(stack))
+        raise NotImplementedError("Stack [{}] is not supported".format(stack))
     if not runtime.check_deprecation(mx_version):
-        raise Exception(
-            "Mendix runtime version {} is not supported".format(mx_version_str)
+        raise NotImplementedError(
+            "Mendix runtime version [{}] is not supported".format(
+                mx_version_str
+            )
         )
     logging.info("Preflight check completed")
 
 
 def set_up_directory_structure():
-    logging.debug("making directory structure")
+    logging.debug("Creating directory structure...")
     util.mkdir_p(DOT_LOCAL_LOCATION)
     for name in ["runtimes", "log", "database", "data", "bin"]:
         util.mkdir_p(os.path.join(BUILD_DIR, name))
-    for name in ["files", "tmp"]:
+    for name in ["files", "tmp", "database"]:
         util.mkdir_p(os.path.join(BUILD_DIR, "data", name))
 
 
@@ -137,20 +137,31 @@ if __name__ == "__main__":
         format="%(levelname)s: %(message)s",
     )
 
-    preflight_check()
+    try:
+        preflight_check()
+    except (ValueError, NotImplementedError) as error:
+        logging.error(error)
+        exit(1)
+
     if is_source_push():
         logging.info("Source push detected, starting MxBuild...")
         runtime_version = runtime.get_version(BUILD_DIR)
-        mxbuild.compile(
-            BUILD_DIR,
-            CACHE_DIR,
-            DOT_LOCAL_LOCATION,
-            runtime_version,
-            runtime.get_java_version(runtime_version),
-        )
-        for folder in ("mxbuild", "mono"):
-            path = os.path.join(DOT_LOCAL_LOCATION, folder)
-            shutil.rmtree(path, ignore_errors=True)
+        try:
+            mxbuild.compile(
+                BUILD_DIR,
+                CACHE_DIR,
+                DOT_LOCAL_LOCATION,
+                runtime_version,
+                runtime.get_java_version(runtime_version),
+            )
+        except RuntimeError as error:
+            logging.error(error)
+            exit(1)
+        finally:
+            for folder in ("mxbuild", "mono"):
+                path = os.path.join(DOT_LOCAL_LOCATION, folder)
+                shutil.rmtree(path, ignore_errors=True)
+
     set_up_directory_structure()
     copy_buildpack_resources()
     java.compile(

@@ -1,13 +1,12 @@
+import crypt
 import json
 import logging
-import crypt
 import os
 import re
 import subprocess
 
-from buildpack import util
+from buildpack import instadeploy, util
 from buildpack.runtime_components import security
-
 
 DEFAULT_HEADERS = {
     "X-Frame-Options": r"(?i)(^allow-from https?://([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*(:\d+)?$|^deny$|^sameorigin$)",  # noqa: E501
@@ -33,7 +32,7 @@ def compile(build_path, cache_path):
 def set_up_files(m2ee):
     lines = ""
 
-    if util.use_instadeploy(m2ee.config.get_runtime_version()):
+    if instadeploy.use_instadeploy(m2ee.config.get_runtime_version()):
         mxbuild_upstream = "proxy_pass http://mendix_mxbuild"
     else:
         mxbuild_upstream = "return 501"
@@ -50,8 +49,6 @@ def set_up_files(m2ee):
         .replace("HTTP_HEADERS", http_headers)
         .replace("MXBUILD_UPSTREAM", mxbuild_upstream)
     )
-    for line in lines.split("\n"):
-        logging.debug(line)
     with open("nginx/conf/nginx.conf", "w") as fh:
         fh.write(lines)
 

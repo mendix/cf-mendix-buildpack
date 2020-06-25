@@ -142,7 +142,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# lib/
 lib64/
 parts/
 sdist/
@@ -238,3 +238,4 @@ requirements-**.txt
 
 .vscode
 .local
+mxbuild/

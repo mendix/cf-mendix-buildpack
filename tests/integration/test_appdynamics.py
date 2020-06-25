@@ -1,12 +1,11 @@
-import basetest
-
 from buildpack.appdynamics import APPDYNAMICS_VERSION
+from tests.integration import basetest
 
 
 class TestCaseDeployWithAppdynamics(basetest.BaseTest):
     def _deploy_app(self, mda_file):
         super().setUp()
-        self.setUpCF(
+        self.stage_container(
             mda_file,
             env_vars={
                 "APPDYNAMICS_AGENT_ACCOUNT_NAME": "Mendix-test",
@@ -19,16 +18,14 @@ class TestCaseDeployWithAppdynamics(basetest.BaseTest):
                 "APPDYNAMICS_CONTROLLER_SSL_ENABLED": "true",
             },
         )
-        self.startApp()
+        self.start_container()
 
     def _test_appdynamics_running(self, mda_file):
         self._deploy_app(mda_file)
         self.assert_app_running()
 
         # check if appdynamics agent is running
-        output = self.cmd(
-            ("cf", "ssh", self.app_name, "-c", "ps -ef| grep javaagent")
-        )
+        output = self.run_on_container("ps -ef| grep javaagent")
         assert output is not None
         assert str(output).find(APPDYNAMICS_VERSION) >= 0
 

@@ -212,10 +212,6 @@ def is_free_app():
     return os.getenv("PROFILE") == "free"
 
 
-def use_instadeploy(mx_version):
-    return mx_version >= 6.7
-
-
 def get_nginx_port():
     return int(os.environ["PORT"])
 

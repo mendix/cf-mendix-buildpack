@@ -1,20 +1,16 @@
-import requests
-
 from tests.integration import basetest
 
 
 class TestCaseMxAdminExposed(basetest.BaseTest):
     def setUp(self):
         super().setUp()
-        self.setUpCF("BuildpackTestApp-mx-7-16.mda")
-        self.startApp()
+        self.stage_container("BuildpackTestApp-mx-7-16.mda")
+        self.start_container()
 
     def test_mxadmin_exposed_unauthorized(self):
-        full_uri = "https://" + self.app_name + "/_mxadmin/"
-        r = requests.get(full_uri)
+        r = self.httpget("/_mxadmin/")
         assert r.status_code == 401
 
     def test_mxadmin_exposed_authorized(self):
-        full_uri = "https://" + self.app_name + "/_mxadmin/"
-        r = requests.get(full_uri, auth=("MxAdmin", self.mx_password))
+        r = self.httpget("/_mxadmin/", auth=("MxAdmin", self._mx_password))
         assert r.status_code == 200

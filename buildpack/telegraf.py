@@ -191,17 +191,18 @@ def update_config(m2ee, app_name):
     # Configure postgreSQL input plugin
     if include_db_metrics():
         db_config = database.get_config()
-        _write_config(
-            "[[inputs.postgresql]]",
-            {
-                "address": "postgres://{}:{}@{}/{}".format(
-                    db_config["DatabaseUserName"],
-                    db_config["DatabasePassword"],
-                    db_config["DatabaseHost"],
-                    db_config["DatabaseName"],
-                )
-            },
-        )
+        if db_config:
+            _write_config(
+                "[[inputs.postgresql]]",
+                {
+                    "address": "postgres://{}:{}@{}/{}".format(
+                        db_config["DatabaseUserName"],
+                        db_config["DatabasePassword"],
+                        db_config["DatabaseHost"],
+                        db_config["DatabaseName"],
+                    )
+                },
+            )
 
     # Forward metrics also to DataDog when enabled
     if datadog.is_enabled():

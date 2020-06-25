@@ -1,139 +1,62 @@
 import os
 
-import backoff
-import requests
-
-from buildpack import java, runtime, util
+from buildpack import java, runtime
 from tests.integration import basetest
+
+CERT_TO_CHECK = "staat der nederlanden root ca - g3"
 
 
 class TestJDKVersions(basetest.BaseTest):
-    def setUp(self):
-        super().setUp()
+    def assert_java_presence(self, target_dir):
+        assert self.is_present_in_container(
+            os.path.join("/", target_dir)
+        ) or self.is_present_in_container(
+            os.path.join(".local", target_dir, "bin", "java")
+        )
 
-    def _check_java_presence(self, target_dir):
+    def _test_jdk(self, mda, mx_version, jdk_version, target_dir):
+        self.stage_container(mda)
 
-        try:
-            self.cmd(
-                (
-                    "cf",
-                    "ssh",
-                    self.app_name,
-                    "-c",
-                    os.path.join("/{}".format(target_dir), "bin", "java")
-                    + " -version",
-                )
-            )
-            rootCheckFail = False
-        except Exception:
-            rootCheckFail = True
+        jdk = java.determine_jdk(runtime.get_java_version(mx_version), "jre")
+        target = java.compose_jvm_target_dir(jdk)
 
-        try:
-            self.cmd(
-                (
-                    "cf",
-                    "ssh",
-                    self.app_name,
-                    "-c",
-                    os.path.join(
-                        "/home/vcap/app/.local/{}".format(target_dir),
-                        "bin",
-                        "java",
-                    )
-                    + " -version",
-                )
-            )
-            localCheckFail = False
-        except Exception:
-            localCheckFail = True
+        assert jdk["version"] == jdk_version
+        assert target == target_dir
+        self.assert_java_presence(target)
 
-        assert not (rootCheckFail and localCheckFail)
+        # TODO check if we can do this with staging / in one test only
+        self.start_container()
+        self.assert_certificate_in_cacert(CERT_TO_CHECK)
 
     def test_oracle_jdk_8(self):
-        self.setUpCF("BuildpackTestApp-mx-7-16.mda", health_timeout=60)
-        self.startApp()
-
-        jdk = java.determine_jdk(runtime.get_java_version("7.16.0"), "jre")
-        target_dir = java.compose_jvm_target_dir(jdk)
-
-        assert jdk["version"] == "8u202"
-        assert target_dir == "usr/lib/jvm/jre-8u202-oracle-x64"
-
-        self._check_java_presence(target_dir)
-        self.assert_certificate_in_cacert("staat der nederlanden root ca - g3")
+        self._test_jdk(
+            "BuildpackTestApp-mx-7-16.mda",
+            "7.16.0",
+            "8u202",
+            "usr/lib/jvm/jre-8u202-oracle-x64",
+        )
 
     def test_adopt_jdk_8(self):
-        self.setUpCF("AdoptOpenJDKTest_7.23.1.mda", health_timeout=60)
-        self.startApp()
-
-        jdk = java.determine_jdk(runtime.get_java_version("7.23.1"), "jre")
-        target_dir = java.compose_jvm_target_dir(jdk)
-
-        assert jdk["version"] == "8u202"
-        assert (
-            target_dir == "usr/lib/jvm/AdoptOpenJDK-jre-8u202-AdoptOpenJDK-x64"
+        self._test_jdk(
+            "AdoptOpenJDKTest_7.23.1.mda",
+            "7.23.1",
+            "8u202",
+            "usr/lib/jvm/AdoptOpenJDK-jre-8u202-AdoptOpenJDK-x64",
         )
-
-        self._check_java_presence(target_dir)
-        self.assert_certificate_in_cacert("staat der nederlanden root ca - g3")
 
     def test_adopt_jdk_11(self):
-        self.setUpCF("AdoptOpenJDKTest_8beta3.mda", health_timeout=60)
-        self.startApp()
-
-        jdk = java.determine_jdk(runtime.get_java_version("8.0.0"), "jre")
-        target_dir = java.compose_jvm_target_dir(jdk)
-
-        assert jdk["version"] == "11.0.3"
-        assert (
-            target_dir
-            == "usr/lib/jvm/AdoptOpenJDK-jre-11.0.3-AdoptOpenJDK-x64"
-        )
-        self._check_java_presence(target_dir)
-        self.assert_certificate_in_cacert("staat der nederlanden root ca - g3")
-
-    def test_fast_deploy_7_23_1(self):
-        FILENAME = "AdoptOpenJDKTest_7.23.1.mpk"
-        self.setUpCF(FILENAME, env_vars={"DEPLOY_PASSWORD": self.mx_password})
-
-        self.startApp()
-
-        self.cmd(
-            (
-                "wget",
-                "--quiet",
-                "-N",
-                "-O",
-                self.app_id + FILENAME,
-                "https://s3-eu-west-1.amazonaws.com"
-                "/mx-buildpack-ci/" + FILENAME,
-            )
+        self._test_jdk(
+            "AdoptOpenJDKTest_8beta3.mda",
+            "8.0.0",
+            "11.0.3",
+            "usr/lib/jvm/AdoptOpenJDK-jre-11.0.3-AdoptOpenJDK-x64",
         )
 
-        r = self._await_fast_deploy(self.app_id + FILENAME)
-
-        if r.status_code != 200:
-            print(self.get_recent_logs())
-        assert r.status_code == 200 and "STARTED" in r.text
-        os.remove(self.app_id + FILENAME)
-
-        jdk = java.determine_jdk(runtime.get_java_version("7.23.1"))
-        target_dir = java.compose_jvm_target_dir(jdk)
-
-        assert jdk["version"] == "8u202"
-        assert (
-            target_dir == "usr/lib/jvm/AdoptOpenJDK-jdk-8u202-AdoptOpenJDK-x64"
+    def assert_certificate_in_cacert(self, cert_alias):
+        result = self.run_on_container(
+            "{} -list -storepass changeit -keystore {}".format(
+                ".local/usr/lib/jvm/*/bin/keytool",
+                ".local/usr/lib/jvm/*/lib/security/cacerts",
+            ),
         )
-
-        self._check_java_presence(target_dir)
-
-    @backoff.on_predicate(
-        backoff.expo, lambda x: x.status_code != 200, max_time=180
-    )
-    def _await_fast_deploy(self, filename):
-        url = "https://" + self.app_name + "/_mxbuild/"
-        return requests.post(
-            url,
-            auth=("deploy", self.mx_password),
-            files={"file": open(os.path.abspath(filename), "rb")},
-        )
+        self.assertIn(cert_alias, result)

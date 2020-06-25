@@ -1,0 +1,56 @@
+{{ generated_notice }}
+if: tag is blank
+
+os: linux
+dist: bionic
+language: python
+python: 3.6
+
+services:
+  - docker
+
+env:
+  global:
+    - TEST_PREFIX=travis-$TRAVIS_JOB_ID
+
+cache:
+  directories:
+  - $HOME/.cache/pip
+  - $HOME/.cf
+  - dist
+
+install:
+  - make install_requirements
+
+_install_cf_cli_and_local: &install_cf_cli_and_local |-
+  wget -q -O - https://packages.cloudfoundry.org/debian/cli.cloudfoundry.org.key | sudo apt-key add -
+  echo "deb https://packages.cloudfoundry.org/debian stable main" | sudo tee /etc/apt/sources.list.d/cloudfoundry-cli.list
+  sudo apt-get update && sudo apt-get install -y cf-cli
+  sudo curl -s https://download.mendix.com/Mendix-CA-G2.crt -o /usr/local/share/ca-certificates/ca.crt && sudo update-ca-certificates
+  cf install-plugin cflocal -f
+
+_get_host: &get_host |-
+  export TEST_HOST=$(ip -4 addr show docker0 | grep -Po 'inet \K[\d.]+')
+  echo $TEST_HOST
+
+jobs:
+  include:
+    - stage: build
+      script: make lint test_unit build
+{%- for tests in testset %}
+    - stage: test
+      before_install:
+        - *install_cf_cli_and_local
+      before_script:
+        - *get_host
+      script:
+        - make test_integration TEST_FILES='{{ tests|join(' ') }}' &
+        - MAKE_PID=$!
+        - while [ -e /proc/$MAKE_PID ]; do sleep 60 && echo -n "."; done
+        - sleep 15
+        - wait $MAKE_PID
+        - sleep 5
+{%- endfor %}
+
+notifications:
+  email: false

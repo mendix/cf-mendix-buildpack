@@ -1,11 +1,7 @@
 import os
 import json
-import atexit
 
-import buildpack.start as start
 import buildpack.runtime_components.storage as storage
-
-atexit.unregister(start.terminate_process)
 
 
 class M2EEConfigStub:

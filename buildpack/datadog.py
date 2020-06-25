@@ -229,37 +229,38 @@ def _set_up_postgres():
     if not util.i_am_primary_instance():
         return
     dbconfig = database.get_config()
-    for k in (
-        "DatabaseType",
-        "DatabaseUserName",
-        "DatabasePassword",
-        "DatabaseHost",
-    ):
-        if k not in dbconfig:
-            logging.warning(
-                "Skipping database configuration for Datadog because "
-                "configuration is not found. See database_config.py "
-                "for details"
-            )
+    if dbconfig:
+        for k in (
+            "DatabaseType",
+            "DatabaseUserName",
+            "DatabasePassword",
+            "DatabaseHost",
+        ):
+            if k not in dbconfig:
+                logging.warning(
+                    "Skipping database configuration for Datadog because "
+                    "configuration is not found. See database_config.py "
+                    "for details"
+                )
+                return
+        if dbconfig["DatabaseType"] != "PostgreSQL":
             return
-    if dbconfig["DatabaseType"] != "PostgreSQL":
-        return
 
-    os.makedirs(DD_AGENT_CHECKS_DIR + "/postgres.d", exist_ok=True)
-    with open(DD_AGENT_CHECKS_DIR + "/postgres.d/conf.yaml", "w") as fh:
-        config = {
-            "init_config": {},
-            "instances": [
-                {
-                    "host": dbconfig["DatabaseHost"].split(":")[0],
-                    "port": int(dbconfig["DatabaseHost"].split(":")[1]),
-                    "username": dbconfig["DatabaseUserName"],
-                    "password": dbconfig["DatabasePassword"],
-                    "dbname": dbconfig["DatabaseName"],
-                }
-            ],
-        }
-        fh.write(yaml.safe_dump(config))
+        os.makedirs(DD_AGENT_CHECKS_DIR + "/postgres.d", exist_ok=True)
+        with open(DD_AGENT_CHECKS_DIR + "/postgres.d/conf.yaml", "w") as fh:
+            config = {
+                "init_config": {},
+                "instances": [
+                    {
+                        "host": dbconfig["DatabaseHost"].split(":")[0],
+                        "port": int(dbconfig["DatabaseHost"].split(":")[1]),
+                        "username": dbconfig["DatabaseUserName"],
+                        "password": dbconfig["DatabasePassword"],
+                        "dbname": dbconfig["DatabaseName"],
+                    }
+                ],
+            }
+            fh.write(yaml.safe_dump(config))
 
 
 def _set_up_environment():
@@ -269,9 +270,11 @@ def _set_up_environment():
     if _is_dd_tracing_enabled():
         os.environ["DD_SERVICE_NAME"] = _get_service()
         os.environ["DD_JMXFETCH_ENABLED"] = "false"
-        os.environ["DD_SERVICE_MAPPING"] = "{}:{}.db".format(
-            database.get_config()["DatabaseType"].lower(), _get_service()
-        )
+        dbconfig = database.get_config()
+        if dbconfig:
+            os.environ["DD_SERVICE_MAPPING"] = "{}:{}.db".format(
+                dbconfig["DatabaseType"].lower(), _get_service()
+            )
 
     e = dict(os.environ.copy())
 
@@ -405,6 +408,12 @@ def run(runtime_version):
 
     # The runtime does not handle a non-open logs endpoint socket
     # gracefully, so wait until it's up
+    @backoff.on_predicate(backoff.expo, lambda x: x > 0, max_time=10)
+    def _await_logging_endpoint():
+        return socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect_ex(
+            ("localhost", DD_LOGS_PORT)
+        )
+
     logging.info("Awaiting Datadog Agent log subscriber...")
     if _await_logging_endpoint() == 0:
         logging.info("Datadog Agent log subscriber is ready")
@@ -413,9 +422,3 @@ def run(runtime_version):
             "Datadog Agent log subscriber was not initialized correctly."
             "Application logs will not be shipped to Datadog."
         )
-
-
-@backoff.on_predicate(backoff.expo, lambda x: x > 0, max_time=10)
-def _await_logging_endpoint():
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    return s.connect_ex(("localhost", DD_LOGS_PORT))

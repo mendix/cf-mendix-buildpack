@@ -5,15 +5,14 @@ from tests.integration import basetest
 
 class TestCaseDeployWithDatadog(basetest.BaseTest):
     def _deploy_app(self, mda_file):
-        super().setUp()
-        self.setUpCF(
+        self.stage_container(
             mda_file,
             env_vars={
                 "DD_API_KEY": "NON-VALID-TEST-KEY",
                 "DD_TRACE_ENABLED": "true",
             },
         )
-        self.startApp()
+        self.start_container()
 
     def _test_datadog_running(self, mda_file):
         self._deploy_app(mda_file)
@@ -28,23 +27,17 @@ class TestCaseDeployWithDatadog(basetest.BaseTest):
         self._test_listening_on_port(9032)
 
     def _test_listening_on_port(self, port, agent_string="agent"):
-        output = self.cmd(
-            (
-                "cf",
-                "ssh",
-                self.app_name,
-                "-c",
-                "lsof -i | grep '^{}.*:{}'".format(agent_string, port),
-            )
+        output = self.run_on_container(
+            "lsof -i | grep '^{}.*:{}'".format(agent_string, port)
         )
         assert output is not None
         assert str(output).find(agent_string) >= 0
 
     def _test_datadog(self, mda_file):
         self._test_datadog_running(mda_file)
-        self._test_logsubscriber_active(mda_file)
+        self._test_logsubscriber_active()
 
-    def _test_logsubscriber_active(self, mda_file):
+    def _test_logsubscriber_active(self):
         self.assert_string_in_recent_logs(
             "Datadog Agent log subscriber is ready"
         )
@@ -64,11 +57,10 @@ class TestCaseDeployWithDatadog(basetest.BaseTest):
         self._test_datadog("Mendix8.1.1.58432_StarterApp.mda")
 
     def test_datadog_failure_mx6(self):
-        super().setUp()
-        self.setUpCF(
+        self.stage_container(
             "sample-6.2.0.mda", env_vars={"DD_API_KEY": "NON-VALID-TEST-KEY"}
         )
-        self.startApp()
+        self.start_container()
         self.assert_app_running()
         self.assert_string_in_recent_logs(
             "Datadog integration requires Mendix 7.14 or newer"

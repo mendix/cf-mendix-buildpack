@@ -70,6 +70,7 @@ class M2EERunner:
 
     def stop(self, timeout=5):
         self._client.shutdown()
+
         return self._wait_pid(timeout)
 
     def terminate(self, timeout=5):

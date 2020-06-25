@@ -4,11 +4,11 @@ Using Cloud Foundry database services are detected from VCAP bindings and transl
 
 All database configuration code can be found in `lib/database_config.py`. VCAP service bindings have preference over `DATABASE_URL`. VCAP are recognized on the identifier and/or tags.
 
-## Postgres using RDS Service Broker
+## PostgreSQL using RDS Service Broker
 
 Selection based on tags `["database", "RDS", "postgresql"]`.
 
-```
+```json
   "rds": [
    {
     "binding_name": null,
@@ -39,7 +39,7 @@ Selection based on tags `["database", "RDS", "postgresql"]`.
 
 Selection based on name `hana` and tags `["hana", "database", "relational"]`.
 
-```
+```json
   "hana": [
    {
     "binding_name": null,
