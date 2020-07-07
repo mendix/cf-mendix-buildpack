@@ -4,8 +4,7 @@ from tests.integration import basetest
 
 # TODO check if we can unit test this
 class TestCaseCustomHeaders(basetest.BaseTest):
-    def setUp(self):
-        super().setUp()
+    def test_custom_headers(self):
         self.stage_container(
             "BuildpackTestApp-mx-7-16.mda",
             env_vars={
@@ -22,7 +21,6 @@ class TestCaseCustomHeaders(basetest.BaseTest):
         )
         self.start_container()
 
-    def test_custom_headers(self):
         self.assert_app_running()
         response = self.httpget()
         self.assertIn("DENY", response.headers["X-Frame-Options"])

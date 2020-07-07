@@ -2,15 +2,13 @@ from tests.integration import basetest
 
 
 class TestCaseTelegraf(basetest.BaseTest):
-    def setUp(self):
-        super().setUp()
+    def test_telegraf_running(self):
         self.stage_container(
             "BuildpackTestApp-mx-7-16.mda",
             env_vars={"APPMETRICS_TARGET": '{"url": "https://foo.bar/write"}'},
         )
         self.start_container()
 
-    def test_telegraf_running(self):
         self.assert_app_running()
 
         # Validate telegraf is running and has port 8125 opened for StatsD

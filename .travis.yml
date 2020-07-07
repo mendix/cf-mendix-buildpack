@@ -59,7 +59,7 @@ jobs:
       before_script:
         - *get_host
       script:
-        - make test_integration TEST_FILES='tests/integration/test_datadog.py tests/integration/test_debug_container.py tests/integration/test_deprecations.py tests/integration/test_emit_metrics.py tests/integration/test_instadeploy.py tests/integration/test_jdbc_parameters.py' &
+        - make test_integration TEST_FILES='tests/integration/test_datadog.py tests/integration/test_debug_container.py tests/integration/test_deprecations.py tests/integration/test_instadeploy.py tests/integration/test_jdbc_parameters.py tests/integration/test_jdk_versions.py' &
         - MAKE_PID=$!
         - while [ -e /proc/$MAKE_PID ]; do sleep 60 && echo -n "."; done
         - sleep 15
@@ -71,7 +71,7 @@ jobs:
       before_script:
         - *get_host
       script:
-        - make test_integration TEST_FILES='tests/integration/test_jdk_versions.py tests/integration/test_jetty_config.py tests/integration/test_logging.py tests/integration/test_mda_app_deployed.py tests/integration/test_mono.py' &
+        - make test_integration TEST_FILES='tests/integration/test_jetty_config.py tests/integration/test_logging.py tests/integration/test_mda_app_deployed.py tests/integration/test_metrics.py tests/integration/test_mono.py' &
         - MAKE_PID=$!
         - while [ -e /proc/$MAKE_PID ]; do sleep 60 && echo -n "."; done
         - sleep 15

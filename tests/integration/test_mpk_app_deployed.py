@@ -4,18 +4,12 @@ from tests.integration import basetest
 
 
 class TestCaseMpkAppDeployed(basetest.BaseTest):
-    def _stage(self, package_name):
-        return self.stage_container(
-            package_name,
-            env_vars={
-                "FORCE_WRITE_BUILD_ERRORS": "true",
-                # "BUILD_STATUS_CALLBACK_URL": "http://localhost/buildstatus",
-            },
-        )
-
     def test_model_has_inconsistency_errors(self):
         with self.assertRaises(RuntimeError):
-            self.stage_container("model-with-consistency-errors-7.0.2.mpk")
+            self.stage_container(
+                "model-with-consistency-errors-7.0.2.mpk",
+                env_vars={"FORCE_WRITE_BUILD_ERRORS": "true",},
+            )
 
     def test_model_has_no_inconsistency_errors(self):
         assert self.stage_container("empty-model-7.0.2.mpk")
