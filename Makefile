@@ -1,7 +1,7 @@
 PACKAGE_NAME := buildpack
 PREFIX=$(shell p='$(TEST_PREFIX)'; echo "$${p:-test}")
 TEST_PROCESSES := $(if $(TEST_PROCESSES),$(TEST_PROCESSES),2)
-TEST_FILES := $(if $(TEST_FILES),$(TEST_FILES),"tests/integration/test_*.py")
+TEST_FILES := $(if $(TEST_FILES),$(TEST_FILES),tests/integration/test_*.py)
 
 .PHONY: vendor
 vendor: download_wheels
