@@ -135,8 +135,7 @@ if __name__ == "__main__":
 
         def sigterm_handler(_signo, _stack_frame):
             logging.debug("Handling SIGTERM...")
-            m2ee.terminate()
-            sys.exit(1)
+            terminate_process()
 
         def sigusr_handler(_signo, _stack_frame):
             logging.debug("Handling SIGUSR...")
@@ -147,8 +146,7 @@ if __name__ == "__main__":
             else:
                 # Should not happen
                 pass
-            m2ee.stop()
-            sys.exit(1)
+            runtime.stop(m2ee)
 
         def sigchild_handler(_signo, _stack_frame):
             logging.debug("Handling SIGCHILD...")
