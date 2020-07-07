@@ -30,7 +30,7 @@ BASIC_AUTH_OR_OTHER_IP_FILTER_RESOURCE = (
     BASIC_AUTH_OR_OTHER_IP_FILTER + "_tablet-page-wizard.scss"
 )
 
-# TODO check if we can unit test this
+
 class TestCaseAccessRestrictions(basetest.BaseTest):
     def test_access_is_restricted(self):
         myips = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]

@@ -2,7 +2,7 @@ import json
 
 from tests.integration import basetest
 
-# TODO check if we can unit test this
+
 class TestCaseCustomHeaders(basetest.BaseTest):
     def test_custom_headers(self):
         self.stage_container(

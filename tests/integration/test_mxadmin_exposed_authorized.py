@@ -1,6 +1,7 @@
 from tests.integration import basetest
 
 
+# TODO check if we should test this (MxAdmin is implicit in app startup)
 class TestCaseMxAdminExposed(basetest.BaseTest):
     def setUp(self):
         super().setUp()
