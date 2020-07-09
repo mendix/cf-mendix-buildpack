@@ -46,7 +46,7 @@ class TestCaseClientCertificates(basetest.BaseTest):
     # Mendix 7.20 deprecated WebServiceClientCertificates in favour of ClientCertificateUsagess
     def test_selfsigned_certificate_less_mx720(self):
         self._test_selfsigned_certificate("BuildpackTestApp-mx-7-16.mda")
-        self.assert_string_not_in_recent_logs("ClientCertificateUsages")
+        self.assert_string_in_recent_logs("WebServiceClientCertificates")
 
     def test_selfsigned_certificate_greq_mx720(self):
         self._test_selfsigned_certificate("Mendix8.1.1.58432_StarterApp.mda")
@@ -61,8 +61,8 @@ class TestCaseClientCertificates(basetest.BaseTest):
             }
         ]
 
-        self.setUpCF(
+        self.stage_container(
             mda, env_vars={"CLIENT_CERTIFICATES": json.dumps(certificates)}
         )
-        self.startApp()
+        self.start_container()
         self.assert_app_running()

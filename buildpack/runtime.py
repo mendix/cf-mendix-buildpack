@@ -6,6 +6,8 @@ import subprocess
 import sys
 import time
 
+import backoff
+
 from buildpack import util
 from buildpack.runtime_components import (
     backup,
@@ -15,6 +17,7 @@ from buildpack.runtime_components import (
     security,
     storage,
 )
+from lib.m2ee import M2EE as m2ee_class
 from lib.m2ee import logger
 from lib.m2ee.version import MXVersion
 
@@ -29,8 +32,6 @@ logging.getLogger("m2ee").propagate = False
 
 def check_deprecation(version):
     if version >= MXVersion("5.0.0") and version < MXVersion("6.0.0"):
-        logging.error("Mendix Runtime 5.x is no longer supported.")
-        logging.error("You can version pin on v3.8.0.")
         return False
 
     return True
@@ -279,12 +280,30 @@ def get_custom_runtime_settings():
     return custom_runtime_settings
 
 
+def get_application_root_url(vcap_data):
+    try:
+        prefix = "http"
+        host = vcap_data["application_uris"][0]
+        if ".local" in host:
+            host = "localhost"
+        if host != "localhost":
+            prefix += "s"
+        return "{}://{}".format(prefix, host)
+    except IndexError:
+        logging.warning(
+            "No application routes are defined. Your application will not be "
+            "accessible. Please contact Support if this issue persists."
+        )
+        return ""
+
+
 def set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
     scheduled_event_execution, my_scheduled_events = get_scheduled_events(
         metadata
     )
+
     app_config = {
-        "ApplicationRootUrl": "https://%s" % vcap_data["application_uris"][0],
+        "ApplicationRootUrl": get_application_root_url(vcap_data),
         "MicroflowConstants": get_constants(metadata),
         "ScheduledEventExecution": scheduled_event_execution,
     }
@@ -380,9 +399,54 @@ def complete_start_procedure_safe_to_use_for_restart(m2ee):
     configure_debugger(m2ee)
 
 
+def shutdown(m2ee, timeout=10):
+    if not stop(m2ee, timeout):
+        logging.debug("Terminating runtime with M2EE...")
+        if not m2ee.terminate(timeout):
+            logging.debug(
+                "M2EE terminate failed, killing runtime with M2EE..."
+            )
+            if not m2ee.kill(timeout):
+                logging.warning("M2EE could not kill runtime")
+                return False
+    return True
+
+
+def stop(m2ee, timeout=10):
+    logging.debug("Stopping runtime with M2EE...")
+    if not m2ee.stop(timeout):
+        logging.debug("M2EE stop failed, waiting for process...")
+        try:
+            os.waitpid(m2ee.runner.get_pid(), os.WNOHANG)
+            m2ee.runner.cleanup_pid()
+        except OSError as error:
+            logging.warning(
+                "Waiting for runtime process failed: {}".format(error)
+            )
+            return False
+    return True
+
+
 def start_app(m2ee):
-    m2ee.start_appcontainer()
-    if not m2ee.send_runtime_config():
+    logging.info("The buildpack is starting the runtime...")
+    if not m2ee.start_appcontainer():
+        logging.error(
+            "Cannot start runtime. Most likely, the runtime is already active or still active"
+        )
+        sys.exit(1)
+
+    @backoff.on_predicate(backoff.expo, max_time=240)
+    def _await_runtime_config():
+        try:
+            result = m2ee.send_runtime_config()
+        except Exception:
+            result = False
+        return result
+
+    is_runtime_config = _await_runtime_config()
+
+    if not is_runtime_config:
+        logging.error("Cannot set runtime configuration")
         sys.exit(1)
 
     logging.debug("Appcontainer has been started")
@@ -462,3 +526,109 @@ def run_components(m2ee):
     backup.run()
     metrics.run(m2ee)
     logs.run()
+
+
+def pre_process_m2ee_yaml():
+    logging.debug("Preprocessing M2EE defaults...")
+    subprocess.check_call(
+        [
+            "sed",
+            "-i",
+            "s|BUILD_PATH|%s|g; s|RUNTIME_PORT|%d|; s|ADMIN_PORT|%d|; s|PYTHONPID|%d|"
+            % (
+                os.getcwd(),
+                util.get_runtime_port(),
+                util.get_admin_port(),
+                os.getpid(),
+            ),
+            ".local/m2ee.yaml",
+        ]
+    )
+
+
+def set_up_m2ee_client(vcap_data):
+    client = m2ee_class(
+        yamlfiles=[os.path.abspath(".local/m2ee.yaml")],
+        load_default_files=False,
+        config={
+            "m2ee": {
+                # this is named admin_pass, but it's the verification http header
+                # to communicate with the internal management port of the runtime
+                "admin_pass": security.get_m2ee_password()
+            }
+        },
+    )
+
+    version = client.config.get_runtime_version()
+
+    mendix_runtimes_path = "/usr/local/share/mendix-runtimes.git"
+    mendix_runtime_version_path = os.path.join(
+        os.getcwd(), "runtimes", str(version)
+    )
+    if os.path.isdir(mendix_runtimes_path) and not os.path.isdir(
+        mendix_runtime_version_path
+    ):
+        util.mkdir_p(mendix_runtime_version_path)
+        env = dict(os.environ)
+        env["GIT_WORK_TREE"] = mendix_runtime_version_path
+
+        # checkout the runtime version
+        process = subprocess.Popen(
+            ["git", "checkout", str(version), "-f"],
+            cwd=mendix_runtimes_path,
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        process.communicate()
+        if process.returncode != 0:
+            logging.info("Mendix %s is not available in the rootfs", version)
+            logging.info(
+                "Fallback (1): trying to fetch Mendix %s using git", version
+            )
+            process = subprocess.Popen(
+                [
+                    "git",
+                    "fetch",
+                    "origin",
+                    "refs/tags/{0}:refs/tags/{0}".format(str(version)),
+                    "&&",
+                    "git",
+                    "checkout",
+                    str(version),
+                    "-f",
+                ],
+                cwd=mendix_runtimes_path,
+                env=env,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            process.communicate()
+            if process.returncode != 0:
+                logging.info(
+                    "Unable to fetch Mendix {} using git".format(version)
+                )
+                url = util.get_blobstore_url(
+                    "/runtime/mendix-%s.tar.gz" % str(version)
+                )
+                logging.info(
+                    "Fallback (2): downloading Mendix {} from {}".format(
+                        version, url
+                    )
+                )
+                util.download_and_unpack(
+                    url, os.path.join(os.getcwd(), "runtimes")
+                )
+
+        client.reload_config()
+    set_runtime_config(
+        client.config._model_metadata,
+        client.config._conf["mxruntime"],
+        vcap_data,
+        client,
+    )
+
+    set_application_name(client, vcap_data["application_name"])
+
+    set_jetty_config(client)
+    return client

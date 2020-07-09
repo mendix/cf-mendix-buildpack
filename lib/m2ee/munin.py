@@ -431,7 +431,7 @@ def write_last_known_good_stats_cache(stats, config_cache):
             f.write(json.dumps(stats))
     except Exception as e:
         logger.error(
-            "Error writing munin config cache to %s: %s", (config_cache, e)
+            "Error writing munin config cache to %s: %s", config_cache, e
         )
 
 
@@ -463,7 +463,7 @@ def print_requests_config(name, stats):
         "graph_info This graph shows the amount of requests this MxRuntime handles"
     )
     for sub in stats["requests"].keys():
-        substrip = "_" + string.strip(sub, "/").replace("-", "_")
+        substrip = "_" + sub.strip("/").replace("-", "_")
         if sub != "":
             subname = sub
         else:
@@ -482,7 +482,7 @@ def print_requests_config(name, stats):
 def print_requests_values(name, stats):
     print("multigraph mxruntime_requests_%s" % name)
     for sub, count in stats["requests"].items():
-        substrip = "_" + string.strip(sub, "/").replace("-", "_")
+        substrip = "_" + sub.strip("/").replace("-", "_")
         print("%s.value %s" % (substrip, count))
     print("")
 

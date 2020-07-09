@@ -1,14 +1,11 @@
 import json
 
-import requests
-
 from tests.integration import basetest
 
 
-class TestCaseBuildPackCustomHeaderConfig(basetest.BaseTest):
-    def setUp(self):
-        super().setUp()
-        self.setUpCF(
+class TestCaseCustomHeaders(basetest.BaseTest):
+    def test_custom_headers(self):
+        self.stage_container(
             "BuildpackTestApp-mx-7-16.mda",
             env_vars={
                 "X_FRAME_OPTIONS": "DENY",
@@ -22,16 +19,10 @@ class TestCaseBuildPackCustomHeaderConfig(basetest.BaseTest):
                 ),
             },
         )
-        self.startApp()
+        self.start_container()
 
-    def _httpget(self):
-        full_uri = "https://" + self.app_name
-        response = requests.get(full_uri)
-        return response
-
-    def test_custom_header_settings(self):
         self.assert_app_running()
-        response = self._httpget()
+        response = self.httpget()
         self.assertIn("DENY", response.headers["X-Frame-Options"])
         self.assertIn(
             "https://this.is.mydomain.nl",

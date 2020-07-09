@@ -1,7 +1,5 @@
 import json
 
-import requests
-
 from tests.integration import basetest
 
 BLOCK_ALL = "/widgets/GoogleMaps/"
@@ -34,27 +32,12 @@ BASIC_AUTH_OR_OTHER_IP_FILTER_RESOURCE = (
 
 
 class TestCaseAccessRestrictions(basetest.BaseTest):
-    def setUp(self):
-        super().setUp()
-        myips = set()
+    def test_access_is_restricted(self):
+        myips = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
         wide_open_ips = ["0.0.0.0/0", "::/0"]
         other_ips = ["1.2.3.4/32", "1::2/128"]
 
-        #  https://docs.travis-ci.com/user/ip-addresses/
-        r = requests.get("https://dnsjson.com/nat.travisci.net/A.json")
-        r.raise_for_status()
-        for ip in r.json()["results"]["records"]:
-            myips.add("%s/32" % ip)
-        try:
-            myips.add(requests.get("https://myipv4.mendix.com/").text + "/32")
-            myips.add(requests.get("https://myipv6.mendix.com/").text + "/128")
-        except Exception:
-            pass
-        myips = list(myips)
-
-        print("my ip ranges are", ",".join(myips))
-
-        self.setUpCF(
+        self.stage_container(
             "sample-6.2.0.mda",
             env_vars={
                 "ACCESS_RESTRICTIONS": json.dumps(
@@ -90,9 +73,8 @@ class TestCaseAccessRestrictions(basetest.BaseTest):
                 )
             },
         )
-        self.startApp()
+        self.start_container()
 
-    def test_access_is_restricted(self):
         auth = ("user", "password")
         auth_wrong_user = ("user1", "password")
         auth_wrong_pass = ("user", "password1")
@@ -100,62 +82,78 @@ class TestCaseAccessRestrictions(basetest.BaseTest):
 
         success = all(
             [
-                self._httpget(BLOCK_ALL_RESOURCE, 403),
-                self._httpget(BLOCK_ALL_BUT_SUB_PATH_WIDE_OPEN_RESOURCE, 200),
-                self._httpget(MY_IP_FILTER_RESOURCE, 200),
-                self._httpget(OTHER_IP_FILTER_RESOURCE, 403),
-                self._httpget(OTHER_IP_FILTER_RESOURCE, 403, auth=auth),
-                self._httpget(BASIC_AUTH_RESOURCE, 200, auth=auth),
-                self._httpget(BASIC_AUTH_RESOURCE, 401),
-                self._httpget(BASIC_AUTH_RESOURCE, 401, auth=auth_wrong_user),
-                self._httpget(BASIC_AUTH_RESOURCE, 401, auth=auth_wrong_pass),
-                self._httpget(BASIC_AUTH_RESOURCE, 401, auth=auth_wrong_pass2),
-                self._httpget(
+                self._check_http_code(BLOCK_ALL_RESOURCE, 403),
+                self._check_http_code(
+                    BLOCK_ALL_BUT_SUB_PATH_WIDE_OPEN_RESOURCE, 200
+                ),
+                self._check_http_code(MY_IP_FILTER_RESOURCE, 200),
+                self._check_http_code(OTHER_IP_FILTER_RESOURCE, 403),
+                self._check_http_code(
+                    OTHER_IP_FILTER_RESOURCE, 403, auth=auth
+                ),
+                self._check_http_code(BASIC_AUTH_RESOURCE, 200, auth=auth),
+                self._check_http_code(BASIC_AUTH_RESOURCE, 401),
+                self._check_http_code(
+                    BASIC_AUTH_RESOURCE, 401, auth=auth_wrong_user
+                ),
+                self._check_http_code(
+                    BASIC_AUTH_RESOURCE, 401, auth=auth_wrong_pass
+                ),
+                self._check_http_code(
+                    BASIC_AUTH_RESOURCE, 401, auth=auth_wrong_pass2
+                ),
+                self._check_http_code(
                     BASIC_AUTH_AND_MY_IP_FILTER_RESOURCE, 200, auth=auth
                 ),
-                self._httpget(BASIC_AUTH_AND_MY_IP_FILTER_RESOURCE, 401),
-                self._httpget(
+                self._check_http_code(
+                    BASIC_AUTH_AND_MY_IP_FILTER_RESOURCE, 401
+                ),
+                self._check_http_code(
                     BASIC_AUTH_AND_MY_IP_FILTER_RESOURCE,
                     401,
                     auth=auth_wrong_user,
                 ),
-                self._httpget(
+                self._check_http_code(
                     BASIC_AUTH_AND_OTHER_IP_FILTER_RESOURCE, 403, auth=auth
                 ),
-                self._httpget(
+                self._check_http_code(
                     BASIC_AUTH_OR_MY_IP_FILTER_RESOURCE, 200, auth=auth
                 ),
-                self._httpget(BASIC_AUTH_OR_MY_IP_FILTER_RESOURCE, 200),
-                self._httpget(
+                self._check_http_code(
+                    BASIC_AUTH_OR_MY_IP_FILTER_RESOURCE, 200
+                ),
+                self._check_http_code(
                     BASIC_AUTH_OR_MY_IP_FILTER_RESOURCE,
                     200,
                     auth=auth_wrong_user,
                 ),
-                self._httpget(
+                self._check_http_code(
                     BASIC_AUTH_OR_OTHER_IP_FILTER_RESOURCE, 200, auth=auth
                 ),
-                self._httpget(
+                self._check_http_code(
                     BASIC_AUTH_OR_OTHER_IP_FILTER_RESOURCE,
                     401,
                     auth=auth_wrong_user,
                 ),
-                self._httpget(
+                self._check_http_code(
                     BASIC_AUTH_OR_OTHER_IP_FILTER_RESOURCE,
                     401,
                     auth=auth_wrong_pass,
                 ),
-                self._httpget(
+                self._check_http_code(
                     BASIC_AUTH_OR_OTHER_IP_FILTER_RESOURCE,
                     401,
                     auth=auth_wrong_pass2,
                 ),
-                self._httpget(BASIC_AUTH_OR_OTHER_IP_FILTER_RESOURCE, 401),
+                self._check_http_code(
+                    BASIC_AUTH_OR_OTHER_IP_FILTER_RESOURCE, 401
+                ),
             ]
         )
         assert success
 
-    def _httpget(self, path, expected_code, auth=None):
-        r = requests.get("https://" + self.app_name + path, auth=auth)
+    def _check_http_code(self, path, expected_code, auth=None):
+        r = self.httpget(path, auth=auth)
         if r.status_code == expected_code:
             print("OK")
         else:

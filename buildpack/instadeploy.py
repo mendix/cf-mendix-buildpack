@@ -304,3 +304,33 @@ def send_metadata_to_cloudportal():
         # We don't care about the response.
         requests.post(target_url, files=files, headers=headers)
         logging.info("Updated metadata in CloudPortal")
+
+
+def use_instadeploy(mx_version):
+    return mx_version >= 6.7
+
+
+def set_up_instadeploy_if_deploy_password_is_set(
+    reload_callback, restart_callback, mx_version, java_version
+):
+    if os.getenv("DEPLOY_PASSWORD"):
+        if use_instadeploy(mx_version):
+
+            thread = InstaDeployThread(
+                util.get_deploy_port(),
+                restart_callback,
+                reload_callback,
+                mx_version,
+                java_version,
+            )
+            thread.setDaemon(True)
+            thread.start()
+
+            if os.path.exists(os.path.expanduser("~/.sourcepush")):
+                send_metadata_to_cloudportal()
+        else:
+            logging.warning(
+                "Not setting up InstaDeploy because Mendix "
+                "runtime version [%s] does not support it",
+                mx_version,
+            )

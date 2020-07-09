@@ -1,0 +1,10 @@
+backoff==1.10.0
+black==19.10b0
+certifi==2020.4.5.2
+cryptography==2.9.2
+idna==2.8
+Jinja2==2.11.2
+nose-timer==1.0.0
+pylint==2.5.3
+pyopenssl==19.1.0
+requests==2.24.0

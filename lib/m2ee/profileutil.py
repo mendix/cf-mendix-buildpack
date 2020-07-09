@@ -33,10 +33,11 @@ class Log:
         self.queries = data["database_queries"]
         if hasattr(self, "start_time"):
             self.end_time_formatted = datetime.datetime.fromtimestamp(
-                (self.start_time + self.duration) // 1000
+                (self.start_time + self.duration)  # pylint: disable=no-member
+                // 1000
             )
             self.start_time_formatted = datetime.datetime.fromtimestamp(
-                self.start_time // 1000
+                self.start_time // 1000  # pylint: disable=no-member
             )
 
     def __str__(self):
@@ -56,12 +57,12 @@ class Log:
             queries = " None"
 
         if hasattr(self, "user_roles"):
-            userroles = ",".join(self.user_roles)
+            userroles = ",".join(self.user_roles)  # pylint: disable=no-member
         else:
             userroles = None
 
         if hasattr(self, "form_name"):
-            form_name = self.form_name
+            form_name = self.form_name  # pylint: disable=no-member
         else:
             form_name = None
 
@@ -82,15 +83,15 @@ Original request: %s \n\n \
             % (
                 queries,
                 self.request_id,
-                self.username,
+                self.username,  # pylint: disable=no-member
                 userroles,
-                self.still_running,
+                self.still_running,  # pylint: disable=no-member
                 self.action,
                 self.start_time_formatted,
                 self.end_time_formatted,
-                self.duration,
+                self.duration,  # pylint: disable=no-member
                 form_name,
-                self.request_content,
+                self.request_content,  # pylint: disable=no-member
             )
         )
 

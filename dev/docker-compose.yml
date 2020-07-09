@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 services:
   buildpack:
@@ -6,15 +6,12 @@ services:
       context: ../
       dockerfile: ./dev/Dockerfile
     volumes:
-    - ../:/home/vcap/app
+      - ../:/app
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
-      CF_ENDPOINT: ${CF_ENDPOINT}
-      CF_USER: ${CF_USER}
-      CF_PASSWORD: ${CF_PASSWORD}
-      CF_ORG: ${CF_ORG}
-      CF_SPACE: ${CF_SPACE}
-      CF_DOMAIN: ${CF_DOMAIN}
-      MX_PASSWORD: ${MX_PASSWORD}
       TEST_PREFIX: ${TEST_PREFIX}
-      BUILDPACK: ${BUILDPACK}
+      TEST_PROCESSES: ${TEST_PROCESSES}
+      TEST_HOST: ${TEST_HOST}
+      TEST_MEMORY: ${TEST_MEMORY}
+      TEST_DISK: ${TEST_DISK}
     entrypoint: /bin/bash

@@ -5,6 +5,8 @@ import os
 import sys
 import uuid
 
+from lib.m2ee.version import MXVersion
+
 
 def get_admin_password():
     return os.getenv("ADMIN_PASSWORD")
@@ -80,7 +82,7 @@ def get_certificate_authorities():
     return config
 
 
-def get_client_certificates(version):
+def get_client_certificates(mx_version):
     config = {}
     client_certificates_json = os.getenv("CLIENT_CERTIFICATES", "[]")
     """
@@ -112,9 +114,15 @@ def get_client_certificates(version):
     if len(files) > 0:
         config["ClientCertificates"] = ",".join(files)
         config["ClientCertificatePasswords"] = ",".join(passwords)
-        if version < 7.20:
+        if mx_version < MXVersion("7.20"):
+            logging.debug(
+                "Runtime version < 7.20, using WebServiceClientCertificates..."
+            )
             config["WebServiceClientCertificates"] = pins
         else:
             # Deprecated in 7.20
+            logging.debug(
+                "Runtime version >= 7.20, using ClientCertificateUsages..."
+            )
             config["ClientCertificateUsages"] = pins
     return config

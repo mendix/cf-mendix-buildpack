@@ -58,7 +58,7 @@ def compile(build_path, cache_path, local_path, runtime_version, java_version):
         subprocess.check_call(args, env=mono_env)
     except subprocess.CalledProcessError as ex:
         buildstatus_callback(BUILD_ERRORS_JSON)
-        raise ex
+        raise RuntimeError(ex)
 
     for file_name in os.listdir(build_path):
         filepath = os.path.join(build_path, file_name)
