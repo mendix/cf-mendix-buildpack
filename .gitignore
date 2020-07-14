@@ -239,3 +239,4 @@ requirements-**.txt
 .vscode
 .local
 mxbuild/
+.noseids

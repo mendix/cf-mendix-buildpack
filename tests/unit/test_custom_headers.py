@@ -154,3 +154,11 @@ class TestCaseCustomHeaderConfig(unittest.TestCase):
         os.environ["HTTP_RESPONSE_HEADERS"] = "invalid"
         with self.assertRaises(ValueError):
             nginx.parse_headers()
+
+    def test_samesite_cookie_workaround_header(self):
+        header_config = nginx.parse_headers(True)
+        self.assertIn(nginx.SAMESITE_COOKIE_WORKAROUND_HEADER, header_config)
+
+    def test_samesite_cookie_workaround_path(self):
+        path_config = nginx.get_path_config(True)
+        self.assertIn(nginx.SAMESITE_COOKIE_WORKAROUND_PROXY_PASS, path_config)
