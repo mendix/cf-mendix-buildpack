@@ -2,7 +2,18 @@
 
 [![Build Status](https://travis-ci.org/mendix/cf-mendix-buildpack.svg?branch=master)](https://travis-ci.org/mendix/cf-mendix-buildpack)
 
-This document contains general information on the Mendix Buildpack.
+This document contains general information on the Mendix Buildpack. 
+
+The latest build supports all Mendix version 6, 7 and 8. See the table which version of the build introduced support for a version. The section [Version pinning](#buildpack-version-pinning) describes how to pick a specific version.
+
+| Mendix version   | Minimal buildpack version |
+| ----             | ----                      |
+| Mendix 8.x       | v3.4.0                    |
+| Mendix 7.23.x    | v3.1.0                    |
+| Mendix 6.x & 7.x | v1.0                      |
+
+[Release notes](https://docs.mendix.com/releasenotes/studio-pro/) for Mendix versions are found on Mendix Docs.
+
 
 ## Requirements
 
