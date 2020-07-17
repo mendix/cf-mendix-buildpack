@@ -123,6 +123,7 @@ def _write_http_output_config(http_config):
         "url": http_config["url"],
         "method": "POST",
         "data_format": "influx",
+        "timeout": "30s",
     }
 
     username = http_config.get("username")
