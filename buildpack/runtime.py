@@ -66,27 +66,17 @@ def compile(build_path, cache_path):
 def get_java_version(mx_version):
     if mx_version >= MXVersion("8.0.0"):
         java_version = {
-            "version": os.getenv("JAVA_VERSION", "11.0.3"),
+            "version": os.getenv("JAVA_VERSION", "11.0.8"),
             "vendor": "AdoptOpenJDK",
         }
     elif mx_version >= MXVersion("7.23.1"):
         java_version = {
-            "version": os.getenv("JAVA_VERSION", "8u202"),
+            "version": os.getenv("JAVA_VERSION", "8u262"),
             "vendor": "AdoptOpenJDK",
-        }
-    elif mx_version >= MXVersion("6.6"):
-        java_version = {
-            "version": os.getenv("JAVA_VERSION", "8u202"),
-            "vendor": "oracle",
-        }
-    elif mx_version >= MXVersion("6.0"):
-        java_version = {
-            "version": os.getenv("JAVA_VERSION", "8u51"),
-            "vendor": "oracle",
         }
     else:
         java_version = {
-            "version": os.getenv("JAVA_VERSION", "7u80"),
+            "version": os.getenv("JAVA_VERSION", "8u261"),
             "vendor": "oracle",
         }
 

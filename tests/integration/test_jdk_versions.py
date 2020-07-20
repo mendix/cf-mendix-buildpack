@@ -32,24 +32,24 @@ class TestJDKVersions(basetest.BaseTest):
         self._test_jdk(
             "BuildpackTestApp-mx-7-16.mda",
             "7.16.0",
-            "8u202",
-            "usr/lib/jvm/jre-8u202-oracle-x64",
+            "8u261",
+            "usr/lib/jvm/jre-8u261-oracle-x64",
         )
 
     def test_adopt_jdk_8(self):
         self._test_jdk(
             "AdoptOpenJDKTest_7.23.1.mda",
             "7.23.1",
-            "8u202",
-            "usr/lib/jvm/AdoptOpenJDK-jre-8u202-AdoptOpenJDK-x64",
+            "8u262",
+            "usr/lib/jvm/AdoptOpenJDK-jre-8u262-AdoptOpenJDK-x64",
         )
 
     def test_adopt_jdk_11(self):
         self._test_jdk(
             "AdoptOpenJDKTest_8beta3.mda",
             "8.0.0",
-            "11.0.3",
-            "usr/lib/jvm/AdoptOpenJDK-jre-11.0.3-AdoptOpenJDK-x64",
+            "11.0.8",
+            "usr/lib/jvm/AdoptOpenJDK-jre-11.0.8-AdoptOpenJDK-x64",
         )
 
     def assert_certificate_in_cacert(self, cert_alias):
