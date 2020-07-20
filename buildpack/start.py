@@ -135,7 +135,7 @@ if __name__ == "__main__":
 
         def sigterm_handler(_signo, _stack_frame):
             logging.debug("Handling SIGTERM...")
-            terminate_process()
+            runtime.stop(m2ee)
             sys.exit(0)
 
         def sigusr_handler(_signo, _stack_frame):
