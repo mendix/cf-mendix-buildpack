@@ -119,6 +119,9 @@ def _educated_guess_category(smaps, debug=False):
             elif smap.inode == 0 and smap.descr == "[heap]":
                 smap.category = CATEGORY_NATIVE_HEAP_ARENA
                 stage = STAGE_SEEN_NATIVE_HEAP
+            elif smap.inode == 0 and smap.flags.startswith("rw"):
+                smap.category = CATEGORY_JVM_HEAP
+                stage = STAGE_IN_JVM_HEAP
             else:
                 stage = STAGE_BORK
         elif stage == STAGE_SEEN_NATIVE_HEAP:
