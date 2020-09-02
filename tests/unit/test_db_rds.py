@@ -94,5 +94,7 @@ class TestCaseRdsDryRun:
         )
         assert config["DatabaseName"] == "dbuajsdhkasdhaks"
         assert config["DatabaseJdbcUrl"].find("tcpKeepAlive") >= 0
+        assert config["DatabaseJdbcUrl"].find("sslmode") >= 0
+        assert config["DatabaseJdbcUrl"].find("sslfactory") >= 0
         assert config["DatabaseUserName"] == "ua98s7?ananla"
         assert config["DatabasePassword"] == "na8na+nlay&aona0--anbs"
