@@ -6,6 +6,7 @@ import sys
 
 from buildpack import (
     appdynamics,
+    dynatrace,
     datadog,
     java,
     mxbuild,
@@ -171,6 +172,7 @@ if __name__ == "__main__":
         runtime.get_java_version(runtime.get_version(BUILD_DIR)),
     )
     appdynamics.compile(DOT_LOCAL_LOCATION, CACHE_DIR)
+    dynatrace.compile(DOT_LOCAL_LOCATION, CACHE_DIR)
     newrelic.compile(BUILDPACK_DIR, BUILD_DIR)
     telegraf.compile(DOT_LOCAL_LOCATION, CACHE_DIR)
     datadog.compile(DOT_LOCAL_LOCATION, CACHE_DIR)
