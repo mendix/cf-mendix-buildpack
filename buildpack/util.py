@@ -122,7 +122,11 @@ def download_and_unpack(url, destination, cache_dir="/tmp/downloads"):
             cached_location=cached_location, dest=destination
         )
     )
-    if file_name.endswith(".tar.gz") or file_name.endswith(".tgz"):
+    if (
+        file_name.endswith(".tar.gz")
+        or file_name.endswith(".tgz")
+        or file_name.endswith(".tar")
+    ):
         unpack_cmd = ["tar", "xf", cached_location, "-C", destination]
         if file_name.startswith(("mono-", "jdk-", "jre-", "AdoptOpenJDK-")):
             unpack_cmd.extend(("--strip", "1"))

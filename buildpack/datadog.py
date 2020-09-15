@@ -9,6 +9,13 @@ import yaml
 
 from buildpack import util
 from buildpack.runtime_components import database
+from buildpack.databroker import is_enabled as is_databroker_enabled
+from buildpack.databroker import is_producer_app as is_databroker_producer_app
+from buildpack.databroker.config_generator.templates.jmx import (
+    consumer,
+    kafka_connect,
+    kafka_streams,
+)
 
 DD_SIDECAR = "cf-datadog-sidecar-v0.21.2_master_103662.tar.gz"
 MX_AGENT_JAR = "mx-java-agent.jar"
@@ -140,7 +147,7 @@ def _set_up_jmx():
                     "reporter": "statsd:localhost:{}".format(
                         _get_statsd_port()
                     ),
-                    # 'refresh_beans': 10, # runtime takes time to initialize the beans
+                    'refresh_beans': 120, # runtime takes time to initialize the beans
                     "conf": [
                         {
                             "include": {
@@ -220,6 +227,14 @@ def _set_up_jmx():
                 }
             ],
         }
+
+        if is_databroker_enabled():
+            if is_databroker_producer_app():
+                config["instances"].append(kafka_connect.jmx_metrics)
+                config["instances"].append(kafka_streams.jmx_metrics)
+            else:
+                config["instances"][0]["conf"].extend(consumer.jmx_metrics)
+
         fh.write(yaml.safe_dump(config))
 
 
