@@ -7,6 +7,7 @@ import sys
 from buildpack import (
     appdynamics,
     dynatrace,
+    databroker,
     datadog,
     java,
     mxbuild,
@@ -181,5 +182,6 @@ if __name__ == "__main__":
     telegraf.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
     datadog.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
     runtime.stage(BUILD_DIR, CACHE_DIR)
+    databroker.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
     nginx.stage(BUILD_DIR, CACHE_DIR)
     logging.info("Mendix Cloud Foundry Buildpack staging completed")

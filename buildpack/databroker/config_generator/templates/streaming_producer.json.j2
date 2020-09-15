@@ -1,0 +1,13 @@
+{
+  "topologies": [
+    {%- for entity in DataBrokerConfiguration.publishedServices[0].entities %}
+    {
+      "name": "{{ entity.objectName }} topology",
+      "source": "{{ entity.rawTopic }}",
+      "sink": "{{ entity.topicName }}",
+      "filter": "",
+      "join": ""
+    }{% if not loop.last %},{% endif %}
+    {%- endfor %}
+  ]
+}

@@ -1,0 +1,16 @@
+bootstrap.servers={{ bootstrap_servers }}
+group.id=mx-databroker-consumer
+key.converter.schemas.enable=true
+value.converter.schemas.enable=true
+key.converter=org.apache.kafka.connect.json.JsonConverter
+value.converter=org.apache.kafka.connect.json.JsonConverter
+config.storage.topic=mx-databroker-connect-configs
+config.storage.replication.factor={{ NodeCount }}
+offset.storage.topic=mx-databroker-connect-offsets
+offset.storage.replication.factor={{ NodeCount }}
+offset.storage.file.filename=/tmp/connect.offsets
+status.storage.replication.factor={{ NodeCount }}
+status.storage.topic=mx-databroker-connect-status
+wait.interval.time=10
+plugin.path=/home/vcap/app/.local/databroker/debezium
+rest.port=8083
