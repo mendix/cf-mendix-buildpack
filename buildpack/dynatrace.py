@@ -13,6 +13,8 @@ default_env = {
     # "DT_SAAS_URL": None, # required
     "DT_LOGSTREAM": "stdout",
     "DT_NETWORK_ZONE": None, # optional, not sure what this means :D
+    "DT_CUSTOM_PROP": None, # optional metadata e.g. Department=Acceptance Stage=Sprint
+    "DT_TAGS": None, # optional tags e.g. MikesStuff easyTravel=Mike
 }
 
 def compile(buildpack_path, build_path):
