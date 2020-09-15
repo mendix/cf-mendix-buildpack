@@ -15,6 +15,7 @@ import requests
 
 from buildpack import (
     appdynamics,
+    databroker,
     dynatrace,
     datadog,
     instadeploy,
@@ -67,6 +68,7 @@ if __name__ == "__main__":
     app_is_restarting = False
     m2ee = None
     nginx_process = None
+    databroker_processes = databroker.Databroker()
 
     logging.basicConfig(
         level=util.get_buildpack_loglevel(),
@@ -115,6 +117,7 @@ if __name__ == "__main__":
                 logging.warning(
                     "Cannot terminate runtime: M2EE client not set"
                 )
+            databroker_processes.stop()
             try:
                 process_group = os.getpgrp()
                 logging.debug(
@@ -138,6 +141,7 @@ if __name__ == "__main__":
         def sigterm_handler(_signo, _stack_frame):
             logging.debug("Handling SIGTERM...")
             runtime.stop(m2ee)
+            databroker_processes.stop()
             sys.exit(0)
 
         def sigusr_handler(_signo, _stack_frame):
@@ -150,6 +154,7 @@ if __name__ == "__main__":
                 # Should not happen
                 pass
             runtime.stop(m2ee)
+            databroker_processes.stop()
             sys.exit(1)
 
         def sigchild_handler(_signo, _stack_frame):
@@ -191,9 +196,17 @@ if __name__ == "__main__":
 
         nginx_process = nginx.run()
 
+        databroker_processes.run(m2ee.client, runtime.database.get_config())
+
         def loop_until_process_dies():
             @backoff.on_predicate(backoff.constant, interval=10, logger=None)
             def _await_process_dies():
+                success = (
+                    databroker_processes.restart_if_any_component_not_healthy()
+                )
+                if not success:
+                    runtime.stop(m2ee)
+                    return True
                 return not (app_is_restarting or m2ee.runner.check_pid())
 
             logging.debug("Waiting until runtime process dies...")

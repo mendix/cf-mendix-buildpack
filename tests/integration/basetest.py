@@ -288,9 +288,12 @@ class BaseTest(unittest.TestCase):
             timeout=15,
         )
 
-    def run_on_container(self, command):
+    def run_on_container(self, command, target_container=None):
+        if target_container is None:
+            target_container = self._container_id
+
         result = self._cmd(
-            ("docker", "exec", self._container_id, "bash", "-c", command)
+            ("docker", "exec", target_container, "bash", "-c", command)
         )
         if not result[1]:
             raise RuntimeError(
@@ -313,6 +316,7 @@ class BaseTestWithPostgreSQL(BaseTest):
         self._database_password = "test"
         self._database_name = "test"
         self._database_postgres_version = 9
+        self._database_postgres_image = "postgres"
 
     def _get_database_environment(self):
         # return {
@@ -353,7 +357,10 @@ class BaseTestWithPostgreSQL(BaseTest):
                 "-e",
                 "POSTGRES_DB={}".format(self._database_name),
                 "-d",
-                "postgres:{}".format(self._database_postgres_version),
+                "{}:{}".format(
+                    self._database_postgres_image,
+                    self._database_postgres_version,
+                ),
             )
         )
 
@@ -370,6 +377,12 @@ class BaseTestWithPostgreSQL(BaseTest):
             )
 
         self._database_port = result[0].split(":")[1]
+
+        # update database_host with correct exposed port of db
+        if env_vars and "MXRUNTIME_DatabaseHost" in env_vars:
+            env_vars["MXRUNTIME_DatabaseHost"] = "{}:{}".format(
+                self._host, self._database_port
+            )
 
         return super().stage_container(
             package_name=package_name, env_vars=env_vars
