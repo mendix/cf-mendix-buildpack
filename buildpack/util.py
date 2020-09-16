@@ -126,14 +126,9 @@ def download_and_unpack(url, destination, cache_dir="/tmp/downloads"):
         unpack_cmd = ["tar", "xf", cached_location, "-C", destination]
         if file_name.startswith(("mono-", "jdk-", "jre-", "AdoptOpenJDK-")):
             unpack_cmd.extend(("--strip", "1"))
-    elif file_name.endswith(".zip"):
-        unpack_cmd = ["unzip", cached_location, "-d", destination]
     else:
-        raise Exception(
-            "do not know how to unpack {cached_location}".format(
-                cached_location=cached_location
-            )
-        )
+        unpack_cmd = ["unzip", cached_location, "-d", destination]
+
     subprocess.check_call(unpack_cmd)
 
     logging.debug(
