@@ -84,7 +84,7 @@ def preflight_check():
 def set_up_directory_structure():
     logging.debug("Creating directory structure...")
     util.mkdir_p(DOT_LOCAL_LOCATION)
-    for name in ["runtimes", "log", "database", "data", "bin"]:
+    for name in ["runtimes", "log", "database", "data", "bin", ".postgresql"]:
         util.mkdir_p(os.path.join(BUILD_DIR, name))
     for name in ["files", "tmp", "database"]:
         util.mkdir_p(os.path.join(BUILD_DIR, "data", name))
@@ -94,6 +94,10 @@ def copy_buildpack_resources():
     shutil.copy(
         os.path.join(BUILDPACK_DIR, "etc/m2ee/m2ee.yaml"),
         os.path.join(DOT_LOCAL_LOCATION, "m2ee.yaml"),
+    )
+    shutil.copy(
+        os.path.join(BUILDPACK_DIR, "etc/rds-ca-2019-root.pem"),
+        os.path.join(BUILD_DIR, ".postgresql/rds-ca-2019-root.pem"),
     )
     shutil.copytree(
         os.path.join(BUILDPACK_DIR, "etc/nginx"),
