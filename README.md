@@ -408,6 +408,25 @@ Additionally, we configure the following Datadog environment variables for you:
 
 The `DD_LOG_FILE` , `DD_PROCESS_CONFIG_LOG_FILE` and `DD_DOGSTATSD_PORT` environment variables are also configured specifically with buildpack-specific system values. Other environment variables can be set as per the [Datadog Agent documentation](https://docs.datadoghq.com/agent/).
 
+### Dynatrace
+
+[Dynatrace SaaS/Managed](http://www.dynatrace.com/cloud-foundry/) is your full stack monitoring solution - powered by artificial intelligence. Dynatrace SaaS/Managed allows you insights into all application requests from the users click in the browser down to the database statement and code-level.
+
+
+To enable Dynatrace, configure the following environment variables:
+
+| Environment Variable | Description |
+|-|-|
+| `DT_PAAS_TOKEN` | The token for integrating your Dynatrace environment with Cloud Foundry. You can find it in the deploy Dynatrace section within your environment. |
+| `DT_SAAS_URL` | Monitoring endpoint url of the Dynatrace service |
+| `DT_TENANT` | Your Dynatrace environment ID is the unique identifier of your Dynatrace environment. You can find it in the deploy Dynatrace section within your environment. |
+
+By setting these environment variables automatically the Dynatrace OneAgent will be loaded in the container. 
+
+OneAgent will be able to measure all J2EE related Metrics from the Application. See OneAgent documention for more details. 
+
+
+
 # Data Snapshots
 
 If you want to enable initializing your database and files from an existing data snapshot included in the MDA, set the environment variable `USE_DATA_SNAPSHOT` to `true` . Please note: this only works when the database is completely empty. If there are any Mendix tables defined in the database already, the Runtime will refuse the overwrite it. So, if you have ever started an app before setting this environment variable (thereby initializing the database), you will not be able to import a data snapshot.
