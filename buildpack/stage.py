@@ -177,7 +177,6 @@ if __name__ == "__main__":
         DOT_LOCAL_LOCATION,
         runtime.get_java_version(runtime.get_version(BUILD_DIR)),
     )
-<<<<<<< HEAD:buildpack/stage.py
     appdynamics.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
     dynatrace.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
     newrelic.stage(BUILDPACK_DIR, BUILD_DIR)
@@ -187,14 +186,3 @@ if __name__ == "__main__":
     databroker.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
     nginx.stage(BUILD_DIR, CACHE_DIR)
     logging.info("Mendix Cloud Foundry Buildpack staging completed")
-=======
-    appdynamics.compile(DOT_LOCAL_LOCATION, CACHE_DIR)
-    dynatrace.compile(DOT_LOCAL_LOCATION, CACHE_DIR)
-    newrelic.compile(BUILDPACK_DIR, BUILD_DIR)
-    telegraf.compile(DOT_LOCAL_LOCATION, CACHE_DIR)
-    datadog.compile(DOT_LOCAL_LOCATION, CACHE_DIR)
-    runtime.compile(BUILD_DIR, CACHE_DIR)
-    databroker.compile(DOT_LOCAL_LOCATION, CACHE_DIR)
-    nginx.compile(BUILD_DIR, CACHE_DIR)
-    logging.info("Mendix Cloud Foundry Buildpack compile completed")
->>>>>>> 6732617... Add support for Dynatrace:buildpack/compile.py

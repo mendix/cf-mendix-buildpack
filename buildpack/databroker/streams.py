@@ -20,7 +20,7 @@ BASE_DIR = "databroker"
 AZKARRA_HOME = os.path.join(BASE_DIR, "azkarra")
 AZKARRA_TPLY_CONF_NAME = "topology.conf"
 PDR_STREAMS_FILENAME = "stream-sidecar"
-PDR_STREAMS_VERSION = "0.18.0"
+PDR_STREAMS_VERSION = "0.22.0-8"
 PDR_STREAMS_DIR = os.path.join(BASE_DIR, "producer-streams")
 PDR_STREAMS_HOME = os.path.join(
     PDR_STREAMS_DIR, "{}-{}".format(PDR_STREAMS_FILENAME, PDR_STREAMS_VERSION)
@@ -35,6 +35,7 @@ PDR_STREAMS_JAR = os.path.join(
     os.getcwd(),
     LOCAL,
     PDR_STREAMS_HOME,
+    "lib",
     "{}-{}.{}".format(PDR_STREAMS_FILENAME, PDR_STREAMS_VERSION, "jar"),
 )
 
