@@ -103,7 +103,7 @@ jobs:
         token: $GITHUB_ACCESS_TOKEN
         file: dist/cf-mendix-buildpack.zip
         draft: true
-        cleanup: false
+        skip_cleanup: true
         on:
           branch: master
 
