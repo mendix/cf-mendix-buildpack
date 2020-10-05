@@ -101,6 +101,8 @@ jobs:
       deploy:
         provider: releases
         token: $GITHUB_ACCESS_TOKEN
+        name: $TRAVIS_TAG
+        body: $TRAVIS_COMMIT_MESSAGE
         file: dist/cf-mendix-buildpack.zip
         draft: true
         skip_cleanup: true
