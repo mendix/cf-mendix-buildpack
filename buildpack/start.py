@@ -15,6 +15,7 @@ import requests
 
 from buildpack import (
     appdynamics,
+    dynatrace,
     datadog,
     instadeploy,
     java,
@@ -102,6 +103,7 @@ if __name__ == "__main__":
         appdynamics.update_config(
             m2ee, util.get_vcap_data()["application_name"]
         )
+        dynatrace.update_config(m2ee, util.get_vcap_data()["application_name"])
         telegraf.update_config(m2ee, util.get_vcap_data()["application_name"])
         datadog.update_config(m2ee)
 

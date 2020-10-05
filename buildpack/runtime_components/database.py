@@ -306,6 +306,18 @@ class UrlDatabaseConfiguration(DatabaseConfiguration):
         if database_type == "PostgreSQL":
             jdbc_params.update({"tcpKeepAlive": "true"})
 
+        if database_type == "PostgreSQL" and config["DatabaseHost"].split(":")[
+            0
+        ].endswith(".rds.amazonaws.com"):
+            jdbc_params.update(
+                {
+                    "sslrootcert": os.path.expandvars(
+                        "$HOME/.postgresql/rds-ca-2019-root.pem"
+                    )
+                }
+            )
+            jdbc_params.update({"sslmode": "verify-full"})
+
         extra_url_params_str = self.env_vars.get(
             "DATABASE_CONNECTION_PARAMS", "{}"
         )
