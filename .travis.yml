@@ -89,21 +89,22 @@ jobs:
         - sleep 15
         - wait $MAKE_PID
         - sleep 5
-
-before_deploy:
-  - git config --local user.name $GIT_USERNAME
-  - git config --local user.email $GIT_EMAIL
-  - export TRAVIS_TAG=${TRAVIS_TAG:-$(cat .version | tr -d '\n')}
-  - git tag $TRAVIS_TAG
-
-deploy:
-  provider: releases
-  token: $GITHUB_ACCESS_TOKEN
-  file: dist/cf-mendix-buildpack.zip
-  draft: true
-  cleanup: false
-  on:
-    branch: master
+    - stage: deploy
+      if: branch = master
+      install: skip
+      before_deploy:
+      - git config --local user.name $GIT_USERNAME
+      - git config --local user.email $GIT_EMAIL
+      - export TRAVIS_TAG=${TRAVIS_TAG:-$(cat .version | tr -d '\n')}
+      - git tag $TRAVIS_TAG
+      deploy:
+        provider: releases
+        token: $GITHUB_ACCESS_TOKEN
+        file: dist/cf-mendix-buildpack.zip
+        draft: true
+        cleanup: false
+        on:
+          branch: master
 
 notifications:
   email: false
