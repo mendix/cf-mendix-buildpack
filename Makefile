@@ -1,4 +1,4 @@
-PACKAGE_NAME := buildpack
+PROJECT_NAME := $(if $(PROJECT_NAME),$(PROJECT_NAME),cf-mendix-buildpack)
 PREFIX=$(shell p='$(TEST_PREFIX)'; echo "$${p:-test}")
 TEST_PROCESSES := $(if $(TEST_PROCESSES),$(TEST_PROCESSES),2)
 TEST_FILES := $(if $(TEST_FILES),$(TEST_FILES),tests/integration/test_*.py)
@@ -29,7 +29,7 @@ build: create_build_dirs vendor write_commit
 	tar xf source.tar -C build/ --exclude=.commit
 	rm source.tar
 	cd build && rm -rf .gitignore .pylintrc .travis.yml* Makefile *.in tests/ dev/
-	cd build && zip -r  -9 ../dist/${PACKAGE_NAME}.zip .
+	cd build && zip -r  -9 ../dist/${PROJECT_NAME}.zip .
 
 .PHONY: install_piptools
 install_piptools:
@@ -47,8 +47,8 @@ requirements: install_piptools
 
 .PHONY: lint
 lint:
-	black --line-length=79 --check --diff $(PACKAGE_NAME) lib/m2ee/* tests/*/
-	pylint --disable=W,R,C $(PACKAGE_NAME) lib/m2ee/* tests/*/
+	black --line-length=79 --check --diff buildpack lib/m2ee/* tests/*/
+	pylint --disable=W,R,C buildpack lib/m2ee/* tests/*/
 
 .PHONY: clean
 clean:
@@ -57,7 +57,7 @@ clean:
 	rm -rf .coverage
 	rm -rf .pytest_cache
 	rm -rf .mypy_cache
-	rm -rf $(PACKAGE_NAME).egg-info
+	rm -rf buildpack.egg-info
 	rm -rf pip-wheel-metadata
 	rm -f *.mda *.mpk
 	find . -regex ".*__pycache__.*" -delete
@@ -78,7 +78,7 @@ test: test_unit test_integration
 
 .PHONY: format
 format:
-	black --line-length=79 $(PACKAGE_NAME) tests lib/m2ee/*
+	black --line-length=79 buildpack tests lib/m2ee/*
 
 .PHONY: write_commit
 write_commit:
