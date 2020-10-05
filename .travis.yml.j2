@@ -59,7 +59,7 @@ jobs:
       - git config --local user.name $GIT_USERNAME
       - git config --local user.email $GIT_EMAIL
       - export TRAVIS_TAG=${TRAVIS_TAG:-$(cat .version | tr -d '\n')}
-      - git tag $TRAVIS_TAG
+      - if [ $(git tag -l "$TRAVIS_TAG") ]; then exit 0; else git tag $TRAVIS_TAG; fi
       deploy:
         provider: releases
         token: $GITHUB_ACCESS_TOKEN
