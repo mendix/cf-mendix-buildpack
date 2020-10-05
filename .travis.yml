@@ -92,6 +92,7 @@ jobs:
     - stage: deploy
       if: branch = master
       install: skip
+      script: skip
       before_deploy:
       - git config --local user.name $GIT_USERNAME
       - git config --local user.email $GIT_EMAIL
