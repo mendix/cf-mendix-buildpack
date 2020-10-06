@@ -100,12 +100,13 @@ jobs:
       - if [ $(git tag -l "$TRAVIS_TAG") ]; then exit 0; else git tag $TRAVIS_TAG; fi
       deploy:
         provider: releases
+        edge: true
         token: $GITHUB_ACCESS_TOKEN
         name: $TRAVIS_TAG
-        body: $TRAVIS_COMMIT_MESSAGE
+        release_notes: $TRAVIS_COMMIT_MESSAGE
         file: dist/cf-mendix-buildpack.zip
         draft: true
-        skip_cleanup: true
+        cleanup: false
         on:
           branch: master
 
