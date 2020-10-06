@@ -96,7 +96,7 @@ jobs:
       before_deploy:
       - git config --local user.name $GIT_USERNAME
       - git config --local user.email $GIT_EMAIL
-      - export TRAVIS_TAG=${TRAVIS_TAG:-$(cat .version | tr -d '\n')}
+      - export TRAVIS_TAG=$(cat .version | tr -d '\n')
       - if [ $(git tag -l "$TRAVIS_TAG") ]; then exit 0; else git tag $TRAVIS_TAG; fi
       deploy:
         provider: releases
