@@ -2,26 +2,28 @@
 
 [![Build Status](https://travis-ci.org/mendix/cf-mendix-buildpack.svg?branch=master)](https://travis-ci.org/mendix/cf-mendix-buildpack)
 
-This document contains general information on the Mendix Buildpack. 
+This document contains general information on the Mendix Cloud Foundry Buildpack.
 
-The latest build supports all Mendix version 6, 7 and 8. See the table which version of the build introduced support for a version. The section [Version pinning](#buildpack-version-pinning) describes how to pick a specific version.
+The latest [release](https://github.com/mendix/cf-mendix-buildpack/releases/latest) supports Mendix versions 6, 7 and 8. See the table which buildpack release introduced support for a Mendix version. [This section](#buildpack-releases-and-version-pinning) describes how to use a specific release.
 
-| Mendix version   | Minimal buildpack version |
-| ----             | ----                      |
-| Mendix 8.x       | v3.4.0                    |
-| Mendix 7.23.x    | v3.1.0                    |
-| Mendix 6.x & 7.x | v1.0                      |
+| Mendix Version | Minimal Buildpack Release |
+| ----           | ----                      |
+| `8.x`          | `v3.4.0`                  |
+| `7.23.x`       | `v3.1.0`                  |
+| `6.x`, `7.x`   | `v1.0`                    |
 
-[Release notes](https://docs.mendix.com/releasenotes/studio-pro/) for Mendix versions are found on Mendix Docs.
-
+The buildpack is heavily tied to the Mendix Public Cloud, but can be used independently.
+Release notes are available for the [buildpack](https://github.com/mendix/cf-mendix-buildpack/releases/), [Mendix itself](https://docs.mendix.com/releasenotes/studio-pro/) and the [Mendix Public Cloud](https://docs.mendix.com/releasenotes/developer-portal/deployment).
 
 ## Requirements
 
-The Mendix Buildpack for Cloud Foundry requires a cluster which supports the `cflinuxfs3` stack.
+The buildpack requires a cluster which supports the `cflinuxfs3` stack.
+
+Additionally, we recommend a base level knowledge of Cloud Foundry. You should at least be familiar with the Cloud Foundry CLI.
 
 ## Lifecycle
 
-The Mendix Buildpack for Cloud Foundry has two main phases:
+The buildpack has two main phases:
 
 * `compile` : Fetch the JRE, Mendix Runtime, and nginx and bundle these together with the application model into a `droplet` . This is handled by `buildpack/compile.py` .
 * `run` : Start the various processes and run the application. `buildpack/start.py` is for orchestration, the JVM is for executing the Mendix Model, and nginx is used as reverse proxy including handling access restrictions.
@@ -38,16 +40,18 @@ Install the Cloud Foundry command line executable. You can find this on the [rel
 
 ### Push your app
 
-We push an mda (Mendix Deployment Archive) that was built by the Mendix Business Modeler to Cloud Foundry.
+We push an MDA (Mendix Deployment Archive) that was built by Mendix Studio Pro to Cloud Foundry.
+
+*Note: please replace `<LINK-TO-BUILDPACK>` in the commands below with a link to the version of the buildpack you are trying to deploy. Please check [this section](#buildpack-releases-and-version-pinning) for details on how to pick a release.*
 
 ``` shell
-cf push <YOUR_APP> -b https://github.com/mendix/cf-mendix-buildpack -p <YOUR_MDA>.mda -t 180
+cf push <YOUR_APP> -b <LINK-TO-BUILDPACK> -p <YOUR_MDA>.mda -t 180
 ```
 
-We can also push a project directory. This will move the build process (using mxbuild) to Cloud Foundry:
+We can also push a project directory. This will move the build process (using MxBuild, a component of Studio Pro) to Cloud Foundry:
 
 ``` shell
-cd <PROJECT DIR>; cf push -b https://github.com/mendix/cf-mendix-buildpack -t 180
+cd <PROJECT DIR>; cf push -b <LINK-TO-BUILDPACK> -t 180
 ```
 
 Note that you might need to increase the startup timeout to prevent the database from being partially synchronized. This can be done either by specifying the `-t 180` parameter like above, or by using the `CF_STARTUP_TIMEOUT` environment variable (in minutes) from the command line.
@@ -87,7 +91,7 @@ cf set-env <YOUR_APP> MXRUNTIME_DatabasePassword password
 Now we need to push the application once more.
 
 ``` shell
-cf push <YOUR_APP> -b https://github.com/mendix/cf-mendix-buildpack -p <YOUR_MDA>.mda
+cf push <YOUR_APP> -b <LINK-TO-BUILDPACK> -p <YOUR_MDA>.mda
 ```
 
 You can now log in to your application with the configured admin password.
@@ -342,7 +346,7 @@ yW7wMeYCUfgTNWaSaJd6uYUjj+IP/9+YOkp5pLW5eEAq6YscYA==
 -----END CERTIFICATE-----
 ```
 
-Please note, these are two internal Mendix CAs which you should not actually add to your trust store.
+*Please note that these are two internal Mendix CAs which you should not actually add to your trust store.*
 
 ## Monitoring Tools
 
@@ -412,7 +416,6 @@ The `DD_LOG_FILE` , `DD_PROCESS_CONFIG_LOG_FILE` and `DD_DOGSTATSD_PORT` environ
 
 [Dynatrace SaaS/Managed](http://www.dynatrace.com/cloud-foundry/) is your full stack monitoring solution - powered by artificial intelligence. Dynatrace SaaS/Managed allows you insights into all application requests from the users click in the browser down to the database statement and code-level.
 
-
 To enable Dynatrace, configure the following environment variables:
 
 | Environment Variable | Description |
@@ -424,8 +427,6 @@ To enable Dynatrace, configure the following environment variables:
 By setting these environment variables automatically the Dynatrace OneAgent will be loaded in the container. 
 
 OneAgent will be able to measure all J2EE related Metrics from the Application. See OneAgent documention for more details. 
-
-
 
 # Data Snapshots
 
@@ -484,19 +485,19 @@ cf set-env <YOUR_APP> LOG_RATELIMIT '1000'
 
 You can enable the Mendix Debugger by setting a `DEBUGGER_PASSWORD` environment variable. This will enable and open up the debugger for the lifetime of this process and is to be used with caution. The debugger is reachable on https://DOMAIN/debugger/. You can follow the second half of this [How To](https://docs.mendix.com/howto/monitoring-troubleshooting/debug-microflows) to connect with the Mendix Business Modeler. To stop the debugger, unset the environment variable and restart the application.
 
-# Buildpack Version Pinning
+# Buildpack Releases and Version Pinning
 
-If you use the `cf push` commands as described above, you will always use the latest version of the buildpack, i.e. the most recent commit to the master branch. We recommend this for the majority of use cases, as you will always have the latest features and fixes.
+We recommend "pinning to" - using a specific [release](https://github.com/mendix/cf-mendix-buildpack/releases) of - the buildpack. This will prevent you from being affected by bugs that are inadvertently introduced, but you will need to set up a procedure to regularly move to new versions of the buildpack.
 
-However, if you need to exercise a high degree of control over your deployments, it is possible to pin a specific version of the buildpack. This will prevent you from being affected by bugs that are inadvertently introduced, but you will need to set up a procedure to regularly move to new versions of the buildpack.
-
-To push with a specific version of the buildpack, append `#<tag>` to the buildpack URL in your `cf push` command like so:
+To push with a specific release of the buildpack, replace `<RELEASE>` in the buildpack URL below in your `cf push` command with the release you want to pin to, e.g. `v4.11.0`:
 
 ``` shell
-cf push <YOUR_APP> -b https://github.com/mendix/cf-mendix-buildpack#v1.9.2 -p <YOUR_MDA>.mda -t 180
+cf push <YOUR_APP> -b https://github.com/mendix/cf-mendix-buildpack/releases/download/<RELEASE>/cf-mendix-buildpack.zip -p <YOUR_MDA>.mda -t 180
 ```
 
-You can find the list of available tags here: https://github.com/mendix/cf-mendix-buildpack/tags
+You can find the list of available releases [here](https://github.com/mendix/cf-mendix-buildpack/releases).
+
+**Note: do not directly pin to the buildpack source code, but always pin to a specific release. The release is a runnable version of the buildpack and always contains the (binary) dependencies needed to run the buildpack directly; we do not guarantee that the source code by itself runs.**
 
 # Troubleshooting (Rescue Mode)
 
