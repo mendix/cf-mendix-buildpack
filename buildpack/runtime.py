@@ -37,7 +37,7 @@ def check_deprecation(version):
     return True
 
 
-def compile(build_path, cache_path):
+def stage(build_path, cache_path):
     logging.debug("downloading mendix version")
 
     git_repo_found = os.path.isdir("/usr/local/share/mendix-runtimes.git")

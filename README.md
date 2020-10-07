@@ -25,10 +25,10 @@ Additionally, we recommend a base level knowledge of Cloud Foundry. You should a
 
 The buildpack has two main phases:
 
-* `compile` : Fetch the JRE, Mendix Runtime, and nginx and bundle these together with the application model into a `droplet` . This is handled by `buildpack/compile.py` .
+* `stage` : Fetch the JRE, Mendix Runtime, and nginx and bundle these together with the application model into a Cloud Foundry droplet. This is handled by `buildpack/stage.py` .
 * `run` : Start the various processes and run the application. `buildpack/start.py` is for orchestration, the JVM is for executing the Mendix Model, and nginx is used as reverse proxy including handling access restrictions.
 
-The compile phase accepts archives in `.mda` format (Mendix Deployment Archive). There is experimental support for `.mpk` archives (Mendix Project Package). If an `.mpk` file is pushed, `mxbuild` is executed using Mono in the compile phase as well, the run phase stays the same.
+The staging phase accepts archives in `.mda` format (Mendix Deployment Archive). There is experimental support for `.mpk` archives (Mendix Project Package). If an `.mpk` file is pushed, `mxbuild` is executed using Mono in the compile phase as well, the run phase stays the same.
 
 ## How to Deploy
 

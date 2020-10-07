@@ -119,8 +119,8 @@ def copy_buildpack_resources():
         os.path.join(BUILD_DIR, ".commit"),
     )
     shutil.copy(
-        os.path.join(BUILDPACK_DIR, ".version"),
-        os.path.join(BUILD_DIR, ".version"),
+        os.path.join(BUILDPACK_DIR, "VERSION"),
+        os.path.join(BUILD_DIR, "VERSION"),
     )
 
 
@@ -152,7 +152,7 @@ if __name__ == "__main__":
         logging.info("Source push detected, starting MxBuild...")
         runtime_version = runtime.get_version(BUILD_DIR)
         try:
-            mxbuild.compile(
+            mxbuild.stage(
                 BUILD_DIR,
                 CACHE_DIR,
                 DOT_LOCAL_LOCATION,
@@ -169,17 +169,17 @@ if __name__ == "__main__":
 
     set_up_directory_structure()
     copy_buildpack_resources()
-    java.compile(
+    java.stage(
         BUILDPACK_DIR,
         CACHE_DIR,
         DOT_LOCAL_LOCATION,
         runtime.get_java_version(runtime.get_version(BUILD_DIR)),
     )
-    appdynamics.compile(DOT_LOCAL_LOCATION, CACHE_DIR)
-    dynatrace.compile(DOT_LOCAL_LOCATION, CACHE_DIR)
-    newrelic.compile(BUILDPACK_DIR, BUILD_DIR)
-    telegraf.compile(DOT_LOCAL_LOCATION, CACHE_DIR)
-    datadog.compile(DOT_LOCAL_LOCATION, CACHE_DIR)
-    runtime.compile(BUILD_DIR, CACHE_DIR)
-    nginx.compile(BUILD_DIR, CACHE_DIR)
-    logging.info("Mendix Cloud Foundry Buildpack compile completed")
+    appdynamics.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
+    dynatrace.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
+    newrelic.stage(BUILDPACK_DIR, BUILD_DIR)
+    telegraf.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
+    datadog.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
+    runtime.stage(BUILD_DIR, CACHE_DIR)
+    nginx.stage(BUILD_DIR, CACHE_DIR)
+    logging.info("Mendix Cloud Foundry Buildpack staging completed")

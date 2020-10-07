@@ -50,7 +50,7 @@ def _is_samesite_cookie_workaround_enabled(mx_version):
         return False
 
 
-def compile(build_path, cache_path):
+def stage(build_path, cache_path):
     util.download_and_unpack(
         util.get_blobstore_url(
             "/mx-buildpack/nginx_1.19.1_linux_x64_cflinuxfs3_b5af01b0.tgz"

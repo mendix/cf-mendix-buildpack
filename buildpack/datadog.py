@@ -374,7 +374,7 @@ def update_config(m2ee):
     _set_up_postgres()
 
 
-def compile(install_path, cache_dir):
+def stage(install_path, cache_dir):
     if not is_enabled():
         return
 
