@@ -264,7 +264,7 @@ def get_current_buildpack_commit():
 
 def get_buildpack_version():
     try:
-        with open(".version", "r") as version_file:
+        with open("VERSION", "r") as version_file:
             return version_file.readline().strip()
     except OSError:
         return "unversioned"

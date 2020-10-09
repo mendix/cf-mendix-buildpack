@@ -18,7 +18,7 @@ default_env = {
 }
 
 
-def compile(buildpack_path, build_path):
+def stage(buildpack_path, build_path):
     if is_enabled():
         agent_url = "{url}/e/{environment}/api/v1/deployment/installer/agent/unix/paas/latest?include=java&bitness=64&Api-Token={token}".format(
             url=os.environ.get("DT_SAAS_URL"),

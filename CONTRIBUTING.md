@@ -25,6 +25,6 @@ The following guidelines must be respected to get your PR merged to `master` :
 * Rebase your git history in such a way that each commit makes one consistent change. Don't include separate "fixup" commits later on.
 * Submit your PR with all the information we need to review it. The same applies to PRs as it does to issues.
 * The code must pass linting and all integration tests (in Travis). Code which does not pass will not be considered / reviewed. We have to be this strict since all deployments to the Mendix public cloud use the `master` branch.
-* Always bump the version number in `.version` to an appropriate value.
+* Always bump the version number in `VERSION` to an appropriate value.
 * There is a minimum of one reviewer per PR.
-* After a PR is merged, a release must be created with the appropriate version.
+* After a PR is merged, a release must be created with the appropriate version, a sensical title and proper release notes.

@@ -15,7 +15,7 @@ from buildpack.util import NotFoundException
 BUILD_ERRORS_JSON = "/tmp/builderrors.json"
 
 
-def compile(build_path, cache_path, local_path, runtime_version, java_version):
+def stage(build_path, cache_path, local_path, runtime_version, java_version):
     mono_location = mono.ensure_and_get_mono(runtime_version, cache_path)
     logging.info("Mono available: %s", mono_location)
     mono_env = mono.get_env_with_monolib(mono_location)

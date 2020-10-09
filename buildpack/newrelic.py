@@ -5,7 +5,7 @@ import shutil
 from buildpack import util
 
 
-def compile(buildpack_path, build_path):
+def stage(buildpack_path, build_path):
     if get_new_relic_license_key():
         shutil.copytree(
             os.path.join(buildpack_path, "vendor/newrelic"),

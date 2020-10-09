@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 
-cd "$1"
+BUILDPACK_PATH=$(dirname "$0")/..
+VERSION=$(cat $BUILDPACK_PATH/VERSION | tr -d '[:space:]')
 
+cd "$1"
 if [[ -d model && -d web && -f model/metadata.json ]]; then
-    echo "Mendix Cloud Foundry Buildpack"
+    echo "Mendix Cloud Foundry Buildpack $VERSION"
     exit 0
 elif [[ -d userlib && -d javasource && -d theme && -n "*.mpr" ]]; then
-    echo "Mendix Cloud Foundry Buildpack"
+    echo "Mendix Cloud Foundry Buildpack $VERSION"
     exit 0
 else
     echo "no"

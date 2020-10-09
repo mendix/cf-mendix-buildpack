@@ -7,7 +7,7 @@ This document describes best practices of developing the Mendix Buildpack. Use i
 The buildpack features the following directories:
 
 * `bin` : Cloud Foundry buildpack lifecycle scripts, utility scripts and binaries live here
-* `buildpack` : All Python code lives here, this is the home of the main buildpack module. Entry points are `compile.py` and `start.py`
+* `buildpack` : All Python code lives here, this is the home of the main buildpack module. Entry points are `stage.py` and `start.py`
 * `dev` : Code for local development and CI lives here
 * `docs` : Extra documentation in Markdown format lives here
 * `etc` : Configuration templates for e.g. nginx and M2EE live here

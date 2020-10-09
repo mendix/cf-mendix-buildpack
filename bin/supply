@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+# Since the Mendix Cloud Foundry buildpack is designed to be used as a final buildpack, this script is empty

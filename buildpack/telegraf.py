@@ -227,7 +227,7 @@ def update_config(m2ee, app_name):
     datadog.enable_mx_java_agent(m2ee)
 
 
-def compile(install_path, cache_dir):
+def stage(install_path, cache_dir):
     if not is_enabled():
         return
     #
