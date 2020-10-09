@@ -55,20 +55,23 @@ jobs:
       if: branch = master
       install: skip
       script: skip
-      before_deploy:
-      - git config --local user.name $GIT_USERNAME
-      - git config --local user.email $GIT_EMAIL
-      - export TRAVIS_TAG=$(cat VERSION | tr -d '\n')
-      - if [ $(git tag -l "$TRAVIS_TAG") ]; then exit 0; else git tag $TRAVIS_TAG; fi
+      before_deploy: |-
+        git config --local user.name $GIT_USERNAME
+        git config --local user.email $GIT_EMAIL
+        export TRAVIS_TAG=$(cat VERSION | tr -d '\n')
+        if [ $(git tag -l "$TRAVIS_TAG") ]
+        then
+          echo "Existing tag detecting, skipping deploy" && exit 0 
+        else
+          git tag "$TRAVIS_TAG"
+        fi
       deploy:
         provider: releases
-        edge: true
         token: $GITHUB_ACCESS_TOKEN
-        name: $TRAVIS_TAG
-        release_notes: $TRAVIS_COMMIT_MESSAGE
+        name: "$TRAVIS_TAG: $TRAVIS_COMMIT_MESSAGE"
         file: dist/cf-mendix-buildpack.zip
         draft: true
-        cleanup: false
+        skip_cleanup: true
         on:
           branch: master
 
