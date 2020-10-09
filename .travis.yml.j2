@@ -59,9 +59,8 @@ jobs:
         git config --local user.name $GIT_USERNAME
         git config --local user.email $GIT_EMAIL
         export TRAVIS_TAG=$(cat VERSION | tr -d '\n')
-        if [ $(git tag -l "$TRAVIS_TAG") ]
-        then
-          echo "Existing tag detecting, skipping deploy" && exit 0 
+        if [ $(git tag -l "$TRAVIS_TAG") ]; then
+          echo "Existing tag detected, skipping deploy" && exit 0 
         else
           git tag "$TRAVIS_TAG"
         fi
