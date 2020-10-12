@@ -74,7 +74,7 @@ def _delete_other_versions(directory, file_name):
         )
     )
     expression = (
-        r"^((?:[a-zA-Z]+-)+)((?:v*[0-9]+\.?)+.*)(\.(?:tar\.gz|tgz|zip))$"
+        r"^((?:[a-zA-Z]+-)+)((?:v*[0-9]+\.?)+.*)(\.(?:tar|tar\.gz|tgz|zip))$"
     )
     pattern = re.sub(expression, "\\1*\\3", file_name)
 
