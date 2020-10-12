@@ -47,7 +47,6 @@ def update_config(m2ee, app_name):
     m2ee_section = m2ee.config._conf["m2ee"]
     if "custom_environment" not in m2ee_section:
         m2ee_section["custom_environment"] = {}
-<<<<<<< HEAD
 
     for key, dv in default_env.items():
         value = os.environ.get(key, dv)
@@ -65,25 +64,6 @@ def update_config(m2ee, app_name):
 
     m2ee.config._conf["m2ee"]["javaopts"].append(
         "-agentpath:{path}".format(path=os.path.abspath(agent_path))
-=======
-    
-    for key, dv in default_env.items():
-        value = os.environ.get(key, dv)
-        if value:
-            m2ee_section["custom_environment"][
-                key
-            ] = value
-    m2ee_section["custom_environment"]["DT_CONNECTION_POINT"] = get_connection_endpoint()
-
-    agent_path = os.path.join(".local", get_agent_path())
-    if not os.path.exists(agent_path):
-        raise Exception("Dynatrace Agent not found: {agent_path}".format(agent_path))
-
-    m2ee.config._conf["m2ee"]["javaopts"].append(
-        "-agentpath:{path}".format(
-            path=os.path.abspath(agent_path)
-        )
->>>>>>> 6732617... Add support for Dynatrace
     )
     m2ee.config._conf["m2ee"]["javaopts"].append("-Xshare:off")
 
@@ -97,32 +77,21 @@ def get_connection_endpoint():
     manifest = get_manifest()
     endpoints = manifest.get("communicationEndpoints", [])
     # prepend the DT_SAAS_URL because the communication endpoints might not be correct
-<<<<<<< HEAD
     endpoints.insert(
         0, "{url}/communication".format(url=os.environ.get("DT_SAAS_URL"))
     )
-=======
-    endpoints.insert(0, "{url}/communication".format(url=os.environ.get("DT_SAAS_URL")))
->>>>>>> 6732617... Add support for Dynatrace
     return ";".join(endpoints)
 
 
 def get_agent_path():
     manifest = get_manifest()
     technologies = manifest.get("technologies")
-<<<<<<< HEAD
     java_binaries = technologies.get("java").get("linux-x86-64")
-=======
-    java_binaries =  technologies.get("java").get("linux-x86-64")
->>>>>>> 6732617... Add support for Dynatrace
     for f in java_binaries:
         binary_type = f.get("binarytype")
         if binary_type == "loader":
             return f.get("path")
 
-<<<<<<< HEAD
 
-=======
->>>>>>> 6732617... Add support for Dynatrace
 def is_enabled():
     return "DT_PAAS_TOKEN" in os.environ.keys()
