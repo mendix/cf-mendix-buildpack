@@ -84,7 +84,7 @@ Note that not all databases are automatically picked up by the buildpack. If `cf
 ``` shell
 cf set-env <YOUR_APP> MXRUNTIME_DatabaseType PostgreSQL
 cf set-env <YOUR_APP> MXRUNTIME_DatabaseJdbcUrl postgres://host/databasename
-cf set-env <YOUR_APP> MXRUNTIME_DatabaseUsername user
+cf set-env <YOUR_APP> MXRUNTIME_DatabaseUserName user
 cf set-env <YOUR_APP> MXRUNTIME_DatabasePassword password
 ```
 
