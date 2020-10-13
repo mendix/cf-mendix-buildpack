@@ -5,10 +5,12 @@
 #
 
 import os
-import requests
 import time
 import logging
 import json
+
+import backoff
+import requests
 
 from buildpack import util
 from buildpack.databroker.process_supervisor import DataBrokerProcess
@@ -42,7 +44,7 @@ KAFKA_CONNECT_CFG_PATH = os.path.join(
 )
 DBZ_HOME_DIR = os.path.join(LOCAL, BASE_DIR, DBZ_DIR)
 CONNECT_URL = "http://localhost:8083/connectors"
-INITIAL_WAIT = 30
+INITIAL_WAIT = 15
 MAX_RETRIES = 8
 BACKOFF_TIME = 5
 KAFKA_CONNECT_JMX_PORT = "11003"
@@ -95,42 +97,38 @@ def run(complete_conf):
     debezium_config = json.loads(
         debezium_generator.generate_config(complete_conf)
     )
-    retry_count = 1
-    success = False
-    while retry_count < MAX_RETRIES:
-        try:
-            response = requests.put(
-                "{}/{}/{}".format(
-                    CONNECT_URL, debezium_config["name"], "config"
-                ),
-                json=debezium_config["config"],
+
+    def backoff_hdlr(details):
+        logging.warn(
+            "Databroker: Failed to receive successful response from connect. Retrying...({}/{})".format(
+                details["tries"], MAX_RETRIES
             )
-            if response.status_code in (200, 201):
-                success = True
-                break
-            else:
-                logging.warn(
-                    "Databroker: Failed to receive successful response from connect. Retrying...({}/{})".format(
-                        retry_count, MAX_RETRIES
-                    )
-                )
-                retry_count += 1
-                time.sleep(BACKOFF_TIME)
-        except Exception as ex:
-            logging.warn(
-                "Databroker: Failed to receive successful response from connect. Retrying...({}/{})".format(
-                    retry_count, MAX_RETRIES
-                )
-            )
-            logging.debug("Exception message: {}".format(str(ex)))
-            retry_count += 1
-            time.sleep(BACKOFF_TIME)
-    if success:
-        logging.debug(
-            "Databroker: connect and debezium successfully initialized"
         )
-    else:
+
+    def giveup_hdlr(details):
         logging.error("Databroker: Kafka Connect wait retries exhaused")
         raise Exception("Databroker: Kafka Connect failed to start")
 
+    @backoff.on_predicate(
+        backoff.constant,
+        interval=BACKOFF_TIME,
+        max_tries=MAX_RETRIES,
+        on_backoff=backoff_hdlr,
+        on_giveup=giveup_hdlr,
+    )
+    @backoff.on_exception(
+        backoff.constant,
+        Exception,
+        interval=BACKOFF_TIME,
+        max_tries=MAX_RETRIES,
+        on_backoff=backoff_hdlr,
+        on_giveup=giveup_hdlr,
+    )
+    def start_debezium_connector():
+        return requests.put(
+            "{}/{}/{}".format(CONNECT_URL, debezium_config["name"], "config"),
+            json=debezium_config["config"],
+        )
+
+    start_debezium_connector()
     return kafka_connect_process

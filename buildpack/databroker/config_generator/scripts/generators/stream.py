@@ -5,5 +5,5 @@ from buildpack.databroker.config_generator.scripts.utils import (
 
 def generate_config(config):
     env = template_engine_instance()
-    template = env.get_template("streaming_producer.json")
+    template = env.get_template("streaming_producer.json.j2")
     return template.render(config)

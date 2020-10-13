@@ -147,7 +147,7 @@ def _set_up_jmx():
                     "reporter": "statsd:localhost:{}".format(
                         _get_statsd_port()
                     ),
-                    'refresh_beans': 120, # runtime takes time to initialize the beans
+                    "refresh_beans": 120,  # runtime takes time to initialize the beans
                     "conf": [
                         {
                             "include": {

@@ -25,7 +25,7 @@ class PostgresConfig(DebeziumInterface):
 
     def generate_config(self):
         env = template_engine_instance()
-        template = env.get_template("debezium/postgres.json")
+        template = env.get_template("debezium/postgres.json.j2")
         parsed_whitelist = self.__parse_whitelist(
             self.config.DataBrokerConfiguration.publishedServices[0].entities
         )
