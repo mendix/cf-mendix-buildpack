@@ -20,17 +20,16 @@ KAFKA_CONNECT_CFG_PATH = "{}/{}".format(
     KAFKA_CONNECT_DIR, KAFKA_CONNECT_CFG_NAME
 )
 
-STREAM_SIDECAR_DIR = "{}/producer-streams/stream-sidecar-0.18.0".format(
+STREAM_SIDECAR_DIR = "{}/producer-streams/stream-sidecar-0.22.0-8".format(
     LOCAL_DATABROKER_FOLDER
 )
 STREAM_TOPOLOGY_CFG_NAME = "topology.conf"
 STREAM_TOPOLOGY_CFG_PATH = "{}/{}".format(
     STREAM_SIDECAR_DIR, STREAM_TOPOLOGY_CFG_NAME
 )
-STREAM_AZKARRA_DIR = "{}/azkarra".format(LOCAL_DATABROKER_FOLDER)
 STREAM_AZKARRA_CFG_NAME = "azkarra.conf"
 STREAM_AZKARRA_CFG_PATH = "{}/{}".format(
-    STREAM_AZKARRA_DIR, STREAM_AZKARRA_CFG_NAME
+    STREAM_SIDECAR_DIR, STREAM_AZKARRA_CFG_NAME
 )
 
 
@@ -93,7 +92,7 @@ class TestDataBrokerConfigs(unittest.TestCase):
         os.environ["MXRUNTIME_DatabaseName"] = "mendix"
         os.environ["MXRUNTIME_DatabasePassword"] = "mx-app-password"
         # environment variable will overwrite the defautl constant value
-        os.environ["MX_MyFirstModule.Kafka_broker_url"] = TEST_BROKER_URL
+        os.environ["MX_MyFirstModule_Kafka_broker_url"] = TEST_BROKER_URL
 
         metadata_file = open(TEST_METADATA_FILE_PATH, "rt")
         dependencies_file = open(TEST_DEPENDENCIES_FILE_PATH, "rt")
@@ -129,7 +128,7 @@ class TestDataBrokerConfigs(unittest.TestCase):
                 actual_config[tmp_line[0]] = tmp_line[1]
 
             assert actual_config["bootstrap.servers"] == os.environ.get(
-                "MX_MyFirstModule.Kafka_broker_url"
+                "MX_MyFirstModule_Kafka_broker_url"
             )
 
     # There are two configs for streams, one is topology.conf another is azkarra.conf
@@ -137,7 +136,6 @@ class TestDataBrokerConfigs(unittest.TestCase):
     def test_stream_config(self):
 
         self._check_folder_exist(STREAM_SIDECAR_DIR)
-        self._check_folder_exist(STREAM_AZKARRA_DIR)
 
         streams.setup_configs(self.complete_producer_conf)
 
@@ -174,7 +172,7 @@ class TestDataBrokerConfigs(unittest.TestCase):
             assert (
                 str(actual_config).find(
                     'bootstrap.servers = "{}"'.format(
-                        os.environ.get("MX_MyFirstModule.Kafka_broker_url")
+                        os.environ.get("MX_MyFirstModule_Kafka_broker_url")
                     )
                 )
                 > 1
