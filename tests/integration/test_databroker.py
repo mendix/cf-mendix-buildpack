@@ -1,7 +1,9 @@
-import backoff
 import time
 import socket
 import re
+
+import backoff
+import requests
 
 from tests.integration import basetest
 
@@ -85,11 +87,11 @@ class TestCaseDataBroker(basetest.BaseTestWithPostgreSQL):
             env_vars={
                 "DATABROKER_ENABLED": "true",
                 "MXRUNTIME_DatabaseType": "PostgreSQL",
-                "MXRUNTIME_DatabaseHost": "localhost:5432",  # will update with correct one later
+                "MXRUNTIME_DatabaseHost": "{}:{}".format(self._host, self._database_port),
                 "MXRUNTIME_DatabaseName": "test",
                 "MXRUNTIME_DatabaseUserName": "test",
                 "MXRUNTIME_DatabasePassword": "test",
-                "MX_MyFirstModule.Kafka_broker_url": "{}:{}".format(
+                "MX_MyFirstModule_Kafka_broker_url": "{}:{}".format(
                     self._host, KAFKA_BROKER_PORT,
                 ),
             },
@@ -100,16 +102,19 @@ class TestCaseDataBroker(basetest.BaseTestWithPostgreSQL):
         # check app is running
         self.assert_app_running()
 
-        # check pg-connector is running
-        pg_connector_running = self.run_on_container(
-            'curl -H "ContentType:application/json" \
-            --max-time {} \
-            --retry {} \
-            {}'.format(
-                MAX_RETRY_COUNT, BACKOFF_TIME, KAFKA_PG_CONNECTOR_STATUS_API,
-            )
+        @backoff.on_exception(
+            backoff.constant,
+            Exception,
+            interval=BACKOFF_TIME,
+            max_tries=MAX_RETRY_COUNT,
         )
-        assert str(pg_connector_running).find('"state":"RUNNING"') > 0
+        def check_if_dbz_running():
+            return self.run_on_container(
+                "curl " + KAFKA_PG_CONNECTOR_STATUS_API
+            )
+
+        response = check_if_dbz_running()
+        assert str(response).find('"state":"RUNNING"') > 0
 
         # check azkarra is running by verify expected topics have been created
         topics = self.run_on_container(

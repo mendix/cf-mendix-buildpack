@@ -377,7 +377,7 @@ class BaseTestWithPostgreSQL(BaseTest):
         self._database_port = result[0].split(":")[1]
 
         # update database_host with correct exposed port of db
-        if "MXRUNTIME_DatabaseHost" in env_vars:
+        if env_vars and "MXRUNTIME_DatabaseHost" in env_vars:
             env_vars["MXRUNTIME_DatabaseHost"] = "{}:{}".format(
                 self._host, self._database_port
             )
