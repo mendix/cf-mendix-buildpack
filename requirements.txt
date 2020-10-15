@@ -9,6 +9,8 @@ certifi==2020.4.5.2       # via -r requirements.in, requests
 chardet==3.0.4            # via requests
 httplib2==0.18.1          # via -r requirements.in
 idna==2.8                 # via requests
+jinja2==2.11.2            # via -r requirements.in
+markupsafe==1.1.1         # via jinja2
 psycopg2-binary==2.8.5    # via -r requirements.in
 pyyaml==5.3.1             # via -r requirements.in
 requests==2.24.0          # via -r requirements.in

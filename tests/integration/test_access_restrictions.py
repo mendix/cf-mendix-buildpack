@@ -150,6 +150,12 @@ class TestCaseAccessRestrictions(basetest.BaseTest):
                 ),
             ]
         )
+        if not success:
+            print(
+                self.run_on_container(
+                    "cat /home/vcap/app/nginx/conf/nginx.conf"
+                )
+            )
         assert success
 
     def _check_http_code(self, path, expected_code, auth=None):

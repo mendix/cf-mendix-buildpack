@@ -26,7 +26,9 @@ class BaseTest(unittest.TestCase):
         super().__init__(*args, **kwargs)
 
         self._host = os.environ.get("TEST_HOST", "host.docker.internal")
-        self._buildpack = os.path.join(os.getcwd(), "dist", "cf-mendix-buildpack.zip")
+        self._buildpack = os.path.join(
+            os.getcwd(), "dist", "cf-mendix-buildpack.zip"
+        )
         self._mx_password = os.environ.get("MX_PASSWORD", "Y0l0lop13#123")
         self._app_id = self._get_random_id()
         self._app_name = "{}-{}-{}".format(
