@@ -8,7 +8,7 @@ http {
     {% if default_headers or samesite_cookie_workaround_enabled %}
     {% block default_headers_block -%}
     {% for key, value in default_headers %}
-    add_header {{ key }} '{{ value }}';
+    add_header {{ key }} '{{ value }}' always;
     {% endfor %}
     {% endblock %}
     {% if samesite_cookie_workaround_enabled %}
