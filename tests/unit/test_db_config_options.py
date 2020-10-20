@@ -33,7 +33,7 @@ class TestDatabaseConfigOptions(unittest.TestCase):
         os.environ["MXRUNTIME_DatabaseType"] = "PostgreSQL"
         os.environ[
             "MXRUNTIME_DatabaseJdbcUrl"
-        ] = "postgres://username:password@rdsbroker-testfree-nonprod-1-eu-west-1.asdbjasdg.eu-west-1.rds.amazonaws.com:5432/testdatabase"  # noqa E501
+        ] = "jdbc:postgresql://username:password@rdsbroker-testfree-nonprod-1-eu-west-1.asdbjasdg.eu-west-1.rds.amazonaws.com:5432/testdatabase"  # noqa E501
 
         config = get_config()
         assert not config
