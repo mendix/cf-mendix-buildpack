@@ -161,7 +161,7 @@ if __name__ == "__main__":
         signal.signal(signal.SIGUSR1, sigusr_handler)
         signal.signal(signal.SIGUSR2, sigusr_handler)
 
-        nginx.set_up_files(m2ee)
+        nginx.configure(m2ee)
         telegraf.run()
         datadog.run(m2ee.config.get_runtime_version())
 

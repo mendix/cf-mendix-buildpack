@@ -1,0 +1,170 @@
+worker_processes 1;
+daemon off;
+
+error_log stderr;
+events { worker_connections 4096; }
+
+http {
+    {% if default_headers or samesite_cookie_workaround_enabled %}
+    {% block default_headers_block -%}
+    {% for key, value in default_headers %}
+    add_header {{ key }} '{{ value }}' always;
+    {% endfor %}
+    {% endblock %}
+    {% if samesite_cookie_workaround_enabled %}
+    add_header Set-Cookie "mx-cookie-test=allowed; SameSite=None; Secure; Path=/" always;
+    {% endif %}
+
+    {% endif %}
+    access_log off; # we use cloud foundry RTR logging
+    default_type application/octet-stream;
+    include mime.types;
+    include proxy_params;
+    sendfile on;
+
+    client_max_body_size 1G;
+
+    gzip on;
+    gzip_disable "msie6";
+    gzip_comp_level 6;
+    gzip_min_length 1100;
+    gzip_buffers 16 8k;
+    gzip_proxied any;
+    gzip_types text/plain text/css text/js text/xml text/javascript application/javascript application/x-javascript application/json application/xml application/xml+rss;
+
+    tcp_nopush on;
+    keepalive_timeout 30;
+    absolute_redirect off;
+    server_tokens off;
+
+    upstream mendix {
+        server 127.0.0.1:{{ runtime_port }};
+        keepalive 8;
+    }
+
+    upstream mendix_admin {
+        server 127.0.0.1:{{ admin_port }};
+        keepalive 8;
+    }
+
+    upstream mendix_mxbuild {
+        server 127.0.0.1:{{ deploy_port }};
+        keepalive 8;
+    }
+
+    server {
+        listen {{ nginx_port }};
+        server_name _;
+        root {{ root }}/web/;
+        index index.html index.htm;
+
+        error_page 403 @403-custom;
+        error_page 404 @404-custom;
+        error_page 503 @503-custom;
+
+        {% macro location_body(location) -%}
+        proxy_intercept_errors {{ location.proxy_intercept_errors }};
+        satisfy {{ location.satisfy }};
+        {% if location.ipfilter_ips is not none %}
+        {% for ip in location.ipfilter_ips %}
+        allow {{ ip }};
+        {% endfor %}
+        deny all;
+        {% endif %}
+        {% if location.issuer_dn_regex %}
+        if ($http_ssl_client_i_dn ~* ^(?!({{ location.issuer_dn_regex }})$)(\w*)) {
+            return 403;
+        }
+        {% endif %}
+        {% if location.client_cert_enabled %}
+        auth_request /client-cert-check-internal;
+        {% endif %}
+        {% if location.basic_auth_index %}
+        auth_basic "Restricted";
+        auth_basic_user_file {{ root }}/nginx/.htpasswd{{ location.basic_auth_index }};
+        {%- endif %}
+        {%- endmacro %}
+        {% for location in locations %}
+        location {{ location.path }} {
+            if ($request_uri ~ ^/(.*\.(css|js)|forms/.*|img/.*|pages/.*)\?[0-9]+$) {
+                    expires 1y;
+            }
+        {% if location.path == "/" %}
+            if ($request_uri ~ ^/((index[\w-]*|login)\.html)?$) {
+                {{ self.default_headers_block() }}
+                add_header Cache-Control "no-cache";
+            }
+            proxy_pass http://mendix;
+            {% if samesite_cookie_workaround_enabled %}
+            proxy_cookie_path ~(.*) "$1; SameSite=None; Secure";
+            {% endif %}
+        }
+        {{ location_body(location) }}
+        {% else %}
+            proxy_pass http://mendix;
+            {% if samesite_cookie_workaround_enabled %}
+            proxy_cookie_path ~(.*) "$1; SameSite=None; Secure";
+            {% endif %}
+            {{ location_body(location)|indent }}
+        }
+        {% endif %}
+
+        {% endfor %}
+        location /_mxadmin/ {
+            auth_basic "Restricted";
+            auth_basic_user_file {{ root }}/nginx/.htpasswd;
+            proxy_pass http://mendix_admin/;
+            satisfy any;
+        }
+
+        location /_mxbuild/ {
+            auth_basic "Restricted";
+            auth_basic_user_file {{ root }}/nginx/.htpasswd-mxbuild;
+            {% if instadeploy_enabled %}
+            proxy_pass http://mendix_mxbuild;
+            {% else %}
+            return 501;
+            {% endif %}
+            error_page 502 503 504 =503 @503-for-post;
+            satisfy any;
+        }
+
+        location /client-cert-check-internal {
+            internal;
+            if ($http_ssl_client_s_dn) {
+                return 200;
+            }
+            return 403;
+        }
+
+        location @403 {
+            root {{ root }}/nginx/monsters/;
+            try_files /403-appnode-app.html =403;
+            allow all;
+        }
+        location @403-custom {
+            try_files /error_page/403.html @403;
+            allow all;
+        }
+
+        location @404 {
+            root {{ root }}/nginx/monsters/;
+            try_files /404-appnode-app.html =404;
+        }
+        location @404-custom {
+            try_files /error_page/404.html @404;
+        }
+
+        location @503-for-post {
+            return 503;
+        }
+        location @503 {
+            root {{ root }}/nginx/monsters/;
+            try_files /503-appnode-app.html =503;
+        }
+        location @503-custom {
+            try_files /error_page/offline.html @503;
+        }
+    }
+}
+
