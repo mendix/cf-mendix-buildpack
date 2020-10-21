@@ -20,6 +20,10 @@ from buildpack.runtime_components import (
 from lib.m2ee import M2EE as m2ee_class
 from lib.m2ee import logger
 from lib.m2ee.version import MXVersion
+from buildpack.databroker import (
+    is_enabled as is_databroker_enabled,
+    RUNTIME_DATABROKER_FLAG,
+)
 
 logger.setLevel(util.get_buildpack_loglevel())
 
@@ -266,6 +270,9 @@ def get_custom_runtime_settings():
             custom_runtime_settings[
                 k.replace("MXRUNTIME_", "", 1).replace("_", ".")
             ] = v
+
+    if is_databroker_enabled():
+        custom_runtime_settings[RUNTIME_DATABROKER_FLAG] = True
 
     return custom_runtime_settings
 
