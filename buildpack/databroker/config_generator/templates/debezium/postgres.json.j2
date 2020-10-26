@@ -1,0 +1,29 @@
+{
+  "name": "mx-databroker-{{ DatabaseType }}-source-connector",
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "tasks.max": 1,
+    "database.hostname": "{{ database_hostname }}",
+    "database.port": {{ database_port }},
+    "database.user": "{{ DatabaseUserName }}",
+    "database.password": "{{ DatabasePassword }}",
+    "database.dbname": "{{ DatabaseName }}",
+    "database.server.name": "{{ DatabaseName }}",
+    "table.whitelist": "{{ parsed_whitelist }}",
+    "slot.name": "mx_databroker",
+    "transforms": "unwrap",
+    "transforms.unwrap.add.fields": "table,lsn,txId,ts_ms",
+    "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
+    "transforms.unwrap.operation.header": true,
+    "transforms.unwrap.drop.tombstones": true,
+    "transforms.unwrap.delete.handling.mode": "rewrite",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "heartbeat.interval.ms": 5000,
+    "database.initial.statements": "CREATE TABLE IF NOT EXISTS heartbeat (id SERIAL PRIMARY KEY, ts TIMESTAMP WITH TIME ZONE)",
+    "heartbeat.action.query": "INSERT INTO heartbeat (id, ts) VALUES (1, NOW()) ON CONFLICT(id) DO UPDATE SET ts=EXCLUDED.ts",
+    "schema.refresh.mode": "columns_diff_exclude_unchanged_toast",
+    "sanitize.field.names": true,
+    "snapshot.mode": "exported",
+    "plugin.name": "pgoutput"
+  }
+}

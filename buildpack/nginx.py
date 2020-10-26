@@ -10,6 +10,8 @@ from buildpack import instadeploy, util
 from buildpack.runtime_components import security
 from lib.m2ee.version import MXVersion
 
+from jinja2 import Template
+
 DEFAULT_HEADERS = {
     "X-Frame-Options": r"(?i)(^allow-from https?://([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*(:\d+)?$|^deny$|^sameorigin$)",  # noqa: E501
     "Referrer-Policy": r"(?i)(^no-referrer$|^no-referrer-when-downgrade$|^origin|origin-when-cross-origin$|^same-origin|strict-origin$|^strict-origin-when-cross-origin$|^unsafe-url$)",  # noqa: E501
@@ -20,19 +22,18 @@ DEFAULT_HEADERS = {
     "X-XSS-Protection": r"(?i)(^0$|^1$|^1; mode=block$|^1; report=https?://([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*(:\d+)?$)",  # noqa: E501
 }
 
+CONFIG_FILE = "nginx/conf/nginx.conf"
+
 
 # Fix for Chrome SameSite enforcement (from Chrome 80 onwards)
 # Runtime will set this cookie in runtime versions >= SAMESITE_COOKIE_WORKAROUND_LESS_MX_VERSION
-SAMESITE_COOKIE_WORKAROUND_ENV_KEY = "SAMESITE_COOKIE_PRE_MX812"
-SAMESITE_COOKIE_WORKAROUND_DEFAULT = False
-SAMESITE_COOKIE_WORKAROUND_LESS_MX_VERSION = "8.12"
-SAMESITE_COOKIE_WORKAROUND_HEADER = 'add_header Set-Cookie "mx-cookie-test=allowed; SameSite=None; Secure; Path=/" always;'
-SAMESITE_COOKIE_WORKAROUND_PROXY_PASS = (
-    'proxy_cookie_path ~(.*) "$1; SameSite=None; Secure";'
-)
 
 
 def _is_samesite_cookie_workaround_enabled(mx_version):
+    SAMESITE_COOKIE_WORKAROUND_ENV_KEY = "SAMESITE_COOKIE_PRE_MX812"
+    SAMESITE_COOKIE_WORKAROUND_DEFAULT = False
+    SAMESITE_COOKIE_WORKAROUND_LESS_MX_VERSION = "8.12"
+
     try:
         return distutils.util.strtobool(
             os.environ.get(
@@ -60,47 +61,44 @@ def stage(build_path, cache_path):
     )
 
 
-def set_up_files(m2ee):
-    lines = ""
-
-    if instadeploy.use_instadeploy(m2ee.config.get_runtime_version()):
-        mxbuild_upstream = "proxy_pass http://mendix_mxbuild"
-    else:
-        mxbuild_upstream = "return 501"
-    with open("nginx/conf/nginx.conf") as fh:
-        lines = "".join(fh.readlines())
-
+def configure(m2ee):
     samesite_cookie_workaround_enabled = _is_samesite_cookie_workaround_enabled(
         MXVersion(str(m2ee.config.get_runtime_version()))
     )
-
     if samesite_cookie_workaround_enabled:
         logging.info("SameSite cookie workaround is enabled")
 
-    http_headers = parse_headers(samesite_cookie_workaround_enabled)
-    lines = (
-        lines.replace(
-            "CONFIG", get_path_config(samesite_cookie_workaround_enabled)
-        )
-        .replace("NGINX_PORT", str(util.get_nginx_port()))
-        .replace("RUNTIME_PORT", str(util.get_runtime_port()))
-        .replace("ADMIN_PORT", str(util.get_admin_port()))
-        .replace("DEPLOY_PORT", str(util.get_deploy_port()))
-        .replace("ROOT", os.getcwd())
-        .replace("HTTP_HEADERS", http_headers)
-        .replace("MXBUILD_UPSTREAM", mxbuild_upstream)
-    )
-    with open("nginx/conf/nginx.conf", "w") as fh:
-        fh.write(lines)
+    output_path = os.path.abspath(CONFIG_FILE)
+    template_path = os.path.abspath("{}.j2".format(CONFIG_FILE))
 
-    gen_htpasswd({"MxAdmin": security.get_m2ee_password()})
-    gen_htpasswd(
+    with open(template_path, "r") as file_:
+        template = Template(file_.read(), trim_blocks=True, lstrip_blocks=True)
+    rendered = template.render(
+        instadeploy_enabled=instadeploy.use_instadeploy(
+            m2ee.config.get_runtime_version()
+        ),
+        samesite_cookie_workaround_enabled=samesite_cookie_workaround_enabled,
+        locations=get_access_restriction_locations(),
+        default_headers=get_http_headers(),
+        nginx_port=str(util.get_nginx_port()),
+        runtime_port=str(util.get_runtime_port()),
+        admin_port=str(util.get_admin_port()),
+        deploy_port=str(util.get_deploy_port()),
+        root=os.getcwd(),
+    )
+
+    logging.debug("Writing nginx configuration file...")
+    with open(output_path, "w") as file_:
+        file_.write(rendered)
+    logging.debug("nginx configuration file written")
+
+    generate_password_file({"MxAdmin": security.get_m2ee_password()})
+    generate_password_file(
         {"deploy": os.getenv("DEPLOY_PASSWORD")}, file_name_suffix="-mxbuild"
     )
 
 
-def parse_headers(samesite_cookie_workaround=False):
-    header_config = ""
+def get_http_headers():
     headers_from_json = {}
 
     # this is kept for X-Frame-Options backward compatibility
@@ -114,21 +112,24 @@ def parse_headers(samesite_cookie_workaround=False):
         headers_from_json.update(json.loads(headers_json))
     except Exception as _:
         logging.error(
-            "Failed to parse HTTP_RESPONSE_HEADERS, due to invalid JSON string: '%s'",
+            "Failed to parse HTTP_RESPONSE_HEADERS due to invalid JSON string: '%s'",
             headers_json,
         )
         raise
 
+    result = []
     for header_key, header_value in headers_from_json.items():
         regEx = DEFAULT_HEADERS[header_key]
         if regEx and re.match(regEx, header_value):
             escaped_value = header_value.replace('"', '\\"').replace(
                 "'", "\\'"
             )
-            header_config += "add_header {} '{}';\n".format(
-                header_key, escaped_value
+            result.append((header_key, escaped_value))
+            logging.debug(
+                "Added header {} '{}' to nginx config".format(
+                    header_key, header_value
+                )
             )
-            logging.debug("Added header {} to nginx config".format(header_key))
         else:
             logging.warning(
                 "Skipping {} config, value '{}' is not valid".format(
@@ -136,20 +137,23 @@ def parse_headers(samesite_cookie_workaround=False):
                 )
             )
 
-    if samesite_cookie_workaround:
-        header_config += SAMESITE_COOKIE_WORKAROUND_HEADER + "\n"
-
-    return header_config
+    return result
 
 
 def run():
     nginx_process = subprocess.Popen(
-        ["nginx/sbin/nginx", "-p", "nginx", "-c", "conf/nginx.conf"]
+        [
+            "nginx/sbin/nginx",
+            "-p",
+            "nginx",
+            "-c",
+            str(os.path.abspath(CONFIG_FILE)),
+        ]
     )
     return nginx_process
 
 
-def gen_htpasswd(users_passwords, file_name_suffix=""):
+def generate_password_file(users_passwords, file_name_suffix=""):
     with open("nginx/.htpasswd" + file_name_suffix, "w") as fh:
         for user, password in users_passwords.items():
             if not password:
@@ -166,7 +170,18 @@ def gen_htpasswd(users_passwords, file_name_suffix=""):
                 )
 
 
-def get_path_config(samesite_cookie_workaround=False):
+class Location:
+    def __init__(self):
+        self.path = None
+        self.proxy_intercept_errors = "off"
+        self.satisfy = "any"
+        self.ipfilter_ips = None
+        self.basic_auth_index = None
+        self.client_cert_enabled = False
+        self.issuer_dn_regex = None
+
+
+def get_access_restriction_locations():
     # Example for ACCESS_RESTRICTIONS
     # {
     #     "/": {'ipfilter': ['10.0.0.0/8'], 'client_cert': true, 'satisfy': 'any'},
@@ -176,48 +191,17 @@ def get_path_config(samesite_cookie_workaround=False):
     # }
     # Default for satisfy is any
 
-    location_template = """
-location %s {
-    if ($request_uri ~ ^/(.*\.(css|js)|forms/.*|img/.*|pages/.*)\?[0-9]+$) {
-        expires 1y;
-    }
-    proxy_pass http://mendix;
-    %s
-    proxy_intercept_errors %s;
-    satisfy %s;
-    %s
-    %s
-    %s
-    %s
-}
-"""
-    root_template = """
-location %s {
-    if ($request_uri ~ ^/(.*\.(css|js)|forms/.*|img/.*|pages/.*)\?[0-9]+$) {
-            expires 1y;
-    }
-    if ($request_uri ~ ^/((index[\w-]*|login)\.html)?$) {
-            HTTP_HEADERS
-            add_header Cache-Control "no-cache";
-    }
-    proxy_pass http://mendix;
-    %s
-}
-proxy_intercept_errors %s;
-satisfy %s;
-%s
-%s
-%s
-%s
-"""
-
     restrictions = json.loads(os.environ.get("ACCESS_RESTRICTIONS", "{}"))
     if "/" not in restrictions:
         restrictions["/"] = {}
 
-    result = ""
     index = 0
+    result = []
+
     for path, config in restrictions.items():
+        location = Location()
+        location.path = path
+
         if path in ["/_mxadmin/", "/client-cert-check-internal"]:
             raise Exception(
                 "Can not override access restrictions on system path %s" % path
@@ -232,66 +216,39 @@ satisfy %s;
             "/ws-doc/",
             "/rest-doc",
         ]:
-            proxy_intercept_errors = "on"
-        else:
-            proxy_intercept_errors = "off"
+            location.proxy_intercept_errors = "on"
 
-        satisfy = "any"
         if "satisfy" in config:
             if config["satisfy"] in ["any", "all"]:
-                satisfy = config["satisfy"]
+                location.satisfy = config["satisfy"]
             else:
                 raise Exception(
-                    "invalid satisfy value: %s" % config["satisfy"]
+                    "Invalid satisfy value: %s" % config["satisfy"]
                 )
 
-        ipfilter = []
         if "ipfilter" in config:
+            location.ipfilter_ips = []
             for ip in config["ipfilter"]:
-                ipfilter.append("allow " + ip + ";")
-            ipfilter.append("deny all;")
+                location.ipfilter_ips.append(ip)
 
-        basic_auth = []
         if "basic_auth" in config:
             index += 1
-            gen_htpasswd(config["basic_auth"], str(index))
-            basic_auth = (
-                'auth_basic "Restricted";',
-                "auth_basic_user_file ROOT/nginx/.htpasswd%s;" % str(index),
-            )
+            location.basic_auth_index = index
+            generate_password_file(config["basic_auth"], str(index))
 
-        client_cert = ""
         if config.get("client-cert") or config.get("client_cert"):
-            client_cert = "auth_request /client-cert-check-internal;"
+            location.client_cert_enabled = True
 
         # This scenario isn't covered by integration tests. Please test manually if Nginx is properly matching the
         # SSL-Client-I-DN HTTP header with the configuration in the ACCESS_RESTRICTIONS environment variable.
-        issuer_dn = ""
         if "issuer_dn" in config:
-            issuer_dn_regex = ""
+            location.issuer_dn_regex = ""
             for i in config["issuer_dn"]:
                 issuer = i.replace(" ", "\\040")
                 issuer = issuer.replace(".", "\\.")
-                issuer_dn_regex += "{}|".format(issuer)
-            issuer_dn_regex = issuer_dn_regex[:-1]
-            issuer_dn = "if ($http_ssl_client_i_dn ~* ^(?!({})$)(\w*)) {{ \n        return 403;\n    }}".format(
-                issuer_dn_regex
-            )
+                location.issuer_dn_regex += "{}|".format(issuer)
+            location.issuer_dn_regex = location.issuer_dn_regex[:-1]
 
-        proxy_cookie_samesite = ""
-        if samesite_cookie_workaround:
-            proxy_cookie_samesite = SAMESITE_COOKIE_WORKAROUND_PROXY_PASS
+        result.append(location)
 
-        template = root_template if path == "/" else location_template
-        indent = "\n" + " " * (0 if path == "/" else 4)
-        result += template % (
-            path,
-            proxy_cookie_samesite,
-            proxy_intercept_errors,
-            satisfy,
-            indent.join(ipfilter),
-            issuer_dn,
-            client_cert,
-            indent.join(basic_auth),
-        )
-    return "\n        ".join(result.split("\n"))
+    return result
