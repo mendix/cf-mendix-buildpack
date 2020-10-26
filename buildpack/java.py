@@ -154,7 +154,11 @@ def _set_jvm_memory(m2ee_section, vcap, java_version):
     else:
         limit = int(vcap["limits"]["mem"])
 
-    if limit >= 8192:
+    if limit >= 32768:
+        heap_size = limit - 4096
+    elif limit >= 16384:
+        heap_size = limit - 3072
+    elif limit >= 8192:
         heap_size = limit - 2048
     elif limit >= 4096:
         heap_size = limit - 1536
