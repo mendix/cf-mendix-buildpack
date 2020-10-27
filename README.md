@@ -1,6 +1,6 @@
 # Run Mendix in Cloud Foundry
 
-[![Build Status](https://travis-ci.org/mendix/cf-mendix-buildpack.svg?branch=master)](https://travis-ci.org/mendix/cf-mendix-buildpack)
+![Test Status](https://github.com/actions/mendix/cf-mendix-buildpack/.github/workflows/test.yml/badge.svg?branch=master)
 
 This document contains general information on the Mendix Cloud Foundry Buildpack.
 

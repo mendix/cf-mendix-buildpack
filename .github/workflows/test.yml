@@ -1,0 +1,93 @@
+name: Run Integration Tests
+
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+    branches:
+      - develop
+      - master
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.6
+    - name: Install Python requirements
+      run: make install_requirements
+    - name: Lint
+      run: make lint
+    - name: Run unit tests
+      run: make test_unit
+    - name: Build
+      run: make build
+    - name: Upload artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: dist
+        path: dist
+  setup-integration-tests:
+    name: Set up integration tests
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+    - uses: actions/checkout@v2
+    - id: set-matrix
+      name: Set up test matrix
+      run: |
+        FILES=$(cd tests/integration && ls -m test*.py | tr -d \ \\n)
+        TEST=$(jq -n -c --arg inarr "$FILES" '{ test: $inarr | split(",") }')
+        echo "::set-output name=matrix::${TEST}"
+  integration-test:      
+    needs:
+      - build
+      - setup-integration-tests
+    name: Run test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{fromJson(needs.setup-integration-tests.outputs.matrix)}}
+    env:
+      TEST_DISK: 1G
+      TEST_MEMORY: 1G
+      TEST_PROCESSES: 1
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/download-artifact@v2
+      with:
+        name: dist
+        path: dist
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.6
+    - name: Install Python requirements
+      run: make install_requirements
+    - name: Install Cloud Foundry development tools
+      run: |
+        wget -q -O - https://packages.cloudfoundry.org/debian/cli.cloudfoundry.org.key | sudo apt-key add -
+        echo "deb https://packages.cloudfoundry.org/debian stable main" | sudo tee /etc/apt/sources.list.d/cloudfoundry-cli.list
+        sudo apt-get update && sudo apt-get install -y cf-cli
+        sudo curl -s https://download.mendix.com/Mendix-CA-G2.crt -o /usr/local/share/ca-certificates/ca.crt && sudo update-ca-certificates
+        cf install-plugin cflocal -f
+    - name: Export hostname for use in tests
+      run: |
+        TEST_HOST=$(ip -4 addr show docker0 | grep -Po 'inet \K[\d.]+')
+        echo "TEST_HOST=${TEST_HOST}" >> $GITHUB_ENV
+    - name: Run test (${{ matrix.test }})
+      run: make test_integration TEST_FILES=tests/integration/${{ matrix.test }}
+  integration-test-result:
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    name: Get integration test results
+    needs: integration-test
+    steps:
+      - name: Get integration test results
+        if: ${{ needs.integration-test.result != 'success' }}
+        run: exit 1
