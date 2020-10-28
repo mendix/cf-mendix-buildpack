@@ -244,8 +244,14 @@ def get_access_restriction_locations():
         if "issuer_dn" in config:
             location.issuer_dn_regex = ""
             for i in config["issuer_dn"]:
-                issuer = i.replace(" ", "\\040")
+                # Workaround for missing identifier strings from Java
+                # This should be fixed in upstream code by using different certificate libraries
+                issuer = i.replace("OID.2.5.4.97", "organizationIdentifier")
+
+                # Escape special characters
+                issuer = issuer.replace(" ", "\\040")
                 issuer = issuer.replace(".", "\\.")
+
                 location.issuer_dn_regex += "{}|".format(issuer)
             location.issuer_dn_regex = location.issuer_dn_regex[:-1]
 
