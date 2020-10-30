@@ -1,6 +1,6 @@
 # Run Mendix in Cloud Foundry
 
-![Run Integration Tests](https://github.com/mendix/cf-mendix-buildpack/workflows/Run%20Integration%20Tests/badge.svg)
+![Integration Test Status](https://github.com/mendix/cf-mendix-buildpack/workflows/Run%20Integration%20Tests/badge.svg) [![Known Vulnerabilities](https://snyk.io/test/github/mendix/cf-mendix-buildpack/badge.svg)](https://snyk.io/test/github/mendix/cf-mendix-buildpack)
 
 This document contains general information on the Mendix Cloud Foundry Buildpack.
 
