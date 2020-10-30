@@ -4,10 +4,16 @@ on:
   push:
     branches:
       - develop
+    paths-ignore:
+      - '**.md'
+      - 'dev/**'
   pull_request:
     branches:
       - develop
       - master
+    paths-ignore:
+      - '**.md'
+      - 'dev/**'
 
 jobs:
   build:
