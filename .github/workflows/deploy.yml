@@ -5,15 +5,12 @@ on:
     types: [closed]
     branches:
       - master
-    paths-ignore:
-    - '**.md'
-    - 'dev/**'
 
 jobs:
   pre:
     runs-on: ubuntu-latest
     outputs:
-      skip: ${{ steps.skip-check.outputs.skip }}
+      skip: ${{ steps.skip-check.outputs.should_skip }}
     steps:
     - id: skip-check
       uses: fkirc/skip-duplicate-actions@master
