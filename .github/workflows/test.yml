@@ -60,9 +60,7 @@ jobs:
         TEST=$(jq -n -c --arg inarr "$FILES" '{ test: $inarr | split(",") }')
         echo "::set-output name=matrix::${TEST}"
   integration-test:      
-    needs:
-      - build
-      - setup-integration-tests
+    needs: [build, setup-integration-tests]
     name: Run test
     runs-on: ubuntu-latest
     strategy:
@@ -100,8 +98,8 @@ jobs:
     if: ${{ always() }}
     runs-on: ubuntu-latest
     name: Get integration test results
-    needs: integration-test
+    needs: [pre, integration-test]
     steps:
       - name: Get integration test results
-        if: ${{ needs.integration-test.result != 'success' }}
+        if: ${{ needs.pre.outputs.skip != 'true' && needs.integration-test.result != 'success' }}
         run: exit 1
