@@ -164,9 +164,9 @@ cf set-env <YOUR_APP> HEAP_SIZE 512M
 
 ### Configuring the Java Version
 
-The build pack will automatically determine the Java version to use based on the runtime version of the app being deployed. The default Java version is 8 for Mendix 5.18 and higher. For Mendix 8 and above the default Java version is 11. In most cases it is not needed to change the Java version determined by the build pack.
+The buildpack will automatically determine the Java version to use based on the runtime version of the app being deployed. The default Java version is 8 for Mendix 5.18 and higher. For Mendix 8 and above the default Java version is 11. In most cases it is not needed to change the Java version determined by the buildpack.
 
-*Note*: Starting from Mendix 7.23.1 we changed to use AdoptOpenJDK. The buildpack will automatically determine the vendor based on the Mendix version. The `JAVA_VERSION` variable can be used to select a version number only, not the vendor.
+*Note*: Starting from Mendix 7.23.1, we changed to use AdoptOpenJDK. The buildpack will automatically determine the vendor based on the Mendix version. The `JAVA_VERSION` variable can be used to select a version number only, not the vendor.
 
 If you want to force Java 7 or 8, you can set the environment variable `JAVA_VERSION` to `7` or `8` :
 
@@ -268,8 +268,11 @@ The preferred way to set up this on-premises web server is as a transparent prox
 
 Alternatively you can make the required mendix runtime files `mendix-VERSION.tar.gz` available under `BLOBSTORE/runtime/` . The original files can be downloaded from `https://cdn.mendix.com/` . You should also make the Java version available on:
 
-* `BLOBSTORE/mx-buildpack/jre-8-linux-x64.tar.gz`
-* `BLOBSTORE/mx-buildpack/jdk-8-linux-x64.tar.gz`
+* `BLOBSTORE/mx-buildpack/jre-8-linux-x64.tar.gz` (Mendix < 8)
+* `BLOBSTORE/mx-buildpack/jdk-8-linux-x64.tar.gz` (Mendix < 8)
+* `BLOBSTORE/mx-buildpack/jre-11-linux-x64.tar.gz` (Mendix 8)
+* `BLOBSTORE/mx-buildpack/jdk-11-linux-x64.tar.gz` (Mendix 8)
+
 And for [Mendix \< 6.6](https://docs.mendix.com/releasenotes/desktop-modeler/6.6#fixes):
 
 * `BLOBSTORE/mx-buildpack/jre-8u51-linux-x64.tar.gz`
