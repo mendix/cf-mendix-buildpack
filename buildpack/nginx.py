@@ -173,10 +173,11 @@ def generate_password_file(users_passwords, file_name_suffix=""):
 class Location:
     def __init__(self):
         self.path = None
+        self.index = None
         self.proxy_intercept_errors = "off"
         self.satisfy = "any"
         self.ipfilter_ips = None
-        self.basic_auth_index = None
+        self.basic_auth_enabled = False
         self.client_cert_enabled = False
         self.issuer_dn_regex = None
 
@@ -201,8 +202,9 @@ def get_access_restriction_locations():
     for path, config in restrictions.items():
         location = Location()
         location.path = path
+        location.index = index
 
-        if path in ["/_mxadmin/", "/client-cert-check-internal"]:
+        if path in ["/_mxadmin/"] or "/client-cert-check-internal" in path:
             raise Exception(
                 "Can not override access restrictions on system path %s" % path
             )
@@ -232,8 +234,7 @@ def get_access_restriction_locations():
                 location.ipfilter_ips.append(ip)
 
         if "basic_auth" in config:
-            index += 1
-            location.basic_auth_index = index
+            location.basic_auth_enabled = True
             generate_password_file(config["basic_auth"], str(index))
 
         if config.get("client-cert") or config.get("client_cert"):
@@ -256,5 +257,6 @@ def get_access_restriction_locations():
             location.issuer_dn_regex = location.issuer_dn_regex[:-1]
 
         result.append(location)
+        index += 1
 
     return result
