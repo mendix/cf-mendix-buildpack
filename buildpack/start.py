@@ -77,7 +77,7 @@ if __name__ == "__main__":
     )
 
     logging.info(
-        "Mendix Cloud Foundry Buildpack %s [%s] starting...",
+        "Mendix Cloud Foundry Buildpack (TEST-M) %s [%s] starting...",
         util.get_buildpack_version(),
         util.get_current_buildpack_commit(),
     )
