@@ -1,3 +1,4 @@
+from buildpack.databroker import streams
 from buildpack.databroker.config_generator.scripts.utils import (
     template_engine_instance,
 )
@@ -6,7 +7,7 @@ from omegaconf import OmegaConf
 
 def generate_config(config):
     env = template_engine_instance()
-    template = env.get_template("azkarra.conf")
+    template = env.get_template("azkarra.conf.j2")
     azkarra_component_paths = (
         OmegaConf.select(config, "azkarra.component.paths") or None
     )
@@ -19,4 +20,5 @@ def generate_config(config):
         azkarra_home=azkarra_home,
         broker_password=broker_password,
         broker_username=broker_username,
+        stream_version=streams.get_pdr_stream_version(),
     )

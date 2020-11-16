@@ -1,6 +1,9 @@
-from omegaconf import OmegaConf
 import json
 import os
+import logging
+from omegaconf import OmegaConf
+
+from buildpack import util
 from buildpack.databroker.config_generator.scripts.utils import (
     convert_dot_field_to_dict,
     get_value_for_constant,
@@ -31,10 +34,11 @@ def __curate_key(key, prefix, replace_underscores=True):
 def __generate_source_topic_names(config):
     for service in config.DataBrokerConfiguration.publishedServices:
         for entity in service.entities:
-            entity.rawTopic = "{}.{}.{}".format(
+            entity.rawTopic = "{}.{}.{}.{}".format(
                 config.DatabaseName,
                 "public",
-                entity.objectName.replace(".", "_").lower(),
+                entity.originalEntityName.replace(".", "_").lower(),
+                "private",
             )
 
 
@@ -60,10 +64,10 @@ def validate_config(complete_conf):
                 "No Constants found for {}".format(published_service.brokerUrl)
             )
         for entity in published_service.entities:
-            if len(entity.objectName) > POSTGRESQL_MAX_TABLE_LENGTH:
+            if len(entity.publicEntityName) > POSTGRESQL_MAX_TABLE_LENGTH:
                 raise Exception(
                     "Entity {}'s name is too long. Max length of {} supported".format(
-                        entity.objectName, POSTGRESQL_MAX_TABLE_LENGTH
+                        entity.publicEntityName, POSTGRESQL_MAX_TABLE_LENGTH
                     )
                 )
 
@@ -159,9 +163,20 @@ def load_config(configs, database_config, parameters_replacement):
         OmegaConf.update(
             complete_conf, BOOTSTRAP_SERVERS_KEY, bootstrap_servers
         )
+
         if not OmegaConf.select(complete_conf, NODE_COUNT_KEY):
             complete_conf[NODE_COUNT_KEY] = 1
+
         __generate_source_topic_names(complete_conf)
+
+        OmegaConf.update(
+            complete_conf,
+            "log_level",
+            "DEBUG"
+            if util.get_buildpack_loglevel() == logging.DEBUG
+            else "INFO",
+        )
+
         return complete_conf
     except Exception as exception:
         raise Exception(

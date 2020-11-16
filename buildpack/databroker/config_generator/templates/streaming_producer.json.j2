@@ -1,13 +1,14 @@
 {
-  "topologies": [
-    {%- for entity in DataBrokerConfiguration.publishedServices[0].entities %}
-    {
-      "name": "{{ entity.objectName }} topology",
-      "source": "{{ entity.rawTopic }}",
-      "sink": "{{ entity.topicName }}",
-      "filter": "",
-      "join": ""
-    }{% if not loop.last %},{% endif %}
-    {%- endfor %}
-  ]
+  "name": "{{ entity.publicEntityName }} topology",
+  "source": "{{ entity.rawTopic }}",
+  "sink": "{{ entity.topicName }}",
+  "filter": "",
+  "join": "",
+  "originalEntityName": "{{ entity.originalEntityName }}",
+  "publicEntityName": "{{ entity.publicEntityName }}",
+  "attributeMapping": {
+  {%- for attributeKey, attributeValue in entity.attributeMapping.items() %}
+    "{{ attributeKey }}": "{{ attributeValue }}"{% if not loop.last %},{% endif %}
+  {%- endfor %}
+  }
 }

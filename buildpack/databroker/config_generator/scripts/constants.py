@@ -10,3 +10,4 @@ METADATA_CONSTANTS = "Constants"
 CONSTANTS_ENV_VAR_PREFIX = "MX_"
 BOOTSTRAP_SERVERS_KEY = "bootstrap_servers"
 SUPPORTED_DBS = [POSTGRESQL_NAME]
+JAVA_BIN_PATH = "/home/vcap/app/.local/bin/java"
