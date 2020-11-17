@@ -94,15 +94,15 @@ def configure(m2ee):
     logging.debug("nginx configuration file written")
 
     #Populating proxy params template
-    output_path = os.path.abspath(PROXY_FILE)
-    template_path = os.path.abspath("{}.j2".format(PROXY_FILE))
+   # output_path = os.path.abspath(PROXY_FILE)
+   # template_path = os.path.abspath("{}.j2".format(PROXY_FILE))
 
-    with open(template_path, "r") as file_:
-        template = Template(file_.read(), trim_blocks=True, lstrip_blocks=True)
-    rendered = template.render(
-        proxy_buffers="16k",
-        proxy_buffer_size="16k",
-    )
+  #  with open(template_path, "r") as file_:
+  #      template = Template(file_.read(), trim_blocks=True, lstrip_blocks=True)
+  #  rendered = template.render(
+ #       proxy_buffers="16k",
+  #      proxy_buffer_size="16k",
+ #   )
   #  logging.info("TEST TEST TEST TEST")
   #  logging.debug("Writing proxy_params configuration file...")
   #  with open(output_path, "w") as file_:
