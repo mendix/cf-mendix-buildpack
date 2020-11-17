@@ -71,17 +71,12 @@ http {
         {% endfor %}
         deny all;
         {% endif %}
-        {% if location.issuer_dn_regex %}
-        if ($http_ssl_client_i_dn ~* ^(?!({{ location.issuer_dn_regex }})$)(\w*)) {
-            return 403;
-        }
+        {% if location.client_cert_enabled or location.issuer_dn_regex %}
+        auth_request /client-cert-check-internal-{{ location.index }};
         {% endif %}
-        {% if location.client_cert_enabled %}
-        auth_request /client-cert-check-internal;
-        {% endif %}
-        {% if location.basic_auth_index %}
+        {% if location.basic_auth_enabled %}
         auth_basic "Restricted";
-        auth_basic_user_file {{ root }}/nginx/.htpasswd{{ location.basic_auth_index }};
+        auth_basic_user_file {{ root }}/nginx/.htpasswd{{ location.index }};
         {%- endif %}
         {%- endmacro %}
         {% for location in locations %}
@@ -108,6 +103,23 @@ http {
             {{ location_body(location)|indent }}
         }
         {% endif %}
+        {% if location.client_cert_enabled or location.issuer_dn_regex %}
+
+        location /client-cert-check-internal-{{ location.index }} {
+            internal;
+            {% if location.issuer_dn_regex %}
+            if ($http_ssl_client_i_dn ~* ^(?!({{ location.issuer_dn_regex }})$)(\w*)) {
+                return 403;
+            }
+            {% endif %}
+            {% if location.client_cert_enabled %}
+            if ($http_ssl_client_s_dn) {
+                return 200;
+            }
+            {% endif %}
+            return 403;
+        }
+        {% endif %}
 
         {% endfor %}
         location /_mxadmin/ {
@@ -127,14 +139,6 @@ http {
             {% endif %}
             error_page 502 503 504 =503 @503-for-post;
             satisfy any;
-        }
-
-        location /client-cert-check-internal {
-            internal;
-            if ($http_ssl_client_s_dn) {
-                return 200;
-            }
-            return 403;
         }
 
         location @403 {
