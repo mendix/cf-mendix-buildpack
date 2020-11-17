@@ -23,7 +23,7 @@ DEFAULT_HEADERS = {
 }
 
 CONFIG_FILE = "nginx/conf/nginx.conf"
-
+PROXY_FILE = "nginx/conf/proxy_params"
 
 # Fix for Chrome SameSite enforcement (from Chrome 80 onwards)
 # Runtime will set this cookie in runtime versions >= SAMESITE_COOKIE_WORKAROUND_LESS_MX_VERSION
@@ -67,7 +67,8 @@ def configure(m2ee):
     )
     if samesite_cookie_workaround_enabled:
         logging.info("SameSite cookie workaround is enabled")
-
+    
+    #Populating nginx config template
     output_path = os.path.abspath(CONFIG_FILE)
     template_path = os.path.abspath("{}.j2".format(CONFIG_FILE))
 
@@ -92,6 +93,26 @@ def configure(m2ee):
         file_.write(rendered)
     logging.debug("nginx configuration file written")
 
+    #Populating proxy params template
+    output_path = os.path.abspath(PROXY_FILE)
+    template_path = os.path.abspath("{}.j2".format(PROXY_FILE))
+
+    with open(template_path, "r") as file_:
+        template = Template(file_.read(), trim_blocks=True, lstrip_blocks=True)
+    rendered = template.render(
+        proxy_buffers="16k",
+        proxy_buffer_size="16k",
+    )
+    logging.info("TEST TEST TEST TEST")
+    logging.debug("Writing proxy_params configuration file...")
+    with open(output_path, "w") as file_:
+        file_.write(rendered)
+    logging.debug("proxy_params configuration file written")
+
+    #to remove
+    with open(output_path, "r") as file_:
+        logging.info(file_.read())
+    
     generate_password_file({"MxAdmin": security.get_m2ee_password()})
     generate_password_file(
         {"deploy": os.getenv("DEPLOY_PASSWORD")}, file_name_suffix="-mxbuild"
