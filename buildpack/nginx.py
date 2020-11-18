@@ -69,7 +69,7 @@ def configure(m2ee):
     if samesite_cookie_workaround_enabled:
         logging.info("SameSite cookie workaround is enabled")
 
-    #Populating nginx config template
+    # Populating nginx config template
     output_path = os.path.abspath(CONFIG_FILE)
     template_path = os.path.abspath("{}.j2".format(CONFIG_FILE))
 
@@ -94,7 +94,7 @@ def configure(m2ee):
         file_.write(rendered)
     logging.debug("nginx configuration file written")
 
-    #Populating proxy params template
+    # Populating proxy params template
     output_path = os.path.abspath(PROXY_FILE)
     template_path = os.path.abspath("{}.j2".format(PROXY_FILE))
 
@@ -115,7 +115,7 @@ def configure(m2ee):
         {"deploy": os.getenv("DEPLOY_PASSWORD")}, file_name_suffix="-mxbuild"
     )
 
-    
+
 def get_proxy_buffer_size():
     proxy_buffer_size = os.environ.get("PROXY_BUFFER_SIZE", None)
     return proxy_buffer_size
