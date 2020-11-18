@@ -104,12 +104,12 @@ def configure(m2ee):
         proxy_buffers=get_proxy_buffers(),
         proxy_buffer_size=get_proxy_buffer_size(),
     )
-    
+
     logging.debug("Writing proxy_params configuration file...")
     with open(output_path, "w") as file_:
         file_.write(rendered)
     logging.debug("proxy_params configuration file written")
-    
+
     generate_password_file({"MxAdmin": security.get_m2ee_password()})
     generate_password_file(
         {"deploy": os.getenv("DEPLOY_PASSWORD")}, file_name_suffix="-mxbuild"
