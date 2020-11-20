@@ -312,7 +312,7 @@ class UrlDatabaseConfiguration(DatabaseConfiguration):
             jdbc_params.update(
                 {
                     "sslrootcert": os.path.expandvars(
-                        "$HOME/.postgresql/rds-ca-2019-root.pem"
+                        "$HOME/.postgresql/amazon-rds-ca.pem"
                     )
                 }
             )
