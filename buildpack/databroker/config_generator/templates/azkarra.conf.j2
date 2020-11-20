@@ -3,7 +3,7 @@
   enable.wait.for.topics = true
   azkarra {
     home = "/home/vcap/app/.local/databroker/azkarra"
-    component.paths = "/home/vcap/app/.local/databroker/producer-streams/stream-sidecar-0.18.0"
+    component.paths = "/home/vcap/app/.local/databroker/producer-streams/stream-sidecar-{{ stream_version }}"
   }
   streams {
     bootstrap.servers = "{{ bootstrap_servers }}"

@@ -11,11 +11,11 @@ from buildpack import util
 from buildpack.runtime_components import database
 from buildpack.databroker import is_enabled as is_databroker_enabled
 from buildpack.databroker import is_producer_app as is_databroker_producer_app
-from buildpack.databroker.config_generator.templates.jmx import (
-    consumer,
-    kafka_connect,
-    kafka_streams,
+from buildpack.databroker.config_generator.templates.jmx import consumer
+from buildpack.databroker.config_generator.scripts.generators import (
+    jmx as jmx_cfg_generator,
 )
+from buildpack.databroker.config_generator.scripts.utils import write_file
 
 DD_SIDECAR = "cf-datadog-sidecar-v0.21.2_master_103662.tar.gz"
 MX_AGENT_JAR = "mx-java-agent.jar"
@@ -129,112 +129,122 @@ def _enable_dd_java_agent(m2ee):
 
 
 def _set_up_jmx():
-    os.makedirs(DD_AGENT_CHECKS_DIR + "/jmx.d", exist_ok=True)
-    with open(DD_AGENT_CHECKS_DIR + "/jmx.d/conf.yaml", "w") as fh:
-        # JMX beans and values can be inspected with jmxterm
-        # Download the jmxterm jar into the container
-        # and run app/.local/bin/java -jar ~/jmxterm.jar
-        #
-        # The extra attributes are only available from Mendix 7.15.0+
-        config = {
-            "init_config": {"collect_default_metrics": True, "is_jmx": True},
-            "instances": [
-                {
-                    "host": "localhost",
-                    "port": 7845,
-                    "java_bin_path": str(os.path.abspath(".local/bin/java")),
-                    "java_options": "-Xmx50m -Xms5m",
-                    "reporter": "statsd:localhost:{}".format(
-                        _get_statsd_port()
-                    ),
-                    "refresh_beans": 120,  # runtime takes time to initialize the beans
-                    "conf": [
-                        {
-                            "include": {
-                                "bean": "com.mendix:type=SessionInformation",
-                                # NamedUsers = 1;
-                                # NamedUserSessions = 0;
-                                # AnonymousSessions = 0;
-                                "attribute": {
-                                    "NamedUsers": {"metrics_type": "gauge"},
-                                    "NamedUserSessions": {
-                                        "metrics_type": "gauge"
-                                    },
-                                    "AnonymousSessions": {
-                                        "metrics_type": "gauge"
-                                    },
-                                },
-                            }
-                        },
-                        {
-                            "include": {
-                                "bean": "com.mendix:type=Statistics,name=DataStorage",
-                                # Selects = 1153;
-                                # Inserts = 1;
-                                # Updates = 24;
-                                # Deletes = 0;
-                                # Transactions = 25;
-                                "attribute": {
-                                    "Selects": {"metrics_type": "counter"},
-                                    "Updates": {"metrics_type": "counter"},
-                                    "Inserts": {"metrics_type": "counter"},
-                                    "Deletes": {"metrics_type": "counter"},
-                                    "Transactions": {
-                                        "metrics_type": "counter"
-                                    },
-                                },
-                            }
-                        },
-                        {
-                            "include": {
-                                "bean": "com.mendix:type=General",
-                                # Languages = en_US;
-                                # Entities = 24;
-                                "attribute": {
-                                    "Entities": {"metrics_type": "gauge"}
-                                },
-                            }
-                        },
-                        {
-                            "include": {
-                                "bean": "com.mendix:type=JettyThreadPool",
-                                # Threads = 8
-                                # IdleThreads = 3;
-                                # IdleTimeout = 60000;
-                                # MaxThreads = 254;
-                                # StopTimeout = 30000;
-                                # MinThreads = 8;
-                                # ThreadsPriority = 5;
-                                # QueueSize = 0;
-                                "attribute": {
-                                    "Threads": {"metrics_type": "gauge"},
-                                    "MaxThreads": {"metrics_type": "gauge"},
-                                    "IdleThreads": {"metrics_type": "gauge"},
-                                    "QueueSize": {"metrics_type": "gauge"},
-                                },
-                            }
-                        },
-                    ],
-                    #  }, {
-                    #    'include': {
-                    #        'bean': 'com.mendix:type=Jetty',
-                    #        # ConnectedEndPoints = 0;
-                    #        # IdleTimeout = 30000;
-                    #        # RequestsActiveMax = 0;
-                    #        'attribute': {
-                    #        }
-                    #    },
-                }
-            ],
-        }
+    runtime_jmx_dir = DD_AGENT_CHECKS_DIR + "/jmx.d"
+    # JMX beans and values can be inspected with jmxterm
+    # Download the jmxterm jar into the container
+    # and run app/.local/bin/java -jar ~/jmxterm.jar
+    #
+    # The extra attributes are only available from Mendix 7.15.0+
+    config = {
+        "init_config": {"collect_default_metrics": True, "is_jmx": True},
+        "instances": [
+            {
+                "host": "localhost",
+                "port": 7845,
+                "java_bin_path": str(os.path.abspath(".local/bin/java")),
+                "java_options": "-Xmx50m -Xms5m",
+                "reporter": "statsd:localhost:{}".format(_get_statsd_port()),
+                "refresh_beans": 120,  # runtime takes time to initialize the beans
+                "conf": [
+                    {
+                        "include": {
+                            "bean": "com.mendix:type=SessionInformation",
+                            # NamedUsers = 1;
+                            # NamedUserSessions = 0;
+                            # AnonymousSessions = 0;
+                            "attribute": {
+                                "NamedUsers": {"metrics_type": "gauge"},
+                                "NamedUserSessions": {"metrics_type": "gauge"},
+                                "AnonymousSessions": {"metrics_type": "gauge"},
+                            },
+                        }
+                    },
+                    {
+                        "include": {
+                            "bean": "com.mendix:type=Statistics,name=DataStorage",
+                            # Selects = 1153;
+                            # Inserts = 1;
+                            # Updates = 24;
+                            # Deletes = 0;
+                            # Transactions = 25;
+                            "attribute": {
+                                "Selects": {"metrics_type": "counter"},
+                                "Updates": {"metrics_type": "counter"},
+                                "Inserts": {"metrics_type": "counter"},
+                                "Deletes": {"metrics_type": "counter"},
+                                "Transactions": {"metrics_type": "counter"},
+                            },
+                        }
+                    },
+                    {
+                        "include": {
+                            "bean": "com.mendix:type=General",
+                            # Languages = en_US;
+                            # Entities = 24;
+                            "attribute": {
+                                "Entities": {"metrics_type": "gauge"}
+                            },
+                        }
+                    },
+                    {
+                        "include": {
+                            "bean": "com.mendix:type=JettyThreadPool",
+                            # Threads = 8
+                            # IdleThreads = 3;
+                            # IdleTimeout = 60000;
+                            # MaxThreads = 254;
+                            # StopTimeout = 30000;
+                            # MinThreads = 8;
+                            # ThreadsPriority = 5;
+                            # QueueSize = 0;
+                            "attribute": {
+                                "Threads": {"metrics_type": "gauge"},
+                                "MaxThreads": {"metrics_type": "gauge"},
+                                "IdleThreads": {"metrics_type": "gauge"},
+                                "QueueSize": {"metrics_type": "gauge"},
+                            },
+                        }
+                    },
+                ],
+                #  }, {
+                #    'include': {
+                #        'bean': 'com.mendix:type=Jetty',
+                #        # ConnectedEndPoints = 0;
+                #        # IdleTimeout = 30000;
+                #        # RequestsActiveMax = 0;
+                #        'attribute': {
+                #        }
+                #    },
+            }
+        ],
+    }
 
-        if is_databroker_enabled():
-            if is_databroker_producer_app():
-                config["instances"].append(kafka_connect.jmx_metrics)
-                config["instances"].append(kafka_streams.jmx_metrics)
-            else:
-                config["instances"][0]["conf"].extend(consumer.jmx_metrics)
+    if is_databroker_enabled():
+        if is_databroker_producer_app():
+            runtime_jmx_dir = DD_AGENT_CHECKS_DIR + "/jmx_1.d"
 
+            # kafka connect cfg
+            os.makedirs(DD_AGENT_CHECKS_DIR + "/jmx_2.d", exist_ok=True)
+            kafka_connect_cfg = (
+                jmx_cfg_generator.generate_kafka_connect_jmx_config()
+            )
+            write_file(
+                DD_AGENT_CHECKS_DIR + "/jmx_2.d/conf.yaml", kafka_connect_cfg
+            )
+
+            # kafka streams cfg
+            os.makedirs(DD_AGENT_CHECKS_DIR + "/jmx_3.d", exist_ok=True)
+            kafka_streams_cfg = (
+                jmx_cfg_generator.generate_kafka_streams_jmx_config()
+            )
+            write_file(
+                DD_AGENT_CHECKS_DIR + "/jmx_3.d/conf.yaml", kafka_streams_cfg
+            )
+        else:
+            config["instances"][0]["conf"].extend(consumer.jmx_metrics)
+
+    os.makedirs(runtime_jmx_dir, exist_ok=True)
+    with open(runtime_jmx_dir + "/conf.yaml", "w") as fh:
         fh.write(yaml.safe_dump(config))
 
 
