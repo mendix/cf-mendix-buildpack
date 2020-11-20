@@ -97,8 +97,8 @@ def copy_buildpack_resources():
         os.path.join(DOT_LOCAL_LOCATION, "m2ee.yaml"),
     )
     shutil.copy(
-        os.path.join(BUILDPACK_DIR, "etc/rds-ca-2019-root.pem"),
-        os.path.join(BUILD_DIR, ".postgresql/rds-ca-2019-root.pem"),
+        os.path.join(BUILDPACK_DIR, "etc/amazon-rds-ca.pem"),
+        os.path.join(BUILD_DIR, ".postgresql/amazon-rds-ca.pem"),
     )
     shutil.copytree(
         os.path.join(BUILDPACK_DIR, "etc/nginx"),
