@@ -19,14 +19,24 @@ class PostgresConfig(DebeziumInterface):
         return str(self.config.DatabaseType).lower() == POSTGRESQL_NAME
 
     def __parse_whitelist(self, entities):
-        return reduce(
-            lambda x, y: x + ".*{}.*+,".format(y["objectName"]), entities, ""
-        )[:-1]
+        def create_whitelist_strings(whitelist, entity):
+            t = ".*{}.*,".format(entity["originalEntityName"])
+            whitelist["table"] += t
+            whitelist["column"] += t + entity["originalEntityName"] + ".id,"
+            return whitelist
+
+        whitelist = reduce(
+            create_whitelist_strings, entities, {"table": "", "column": ""}
+        )
+        whitelist["table"] = whitelist["table"][:-1]
+        whitelist["column"] = whitelist["column"][:-1]
+
+        return whitelist
 
     def generate_config(self):
         env = template_engine_instance()
         template = env.get_template("debezium/postgres.json.j2")
-        parsed_whitelist = self.__parse_whitelist(
+        whitelist = self.__parse_whitelist(
             self.config.DataBrokerConfiguration.publishedServices[0].entities
         )
         database_data = self.config.DatabaseHost.split(":")
@@ -39,7 +49,8 @@ class PostgresConfig(DebeziumInterface):
             database_port = POSTGRESQL_DEFAULT_PORT
         return template.render(
             self.config,
-            parsed_whitelist=parsed_whitelist,
+            table_whitelist=whitelist["table"],
+            column_whitelist=whitelist["column"],
             database_hostname=database_hostname,
             database_port=database_port,
         )

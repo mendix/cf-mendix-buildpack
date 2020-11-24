@@ -17,6 +17,7 @@ from buildpack.databroker.process_supervisor import DataBrokerProcess
 from buildpack.databroker.config_generator.scripts.generators import (
     debezium as debezium_generator,
     kafka_connect as connect_generator,
+    loggers as loggers_generator,
 )
 from buildpack.databroker.config_generator.scripts.utils import write_file
 
@@ -33,6 +34,7 @@ PROCESS_NAME = "kafka-connect"
 KAFKA_CONNECT_DIR = PROCESS_NAME
 DBZ_CFG_NAME = "debezium-connector.json"
 KAFKA_CONNECT_CFG_NAME = "connect.properties"
+LOG4J_DEBEZIUM_CFG_NAME = "debezium-log4j.properties"
 
 # Run constants
 LOCAL = ".local"
@@ -41,6 +43,9 @@ KAFKA_CONNECT_START_PATH = os.path.join(
 )
 KAFKA_CONNECT_CFG_PATH = os.path.join(
     LOCAL, BASE_DIR, KAFKA_CONNECT_DIR, KAFKA_CONNECT_CFG_NAME
+)
+LOG4J_CFG_PATH = os.path.join(
+    LOCAL, BASE_DIR, KAFKA_CONNECT_DIR, LOG4J_DEBEZIUM_CFG_NAME
 )
 DBZ_HOME_DIR = os.path.join(LOCAL, BASE_DIR, DBZ_DIR)
 CONNECT_URL = "http://localhost:8083/connectors"
@@ -79,12 +84,21 @@ def setup_configs(complete_conf):
     connect_config = connect_generator.generate_config(complete_conf)
     write_file(KAFKA_CONNECT_CFG_PATH, connect_config)
 
+    connect_logging = loggers_generator.generate_kafka_connect_logging_config(
+        complete_conf
+    )
+    write_file(LOG4J_CFG_PATH, connect_logging)
+
 
 def run(complete_conf):
     setup_configs(complete_conf)
     java_path = os.path.join(os.getcwd(), LOCAL, "bin")
     os.environ["PATH"] += os.pathsep + java_path
     os.environ["JMX_PORT"] = KAFKA_CONNECT_JMX_PORT
+    os.environ["KAFKA_LOG4J_OPTS"] = (
+        "-Dlog4j.configuration=file:"
+        + os.path.join(os.getcwd(), LOG4J_CFG_PATH)
+    )
 
     env = dict(os.environ)
 

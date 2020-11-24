@@ -1,5 +1,6 @@
 import socket
 import re
+import os
 
 import backoff
 
@@ -22,7 +23,7 @@ POSTGRES_DB_VERSION = "9.6-alpine"
 MAX_RETRY_COUNT = 8
 BACKOFF_TIME = 10
 
-# Export env variable `TEST_HOST=192.168.64.1` (your local docker ip) before run the test in your local
+
 class TestCaseDataBroker(basetest.BaseTestWithPostgreSQL):
 
     kafka_container_name = None
@@ -80,10 +81,14 @@ class TestCaseDataBroker(basetest.BaseTestWithPostgreSQL):
         )
         self._start_kafka_cluster()
 
+        os.environ[
+            "PACKAGE_URL"
+        ] = "https://dghq119eo3niv.cloudfront.net/test-app/MyProducer902.mda"
         self.stage_container(
             "ProducerApp.mda",
             env_vars={
                 "DATABROKER_ENABLED": "true",
+                "BLOBSTORE": "https://dghq119eo3niv.cloudfront.net",
                 "MXRUNTIME_DatabaseType": "PostgreSQL",
                 "MXRUNTIME_DatabaseHost": "{}:{}".format(
                     self._host, self._database_port
@@ -91,7 +96,7 @@ class TestCaseDataBroker(basetest.BaseTestWithPostgreSQL):
                 "MXRUNTIME_DatabaseName": "test",
                 "MXRUNTIME_DatabaseUserName": "test",
                 "MXRUNTIME_DatabasePassword": "test",
-                "MX_MyFirstModule_Kafka_broker_url": "{}:{}".format(
+                "MX_MyFirstModule_broker_url": "{}:{}".format(
                     self._host, KAFKA_BROKER_PORT,
                 ),
             },
@@ -136,7 +141,8 @@ class TestCaseDataBroker(basetest.BaseTestWithPostgreSQL):
         expect_public_topic_pattern = r".*?\.{}".format(
             DATABROKER_TOPIC_FORMAT_VERSION
         )
-        assert len(re.findall(expect_public_topic_pattern, topics)) == 1
+
+        assert len(re.findall(expect_public_topic_pattern, topics)) > 0
 
         # check streaming service
         output = self.get_recent_logs()
