@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import shutil
 import subprocess
 import threading
 import time
@@ -36,7 +37,15 @@ class LogFilterThread(threading.Thread):
             while True:
                 proc = subprocess.Popen(
                     [
-                        "./bin/mendix-logfilter",
+                        str(
+                            os.path.abspath(
+                                os.path.join(
+                                    ".local",
+                                    "mendix-logfilter",
+                                    "mendix-logfilter",
+                                )
+                            )
+                        ),
                         "-r",
                         self.log_ratelimit,
                         "-f",
@@ -99,3 +108,11 @@ def run():
     thread = LoggingHeartbeatEmitterThread(int(logging_interval))
     thread.setDaemon(True)
     thread.start()
+
+
+def stage(buildpack_dir, build_dir):
+    logging.debug("Staging logging runtime component...")
+    shutil.copytree(
+        os.path.join(buildpack_dir, "vendor", "mendix-logfilter"),
+        os.path.join(build_dir, ".local", "mendix-logfilter"),
+    )

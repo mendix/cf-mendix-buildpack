@@ -1,16 +1,28 @@
 import logging
 import os
-import shutil
 
 from buildpack import util
 
+AGENT_VERSION = "6.2.1"
+NAMESPACE = "newrelic"
+ROOT_DIR = ".local"
 
-def stage(buildpack_path, build_path):
+
+def stage(install_path, cache_path):
     if get_new_relic_license_key():
-        shutil.copytree(
-            os.path.join(buildpack_path, "vendor/newrelic"),
-            os.path.join(build_path, "newrelic"),
+        util.download_and_unpack(
+            util.get_blobstore_url(
+                "/mx-buildpack/newrelic/newrelic-java-{}.zip".format(
+                    AGENT_VERSION
+                )
+            ),
+            _get_destination_dir(install_path),
+            cache_path,
         )
+
+
+def _get_destination_dir(dot_local=ROOT_DIR):
+    return os.path.abspath(os.path.join(dot_local, NAMESPACE))
 
 
 def update_config(m2ee, app_name):
@@ -27,13 +39,13 @@ def update_config(m2ee, app_name):
         "NEW_RELIC_LICENSE_KEY"
     ] = get_new_relic_license_key()
     m2ee_section["custom_environment"]["NEW_RELIC_APP_NAME"] = app_name
-    m2ee_section["custom_environment"]["NEW_RELIC_LOG"] = os.path.abspath(
-        "newrelic/agent.log"
+    m2ee_section["custom_environment"]["NEW_RELIC_LOG"] = os.path.join(
+        _get_destination_dir(), "newrelic", "agent.log"
     )
 
     m2ee.config._conf["m2ee"]["javaopts"].append(
         "-javaagent:{path}".format(
-            path=os.path.abspath("newrelic/newrelic.jar")
+            os.path.join(_get_destination_dir(), "newrelic", "newrelic.jar")
         )
     )
 

@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import re
+import shutil
 from abc import ABC, abstractmethod
 from urllib.parse import parse_qs, unquote, urlencode
 
@@ -460,3 +461,11 @@ class SapHanaDatabaseConfiguration(DatabaseConfiguration):
 
     def get_additional_m2ee_config(self):
         return {}
+
+
+def stage(buildpack_dir, build_dir):
+    logging.debug("Staging database runtime component...")
+    shutil.copy(
+        os.path.join(buildpack_dir, "etc", "amazon-rds-ca.pem"),
+        os.path.join(build_dir, ".postgresql", "amazon-rds-ca.pem"),
+    )
