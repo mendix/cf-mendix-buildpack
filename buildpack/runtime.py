@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import shutil
 import sqlite3
 import subprocess
 import sys
@@ -41,13 +42,24 @@ def check_deprecation(version):
     return True
 
 
-def stage(build_path, cache_path):
-    logging.debug("downloading mendix version")
+def stage(buildpack_dir, build_path, cache_path):
+
+    logging.debug("Staging required components for Mendix runtime...")
+    database.stage(buildpack_dir, build_path)
+    logs.stage(buildpack_dir, build_path)
+
+    logging.debug("Staging the Mendix runtime...")
+    shutil.copy(
+        os.path.join(buildpack_dir, "etc", "m2ee", "m2ee.yaml"),
+        os.path.join(build_path, ".local", "m2ee.yaml"),
+    )
 
     git_repo_found = os.path.isdir("/usr/local/share/mendix-runtimes.git")
 
     if git_repo_found and not os.environ.get("FORCED_MXRUNTIME_URL"):
-        logging.debug("rootfs with mendix runtime detected, skipping download")
+        logging.debug(
+            "Root FS with built-in Mendix runtimes detected, skipping Mendix runtime download"
+        )
         return
 
     url = os.environ.get("FORCED_MXRUNTIME_URL")
@@ -58,10 +70,7 @@ def stage(build_path, cache_path):
         url = util.get_blobstore_url(
             "/runtime/mendix-%s.tar.gz" % str(get_version(build_path))
         )
-    logging.debug(
-        "rootfs without mendix runtimes detected, "
-        "downloading and unpacking mendix runtime now"
-    )
+    logging.debug("Downloading Mendix runtime...")
     util.download_and_unpack(
         url, os.path.join(build_path, "runtimes"), cache_dir=cache_dir
     )

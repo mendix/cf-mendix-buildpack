@@ -9,7 +9,10 @@ class TestCaseLogging(basetest.BaseTest):
         super().setUp()
         self.stage_container(
             "sample-6.2.0.mda",
-            env_vars={"LOGGING_CONFIG": json.dumps({"Jetty": "TRACE"})},
+            env_vars={
+                "LOGGING_CONFIG": json.dumps({"Jetty": "TRACE"}),
+                "LOG_RATELIMIT": 500,
+            },
         )
         self.start_container()
 
