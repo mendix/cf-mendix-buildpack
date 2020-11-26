@@ -33,10 +33,10 @@ jobs:
       - name: Veracode scan
         uses: veracode/veracode-uploadandscan-action@master # Run the uploadandscan action. Inputs are described above.
         with:
-        filepath: 'cf-mendix-buildpack.zip'
-        vid: '${{ secrets.VERACODE_API_ID }}'
-        vkey: '${{ secrets.VERACODE_API_KEY }}'
-        appname: ${{ secrets.VERACODE_APP_ID }}
-        sandboxid: ${{ secrets.VERACODE_SANDBOX_ID }}
-        scantimeout: 15
-        criticality: 'VeryHigh'
+          filepath: 'cf-mendix-buildpack.zip'
+          vid: '${{ secrets.VERACODE_API_ID }}'
+          vkey: '${{ secrets.VERACODE_API_KEY }}'
+          appname: ${{ secrets.VERACODE_APP_ID }}
+          sandboxid: ${{ secrets.VERACODE_SANDBOX_ID }}
+          scantimeout: 15
+          criticality: 'VeryHigh'
