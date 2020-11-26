@@ -194,9 +194,9 @@ class TestDataBrokerConfigs(unittest.TestCase):
         )
 
     def test_streams_override(self):
-        os.environ["STREAMS_VERSION"] = "0.99999"
+        os.environ["DATABROKER_STREAMS_VERSION"] = "0.99999"
         assert streams.get_pdr_stream_version() == "0.99999"
-        del os.environ["STREAMS_VERSION"]  # reset
+        del os.environ["DATABROKER_STREAMS_VERSION"]  # reset
         # default
         assert streams.get_pdr_stream_version() == "0.23.0-9"
 
