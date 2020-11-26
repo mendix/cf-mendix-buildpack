@@ -99,7 +99,10 @@ def run(complete_conf):
         "-Dlog4j.configuration=file:"
         + os.path.join(os.getcwd(), LOG4J_CFG_PATH)
     )
-
+    kafka_connect_heap_opts = os.environ.get(
+        "DATABROKER_KAFKA_CONNECT_HEAP_OPTS", "-Xms512M -Xmx2G"
+    )
+    os.environ["KAFKA_HEAP_OPTS"] = kafka_connect_heap_opts
     env = dict(os.environ)
 
     kafka_connect_process = DataBrokerProcess(
