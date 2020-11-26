@@ -277,6 +277,12 @@ def get_access_restriction_locations():
                 # This should be fixed in upstream code by using different certificate libraries
                 issuer = i.replace("OID.2.5.4.97", "organizationIdentifier")
 
+                logging.debug(
+                    "Adding Issuer DN check on [{}] for path [{}]...".format(
+                        issuer, path
+                    )
+                )
+
                 # Escape special characters
                 issuer = issuer.replace(" ", "\\040")
                 issuer = issuer.replace(".", "\\.")
