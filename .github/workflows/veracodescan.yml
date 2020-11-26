@@ -1,22 +1,22 @@
 name: Push package for veracode scan
 
-on: 
-  pull_request:
-    types: [closed]
-    branches:
-      - master
+on: [push]
+#  pull_request:
+#    types: [closed]
+#     branches:
+#      - master
 
 jobs:
-  pre:
-    runs-on: ubuntu-latest
-    outputs:
-      skip: ${{ steps.skip-check.outputs.should_skip }}
-    steps:
-    - id: skip-check
-      uses: fkirc/skip-duplicate-actions@master
-      with:
-        github_token: ${{ github.token }}
-        paths_ignore: '["**.md", "dev/**"]'
+#  pre:
+ #   runs-on: ubuntu-latest
+ #   outputs:
+ #     skip: ${{ steps.skip-check.outputs.should_skip }}
+ #   steps:
+ #   - id: skip-check
+ #     uses: fkirc/skip-duplicate-actions@master
+ #     with:
+ #       github_token: ${{ github.token }}
+ #       paths_ignore: '["**.md", "dev/**"]'
   veracode-scan:
     name: veracode scan
     runs-on: ubuntu-latest
