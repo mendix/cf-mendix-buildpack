@@ -2,8 +2,9 @@ import errno
 import glob
 import json
 import logging
-import re
 import os
+import re
+import shutil
 import subprocess
 from distutils.util import strtobool
 
@@ -69,13 +70,11 @@ def get_blobstore_url(filename):
 
 def _delete_other_versions(directory, file_name):
     logging.debug(
-        "Deleting other versions than {} from {}...".format(
+        "Deleting other versions than [{}] from [{}]...".format(
             file_name, directory
         )
     )
-    expression = (
-        r"^((?:[a-zA-Z]+-)+)((?:v*[0-9]+\.?)+.*)(\.(?:tar|tar\.gz|tgz|zip))$"
-    )
+    expression = r"^((?:[a-zA-Z]+-)+)((?:v*[0-9]+\.?)+.*)(\.(?:tar|tar\.gz|tgz|zip|jar))$"
     pattern = re.sub(expression, "\\1*\\3", file_name)
 
     if pattern:
@@ -91,7 +90,9 @@ def _delete_other_versions(directory, file_name):
                 os.remove(f)
 
 
-def download_and_unpack(url, destination, cache_dir="/tmp/downloads"):
+def download_and_unpack(
+    url, destination, cache_dir="/tmp/downloads", unpack=True
+):
     file_name = url.split("/")[-1]
     mkdir_p(cache_dir)
     mkdir_p(destination)
@@ -100,44 +101,55 @@ def download_and_unpack(url, destination, cache_dir="/tmp/downloads"):
     _delete_other_versions(cache_dir, file_name)
 
     logging.debug(
-        "Looking for {cached_location}".format(cached_location=cached_location)
+        "Looking for [{cached_location}] in cache...".format(
+            cached_location=cached_location
+        )
     )
 
     if not os.path.isfile(cached_location):
         download(url, cached_location)
-        logging.debug(
-            "downloaded to {cached_location}".format(
-                cached_location=cached_location
-            )
-        )
     else:
         logging.debug(
-            "found in cache: {cached_location}".format(
+            "Found in cache, not downloading [{cached_location}]".format(
                 cached_location=cached_location
             )
         )
 
-    logging.debug(
-        "extracting: {cached_location} to {dest}".format(
-            cached_location=cached_location, dest=destination
+    if unpack:
+        # Unpack the artifact
+        logging.debug(
+            "Extracting [{cached_location}] to [{dest}]...".format(
+                cached_location=cached_location, dest=destination
+            )
         )
-    )
-    if (
-        file_name.endswith(".tar.gz")
-        or file_name.endswith(".tgz")
-        or file_name.endswith(".tar")
-    ):
-        unpack_cmd = ["tar", "xf", cached_location, "-C", destination]
-        if file_name.startswith(("mono-", "jdk-", "jre-", "AdoptOpenJDK-")):
-            unpack_cmd.extend(("--strip", "1"))
-    else:
-        unpack_cmd = ["unzip", cached_location, "-d", destination]
+        if (
+            file_name.endswith(".tar.gz")
+            or file_name.endswith(".tgz")
+            or file_name.endswith(".tar")
+        ):
+            unpack_cmd = ["tar", "xf", cached_location, "-C", destination]
+            if file_name.startswith(
+                ("mono-", "jdk-", "jre-", "AdoptOpenJDK-")
+            ):
+                unpack_cmd.extend(("--strip", "1"))
+        elif file_name.endswith(".zip"):
+            unpack_cmd = ["unzip", cached_location, "-d", destination]
 
-    subprocess.check_call(unpack_cmd)
+        if unpack_cmd:
+            subprocess.check_call(unpack_cmd)
+
+    else:
+        # Copy the artifact, don't unpack
+        logging.debug(
+            "Copying [{cached_location}] to [{dest}]...".format(
+                cached_location=cached_location, dest=destination
+            )
+        )
+        shutil.copyfile(cached_location, os.path.join(destination, file_name))
 
     logging.debug(
-        "source {file_name} retrieved & unpacked in {destination}".format(
-            file_name=file_name, destination=destination
+        "Dependency [{file_name}] is now present at [{destination}]".format(
+            file_name=file_name, destination=destination,
         )
     )
 
@@ -160,7 +172,7 @@ def get_buildpack_loglevel():
 
 def download(url, destination):
     logging.debug(
-        "downloading {url} to {destination}".format(
+        "Downloading [{url}] to [{destination}]...".format(
             url=url, destination=destination
         )
     )
