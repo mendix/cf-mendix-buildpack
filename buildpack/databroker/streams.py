@@ -31,7 +31,9 @@ LOG_LEVEL = (
 
 
 def get_pdr_stream_version():
-    return os.environ.get("STREAMS_VERSION", DEFAULT_PDR_STREAMS_VERSION)
+    return os.environ.get(
+        "DATABROKER_STREAMS_VERSION", DEFAULT_PDR_STREAMS_VERSION
+    )
 
 
 PDR_STREAMS_HOME = os.path.join(
