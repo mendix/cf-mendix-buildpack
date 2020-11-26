@@ -27,7 +27,7 @@
     "heartbeat.action.query": "INSERT INTO heartbeat (id, ts) VALUES (1, NOW()) ON CONFLICT(id) DO UPDATE SET ts=EXCLUDED.ts",
     "schema.refresh.mode": "columns_diff_exclude_unchanged_toast",
     "sanitize.field.names": true,
-    "snapshot.mode": "exported",
+    "snapshot.mode": "always",
     "plugin.name": "wal2json"
   }
 }
