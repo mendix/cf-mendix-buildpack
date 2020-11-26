@@ -16,10 +16,11 @@ import requests
 from buildpack import (
     appdynamics,
     databroker,
-    dynatrace,
     datadog,
+    dynatrace,
     instadeploy,
     java,
+    mx_java_agent,
     newrelic,
     nginx,
     runtime,
@@ -106,6 +107,7 @@ if __name__ == "__main__":
             m2ee, util.get_vcap_data()["application_name"]
         )
         dynatrace.update_config(m2ee, util.get_vcap_data()["application_name"])
+        mx_java_agent.update_config(m2ee)
         telegraf.update_config(m2ee, util.get_vcap_data()["application_name"])
         datadog.update_config(m2ee)
 

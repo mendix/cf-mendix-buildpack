@@ -223,9 +223,6 @@ def update_config(m2ee, app_name):
     else:
         _write_http_output_config(http_configs)
 
-    # Enable Java Agent on MxRuntime to
-    datadog.enable_mx_java_agent(m2ee)
-
 
 def stage(install_path, cache_dir):
     if not is_enabled():
@@ -233,11 +230,9 @@ def stage(install_path, cache_dir):
     #
     # Add Telegraf to the container which can forward metrics to a custom
     # AppMetrics target
-    datadog.download(install_path, cache_dir)
-
     util.download_and_unpack(
         util.get_blobstore_url(
-            "/mx-buildpack/telegraf-1.7.1_linux_amd64.tar.gz"
+            "/mx-buildpack/telegraf/telegraf-1.7.1_linux_amd64.tar.gz"
         ),
         install_path,
         cache_dir=cache_dir,

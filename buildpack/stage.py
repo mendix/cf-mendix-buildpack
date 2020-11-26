@@ -10,6 +10,7 @@ from buildpack import (
     databroker,
     datadog,
     java,
+    mx_java_agent,
     mxbuild,
     newrelic,
     nginx,
@@ -92,28 +93,12 @@ def set_up_directory_structure():
 
 
 def copy_buildpack_resources():
-    shutil.copy(
-        os.path.join(BUILDPACK_DIR, "etc/m2ee/m2ee.yaml"),
-        os.path.join(DOT_LOCAL_LOCATION, "m2ee.yaml"),
-    )
-    shutil.copy(
-        os.path.join(BUILDPACK_DIR, "etc/amazon-rds-ca.pem"),
-        os.path.join(BUILD_DIR, ".postgresql/amazon-rds-ca.pem"),
-    )
-    shutil.copytree(
-        os.path.join(BUILDPACK_DIR, "etc/nginx"),
-        os.path.join(BUILD_DIR, "nginx"),
-    )
     shutil.copytree(
         os.path.join(BUILDPACK_DIR, "buildpack"),
         os.path.join(BUILD_DIR, "buildpack"),
     )
     shutil.copytree(
         os.path.join(BUILDPACK_DIR, "lib"), os.path.join(BUILD_DIR, "lib")
-    )
-    shutil.copy(
-        os.path.join(BUILDPACK_DIR, "bin", "mendix-logfilter"),
-        os.path.join(BUILD_DIR, "bin", "mendix-logfilter"),
     )
     shutil.copy(
         os.path.join(BUILDPACK_DIR, ".commit"),
@@ -178,10 +163,11 @@ if __name__ == "__main__":
     )
     appdynamics.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
     dynatrace.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
-    newrelic.stage(BUILDPACK_DIR, BUILD_DIR)
+    newrelic.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
+    mx_java_agent.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
     telegraf.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
     datadog.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
-    runtime.stage(BUILD_DIR, CACHE_DIR)
+    runtime.stage(BUILDPACK_DIR, BUILD_DIR, CACHE_DIR)
     databroker.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
-    nginx.stage(BUILD_DIR, CACHE_DIR)
+    nginx.stage(BUILDPACK_DIR, BUILD_DIR, CACHE_DIR)
     logging.info("Mendix Cloud Foundry Buildpack staging completed")
