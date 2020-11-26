@@ -16,7 +16,11 @@ http {
     {% endif %}
 
     {% endif %}
-    access_log off; # we use cloud foundry RTR logging
+    log_format client_dn_log '$time_iso8601: '
+                             'request="$request" '
+                             'remote_addr="$remote_addr" '
+                             'ssl_client_i_dn="$http_ssl_client_i_dn" '
+                             'ssl_client_s_dn="$http_ssl_client_s_dn"';
     default_type application/octet-stream;
     include mime.types;
     include proxy_params;
@@ -57,6 +61,13 @@ http {
         server_name _;
         root {{ root }}/web/;
         index index.html index.htm;
+
+        # Enable logging only if ssl_client_i_dn header is presented in the request
+        set $logme 0;
+        if ( $http_ssl_client_i_dn ) {
+            set $logme 1;
+        }
+        access_log /dev/stdout client_dn_log if=$logme;
 
         error_page 403 @403-custom;
         error_page 404 @404-custom;
