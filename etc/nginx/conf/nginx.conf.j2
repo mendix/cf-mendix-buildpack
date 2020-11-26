@@ -62,11 +62,8 @@ http {
         root {{ root }}/web/;
         index index.html index.htm;
 
-        # Enable logging only if ssl_client_i_dn header is presented in the request
+        # Disable logging by default
         set $logme 0;
-        if ( $http_ssl_client_i_dn ) {
-            set $logme 1;
-        }
         access_log /dev/stdout client_dn_log if=$logme;
 
         error_page 403 @403-custom;
@@ -120,6 +117,8 @@ http {
             internal;
             {% if location.issuer_dn_regex %}
             if ($http_ssl_client_i_dn ~* ^(?!({{ location.issuer_dn_regex }})$)(\w*)) {
+                # Enable logging to show ssl_client_i_dn
+                set $logme 1;
                 return 403;
             }
             {% endif %}
@@ -128,6 +127,8 @@ http {
                 return 200;
             }
             {% endif %}
+            # Enable logging to show ssl_client_s_dn
+            set $logme 1;
             return 403;
         }
         {% endif %}
