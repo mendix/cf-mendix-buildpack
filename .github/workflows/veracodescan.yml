@@ -32,5 +32,5 @@ jobs:
 #        with:
 #          ref: master
       - run: wget https://search.maven.org/remotecontent?filepath=com/veracode/vosp/api/wrappers/vosp-api-wrappers-java/19.6.5.8/vosp-api-wrappers-java-19.6.5.8.jar -O vosp-api-wrappers-java-19.6.5.8.jar
-      - run: java -jar vosp-api-wrappers-java-19.6.5.8.jar -vid ${{ secrets.VERACODE_API_ID }} -vkey ${{ secrets.VERACODE_API_KEY }} -action UploadFile -appid ${{ secrets.VERACODE_APP_ID }} -sandboxid ${{ secrets.VERACODE_SANDBOX_ID }} -filepath dist.zip
+      - run: java -jar vosp-api-wrappers-java-19.6.5.8.jar -vid ${{ secrets.VERACODE_API_ID }} -vkey ${{ secrets.VERACODE_API_KEY }} -action UploadFile -appid ${{ secrets.VERACODE_APP_ID }} -sandboxid ${{ secrets.VERACODE_SANDBOX_ID }} -filepath cf-mendix-buildpack.zip
       - run: java -jar vosp-api-wrappers-java-19.6.5.8.jar -vid ${{ secrets.VERACODE_API_ID }} -vkey ${{ secrets.VERACODE_API_KEY }} -action BeginPreScan -appid ${{ secrets.VERACODE_APP_ID }} -sandboxid ${{ secrets.VERACODE_SANDBOX_ID }} -autoscan true
