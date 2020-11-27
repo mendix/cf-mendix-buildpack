@@ -21,15 +21,18 @@ jobs:
 #    needs: pre
     steps:
       - name: Download pull request artifact
-        uses: actions/download-artifact@v2
+        uses: dawidd6/action-download-artifact@v2
         with:
+          workflow: test.yml
+          pr: ${{github.event.pull_request.number}}
           name: dist
           path: dist
       - name: Veracode scan
-        run: ls -la
+        uses: actions/checkout@v2
 #        if: ${{ github.event.pull_request.merged }}
 #        with:
 #          ref: master
+      - run: ls -la
       - run: wget https://search.maven.org/remotecontent?filepath=com/veracode/vosp/api/wrappers/vosp-api-wrappers-java/19.6.5.8/vosp-api-wrappers-java-19.6.5.8.jar -O vosp-api-wrappers-java-19.6.5.8.jar
       - run: java -jar vosp-api-wrappers-java-19.6.5.8.jar -vid ${{ secrets.VERACODE_API_ID }} -vkey ${{ secrets.VERACODE_API_KEY }} -action UploadFile -appid ${{ secrets.VERACODE_APP_ID }} -sandboxid ${{ secrets.VERACODE_SANDBOX_ID }} -filepath dist.zip
       - run: java -jar vosp-api-wrappers-java-19.6.5.8.jar -vid ${{ secrets.VERACODE_API_ID }} -vkey ${{ secrets.VERACODE_API_KEY }} -action BeginPreScan -appid ${{ secrets.VERACODE_APP_ID }} -sandboxid ${{ secrets.VERACODE_SANDBOX_ID }} -autoscan true
