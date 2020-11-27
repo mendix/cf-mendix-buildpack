@@ -292,9 +292,6 @@ def _set_up_environment():
         e["DD_TRACE_ENABLED"] = "false"
     e["DD_LOGS_ENABLED"] = "true"
     e["DD_LOG_FILE"] = "/dev/null"
-    tags = util.get_tags()
-    if tags:
-        e["DD_TAGS"] = ",".join(tags)
     e["DD_PROCESS_CONFIG_LOG_FILE"] = "/dev/null"
     e["DD_DOGSTATSD_PORT"] = str(_get_statsd_port())
 
