@@ -1,7 +1,9 @@
 import logging
 import os
+import shutil
 import socket
 import subprocess
+from distutils.util import strtobool
 
 import backoff
 import yaml
@@ -18,7 +20,7 @@ from buildpack.runtime_components import database
 
 NAMESPACE = "datadog"
 
-SIDECAR_VERSION = "v0.21.2_master_103662"
+SIDECAR_VERSION = "v0.22.0"
 SIDECAR_ARCHIVE = "cf-datadog-sidecar-{}.tar.gz".format(SIDECAR_VERSION)
 JAVA_AGENT_VERSION = "0.68.0"
 JAVA_AGENT_JAR = "dd-java-agent-{}.jar".format(JAVA_AGENT_VERSION)
@@ -29,7 +31,7 @@ ROOT_DIR = os.path.abspath(".local")
 SIDECAR_ROOT_DIR = os.path.join(ROOT_DIR, NAMESPACE)
 AGENT_DIR = os.path.join(SIDECAR_ROOT_DIR, "datadog")
 AGENT_CONF_DIR = os.path.join(AGENT_DIR, "etc", "datadog-agent")
-AGENT_CHECKS_DIR = os.path.abspath("/home/vcap/app/datadog_integrations")
+AGENT_CHECKS_CONF_DIR = os.path.abspath("/home/vcap/app/datadog_integrations")
 
 LOGS_PORT = 9032
 
@@ -43,7 +45,7 @@ def is_enabled():
 
 
 def _is_dd_tracing_enabled():
-    return os.environ.get("DD_TRACE_ENABLED") == "true"
+    return strtobool(os.environ.get("DD_TRACE_ENABLED", "false"))
 
 
 def _is_installed():
@@ -70,20 +72,43 @@ def _get_statsd_port():
 
 
 def _enable_dd_java_agent(m2ee):
-    jar = os.path.join(SIDECAR_ROOT_DIR, JAVA_AGENT_JAR)
+    if _is_dd_tracing_enabled():
+        jar = os.path.join(SIDECAR_ROOT_DIR, JAVA_AGENT_JAR)
 
-    # Check if already configured
-    if 0 in [
-        v.find("-javaagent:{}".format(jar))
-        for v in m2ee.config._conf["m2ee"]["javaopts"]
-    ]:
-        return
+        # Check if already configured
+        if 0 in [
+            v.find("-javaagent:{}".format(jar))
+            for v in m2ee.config._conf["m2ee"]["javaopts"]
+        ]:
+            return
 
-    m2ee.config._conf["m2ee"]["javaopts"].extend(["-javaagent:{}".format(jar)])
+        m2ee.config._conf["m2ee"]["javaopts"].extend(
+            ["-javaagent:{}".format(jar)]
+        )
+
+
+def _is_database_diskstorage_enabled():
+    return strtobool(
+        os.environ.get("DD_ENABLE_DATABASE_DISKSTORAGE_CHECK", "true")
+    )
+
+
+def _set_up_database_diskstorage():
+    # Enables the Mendix database diskstorage check
+    # This check is a very dirty workaround
+    # and makes an environment variable into a gauge with a fixed value.
+    if _is_database_diskstorage_enabled():
+        with open(
+            AGENT_CHECKS_CONF_DIR + "mx_database_diskstorage.yml", "w"
+        ) as fh:
+            config = {
+                "init_config": {},
+                "instances": [{"min_collection_interval": 15}],
+            }
 
 
 def _set_up_jmx():
-    runtime_jmx_dir = AGENT_CHECKS_DIR + "/jmx.d"
+    runtime_jmx_dir = AGENT_CHECKS_CONF_DIR + "/jmx.d"
     # JMX beans and values can be inspected with jmxterm
     # Download the jmxterm jar into the container
     # and run app/.local/bin/java -jar ~/jmxterm.jar
@@ -175,24 +200,24 @@ def _set_up_jmx():
 
     if is_databroker_enabled():
         if is_databroker_producer_app():
-            runtime_jmx_dir = AGENT_CHECKS_DIR + "/jmx_1.d"
+            runtime_jmx_dir = AGENT_CHECKS_CONF_DIR + "/jmx_1.d"
 
             # kafka connect cfg
-            os.makedirs(AGENT_CHECKS_DIR + "/jmx_2.d", exist_ok=True)
+            os.makedirs(AGENT_CHECKS_CONF_DIR + "/jmx_2.d", exist_ok=True)
             kafka_connect_cfg = (
                 jmx_cfg_generator.generate_kafka_connect_jmx_config()
             )
             write_file(
-                AGENT_CHECKS_DIR + "/jmx_2.d/conf.yaml", kafka_connect_cfg
+                AGENT_CHECKS_CONF_DIR + "/jmx_2.d/conf.yaml", kafka_connect_cfg
             )
 
             # kafka streams cfg
-            os.makedirs(AGENT_CHECKS_DIR + "/jmx_3.d", exist_ok=True)
+            os.makedirs(AGENT_CHECKS_CONF_DIR + "/jmx_3.d", exist_ok=True)
             kafka_streams_cfg = (
                 jmx_cfg_generator.generate_kafka_streams_jmx_config()
             )
             write_file(
-                AGENT_CHECKS_DIR + "/jmx_3.d/conf.yaml", kafka_streams_cfg
+                AGENT_CHECKS_CONF_DIR + "/jmx_3.d/conf.yaml", kafka_streams_cfg
             )
         else:
             config["instances"][0]["conf"].extend(consumer.jmx_metrics)
@@ -225,8 +250,8 @@ def _set_up_postgres():
         if dbconfig["DatabaseType"] != "PostgreSQL":
             return
 
-        os.makedirs(AGENT_CHECKS_DIR + "/postgres.d", exist_ok=True)
-        with open(AGENT_CHECKS_DIR + "/postgres.d/conf.yaml", "w") as fh:
+        os.makedirs(AGENT_CHECKS_CONF_DIR + "/postgres.d", exist_ok=True)
+        with open(AGENT_CHECKS_CONF_DIR + "/postgres.d/conf.yaml", "w") as fh:
             config = {
                 "init_config": {},
                 "instances": [
@@ -273,29 +298,12 @@ def _set_up_environment():
     e["DD_PROCESS_CONFIG_LOG_FILE"] = "/dev/null"
     e["DD_DOGSTATSD_PORT"] = str(_get_statsd_port())
 
-    # Include for forward-compatibility with DD buildpack
-    e["DD_ENABLE_CHECKS"] = "true"
+    # Enable configured checks
+    e["DD_ENABLE_USER_CHECKS"] = "true"
+
     e["DATADOG_DIR"] = str(AGENT_DIR)
 
     return e
-
-
-def download(install_path, cache_dir):
-    util.download_and_unpack(
-        util.get_blobstore_url(
-            "{}/{}".format(SIDECAR_URL_ROOT, SIDECAR_ARCHIVE)
-        ),
-        os.path.join(install_path, NAMESPACE),
-        cache_dir=cache_dir,
-    )
-    util.download_and_unpack(
-        util.get_blobstore_url(
-            "{}/{}".format(JAVA_AGENT_URL_ROOT, JAVA_AGENT_JAR)
-        ),
-        os.path.join(install_path, NAMESPACE),
-        cache_dir=cache_dir,
-        unpack=False,
-    )
 
 
 def update_config(m2ee):
@@ -334,12 +342,12 @@ def update_config(m2ee):
 
     # Experimental: enable Datadog Java Trace Agent
     # if tracing is explicitly enabled
-    if _is_dd_tracing_enabled():
-        _enable_dd_java_agent(m2ee)
+    _enable_dd_java_agent(m2ee)
 
-    # Set up Mendix check
-    os.makedirs(AGENT_CHECKS_DIR + "/mendix.d", exist_ok=True)
-    with open(AGENT_CHECKS_DIR + "/mendix.d/conf.yaml", "w") as fh:
+    # Set up Mendix checks
+    _set_up_database_diskstorage()
+    os.makedirs(AGENT_CHECKS_CONF_DIR + "/mendix.d", exist_ok=True)
+    with open(AGENT_CHECKS_CONF_DIR + "/mendix.d/conf.yaml", "w") as fh:
         config = {
             "logs": [
                 {
@@ -358,11 +366,46 @@ def update_config(m2ee):
     _set_up_postgres()
 
 
-def stage(install_path, cache_dir):
+def _download(build_path, cache_dir):
+    util.download_and_unpack(
+        util.get_blobstore_url(
+            "{}/{}".format(SIDECAR_URL_ROOT, SIDECAR_ARCHIVE)
+        ),
+        os.path.join(build_path, NAMESPACE),
+        cache_dir=cache_dir,
+    )
+    util.download_and_unpack(
+        util.get_blobstore_url(
+            "{}/{}".format(JAVA_AGENT_URL_ROOT, JAVA_AGENT_JAR)
+        ),
+        os.path.join(build_path, NAMESPACE),
+        cache_dir=cache_dir,
+        unpack=False,
+    )
+
+
+def _copy_files(buildpack_path, build_path):
+    file_name = "mx_database_diskstorage.py"
+    shutil.copyfile(
+        os.path.join(buildpack_path, "etc", NAMESPACE, "checks.d", file_name),
+        os.path.join(
+            build_path,
+            NAMESPACE,
+            "datadog",
+            "etc",
+            "datadog-agent",
+            "checks.d",
+            file_name,
+        ),
+    )
+
+
+def stage(buildpack_path, build_path, cache_path):
     if not is_enabled():
         return
 
-    download(install_path, cache_dir)
+    _download(build_path, cache_path)
+    _copy_files(buildpack_path, build_path)
 
 
 def run(runtime_version):

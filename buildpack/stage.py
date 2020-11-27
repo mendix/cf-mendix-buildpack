@@ -166,7 +166,7 @@ if __name__ == "__main__":
     newrelic.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
     mx_java_agent.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
     telegraf.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
-    datadog.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
+    datadog.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)
     runtime.stage(BUILDPACK_DIR, BUILD_DIR, CACHE_DIR)
     databroker.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
     nginx.stage(BUILDPACK_DIR, BUILD_DIR, CACHE_DIR)
