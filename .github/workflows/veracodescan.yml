@@ -26,11 +26,19 @@ jobs:
           workflow: test.yml
           pr: ${{github.event.pull_request.number}}
           name: dist
-      - name: Veracode scan
-        run: ls -la
+      - name: Upload and scan
+        uses: veracode/veracode-uploadandscan-action@master
+        with:
+          filepath: 'cf-mendix-buildpack.zip'
+          vid: '${{ secrets.VERACODE_API_ID }}'
+          vkey: '${{ secrets.VERACODE_API_KEY }}'
+          appname: ${{ secrets.VERACODE_APP_ID }}
+          sandboxid: ${{ secrets.VERACODE_SANDBOX_ID }}
+          scantimeout: 15
+#          criticality: 'VeryHigh'
 #        if: ${{ github.event.pull_request.merged }}
 #        with:
 #          ref: master
-      - run: wget https://search.maven.org/remotecontent?filepath=com/veracode/vosp/api/wrappers/vosp-api-wrappers-java/19.6.5.8/vosp-api-wrappers-java-19.6.5.8.jar -O vosp-api-wrappers-java-19.6.5.8.jar
-      - run: java -jar vosp-api-wrappers-java-19.6.5.8.jar -vid ${{ secrets.VERACODE_API_ID }} -vkey ${{ secrets.VERACODE_API_KEY }} -action UploadFile -appid ${{ secrets.VERACODE_APP_ID }} -sandboxid ${{ secrets.VERACODE_SANDBOX_ID }} -filepath cf-mendix-buildpack.zip
-      - run: java -jar vosp-api-wrappers-java-19.6.5.8.jar -vid ${{ secrets.VERACODE_API_ID }} -vkey ${{ secrets.VERACODE_API_KEY }} -action BeginPreScan -appid ${{ secrets.VERACODE_APP_ID }} -sandboxid ${{ secrets.VERACODE_SANDBOX_ID }} -autoscan true
+#      - run: wget https://search.maven.org/remotecontent?filepath=com/veracode/vosp/api/wrappers/vosp-api-wrappers-java/19.6.5.8/vosp-api-wrappers-java-19.6.5.8.jar -O vosp-api-wrappers-java-19.6.5.8.jar
+#      - run: java -jar vosp-api-wrappers-java-19.6.5.8.jar -vid ${{ secrets.VERACODE_API_ID }} -vkey ${{ secrets.VERACODE_API_KEY }} -action UploadFile -appid ${{ secrets.VERACODE_APP_ID }} -sandboxid ${{ secrets.VERACODE_SANDBOX_ID }} -filepath cf-mendix-buildpack.zip
+#      - run: java -jar vosp-api-wrappers-java-19.6.5.8.jar -vid ${{ secrets.VERACODE_API_ID }} -vkey ${{ secrets.VERACODE_API_KEY }} -action BeginPreScan -appid ${{ secrets.VERACODE_APP_ID }} -sandboxid ${{ secrets.VERACODE_SANDBOX_ID }} -autoscan true
