@@ -27,7 +27,7 @@ jobs:
           pr: ${{github.event.pull_request.number}}
           name: dist
       - name: Veracode scan
-          run: ls -la
+        run: ls -la
 #        if: ${{ github.event.pull_request.merged }}
 #        with:
 #          ref: master
