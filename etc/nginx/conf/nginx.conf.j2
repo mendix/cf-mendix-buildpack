@@ -17,8 +17,11 @@ http {
 
     {% endif %}
     log_format client_dn_log '$time_iso8601: '
+                             'Client certificate issuer didn't match with the access rule specified for the requested endpoint: '
                              'request="$request" '
+                             'status="$status" '
                              'remote_addr="$remote_addr" '
+                             'issuer_dn="$issuer_dn" '
                              'ssl_client_i_dn="$http_ssl_client_i_dn" '
                              'ssl_client_s_dn="$http_ssl_client_s_dn"';
     default_type application/octet-stream;
@@ -65,6 +68,8 @@ http {
         # Disable logging by default
         set $logme 0;
         access_log /dev/stdout client_dn_log if=$logme;
+
+        set $issuer_dn '-';
 
         error_page 403 @403-custom;
         error_page 404 @404-custom;
@@ -118,6 +123,7 @@ http {
             {% if location.issuer_dn_regex %}
             if ($http_ssl_client_i_dn ~* ^(?!({{ location.issuer_dn_regex }})$)(\w*)) {
                 # Enable logging to show ssl_client_i_dn
+                set $issuer_dn {{ location.issuer_dn }};
                 set $logme 1;
                 return 403;
             }

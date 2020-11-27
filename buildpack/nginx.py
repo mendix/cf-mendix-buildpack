@@ -272,22 +272,20 @@ def get_access_restriction_locations():
         # SSL-Client-I-DN HTTP header with the configuration in the ACCESS_RESTRICTIONS environment variable.
         if "issuer_dn" in config:
             location.issuer_dn_regex = ""
+            location.issuer_dn = ""
             for i in config["issuer_dn"]:
                 # Workaround for missing identifier strings from Java
                 # This should be fixed in upstream code by using different certificate libraries
                 issuer = i.replace("OID.2.5.4.97", "organizationIdentifier")
 
-                logging.debug(
-                    "Adding Issuer DN check on [{}] for path [{}]...".format(
-                        issuer, path
-                    )
-                )
+                location.issuer_dn += "{}|".format(issuer)
 
                 # Escape special characters
                 issuer = issuer.replace(" ", "\\040")
                 issuer = issuer.replace(".", "\\.")
 
                 location.issuer_dn_regex += "{}|".format(issuer)
+            location.issuer_dn = location.issuer_dn[:-1]
             location.issuer_dn_regex = location.issuer_dn_regex[:-1]
 
         result.append(location)
