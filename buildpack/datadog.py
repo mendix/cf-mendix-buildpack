@@ -20,7 +20,7 @@ from buildpack.runtime_components import database
 
 NAMESPACE = "datadog"
 
-SIDECAR_VERSION = "v0.22.0"
+SIDECAR_VERSION = "v0.22.1"
 SIDECAR_ARCHIVE = "cf-datadog-sidecar-{}.tar.gz".format(SIDECAR_VERSION)
 JAVA_AGENT_VERSION = "0.68.0"
 JAVA_AGENT_JAR = "dd-java-agent-{}.jar".format(JAVA_AGENT_VERSION)
@@ -31,6 +31,7 @@ ROOT_DIR = os.path.abspath(".local")
 SIDECAR_ROOT_DIR = os.path.join(ROOT_DIR, NAMESPACE)
 AGENT_DIR = os.path.join(SIDECAR_ROOT_DIR, "datadog")
 AGENT_CONF_DIR = os.path.join(AGENT_DIR, "etc", "datadog-agent")
+AGENT_CONFD_DIR = os.path.join(AGENT_CONF_DIR, "conf.d")
 AGENT_CHECKS_CONF_DIR = os.path.abspath("/home/vcap/app/datadog_integrations")
 
 LOGS_PORT = 9032
@@ -98,13 +99,15 @@ def _set_up_database_diskstorage():
     # This check is a very dirty workaround
     # and makes an environment variable into a gauge with a fixed value.
     if _is_database_diskstorage_enabled():
+        os.makedirs(AGENT_CHECKS_CONF_DIR, exist_ok=True)
         with open(
-            AGENT_CHECKS_CONF_DIR + "mx_database_diskstorage.yml", "w"
+            AGENT_CHECKS_CONF_DIR + "/mx_database_diskstorage.yml", "w"
         ) as fh:
             config = {
                 "init_config": {},
                 "instances": [{"min_collection_interval": 15}],
             }
+            fh.write(yaml.safe_dump(config))
 
 
 def _set_up_jmx():
