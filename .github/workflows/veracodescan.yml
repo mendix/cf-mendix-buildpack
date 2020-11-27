@@ -32,7 +32,7 @@ jobs:
           filepath: 'cf-mendix-buildpack.zip'
           vid: '${{ secrets.VERACODE_API_ID }}'
           vkey: '${{ secrets.VERACODE_API_KEY }}'
-          appname: '${{ secrets.VERACODE_APP_ID }}'
+          appname: 'Cloud2'
           sandboxid: '${{ secrets.VERACODE_SANDBOX_ID }}'
           scantimeout: 15
 #          criticality: 'VeryHigh'
