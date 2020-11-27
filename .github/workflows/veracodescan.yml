@@ -32,8 +32,8 @@ jobs:
           filepath: 'cf-mendix-buildpack.zip'
           vid: '${{ secrets.VERACODE_API_ID }}'
           vkey: '${{ secrets.VERACODE_API_KEY }}'
-          appname: ${{ secrets.VERACODE_APP_ID }}
-          sandboxid: ${{ secrets.VERACODE_SANDBOX_ID }}
+          appname: '${{ secrets.VERACODE_APP_ID }}'
+          sandboxid: '${{ secrets.VERACODE_SANDBOX_ID }}'
           scantimeout: 15
 #          criticality: 'VeryHigh'
 #        if: ${{ github.event.pull_request.merged }}
