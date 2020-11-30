@@ -17,7 +17,7 @@ http {
 
     {% endif %}
     log_format client_dn_log '$time_iso8601: '
-                             'Client certificate issuer didn't match with the access rule specified for the requested endpoint: '
+                             'Client certificate issuer didn\'t match with the access rule specified for the requested endpoint: '
                              'request="$request" '
                              'status="$status" '
                              'remote_addr="$remote_addr" '
@@ -123,7 +123,7 @@ http {
             {% if location.issuer_dn_regex %}
             if ($http_ssl_client_i_dn ~* ^(?!({{ location.issuer_dn_regex }})$)(\w*)) {
                 # Enable logging to show ssl_client_i_dn
-                set $issuer_dn {{ location.issuer_dn }};
+                set $issuer_dn '{{ location.issuer_dn }}';
                 set $logme 1;
                 return 403;
             }
