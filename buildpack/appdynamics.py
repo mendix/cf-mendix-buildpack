@@ -10,7 +10,7 @@ def stage(destination_path, cache_path):
     if appdynamics_used():
         util.download_and_unpack(
             util.get_blobstore_url(
-                "/mx-buildpack/appdynamics-agent-{}.zip".format(
+                "/mx-buildpack/appdynamics/appdynamics-agent-{}.zip".format(
                     APPDYNAMICS_VERSION
                 )
             ),

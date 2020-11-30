@@ -405,7 +405,7 @@ Additionally, we configure the following Datadog environment variables for you:
 
 | Environment Variable | Value | Can Be Overridden? | Description |
 |-|-|-|-|
-| `DD_ENABLE_CHECKS` | `true` | No | Enables integrated Datadog Agent Checks (logs, system metrics, PostgreSQL and JMX) |
+| `DD_ENABLE_USER_CHECKS` | `true` | No | Enables logs and PostgreSQL, JMX checks |
 | `DD_HOSTNAME` | `<app>-<env>.mendixcloud.com-<instance>` | No | Human-readable host name for your application |
 | `DD_JMXFETCH_ENABLED` | `false` | No | Disables Datadog Java Trace Agent JMX metrics fetching, since this is already handled by the Mendix Runtime. |
 | `DD_LOGS_ENABLED` | `true` | No | Enables sending your application logs directly to Datadog |

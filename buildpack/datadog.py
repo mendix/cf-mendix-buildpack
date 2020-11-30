@@ -1,32 +1,40 @@
-import json
 import logging
 import os
+import shutil
 import socket
 import subprocess
+from distutils.util import strtobool
 
 import backoff
 import yaml
 
 from buildpack import util
-from buildpack.runtime_components import database
 from buildpack.databroker import is_enabled as is_databroker_enabled
 from buildpack.databroker import is_producer_app as is_databroker_producer_app
-from buildpack.databroker.config_generator.templates.jmx import consumer
 from buildpack.databroker.config_generator.scripts.generators import (
     jmx as jmx_cfg_generator,
 )
 from buildpack.databroker.config_generator.scripts.utils import write_file
+from buildpack.databroker.config_generator.templates.jmx import consumer
+from buildpack.runtime_components import database
 
-DD_SIDECAR = "cf-datadog-sidecar-v0.21.2_master_103662.tar.gz"
-MX_AGENT_JAR = "mx-java-agent.jar"
-DD_AGENT_JAR = "dd-java-agent.jar"
+NAMESPACE = "datadog"
 
-SIDECAR_ROOT_DIR = ".local/datadog"
-DD_AGENT_DIR = SIDECAR_ROOT_DIR + "/datadog"
-DD_AGENT_CONF_DIR = DD_AGENT_DIR + "/etc/datadog-agent"
-DD_AGENT_CHECKS_DIR = "/home/vcap/app/datadog_integrations"
+SIDECAR_VERSION = "v0.22.1"
+SIDECAR_ARCHIVE = "cf-datadog-sidecar-{}.tar.gz".format(SIDECAR_VERSION)
+JAVA_AGENT_VERSION = "0.68.0"
+JAVA_AGENT_JAR = "dd-java-agent-{}.jar".format(JAVA_AGENT_VERSION)
+SIDECAR_URL_ROOT = "/mx-buildpack/experimental"
+JAVA_AGENT_URL_ROOT = "/mx-buildpack/{}".format(NAMESPACE)
 
-DD_LOGS_PORT = 9032
+ROOT_DIR = os.path.abspath(".local")
+SIDECAR_ROOT_DIR = os.path.join(ROOT_DIR, NAMESPACE)
+AGENT_DIR = os.path.join(SIDECAR_ROOT_DIR, "datadog")
+AGENT_CONF_DIR = os.path.join(AGENT_DIR, "etc", "datadog-agent")
+AGENT_CONFD_DIR = os.path.join(AGENT_CONF_DIR, "conf.d")
+AGENT_CHECKS_CONF_DIR = os.path.abspath("/home/vcap/app/datadog_integrations")
+
+LOGS_PORT = 9032
 
 
 def get_api_key():
@@ -38,11 +46,11 @@ def is_enabled():
 
 
 def _is_dd_tracing_enabled():
-    return os.environ.get("DD_TRACE_ENABLED") == "true"
+    return strtobool(os.environ.get("DD_TRACE_ENABLED", "false"))
 
 
 def _is_installed():
-    return os.path.exists(DD_AGENT_DIR)
+    return os.path.exists(AGENT_DIR)
 
 
 def _get_service():
@@ -64,72 +72,46 @@ def _get_statsd_port():
         return 8125
 
 
-def enable_mx_java_agent(m2ee):
-    jar = os.path.abspath((SIDECAR_ROOT_DIR + "/{}").format(MX_AGENT_JAR))
+def _enable_dd_java_agent(m2ee):
+    if _is_dd_tracing_enabled():
+        jar = os.path.join(SIDECAR_ROOT_DIR, JAVA_AGENT_JAR)
 
-    # Check if already configured
-    if 0 in [
-        v.find("-javaagent:{}".format(jar))
-        for v in m2ee.config._conf["m2ee"]["javaopts"]
-    ]:
-        return
-
-    if m2ee.config.get_runtime_version() >= 7.14:
-        agent_config = ""
-        agent_config_str = None
-
-        if "METRICS_AGENT_CONFIG" in os.environ:
-            agent_config_str = os.environ.get("METRICS_AGENT_CONFIG")
-        elif "MetricsAgentConfig" in m2ee.config._conf["mxruntime"]:
-            logging.warning(
-                "Passing MetricsAgentConfig with Mendix Custom Runtime "
-                "Settings is deprecated. "
-                "Please use METRICS_AGENT_CONFIG as environment variable."
-            )
-            agent_config_str = m2ee.config._conf["mxruntime"][
-                "MetricsAgentConfig"
-            ]
-
-        if agent_config_str:
-            try:
-                # Ensure that this contains valid JSON
-                json.loads(agent_config_str)
-                config_file_path = os.path.abspath(
-                    ".local/MetricsAgentConfig.json"
-                )
-                with open(config_file_path, "w") as fh:
-                    fh.write(agent_config_str)
-                agent_config = "=config=" + config_file_path
-            except ValueError:
-                logging.error(
-                    "Could not parse json from MetricsAgentConfig",
-                    exc_info=True,
-                )
+        # Check if already configured
+        if 0 in [
+            v.find("-javaagent:{}".format(jar))
+            for v in m2ee.config._conf["m2ee"]["javaopts"]
+        ]:
+            return
 
         m2ee.config._conf["m2ee"]["javaopts"].extend(
-            ["-javaagent:{}{}".format(jar, agent_config)]
-        )
-        # If not explicitly set, default to StatsD
-        m2ee.config._conf["mxruntime"].setdefault(
-            "com.mendix.metrics.Type", "statsd"
+            ["-javaagent:{}".format(jar)]
         )
 
 
-def _enable_dd_java_agent(m2ee):
-    jar = os.path.abspath((SIDECAR_ROOT_DIR + "/{}").format(DD_AGENT_JAR))
+def _is_database_diskstorage_enabled():
+    return strtobool(
+        os.environ.get("DD_ENABLE_DATABASE_DISKSTORAGE_CHECK", "true")
+    )
 
-    # Check if already configured
-    if 0 in [
-        v.find("-javaagent:{}".format(jar))
-        for v in m2ee.config._conf["m2ee"]["javaopts"]
-    ]:
-        return
 
-    m2ee.config._conf["m2ee"]["javaopts"].extend(["-javaagent:{}".format(jar)])
+def _set_up_database_diskstorage():
+    # Enables the Mendix database diskstorage check
+    # This check is a very dirty workaround
+    # and makes an environment variable into a gauge with a fixed value.
+    if _is_database_diskstorage_enabled():
+        os.makedirs(AGENT_CHECKS_CONF_DIR, exist_ok=True)
+        with open(
+            AGENT_CHECKS_CONF_DIR + "/mx_database_diskstorage.yml", "w"
+        ) as fh:
+            config = {
+                "init_config": {},
+                "instances": [{"min_collection_interval": 15}],
+            }
+            fh.write(yaml.safe_dump(config))
 
 
 def _set_up_jmx():
-    runtime_jmx_dir = DD_AGENT_CHECKS_DIR + "/jmx.d"
+    runtime_jmx_dir = AGENT_CHECKS_CONF_DIR + "/jmx.d"
     # JMX beans and values can be inspected with jmxterm
     # Download the jmxterm jar into the container
     # and run app/.local/bin/java -jar ~/jmxterm.jar
@@ -221,24 +203,24 @@ def _set_up_jmx():
 
     if is_databroker_enabled():
         if is_databroker_producer_app():
-            runtime_jmx_dir = DD_AGENT_CHECKS_DIR + "/jmx_1.d"
+            runtime_jmx_dir = AGENT_CHECKS_CONF_DIR + "/jmx_1.d"
 
             # kafka connect cfg
-            os.makedirs(DD_AGENT_CHECKS_DIR + "/jmx_2.d", exist_ok=True)
+            os.makedirs(AGENT_CHECKS_CONF_DIR + "/jmx_2.d", exist_ok=True)
             kafka_connect_cfg = (
                 jmx_cfg_generator.generate_kafka_connect_jmx_config()
             )
             write_file(
-                DD_AGENT_CHECKS_DIR + "/jmx_2.d/conf.yaml", kafka_connect_cfg
+                AGENT_CHECKS_CONF_DIR + "/jmx_2.d/conf.yaml", kafka_connect_cfg
             )
 
             # kafka streams cfg
-            os.makedirs(DD_AGENT_CHECKS_DIR + "/jmx_3.d", exist_ok=True)
+            os.makedirs(AGENT_CHECKS_CONF_DIR + "/jmx_3.d", exist_ok=True)
             kafka_streams_cfg = (
                 jmx_cfg_generator.generate_kafka_streams_jmx_config()
             )
             write_file(
-                DD_AGENT_CHECKS_DIR + "/jmx_3.d/conf.yaml", kafka_streams_cfg
+                AGENT_CHECKS_CONF_DIR + "/jmx_3.d/conf.yaml", kafka_streams_cfg
             )
         else:
             config["instances"][0]["conf"].extend(consumer.jmx_metrics)
@@ -271,8 +253,8 @@ def _set_up_postgres():
         if dbconfig["DatabaseType"] != "PostgreSQL":
             return
 
-        os.makedirs(DD_AGENT_CHECKS_DIR + "/postgres.d", exist_ok=True)
-        with open(DD_AGENT_CHECKS_DIR + "/postgres.d/conf.yaml", "w") as fh:
+        os.makedirs(AGENT_CHECKS_CONF_DIR + "/postgres.d", exist_ok=True)
+        with open(AGENT_CHECKS_CONF_DIR + "/postgres.d/conf.yaml", "w") as fh:
             config = {
                 "init_config": {},
                 "instances": [
@@ -313,27 +295,15 @@ def _set_up_environment():
         e["DD_TRACE_ENABLED"] = "false"
     e["DD_LOGS_ENABLED"] = "true"
     e["DD_LOG_FILE"] = "/dev/null"
-    tags = util.get_tags()
-    if tags:
-        e["DD_TAGS"] = ",".join(tags)
     e["DD_PROCESS_CONFIG_LOG_FILE"] = "/dev/null"
     e["DD_DOGSTATSD_PORT"] = str(_get_statsd_port())
 
-    # Include for forward-compatibility with DD buildpack
-    e["DD_ENABLE_CHECKS"] = "true"
-    e["DATADOG_DIR"] = str(os.path.abspath(DD_AGENT_DIR))
+    # Enable configured checks
+    e["DD_ENABLE_USER_CHECKS"] = "true"
+
+    e["DATADOG_DIR"] = str(AGENT_DIR)
 
     return e
-
-
-def download(install_path, cache_dir):
-    util.download_and_unpack(
-        util.get_blobstore_url(
-            "/mx-buildpack/experimental/{}".format(DD_SIDECAR)
-        ),
-        os.path.join(install_path, "datadog"),
-        cache_dir=cache_dir,
-    )
 
 
 def update_config(m2ee):
@@ -366,26 +336,23 @@ def update_config(m2ee):
                 "host": "localhost",
                 # For MX8 integer is supported again, this change needs to be
                 # made when MX8 is GA
-                "port": str(DD_LOGS_PORT),
+                "port": str(LOGS_PORT),
             }
         )
 
-    # Enable Mendix Java Agent
-    enable_mx_java_agent(m2ee)
-
     # Experimental: enable Datadog Java Trace Agent
     # if tracing is explicitly enabled
-    if _is_dd_tracing_enabled():
-        _enable_dd_java_agent(m2ee)
+    _enable_dd_java_agent(m2ee)
 
-    # Set up Mendix check
-    os.makedirs(DD_AGENT_CHECKS_DIR + "/mendix.d", exist_ok=True)
-    with open(DD_AGENT_CHECKS_DIR + "/mendix.d/conf.yaml", "w") as fh:
+    # Set up Mendix checks
+    _set_up_database_diskstorage()
+    os.makedirs(AGENT_CHECKS_CONF_DIR + "/mendix.d", exist_ok=True)
+    with open(AGENT_CHECKS_CONF_DIR + "/mendix.d/conf.yaml", "w") as fh:
         config = {
             "logs": [
                 {
                     "type": "tcp",
-                    "port": str(DD_LOGS_PORT),
+                    "port": str(LOGS_PORT),
                     "service": _get_service(),
                     "source": "mendix",
                     "tags": util.get_tags(),
@@ -399,11 +366,46 @@ def update_config(m2ee):
     _set_up_postgres()
 
 
-def stage(install_path, cache_dir):
+def _download(build_path, cache_dir):
+    util.download_and_unpack(
+        util.get_blobstore_url(
+            "{}/{}".format(SIDECAR_URL_ROOT, SIDECAR_ARCHIVE)
+        ),
+        os.path.join(build_path, NAMESPACE),
+        cache_dir=cache_dir,
+    )
+    util.download_and_unpack(
+        util.get_blobstore_url(
+            "{}/{}".format(JAVA_AGENT_URL_ROOT, JAVA_AGENT_JAR)
+        ),
+        os.path.join(build_path, NAMESPACE),
+        cache_dir=cache_dir,
+        unpack=False,
+    )
+
+
+def _copy_files(buildpack_path, build_path):
+    file_name = "mx_database_diskstorage.py"
+    shutil.copyfile(
+        os.path.join(buildpack_path, "etc", NAMESPACE, "checks.d", file_name),
+        os.path.join(
+            build_path,
+            NAMESPACE,
+            "datadog",
+            "etc",
+            "datadog-agent",
+            "checks.d",
+            file_name,
+        ),
+    )
+
+
+def stage(buildpack_path, build_path, cache_path):
     if not is_enabled():
         return
 
-    download(install_path, cache_dir)
+    _download(build_path, cache_path)
+    _copy_files(buildpack_path, build_path)
 
 
 def run(runtime_version):
@@ -427,16 +429,14 @@ def run(runtime_version):
     # Start the run script "borrowed" from the official DD buildpack
     # and include settings as environment variables
     logging.info("Starting Datadog Agent...")
-    subprocess.Popen(
-        DD_AGENT_DIR + "/run-datadog.sh", env=_set_up_environment()
-    )
+    subprocess.Popen(AGENT_DIR + "/run-datadog.sh", env=_set_up_environment())
 
     # The runtime does not handle a non-open logs endpoint socket
     # gracefully, so wait until it's up
     @backoff.on_predicate(backoff.expo, lambda x: x > 0, max_time=10)
     def _await_logging_endpoint():
         return socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect_ex(
-            ("localhost", DD_LOGS_PORT)
+            ("localhost", LOGS_PORT)
         )
 
     logging.info("Awaiting Datadog Agent log subscriber...")

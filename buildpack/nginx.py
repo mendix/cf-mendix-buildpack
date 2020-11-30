@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import re
+import shutil
 import subprocess
 
 from buildpack import instadeploy, util
@@ -52,7 +53,13 @@ def _is_samesite_cookie_workaround_enabled(mx_version):
         return False
 
 
-def stage(build_path, cache_path):
+def stage(buildpack_path, build_path, cache_path):
+    logging.debug("Staging nginx...")
+    shutil.copytree(
+        os.path.join(buildpack_path, "etc/nginx"),
+        os.path.join(build_path, "nginx"),
+    )
+
     util.download_and_unpack(
         util.get_blobstore_url(
             "/mx-buildpack/nginx_1.19.1_linux_x64_cflinuxfs3_b5af01b0.tgz"
