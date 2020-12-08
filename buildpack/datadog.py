@@ -20,11 +20,11 @@ from buildpack.runtime_components import database
 
 NAMESPACE = "datadog"
 
-SIDECAR_VERSION = "v0.22.1"
+SIDECAR_VERSION = "v0.22.2"
 SIDECAR_ARCHIVE = "cf-datadog-sidecar-{}.tar.gz".format(SIDECAR_VERSION)
 JAVA_AGENT_VERSION = "0.68.0"
 JAVA_AGENT_JAR = "dd-java-agent-{}.jar".format(JAVA_AGENT_VERSION)
-SIDECAR_URL_ROOT = "/mx-buildpack/experimental"
+SIDECAR_URL_ROOT = "/mx-buildpack/{}".format(NAMESPACE)
 JAVA_AGENT_URL_ROOT = "/mx-buildpack/{}".format(NAMESPACE)
 
 ROOT_DIR = os.path.abspath(".local")
