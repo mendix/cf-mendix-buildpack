@@ -26,7 +26,6 @@ BASE_URL = "/mx-buildpack/experimental/databroker/"
 KAFKA_CONNECT_FILENAME = "kafka-connect"
 KAFKA_CONNECT_VERSION = "2.13-2.5.1-v2"
 DBZ_FILENAME = "debezium"
-DBZ_VERSION = os.getenv("DBZ_VERSION", "1.2.0")
 PKG_FILE_EXT = "tar.gz"
 BASE_DIR = "databroker"
 DBZ_DIR = "debezium"
@@ -35,6 +34,12 @@ KAFKA_CONNECT_DIR = PROCESS_NAME
 DBZ_CFG_NAME = "debezium-connector.json"
 KAFKA_CONNECT_CFG_NAME = "connect.properties"
 LOG4J_DEBEZIUM_CFG_NAME = "debezium-log4j.properties"
+
+DEFAULT_DBZ_VERSION = "1.2.0"
+DBZ_VERSION = os.getenv("DATABROKER_DBZ_VERSION")
+if not DBZ_VERSION:
+    DBZ_VERSION = DEFAULT_DBZ_VERSION
+
 
 # Run constants
 LOCAL = ".local"
