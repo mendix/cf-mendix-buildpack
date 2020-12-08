@@ -132,7 +132,7 @@ def download_and_unpack(
                 ("mono-", "jdk-", "jre-", "AdoptOpenJDK-")
             ):
                 unpack_cmd.extend(("--strip", "1"))
-        elif file_name.endswith(".zip"):
+        else:
             unpack_cmd = ["unzip", cached_location, "-d", destination]
 
         if unpack_cmd:
