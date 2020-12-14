@@ -28,7 +28,7 @@ build: create_build_dirs vendor write_commit
 	git ls-files | tar Tcf - source.tar
 	tar xf source.tar -C build/ --exclude=.commit
 	rm source.tar
-	cd build && rm -rf .gitignore .pylintrc .travis.yml* Makefile *.in tests/ dev/
+	cd build && rm -rf .github/ .gitignore .pylintrc .travis.yml* Makefile *.in tests/ dev/
 	cd build && zip -r  -9 ../dist/${PROJECT_NAME}.zip .
 
 .PHONY: install_piptools

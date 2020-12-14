@@ -12,6 +12,11 @@ from buildpack.databroker import connect, streams
 from buildpack.databroker.config_generator.scripts.configloader import (
     configinitializer,
 )
+from buildpack.databroker.config_generator.scripts.generators import (
+    jmx as jmx_cfg_generator,
+)
+from buildpack.databroker.config_generator.scripts.utils import write_file
+from buildpack.databroker.config_generator.templates.jmx import consumer
 
 DATABROKER_ENABLED_FLAG = "DATABROKER_ENABLED"
 RUNTIME_DATABROKER_FLAG = "DATABROKER.ENABLED"
@@ -84,7 +89,48 @@ class Databroker:
         dep.close()
         return complete_conf
 
-    def run(self, m2ee_client, database_config):
+    def get_datadog_config(self, user_checks_dir):
+        extra_jmx_instance_config = None
+        jmx_config_files = []
+        if is_enabled():
+            if self.is_producer_app:
+                # kafka connect cfg
+                os.makedirs(
+                    os.path.join(user_checks_dir, "jmx_2.d"), exist_ok=True,
+                )
+                kafka_connect_cfg = (
+                    jmx_cfg_generator.generate_kafka_connect_jmx_config()
+                )
+                kafka_connect_cfg_path = os.path.join(
+                    user_checks_dir, "jmx_2.d", "conf.yaml"
+                )
+                write_file(
+                    kafka_connect_cfg_path, kafka_connect_cfg,
+                )
+
+                # kafka streams cfg
+                os.makedirs(
+                    os.path.join(user_checks_dir, "jmx_3.d"), exist_ok=True,
+                )
+                kafka_streams_cfg = (
+                    jmx_cfg_generator.generate_kafka_streams_jmx_config()
+                )
+                kafka_streams_cfg_path = os.path.join(
+                    user_checks_dir, "jmx_3.d", "conf.yaml"
+                )
+                write_file(
+                    kafka_streams_cfg_path, kafka_streams_cfg,
+                )
+                jmx_config_files = [
+                    kafka_connect_cfg_path,
+                    kafka_streams_cfg_path,
+                ]
+            else:
+                # consumer metrics setup
+                extra_jmx_instance_config = consumer.jmx_metrics
+        return (extra_jmx_instance_config, jmx_config_files)
+
+    def run(self, m2ee, database_config):
         if not self.is_producer_app:
             return
         logging.info("Databroker: Initializing components")
@@ -93,7 +139,7 @@ class Databroker:
             logging.info(
                 "Databroker: Waiting for database initialization to complete"
             )
-            if not m2ee_client.ping(timeout=30):
+            if not m2ee.client.ping(timeout=30):
                 raise Exception(
                     "Failed to receive successful ping from admin api"
                 )

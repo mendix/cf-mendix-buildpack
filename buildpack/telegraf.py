@@ -1,9 +1,37 @@
-#
-# [EXPERIMENTAL]
-#
-# Add Telegraf to an app container to collect StatsD events from the runtime.
-# Metrics will be forwarded to host defined in APPMETRICS_TARGET environment
-# variable which is a JSON (single or array) with the following values
+# This module adds the Telegraf metrics agent to an app container.
+# The agent collects StatsD events from Java agents injected into the runtime (if Datadog is not enabled).
+# Additionally, if enabled, PostgreSQL metrics are collected.
+# Metrics will be forwarded to either the host defined in APPMETRICS_TARGET environment,
+# or to other outputs such as Datadog.
+
+import base64
+import json
+import logging
+import os
+import shutil
+import subprocess
+from distutils.util import strtobool
+
+from jinja2 import Template
+
+from buildpack import datadog, mx_java_agent, util
+from buildpack.runtime_components import database
+
+VERSION = "1.16.3"
+NAMESPACE = "telegraf"
+INSTALL_PATH = os.path.join(os.path.abspath(".local"), NAMESPACE)
+EXECUTABLE_PATH = os.path.join(
+    INSTALL_PATH, "telegraf-{}".format(VERSION), "usr", "bin", "telegraf"
+)
+CONFIG_FILE_DIR = os.path.join(
+    INSTALL_PATH, "telegraf-{}".format(VERSION), "etc", "telegraf"
+)
+CONFIG_FILE_PATH = os.path.join(CONFIG_FILE_DIR, "telegraf.conf")
+TEMPLATE_FILENAME = "telegraf.toml.j2"
+STATSD_PORT = 8125
+STATSD_PORT_ALT = 18125
+
+# APPMETRICS_TARGET is a variable which includes JSON (single or array) with the following values:
 # - url: complete url of the endpoint. Mandatory.
 # - username: basic auth username. Optional.
 # - password: basic auth password. Mandatory if username is specified.
@@ -23,219 +51,151 @@
 #   "password": "secret",
 #   "kpionly": true
 # }]
-
-import base64
-import json
-import logging
-import os
-import subprocess
-
-from buildpack import datadog, util
-from buildpack.runtime_components import database
-
-
 def _get_appmetrics_target():
     return os.getenv("APPMETRICS_TARGET")
 
 
 def include_db_metrics():
-    return os.getenv("APPMETRICS_INCLUDE_DB", "true").lower() == "true"
+    return strtobool(os.getenv("APPMETRICS_INCLUDE_DB", "true"))
 
 
 def is_enabled():
-    return _get_appmetrics_target() is not None
+    return _get_appmetrics_target() is not None or datadog.is_enabled()
 
 
 def _is_installed():
-    return os.path.exists(".local/telegraf/usr/bin/telegraf")
+    return os.path.exists(INSTALL_PATH)
 
 
-def _get_tags():
-    # Telegraf tags must be key / value
-    tags = {}
-    for kv in [t.split(":") for t in util.get_tags()]:
-        if len(kv) == 2:
-            tags[kv[0]] = kv[1]
-        else:
+def get_statsd_port():
+    return STATSD_PORT
+
+
+class HttpOutput:
+    def __init__(self):
+        self.url = None
+        self.credentials = None
+        self.kpionly = True
+
+
+def _get_http_outputs():
+    http_configs = []
+    result = []
+    if _get_appmetrics_target():
+        try:
+            http_configs = json.loads(_get_appmetrics_target())
+        except ValueError:
+            logging.error(
+                "Invalid APPMETRICS_TARGET set. Please check if it contains valid JSON. Telegraf will not forward metrics to InfluxDB."
+            )
+            return result
+        if type(http_configs) is not list:
+            http_configs = [http_configs]
+
+    for http_config in http_configs:
+        http_output = HttpOutput()
+        if "url" not in http_config:
             logging.warning(
-                'Skipping tag "{}" from TAGS because not a key/value'.format(
-                    kv[0]
-                )
+                "APPMETRICS_TARGET.url value is not defined in %s. Not adding to Telegraf InfluxDB output configuration.",
+                json.dumps(http_config),
             )
-    return tags
-
-
-def _config_value_str(value):
-    if type(value) is str:
-        return '"%s"' % value
-    elif type(value) is int:
-        return value
-    elif type(value) is bool:
-        return str(value).lower()
-    elif type(value) is list:
-        return json.dumps(value)
-
-
-def _create_config_file(agent_config):
-    logging.debug("writing config file")
-    with open(".local/telegraf/etc/telegraf/telegraf.conf", "w") as tc:
-        print("[agent]", file=tc)
-        for item in agent_config:
-            value = agent_config[item]
-            print("  {} = {}".format(item, _config_value_str(value)), file=tc)
-
-        print("", file=tc)
-
-
-def _write_config(section, config):
-    logging.debug("writing section {}".format(section))
-    with open(".local/telegraf/etc/telegraf/telegraf.conf", "a") as tc:
-        _write_config_in_fd(section, config, tc)
-
-
-def _write_config_in_fd(section, config, fd, indent=""):
-    print("{}{}".format(indent, section), file=fd)
-    # reverse sort to get '[section]' in last
-    for item in sorted(config, reverse=True):
-        value = config[item]
-        if type(value) is dict:
-            _write_config_in_fd(item, value, fd, "{}  ".format(indent))
         else:
-            print(
-                "{}  {} = {}".format(indent, item, _config_value_str(value)),
-                file=fd,
-            )
+            http_output.url = http_config["url"]
 
-    print("", file=fd)
+            if "username" in http_config and http_config["username"]:
+                # Workaround for https://github.com/influxdata/telegraf/issues/4544
+                # http_output['username'] = username
+                # http_output['password'] = password
+                http_output.credentials = base64.b64encode(
+                    (
+                        "{}:{}".format(
+                            http_config["username"], http_config["password"]
+                        )
+                    ).encode()
+                ).decode("ascii")
+
+            if "kpionly" in http_config and http_config["kpionly"] is not None:
+                http_output.kpionly = http_config["kpionly"]
+
+            result.append(http_output)
+
+    return result
 
 
-def _write_http_output_config(http_config):
-    logging.debug("writing http output config")
-    if "url" not in http_config:
-        logging.error(
-            "APPMETRICS_TARGET.url value is not defined in {}".format(
-                _get_appmetrics_target()
-            )
-        )
-        return
-
-    http_output = {
-        "url": http_config["url"],
-        "method": "POST",
-        "data_format": "influx",
-        "timeout": "30s",
-    }
-
-    username = http_config.get("username")
-    password = http_config.get("password")
-    if username:
-        # Workaround for https://github.com/influxdata/telegraf/issues/4544
-        # http_output['username'] = username
-        # http_output['password'] = password
-        credentials = base64.b64encode(
-            ("{}:{}".format(username, password)).encode()
-        ).decode("ascii")
-        http_output["[outputs.http.headers]"] = {
-            "Authorization": "Basic {}".format(credentials)
-        }
-
-    kpionly = http_config["kpionly"] if "kpionly" in http_config else True
-    if kpionly:
-        http_output["[outputs.http.tagpass]"] = {"KPI": ["true"]}
-
-    _write_config("[[outputs.http]]", http_output)
+def _get_db_config():
+    if (
+        include_db_metrics() or datadog.get_api_key()
+    ) and util.i_am_primary_instance():
+        db_config = database.get_config()
+        if db_config and db_config["DatabaseType"] == "PostgreSQL":
+            return db_config
+    return None
 
 
 def update_config(m2ee, app_name):
     if not is_enabled() or not _is_installed():
         return
 
-    # Telegraf config, taking over defaults from telegraf.conf from the distro
-    logging.debug("creating telegraf config")
-    _create_config_file(
-        {
-            "interval": "10s",
-            "round_interval": True,
-            "metric_batch_size": 1000,
-            "metric_buffer_limit": 10000,
-            "collection_jitter": "0s",
-            "flush_interval": "10s",
-            "flush_jitter": "5s",
-            "precision": "",
-            "debug": False,
-            "logfile": "",
-            "hostname": util.get_hostname(),
-            "omit_hostname": False,
-        }
+    # Populate Telegraf config template
+    statsd_port = None
+    if mx_java_agent.meets_version_requirements(
+        m2ee.config.get_runtime_version()
+    ):
+        statsd_port = get_statsd_port()
+
+    template_path = os.path.join(CONFIG_FILE_DIR, TEMPLATE_FILENAME)
+
+    tags = util.get_tags()
+    if datadog.is_enabled() and "service" not in tags:
+        # app and / or service tag not set
+        tags["service"] = datadog.get_service()
+
+    with open(template_path, "r") as file_:
+        template = Template(file_.read(), trim_blocks=True, lstrip_blocks=True)
+    rendered = template.render(
+        interval=10,  # in seconds
+        tags=tags,
+        hostname=util.get_hostname(),
+        statsd_port=statsd_port,
+        db_config=_get_db_config(),
+        database_diskstorage_metric_enabled=datadog.is_database_diskstorage_metric_enabled(),
+        database_rate_count_metrics_enabled=datadog.is_database_rate_count_metrics_enabled(),
+        datadog_api_key=datadog.get_api_key(),
+        datadog_url="{}series/".format(datadog.get_api_url()),
+        http_outputs=_get_http_outputs(),
     )
 
-    _write_config("[global_tags]", _get_tags())
-    _write_config(
-        "[[inputs.statsd]]",
-        {
-            "protocol": "udp",
-            "max_tcp_connections": 250,
-            "tcp_keep_alive": False,
-            "service_address": ":8125",
-            "delete_gauges": True,
-            "delete_counters": True,
-            "delete_sets": True,
-            "delete_timings": True,
-            "percentiles": [90],
-            "metric_separator": ".",
-            "parse_data_dog_tags": True,
-            "allowed_pending_messages": 10000,
-            "percentile_limit": 1000,
-        },
-    )
-
-    # Configure postgreSQL input plugin
-    if include_db_metrics():
-        db_config = database.get_config()
-        if db_config:
-            _write_config(
-                "[[inputs.postgresql]]",
-                {
-                    "address": "postgres://{}:{}@{}/{}".format(
-                        db_config["DatabaseUserName"],
-                        db_config["DatabasePassword"],
-                        db_config["DatabaseHost"],
-                        db_config["DatabaseName"],
-                    )
-                },
-            )
-
-    # Forward metrics also to DataDog when enabled
-    if datadog.is_enabled():
-        _write_config("[[outputs.datadog]]", {"apikey": datadog.get_api_key()})
-
-    # Write http_outputs (one or array)
-    try:
-        http_configs = json.loads(_get_appmetrics_target())
-    except ValueError:
-        logging.error(
-            "Invalid APPMETRICS_TARGET set. Please check if it contains valid JSON."
-        )
-        return
-    if type(http_configs) is list:
-        for http_config in http_configs:
-            _write_http_output_config(http_config)
-    else:
-        _write_http_output_config(http_configs)
+    logging.debug("Writing Telegraf configuration file...")
+    with open(CONFIG_FILE_PATH, "w") as file_:
+        file_.write(rendered)
+    logging.debug("Telegraf configuration file written")
 
 
-def stage(install_path, cache_dir):
+def stage(buildpack_path, build_path, cache_dir):
     if not is_enabled():
         return
-    #
-    # Add Telegraf to the container which can forward metrics to a custom
-    # AppMetrics target
+
+    logging.debug("Staging the Telegraf metrics agent...")
     util.download_and_unpack(
         util.get_blobstore_url(
-            "/mx-buildpack/telegraf/telegraf-1.7.1_linux_amd64.tar.gz"
+            "/mx-buildpack/telegraf/telegraf-{}_linux_amd64.tar.gz".format(
+                VERSION
+            )
         ),
-        install_path,
+        os.path.join(build_path, NAMESPACE),
         cache_dir=cache_dir,
+    )
+
+    # Copy the configuration template
+    shutil.copy(
+        os.path.join(buildpack_path, "etc", "telegraf", TEMPLATE_FILENAME),
+        os.path.join(
+            build_path,
+            NAMESPACE,
+            "telegraf-{}".format(VERSION),
+            "etc",
+            "telegraf",
+        ),
     )
 
 
@@ -245,18 +205,14 @@ def run():
 
     if not _is_installed():
         logging.warning(
-            "Telegraf isn't installed yet but APPMETRICS_TARGET is set. "
-            "Please push or restage your app to "
+            "Telegraf isn't installed yet. "
+            "Please redeploy your application to "
             "complete Telegraf installation."
         )
         return
 
+    logging.info("Starting the Telegraf metrics agent...")
     e = dict(os.environ)
     subprocess.Popen(
-        (
-            ".local/telegraf/usr/bin/telegraf",
-            "--config",
-            ".local/telegraf/etc/telegraf/telegraf.conf",
-        ),
-        env=e,
+        (EXECUTABLE_PATH, "--config", CONFIG_FILE_PATH), env=e,
     )

@@ -31,17 +31,9 @@ def get_vcap_data():
         return json.loads(os.environ.get("VCAP_APPLICATION"))
     else:
         return {
-            "application_uris": ["example.com"],
-            "application_name": "My App",
+            "application_uris": ["app.mendixcloud.com"],
+            "application_name": "Mendix App",
         }
-
-
-def is_appmetrics_enabled():
-    return os.getenv("APPMETRICS_TARGET") is not None
-
-
-def get_tags():
-    return json.loads(os.getenv("TAGS", os.getenv("DD_TAGS", "[]")))
 
 
 def get_domain():
@@ -49,16 +41,11 @@ def get_domain():
 
 
 def get_hostname():
-    dd_hostname = os.environ.get("DD_HOSTNAME")
-    if dd_hostname is None:
-        dd_hostname = get_domain() + "-" + os.getenv("CF_INSTANCE_INDEX", "")
-    return dd_hostname
+    return get_domain() + "-" + os.getenv("CF_INSTANCE_INDEX", "")
 
 
-def get_appname():
-    return "".join(
-        filter(lambda x: not x.isdigit(), get_domain().split("-")[0])
-    )
+def get_app_from_domain():
+    return get_domain().split(".")[0]
 
 
 def get_blobstore():
@@ -72,16 +59,19 @@ def get_blobstore_url(filename, blobstore=get_blobstore()):
     return main_url + filename
 
 
-def _delete_other_versions(directory, file_name):
+def _delete_other_versions(directory, file_name, alias=None):
     logging.debug(
-        "Deleting other versions than [{}] from [{}]...".format(
+        "Deleting other dependency versions than [{}] from [{}]...".format(
             file_name, directory
         )
     )
     expression = r"^((?:[a-zA-Z]+-)+)((?:v*[0-9]+\.?)+.*)(\.(?:tar|tar\.gz|tgz|zip|jar))$"
-    pattern = re.sub(expression, "\\1*\\3", file_name)
+    patterns = [re.sub(expression, "\\1*\\3", file_name)]
+    if alias:
+        patterns.append("{}-*.*".format(alias))
 
-    if pattern:
+    for pattern in patterns:
+        logging.debug("Finding files matching [{}]...".format(pattern))
         files = glob.glob("{}/{}".format(directory, pattern))
 
         for f in files:
@@ -95,13 +85,13 @@ def _delete_other_versions(directory, file_name):
 
 
 def download_and_unpack(
-    url, destination, cache_dir="/tmp/downloads", unpack=True
+    url, destination, cache_dir="/tmp/downloads", unpack=True, alias=None
 ):
     file_name = url.split("/")[-1]
     mkdir_p(cache_dir)
     cached_location = os.path.join(cache_dir, file_name)
 
-    _delete_other_versions(cache_dir, file_name)
+    _delete_other_versions(cache_dir, file_name, alias)
 
     logging.debug(
         "Looking for [{cached_location}] in cache...".format(
@@ -137,7 +127,13 @@ def download_and_unpack(
                 ):
                     unpack_cmd.extend(("--strip", "1"))
             else:
-                unpack_cmd = ["unzip", cached_location, "-d", destination]
+                unpack_cmd = [
+                    "unzip",
+                    "-q",
+                    cached_location,
+                    "-d",
+                    destination,
+                ]
 
             if unpack_cmd:
                 subprocess.check_call(unpack_cmd)
@@ -161,13 +157,7 @@ def download_and_unpack(
 
 
 def mkdir_p(path):
-    try:
-        os.makedirs(path)
-    except OSError as e:
-        if e.errno == errno.EEXIST and os.path.isdir(path):
-            pass
-        else:
-            raise
+    os.makedirs(path, exist_ok=True)
 
 
 def get_buildpack_loglevel():
@@ -290,3 +280,26 @@ def get_buildpack_version():
             return version_file.readline().strip()
     except OSError:
         return "unversioned"
+
+
+def get_tags():
+    # Tags are strings in a JSON array and must be in key:value format
+    tags = []
+    try:
+        tags = json.loads(os.getenv("TAGS", "[]"))
+    except ValueError:
+        logging.warning(
+            "Invalid TAGS set. Please check if it is a valid JSON array."
+        )
+
+    result = {}
+    for kv in [t.split(":") for t in tags]:
+        if len(kv) == 2:
+            result[kv[0]] = kv[1]
+        else:
+            logging.warning(
+                "Skipping tag [{}] from TAGS: not in key:value format".format(
+                    kv[0]
+                )
+            )
+    return result

@@ -381,6 +381,12 @@ Please note that AppDynamics requires Mendix 6.2 or higher.
 
 ### Datadog
 
+The Datadog integration features a limited Datadog Agent installation included in the [official Datadog Cloud Foundry Buildpack](https://github.com/DataDog/datadog-cloudfoundry-buildpack). The following information is collected:
+
+* [Application metrics](https://docs.mendix.com/developerportal/operate/datadog-metrics) are collected by the Datadog IoT agent.
+* [JMX metrics](https://docs.datadoghq.com/integrations/java/) and [APM traces](https://docs.datadoghq.com/tracing/setup_overview/setup/java/) are retrieved using the Datadog Java trace agent and collected by the Datadog agent.
+* [PostgreSQL metrics](https://github.com/influxdata/telegraf/tree/master/plugins/inputs/postgresql) are collected by an included [Telegraf agent](https://docs.influxdata.com/telegraf/) and sent directly to Datadog via the Datadog API.
+
 To enable Datadog, configure the following environment variables:
 
 | Environment Variable | Description |
@@ -388,33 +394,48 @@ To enable Datadog, configure the following environment variables:
 | `DD_API_KEY` | The Datadog API key. Can can be configured in the `Integrations -> API` screen of the user interface for your Datadog organization. |
 | `DD_LOG_LEVEL` | Ensures that log messages are sent to Datadog. A safe level would be `INFO` , but it can be later adjusted to different levels: `CRITICAL` , `ERROR` , `WARNING` , or `DEBUG` . |
 
+If you're using a Datadog EU organization, you should also set the `DD_SITE` environment variable accordingly.
+
+Additionally, the following integration-specific variables are available:
+| Environment Variable | Default Value | Description |
+|-|-|-|
+| `DATADOG_DATABASE_DISKSTORAGE_METRIC` | `true` | Enables a metric denoting the disk storage size available to the database. This metric is set in the `DATABASE_DISKSTORAGE` environment variable. |
+| `DATADOG_DATABASE_RATE_COUNT_METRICS` | `false` | Enables additional rate / count database metrics currently not compatible with the Datadog PostgreSQL integration |
+| `DATADOG_LOGS_REDACTION` | `true` | Enables email address redaction from logs |
+
 To receive metrics from the runtime, the Mendix Java Agent is added to the runtime as Java agent. This agent can be configured by passing a JSON in the environment variable `METRICS_AGENT_CONFIG` as described in [Datadog for v4 Mendix Cloud](https://docs.mendix.com/developerportal/operate/datadog-metrics).
 
-Please note that Datadog integration **requires Mendix 7.14 or higher**. If an older version is used, then a warning will be displayed in the logs and the Datadog integration will not be enabled.
-
-The Datadog integration features a full Datadog Agent installation inspired by the [official Datadog Cloud Foundry Buildpack](https://github.com/DataDog/datadog-cloudfoundry-buildpack). Specific agent checks are enabled and configured specifically for Mendix applications.
+Please note that application metric collection **requires Mendix 7.14 or higher**.
 
 #### Presets
 
 For correlation purposes, we set the Datadog `service` for you to match your **application name**. This name is derived in the following order:
 
-1. Your Mendix `app:` tag if you have set this in the runtime settings.<br/>*Example:* for `app:myfirstapp` , `service` will be set to `myfirstapp` .
-2. The first part of the Cloud Foundry route URI configured for your application, without numeric characters.<br/>*Example:* for a route URI `myfirstapp1000-test.example.com` , `service` will be set to `myfirstapp` .
+1. Your Mendix `service:` tag if you have set this in the runtime settings or `TAGS` environment variable.<br/>*Format:* `["service:myfirstapp", "tag2:value2", ...]`.
+2. Your Mendix `app:` tag if you have set this in the runtime settings or `TAGS` environment variable.<br/>*Example:* for `app:myfirstapp` , `service` will be set to `myfirstapp`.
+3. The first part of the Cloud Foundry route URI configured for your application, without numeric characters.<br/>*Example:* for a route URI `myfirstapp1000-test.example.com` , `service` will be set to `myfirstapp` .
 
 Additionally, we configure the following Datadog environment variables for you:
 
 | Environment Variable | Value | Can Be Overridden? | Description |
 |-|-|-|-|
-| `DD_ENABLE_USER_CHECKS` | `true` | No | Enables logs and PostgreSQL, JMX checks |
 | `DD_HOSTNAME` | `<app>-<env>.mendixcloud.com-<instance>` | No | Human-readable host name for your application |
-| `DD_JMXFETCH_ENABLED` | `false` | No | Disables Datadog Java Trace Agent JMX metrics fetching, since this is already handled by the Mendix Runtime. |
+| `DD_JMXFETCH_ENABLED` | `true` | No | Enables Datadog Java Trace Agent JMX metrics fetching |
 | `DD_LOGS_ENABLED` | `true` | No | Enables sending your application logs directly to Datadog |
-| `DD_SERVICE_MAPPING` | `<database>:<app>.db` | No | Links your database to your app in Datadog APM. Is only set when `DD_TRACE_ENABLED` is set to `true` . |
+| `DD_SERVICE_MAPPING` | `<database>:<app>.db` | No | Links your database to your app in Datadog APM |
 | `DD_SERVICE_NAME` | `<app>` | No | Defaults to your application name as described before. Is only set when `DD_TRACE_ENABLED` is set to `true` . |
-| `DD_TAGS` | Various Cloud Foundry tags | Yes | If set, your tags will be added to the list of supplied Cloud Foundry tags |
-| `DD_TRACE_ENABLED` | `false` | Yes | Disables Datadog APM by default. **Enabling Datadog APM is experimental and enables the [Datadog Java Trace Agent](https://docs.datadoghq.com/tracing/setup/java/) alongside the Mendix Java Agent.** |
+| `DD_TAGS` | `tag1:value1,...:...` | No | Derived from the runtime settings in Mendix Public Cloud or the `TAGS` environment variable |
+| `DD_TRACE_ENABLED` | `false` | Yes | Disables Datadog APM by default. **Enabling Datadog APM is experimental and enables tracing via the [Datadog Java Trace Agent](https://docs.datadoghq.com/tracing/setup/java/) tracing functionality.** |
 
-The `DD_LOG_FILE` , `DD_PROCESS_CONFIG_LOG_FILE` and `DD_DOGSTATSD_PORT` environment variables are also configured specifically with buildpack-specific system values. Other environment variables can be set as per the [Datadog Agent documentation](https://docs.datadoghq.com/agent/).
+Other environment variables can be set as per the [Datadog Agent documentation](https://docs.datadoghq.com/agent/).
+
+#### Known Limitations
+
+Telegraf [does not support (Datadog) metric types correctly yet](https://github.com/influxdata/telegraf/issues/6822) (e.g. rate, counter, gauge). This means that all database metrics are currently pushed to Datadog as a gauge.
+
+The most important metrics (`before_xid_wraparound`, `connections`, `database_size`, `db.count`, `locks`, `max_connections`, `percent_usage_connections`, `table.count`, `deadlocks`) are gauges and are compatible with the Datadog PostgreSQL integration and associated dashboards.
+
+*If you do require the additional rate and counter metrics, there is a workaround available.* First, set the `DATADOG_DATABASE_RATE_COUNT_METRICS` environment variable to `true`. After that variable is enabled, the rate and counter metrics are suffixed by either `_count` or `_rate` to prevent collisions with the official Datadog metrics. In the Datadog UI, the [metric type and unit can be changed](https://docs.datadoghq.com/developers/metrics/type_modifiers/?tab=count#modify-a-metrics-type-within-datadog) to reflect this. We also set a helpful `interval` tag (`10s`) which can be used here. Additionally, gauge metrics can be [rolled up in Datadog dashboards](https://docs.datadoghq.com/dashboards/functions/rollup/). The correct type and unit for other submitted metrics can be found [here](https://github.com/DataDog/integrations-core/blob/master/postgres/metadata.csv).
 
 ### Dynatrace
 
