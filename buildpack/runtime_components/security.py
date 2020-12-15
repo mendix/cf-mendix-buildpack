@@ -63,6 +63,10 @@ def create_admin_user(m2ee, is_development_mode):
 
 def get_certificate_authorities():
     config = {}
+    cas64 = os.getenv("CERTIFICATE_AUTHORITIES_BASE64", None)
+    if cas64:
+        certificate_authorities = base64.b64decode(cas64)
+        os.environ['CERTIFICATE_AUTHORITIES'] = str(certificate_authorities,'utf-8')
     cas = os.getenv("CERTIFICATE_AUTHORITIES", None)
     if cas:
         ca_list = cas.split("-----BEGIN CERTIFICATE-----")
