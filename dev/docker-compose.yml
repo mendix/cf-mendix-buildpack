@@ -1,0 +1,17 @@
+version: "3"
+
+services:
+  buildpack:
+    build:
+      context: ../
+      dockerfile: ./dev/Dockerfile
+    volumes:
+      - ../:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      TEST_PREFIX: ${TEST_PREFIX}
+      TEST_PROCESSES: ${TEST_PROCESSES}
+      TEST_HOST: ${TEST_HOST}
+      TEST_MEMORY: ${TEST_MEMORY}
+      TEST_DISK: ${TEST_DISK}
+    entrypoint: /bin/bash

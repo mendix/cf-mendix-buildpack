@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+
+# Compile script is executed from /home/vcap and buildpack is downloaded in /tmp/buildpacks/<<something>>/
+# Determine the buildpack folder based on this file
+BUILDPACK_PATH=$(dirname "$0")/..
+BUILD_PATH=$1
+CACHE_PATH=$2
+
+# Bootstrap and install the Python requirements from wheels.
+# Minimal packaging for the buildpack includes pip and setuptools wheels.
+REQUIREMENTS_PATH="${BUILDPACK_PATH}/requirements.txt"
+WHEELS_PATH="${BUILDPACK_PATH}/vendor/wheels"
+PIP_WHL_PATH=$(ls $WHEELS_PATH/pip*.whl | head -n1)
+SETUPTOOLS_WHL_PATH=$(ls $WHEELS_PATH/setuptools*.whl | head -n1)
+
+if [[ -z $PIP_WHL_PATH ]] || [[ -z $(ls $WHEELS_PATH/setuptools*.whl | head -n1) ]]
+then
+    echo "pip or setuptools wheels not present in buildpack, cannot stage app"
+    exit 1
+fi
+
+PIP_CMD="python3 ${PIP_WHL_PATH}/pip"
+PIP_WHEELDIR="${CACHE_PATH}/pip/wheels"
+PIP_WORKDIR="${CACHE_PATH}/pip/build"
+# Set the correct Python site-packages directory to install to
+SITE_PACKAGES_PATH="${BUILD_PATH}/$(python3 -m site --user-site | cut -d '/' -f4-)"
+
+echo " ---> Copying included wheels to cache...";
+mkdir -p $PIP_WHEELDIR;
+cp -rf $WHEELS_PATH/* $PIP_WHEELDIR/;
+
+echo " ---> Bootstrapping pip and setuptools..."
+$PIP_CMD install --user --no-warn-script-location --no-index --find-links=$PIP_WHEELDIR --build=$PIP_WORKDIR pip setuptools
+
+echo " ---> Downloading Python dependencies if necessary..."
+if [[ $(ls -1q $PIP_WHEELDIR/*.whl | wc -l) = 2 ]]
+then
+    echo " ---> Downloading Python dependencies as wheels...";
+    $PIP_CMD download -r $REQUIREMENTS_PATH --prefer-binary -d $PIP_WHEELDIR;
+else
+    echo "Wheelhouse contains more than two files, assuming that all Python dependencies have been packaged";
+fi
+
+echo " ---> Installing Python dependencies to ${SITE_PACKAGES_PATH}..."
+$PIP_CMD install --target $SITE_PACKAGES_PATH --no-warn-script-location --no-index --find-links=$PIP_WHEELDIR --build=$PIP_WORKDIR -r $REQUIREMENTS_PATH
+echo " ---> Finished installing Python dependencies"

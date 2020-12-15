@@ -1,0 +1,11 @@
+backoff==1.10.0
+certifi==2020.11.8
+cryptography==3.2.1
+httplib2==0.18.1
+jinja2==2.11.2
+omegaconf==2.0.0
+pem==20.1.0
+psycopg2-binary==2.8.5
+pyyaml==5.3.1
+requests==2.24.0
+urllib3==1.25.11 # Remediation for CVE-2020-26137; can be removed if requests is updated

@@ -1,0 +1,27 @@
+[BASIC]
+module-rgx=[a-z_][a-z0-9_]{2,32}$
+const-rgx=[a-zA-Z_][a-zA-Z0-9_]{2,32}$
+class-rgx=[A-Z_][a-zA-Z0-9]+$
+function-rgx=([a-z_][a-z0-9_]{2,32}|(assert|test_|__)[a-z_][a-z0-9_]{2,80})$
+method-rgx=([a-z_][a-z0-9_]{2,32}|(assert|test_|__)[a-z_][a-z0-9_]{2,80})$
+attr-rgx=[a-z_][a-z0-9_]{2,32}$
+argument-rgx=[a-z_][a-z0-9_]{2,32}$
+variable-rgx=[a-z_][a-z0-9_]{2,32}$
+class-attribute-rgx=([A-Za-z_][A-Za-z0-9_]{2,32}|(__.*__))$
+inlinevar-rgx=[A-Za-z_][A-Za-z0-9_]*$
+
+[MESSAGES CONTROL]
+disable = missing-docstring,  locally-disabled, too-few-public-methods, fixme, bad-continuation
+msg-template = {module}:{line} [{msg_id}: {symbol}] - {msg}
+
+[REPORTS]
+reports = yes
+
+[FORMAT]
+max-line-length = 79
+
+[SIMILARITIES]
+min-similarity-lines=6
+ignore-comments=yes
+ignore-docstrings=yes
+ignore-imports=yes

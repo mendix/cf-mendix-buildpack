@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-
-# Compile script is executed from /home/vcap and buildpack is downloaded in /tmp/buildpacks/<<something>>/
-# Determine the buildpack folder based on this file
-BUILDPACK_PATH=`dirname $0`/..
-PYTHONPATH=${BUILDPACK_PATH}/lib python3 ${BUILDPACK_PATH}/bin/compile.py $*

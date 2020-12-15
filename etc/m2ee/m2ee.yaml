@@ -1,0 +1,53 @@
+mxnode:
+  mxjar_repo: BUILD_PATH/runtimes/
+
+m2ee:
+  app_name: My Project Name
+  app_base: BUILD_PATH/
+  admin_port: ADMIN_PORT
+  custom_environment:
+    HOME: BUILD_PATH
+  javabin: BUILD_PATH/.local/bin/java
+
+  runtime_port: RUNTIME_PORT
+  runtime_listen_addresses: "*"
+
+  pidfile: BUILD_PATH/.local/process.pid
+
+  runtime_blocking_connector: false
+  preserve_environment: true
+
+  javaopts:
+    [
+      "-Dfile.encoding=UTF-8",
+      "-Djava.io.tmpdir=BUILD_PATH/data/tmp",
+      "-XX:OnError=kill -s USR1 PYTHONPID",
+      "-XX:OnOutOfMemoryError=kill -s USR2 PYTHONPID",
+    ]
+
+  jetty:
+    max_form_content_size: 10485760
+
+  allow_destroy_db: true
+
+  database_dump_path: "BUILD_PATH/database"
+
+  model_upload_path: "BUILD_PATH"
+  logfile: BUILD_PATH/log/out.log
+
+logging:
+  - type: file
+    name: FileSubscriber
+    autosubscribe: INFO
+    filename: BUILD_PATH/log/out.log
+    max_size: 1125899906842624 # 1PiB should be enough until we implement stdout logging
+    max_rotation: 1
+
+mxruntime:
+  ApplicationRootUrl: https://APP_URI/
+
+  MicroflowConstants: {}
+
+  ScheduledEventExecution: ALL
+
+  LogMinDurationQuery: 10000
