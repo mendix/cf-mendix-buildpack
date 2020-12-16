@@ -26,11 +26,17 @@ def stage(buildpack_path, build_path):
             token=os.environ.get("DT_PAAS_TOKEN"),
         )
 
-        util.download_and_unpack(
-            agent_url,
-            buildpack_path,  # DOT_LOCAL_LOCATION,
-            build_path,  # CACHE_DIR,
-        )
+        try:
+            util.download_and_unpack(
+                agent_url,
+                buildpack_path,  # DOT_LOCAL_LOCATION,
+                cache_dir=build_path,  # CACHE_DIR,
+                unpack=True,
+            )
+        except Exception as e:
+            logging.warning(
+                "Dynatrace agent download and unpack failed", exc_info=True
+            )
 
 
 def update_config(m2ee, app_name):
@@ -39,8 +45,15 @@ def update_config(m2ee, app_name):
             "Skipping Dynatrace setup, no DT_TENANTTOKEN found in environment"
         )
         return
-    logging.info("Adding Dynatrace")
-    manifest = get_manifest()
+    logging.info("Enabling Dynatrace")
+    try:
+        manifest = get_manifest()
+    except Exception as e:
+        logging.warning(
+            "Failed to parse Dynatrace manifest file", exc_info=True
+        )
+        return
+
     # dynamic default
     default_env.update({"DT_TENANTTOKEN": manifest.get("tenantToken")})
 
