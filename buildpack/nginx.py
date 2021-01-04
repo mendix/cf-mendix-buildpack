@@ -290,6 +290,7 @@ def get_access_restriction_locations():
                 # Escape special characters
                 issuer = issuer.replace(" ", "\\040")
                 issuer = issuer.replace(".", "\\.")
+                issuer = issuer.replace("'", "\\'")
 
                 location.issuer_dn_regex += "{}|".format(issuer)
             location.issuer_dn = location.issuer_dn[:-1]
