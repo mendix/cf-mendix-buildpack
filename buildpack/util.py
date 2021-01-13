@@ -61,8 +61,12 @@ def get_appname():
     )
 
 
-def get_blobstore_url(filename):
-    main_url = os.environ.get("BLOBSTORE", "https://cdn.mendix.com")
+def get_blobstore():
+    return os.environ.get("BLOBSTORE", "https://cdn.mendix.com")
+
+
+def get_blobstore_url(filename, blobstore=get_blobstore()):
+    main_url = blobstore
     if main_url[-1] == "/":
         main_url = main_url[0:-1]
     return main_url + filename
@@ -83,7 +87,7 @@ def _delete_other_versions(directory, file_name):
         for f in files:
             if os.path.basename(f) != file_name:
                 logging.debug(
-                    "Deleting version {} from {}...".format(
+                    "Deleting version [{}] from [{}]...".format(
                         os.path.basename(f), directory
                     )
                 )
@@ -95,7 +99,6 @@ def download_and_unpack(
 ):
     file_name = url.split("/")[-1]
     mkdir_p(cache_dir)
-    mkdir_p(destination)
     cached_location = os.path.join(cache_dir, file_name)
 
     _delete_other_versions(cache_dir, file_name)
@@ -114,44 +117,47 @@ def download_and_unpack(
                 cached_location=cached_location
             )
         )
-
-    if unpack:
-        # Unpack the artifact
-        logging.debug(
-            "Extracting [{cached_location}] to [{dest}]...".format(
-                cached_location=cached_location, dest=destination
+    if destination:
+        mkdir_p(destination)
+        if unpack:
+            # Unpack the artifact
+            logging.debug(
+                "Extracting [{cached_location}] to [{dest}]...".format(
+                    cached_location=cached_location, dest=destination
+                )
             )
-        )
-        if (
-            file_name.endswith(".tar.gz")
-            or file_name.endswith(".tgz")
-            or file_name.endswith(".tar")
-        ):
-            unpack_cmd = ["tar", "xf", cached_location, "-C", destination]
-            if file_name.startswith(
-                ("mono-", "jdk-", "jre-", "AdoptOpenJDK-")
+            if (
+                file_name.endswith(".tar.gz")
+                or file_name.endswith(".tgz")
+                or file_name.endswith(".tar")
             ):
-                unpack_cmd.extend(("--strip", "1"))
+                unpack_cmd = ["tar", "xf", cached_location, "-C", destination]
+                if file_name.startswith(
+                    ("mono-", "jdk-", "jre-", "AdoptOpenJDK-")
+                ):
+                    unpack_cmd.extend(("--strip", "1"))
+            else:
+                unpack_cmd = ["unzip", cached_location, "-d", destination]
+
+            if unpack_cmd:
+                subprocess.check_call(unpack_cmd)
+
         else:
-            unpack_cmd = ["unzip", cached_location, "-d", destination]
+            # Copy the artifact, don't unpack
+            logging.debug(
+                "Copying [{cached_location}] to [{dest}]...".format(
+                    cached_location=cached_location, dest=destination
+                )
+            )
+            shutil.copyfile(
+                cached_location, os.path.join(destination, file_name)
+            )
 
-        if unpack_cmd:
-            subprocess.check_call(unpack_cmd)
-
-    else:
-        # Copy the artifact, don't unpack
         logging.debug(
-            "Copying [{cached_location}] to [{dest}]...".format(
-                cached_location=cached_location, dest=destination
+            "Dependency [{file_name}] is now present at [{destination}]".format(
+                file_name=file_name, destination=destination,
             )
         )
-        shutil.copyfile(cached_location, os.path.join(destination, file_name))
-
-    logging.debug(
-        "Dependency [{file_name}] is now present at [{destination}]".format(
-            file_name=file_name, destination=destination,
-        )
-    )
 
 
 def mkdir_p(path):

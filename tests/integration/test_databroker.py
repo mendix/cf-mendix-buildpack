@@ -88,7 +88,7 @@ class TestCaseDataBroker(basetest.BaseTestWithPostgreSQL):
             "ProducerApp.mda",
             env_vars={
                 "DATABROKER_ENABLED": "true",
-                "BLOBSTORE": "https://dghq119eo3niv.cloudfront.net",
+                "FORCED_MXRUNTIME_URL": "https://dghq119eo3niv.cloudfront.net/",
                 "MXRUNTIME_DatabaseType": "PostgreSQL",
                 "MXRUNTIME_DatabaseHost": "{}:{}".format(
                     self._host, self._database_port
