@@ -42,6 +42,13 @@ def check_deprecation(version):
     return True
 
 
+def _get_runtime_url(blobstore, build_path):
+    return util.get_blobstore_url(
+        "/runtime/mendix-{}.tar.gz".format(str(get_version(build_path))),
+        blobstore=blobstore,
+    )
+
+
 def stage(buildpack_dir, build_path, cache_path):
 
     logging.debug("Staging required components for Mendix runtime...")
@@ -62,14 +69,19 @@ def stage(buildpack_dir, build_path, cache_path):
         )
         return
 
-    url = os.environ.get("FORCED_MXRUNTIME_URL")
-    if url is not None:
+    forced_url = os.environ.get("FORCED_MXRUNTIME_URL")
+    url = None
+    if forced_url is not None:
         cache_dir = "/tmp/downloads"
+        if not forced_url.endswith(".tar.gz"):
+            # Assume that the forced URL points to a blobstore root
+            url = _get_runtime_url(forced_url, build_path)
+        else:
+            url = forced_url
     else:
         cache_dir = cache_path
-        url = util.get_blobstore_url(
-            "/runtime/mendix-%s.tar.gz" % str(get_version(build_path))
-        )
+        url = _get_runtime_url(util.get_blobstore(), build_path)
+
     logging.debug("Downloading Mendix runtime...")
     util.download_and_unpack(
         url, os.path.join(build_path, "runtimes"), cache_dir=cache_dir

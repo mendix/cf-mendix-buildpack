@@ -61,8 +61,12 @@ def get_appname():
     )
 
 
-def get_blobstore_url(filename):
-    main_url = os.environ.get("BLOBSTORE", "https://cdn.mendix.com")
+def get_blobstore():
+    return os.environ.get("BLOBSTORE", "https://cdn.mendix.com")
+
+
+def get_blobstore_url(filename, blobstore=get_blobstore()):
+    main_url = blobstore
     if main_url[-1] == "/":
         main_url = main_url[0:-1]
     return main_url + filename
