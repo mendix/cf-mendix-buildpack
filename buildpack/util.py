@@ -6,7 +6,6 @@ import os
 import re
 import shutil
 import subprocess
-from distutils.util import strtobool
 
 import requests
 
@@ -233,32 +232,6 @@ def get_admin_port():
 
 def get_deploy_port():
     return get_nginx_port() + 3
-
-
-def bypass_loggregator():
-    env_var = os.getenv("BYPASS_LOGGREGATOR", "False")
-    # Throws a useful message if you put in a nonsensical value.
-    # Necessary since we store these in cloud portal as strings.
-    try:
-        bypass = strtobool(env_var)
-    except ValueError as _:
-        logging.warning(
-            "Bypass loggregator has a nonsensical value: %s. "
-            "Falling back to old loggregator-based metric reporting.",
-            env_var,
-        )
-        return False
-
-    if bypass:
-        if os.getenv("TRENDS_STORAGE_URL"):
-            return True
-        else:
-            logging.warning(
-                "BYPASS_LOGGREGATOR is set to true, but no metrics URL is "
-                "set. Falling back to old loggregator-based metric reporting."
-            )
-            return False
-    return False
 
 
 def is_development_mode():

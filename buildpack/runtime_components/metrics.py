@@ -8,10 +8,10 @@ import threading
 import time
 from abc import ABCMeta, abstractmethod
 from timeit import default_timer as timer
+from distutils.util import strtobool
 
 import psycopg2
 import requests
-
 from buildpack import util
 from buildpack.runtime_components import database
 from lib.m2ee import munin
@@ -43,6 +43,32 @@ def run(m2ee):
 
 def get_metrics_url():
     return os.getenv("TRENDS_STORAGE_URL")
+
+
+def bypass_loggregator():
+    env_var = os.getenv("BYPASS_LOGGREGATOR", "False")
+    # Throws a useful message if you put in a nonsensical value.
+    # Necessary since we store these in cloud portal as strings.
+    try:
+        bypass = strtobool(env_var)
+    except ValueError as _:
+        logging.warning(
+            "Bypass loggregator has a nonsensical value: %s. "
+            "Falling back to old loggregator-based metric reporting.",
+            env_var,
+        )
+        return False
+
+    if bypass:
+        if os.getenv("TRENDS_STORAGE_URL"):
+            return True
+        else:
+            logging.warning(
+                "BYPASS_LOGGREGATOR is set to true, but no metrics URL is "
+                "set. Falling back to old loggregator-based metric reporting."
+            )
+            return False
+    return False
 
 
 class MetricsEmitter(metaclass=ABCMeta):
@@ -98,7 +124,7 @@ class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
         self.interval = interval
         self.m2ee = m2ee
         self.db = None
-        if util.bypass_loggregator():
+        if bypass_loggregator():
             logging.info("Metrics are logged direct to metrics server.")
             self.emitter = MetricsServerEmitter(metrics_url=get_metrics_url())
         else:
