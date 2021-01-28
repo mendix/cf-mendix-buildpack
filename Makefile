@@ -3,9 +3,9 @@ PREFIX=$(shell p='$(TEST_PREFIX)'; echo "$${p:-test}")
 TEST_PROCESSES := $(if $(TEST_PROCESSES),$(TEST_PROCESSES),2)
 TEST_FILES := $(if $(TEST_FILES),$(TEST_FILES),tests/integration/test_*.py)
 
-PIP_VERSION=20.1.1
-SETUPTOOLS_VERSION=49.1.0
-PIP_TOOLS_VERSION=5.2.1
+PIP_VERSION=21.0.1
+SETUPTOOLS_VERSION=52.0.0
+PIP_TOOLS_VERSION=5.5.0
 
 .PHONY: vendor
 vendor: download_wheels
