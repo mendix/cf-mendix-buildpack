@@ -44,7 +44,6 @@ class TestCaseCertificateAuthorities(basetest.BaseTest):
             "BuildpackTestApp-mx-7-16.mda",
             env_vars={"CERTIFICATE_AUTHORITIES": self.certificate},
         )
-        
         self.start_container()
         self.assert_app_running()
         self.assert_string_in_recent_logs(
