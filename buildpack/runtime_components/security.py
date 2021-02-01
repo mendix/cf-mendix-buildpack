@@ -66,7 +66,7 @@ def get_certificate_authorities():
     cas = os.getenv("CERTIFICATE_AUTHORITIES", None)
     if cas:
         if "-BEGIN CERTIFICATE-" not in cas:
-            cas =  base64.b64decode(cas)
+            cas = str(base64.b64decode(cas),'utf-8')
         ca_list = cas.split("-----BEGIN CERTIFICATE-----")
         n = 0
         files = []
