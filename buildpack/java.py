@@ -5,28 +5,47 @@ import re
 import subprocess
 
 import certifi
-import pem
-from cryptography import x509
 
 from buildpack import util
 
+KEYUTIL_JAR = "keyutil-0.4.0.jar"
+
 
 def stage(buildpack_path, cache_path, local_path, java_version):
-    logging.debug("begin download and install java")
+    logging.debug("Staging Java...")
+
+    # Download Java
     util.mkdir_p(os.path.join(local_path, "bin"))
     jvm_location = ensure_and_get_jvm(
         java_version, cache_path, local_path, package="jre"
     )
-    # create a symlink in .local/bin/java
+
+    # Create a symlink in .local/bin/java
     os.symlink(
-        # use .. when jdk is in .local because absolute path
+        # Use .. when JDK is in .local because absolute path
         # is different at staging time
         os.path.join(jvm_location.replace(local_path, ".."), "bin", "java"),
         os.path.join(local_path, "bin", "java"),
     )
-    # update cacert file
-    update_java_cacert(buildpack_path, jvm_location)
-    logging.debug("end download and install java")
+
+    # Import Mozilla CA certificates
+    # This is done by a third-party tool (keyutil),
+    # using the Python certifi certificate bundle
+    #
+    # While recent versions of AdoptOpenJDK have these on board,
+    # we still also have to deal with Oracle JREs / JDKs for now.
+    # When we retire support for Mendix 6,
+    # we should reconsider importing these certificates ourselves.
+    util.download_and_unpack(
+        util.get_blobstore_url(
+            "/mx-buildpack/java-keyutil/{}".format(KEYUTIL_JAR)
+        ),
+        None,
+        cache_path,
+    )
+
+    _update_java_cacert(cache_path, jvm_location)
+    logging.debug("Staging Java finished")
 
 
 def determine_jdk(java_version, package="jdk"):
@@ -53,21 +72,24 @@ def _compose_jre_url_path(jdk):
 def ensure_and_get_jvm(
     java_version, cache_dir, dot_local_location, package="jdk"
 ):
-    logging.debug("Begin download and install java %s" % package)
 
     jdk = determine_jdk(java_version, package)
 
     rootfs_java_path = "/{}".format(compose_jvm_target_dir(jdk))
     if not os.path.isdir(rootfs_java_path):
-        logging.debug("rootfs without java sdk detected")
+        logging.debug(
+            "Downloading and installing Java {} if required...".format(
+                package.upper()
+            )
+        )
         util.download_and_unpack(
             util.get_blobstore_url(_compose_jre_url_path(jdk)),
             os.path.join(dot_local_location, compose_jvm_target_dir(jdk)),
             cache_dir,
         )
+        logging.debug("Java {} installed".format(package.upper()))
     else:
-        logging.debug("rootfs with java sdk detected")
-    logging.debug("end download and install java %s" % package)
+        logging.debug("Root FS with Java SDK detected, not installing Java")
 
     return util.get_existing_directory_or_raise(
         [
@@ -78,7 +100,7 @@ def ensure_and_get_jvm(
     )
 
 
-def update_java_cacert(buildpack_dir, jvm_location):
+def _update_java_cacert(cache_dir, jvm_location):
     logging.debug("Importing Mozilla CA certificates into JVM keystore...")
     cacerts_file = os.path.join(jvm_location, "lib", "security", "cacerts")
     if not os.path.exists(cacerts_file):
@@ -89,38 +111,29 @@ def update_java_cacert(buildpack_dir, jvm_location):
         return
 
     # Parse the Mozilla CA certificate bundle from certifi and import it into the keystore
-    for certificate in pem.parse_file(certifi.where()):
+    keyutil_jar = os.path.abspath(os.path.join(cache_dir, KEYUTIL_JAR))
 
-        # Generate the alias string
-        alias = x509.load_pem_x509_certificate(
-            certificate.as_bytes()
-        ).issuer.rfc4514_string()
-
-        # Import the certificate into the keystore
-        try:
-            subprocess.check_output(
-                (
-                    os.path.join(jvm_location, "bin", "keytool"),
-                    "-noprompt",
-                    "-import",
-                    "-trustcacerts",
-                    "-keystore",
-                    cacerts_file,
-                    "-alias",
-                    '"{}"'.format(alias),
-                    "-storepass",
-                    "changeit",
-                ),
-                env=dict(os.environ),
-                input=certificate.as_bytes(),
-                stderr=subprocess.STDOUT,
-            )
-            logging.debug("Imported certificate [{}]".format(alias))
-        except subprocess.CalledProcessError as ex:
-            logging.error(
-                "Error importing certificate [{}]: {}".format(alias, ex.output)
-            )
-            raise ex
+    # Import the certificate into the keystore
+    try:
+        subprocess.check_output(
+            (
+                os.path.join(jvm_location, "bin", "java"),
+                "-jar",
+                keyutil_jar,
+                "--import",
+                "--import-pem-file",
+                certifi.where(),
+                "--force-new-overwrite",
+                "--new-keystore",
+                cacerts_file,
+                "--password",
+                "changeit",
+            ),
+            stderr=subprocess.STDOUT,
+        )
+    except subprocess.CalledProcessError as ex:
+        logging.error("Error importing certificates: {}".format(ex.output))
+        raise ex
 
     logging.debug("Import of Mozilla certificates finished")
 
@@ -139,10 +152,9 @@ def _set_user_provided_java_options(m2ee_section):
     if options:
         try:
             options = json.loads(options)
-        except Exception as e:
+        except ValueError:
             logging.error(
-                "Failed to parse JAVA_OPTS, due to invalid JSON.",
-                exc_info=True,
+                "Failed to parse JAVA_OPTS: invalid JSON", exc_info=True,
             )
             raise
         javaopts.extend(options)
@@ -178,11 +190,10 @@ def _set_jvm_memory(m2ee_section, vcap, java_version):
             heap_size = env_heap_size
         else:
             logging.warning(
-                "specified heap size %s is larger than max memory of the "
-                "container (%s), falling back to a heap size of %s",
-                env_heap_size,
-                str(limit) + "M",
-                heap_size,
+                "The specified heap size [{}] is larger than the maximum memory of the "
+                "container ([{}]). Falling back to a heap size of [{}]".format(
+                    env_heap_size, str(limit) + "M", heap_size
+                )
             )
     javaopts = m2ee_section["javaopts"]
 

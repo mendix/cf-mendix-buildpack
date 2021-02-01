@@ -123,7 +123,7 @@ http {
             {% if location.issuer_dn_regex %}
             if ($http_ssl_client_i_dn ~* ^(?!({{ location.issuer_dn_regex }})$)(\w*)) {
                 # Enable logging to show ssl_client_i_dn
-                set $issuer_dn '{{ location.issuer_dn }}';
+                set $issuer_dn "{{ location.issuer_dn }}";
                 set $logme 1;
                 return 403;
             }
