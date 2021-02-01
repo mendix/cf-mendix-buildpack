@@ -41,18 +41,22 @@ class TestCaseCertificateAuthorities(basetest.BaseTest):
 
     def test_certificate_authorities(self):
         self.stage_container(
-            mda, env_vars={"CERTIFICATE_AUTHORITIES": self.certificate}
+            "BuildpackTestApp-mx-7-16.mda", env_vars={"CERTIFICATE_AUTHORITIES": self.certificate}
         )
         
         self.start_container()
         self.assert_app_running()
-        self.assert_string_in_recent_logs("Core: Added 1 authority certificate(s)")
+        self.assert_string_in_recent_logs(
+            "Core: Added 1 authority certificate(s)"
+        )
         
     def test_certificate_authorities_base64(self):
         self.stage_container(
-            mda, env_vars={"CERTIFICATE_AUTHORITIES": base64.b64encode(self.certificate)}
+            "BuildpackTestApp-mx-7-16.mda", env_vars={"CERTIFICATE_AUTHORITIES": base64.b64encode(self.certificate)}
         )
         
         self.start_container()
         self.assert_app_running()
-        self.assert_string_in_recent_logs("Core: Added 1 authority certificate(s)")
+        self.assert_string_in_recent_logs(
+            "Core: Added 1 authority certificate(s)"
+        )
