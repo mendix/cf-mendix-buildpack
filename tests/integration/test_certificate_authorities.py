@@ -41,7 +41,8 @@ class TestCaseCertificateAuthorities(basetest.BaseTest):
 
     def test_certificate_authorities(self):
         self.stage_container(
-            "BuildpackTestApp-mx-7-16.mda", env_vars={"CERTIFICATE_AUTHORITIES": self.certificate}
+            "BuildpackTestApp-mx-7-16.mda",
+            env_vars={"CERTIFICATE_AUTHORITIES": self.certificate}
         )
         
         self.start_container()
@@ -52,7 +53,8 @@ class TestCaseCertificateAuthorities(basetest.BaseTest):
         
     def test_certificate_authorities_base64(self):
         self.stage_container(
-            "BuildpackTestApp-mx-7-16.mda", env_vars={"CERTIFICATE_AUTHORITIES": base64.b64encode(self.certificate)}
+            "BuildpackTestApp-mx-7-16.mda",
+            env_vars={"CERTIFICATE_AUTHORITIES": base64.b64encode(self.certificate)}
         )
         
         self.start_container()
