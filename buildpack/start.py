@@ -20,6 +20,7 @@ from buildpack import (
     dynatrace,
     instadeploy,
     java,
+    metering,
     mx_java_agent,
     newrelic,
     nginx,
@@ -171,6 +172,7 @@ if __name__ == "__main__":
         nginx.configure(m2ee)
         telegraf.run()
         datadog.run(m2ee.config.get_runtime_version())
+        metering.run()
 
         runtime.run(m2ee)
 
