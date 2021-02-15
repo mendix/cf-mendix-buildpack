@@ -104,6 +104,7 @@ instances:
         bean_regex: 'kafka\.streams:type=stream-processor-node-metrics,thread-id=(.*?),task-id=(.*?),processor-node-id=(.*?)(?:,|$)'
   host: localhost
   port: 11004
+  jvm_direct: true
   java_bin_path: {{ java_bin_path }}
   java_options: -Xmx50m -Xms15m
   refresh_beans: 120

@@ -254,6 +254,18 @@ class BaseTest(unittest.TestCase):
         else:
             pass
 
+    def assert_listening_on_port(self, port, process):
+        output = self.run_on_container(
+            "lsof -i | grep '^{}.*:{}'".format(process, port)
+        )
+        assert output is not None
+        assert str(output).find(process) >= 0
+
+    def assert_running(self, process):
+        output = self.run_on_container("ps aux | grep {}".format(process))
+        assert output is not None
+        assert str(output).find(process) >= 0
+
     def _cmd(self, command):
         try:
             return (

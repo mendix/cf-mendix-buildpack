@@ -1,0 +1,276 @@
+{% if tags %}
+[global_tags]
+    {% for key, value in tags.items() %}
+    {{ key }} = "{{ value }}"
+    {% endfor %}
+{% endif %}
+
+# Main agent configuration; based on defaults
+[agent]
+    interval = "{{ interval }}s"
+    round_interval = true
+    metric_batch_size = 1000
+    metric_buffer_limit = 10000
+    collection_jitter = "0s"
+    flush_interval = "10s"
+    flush_jitter = "5s"
+    precision = ""
+    debug = false
+    logfile = ""
+    hostname = "{{ hostname }}"
+    omit_hostname = false
+
+{% if statsd_port and not datadog_api_key %}
+# StatsD input for Mendix Java Agent
+[[inputs.statsd]]
+    protocol = "udp"
+    max_tcp_connections = 250
+    tcp_keep_alive = false
+    service_address = ":{{ statsd_port }}"
+    delete_gauges = true
+    delete_counters = true
+    delete_sets = true
+    delete_timings = true
+    percentiles = [90]
+    metric_separator = "."
+    datadog_extensions = true
+    allowed_pending_messages = 10000
+    percentile_limit = 1000
+{% endif %}
+
+{% if db_config %}
+{% if not datadog_api_key %}
+# PostgreSQL input (standard)
+[[inputs.postgresql]]
+    address = "postgres://{{ db_config['DatabaseUserName'] }}:{{ db_config['DatabasePassword'] }}@{{ db_config['DatabaseHost'] }}/{{ db_config['DatabaseName'] }}"
+{% else %}
+# PostgreSQL input (Datadog)
+# This input attempts to duplicate the Datadog Agent PostgreSQL check
+#
+# Known limitations:
+# - Metrics are sent to Datadog with as "other" type: Telegraf does not support metric types (yet) across the board
+#   The workaround is to append _rate and _count to those metrics and to do rollup in Datadog based on the Telegraf agent interval settings
+[[inputs.postgresql_extensible]]
+    address = "postgres://{{ db_config['DatabaseUserName'] }}:{{ db_config['DatabasePassword'] }}@{{ db_config['DatabaseHost'] }}/{{ db_config['DatabaseName'] }}"
+    
+    # Drop fields not present in the Datadog Agent PostgreSQL check
+    fielddrop = ["datname"]
+
+    # Add port tag
+    [inputs.postgresql_extensible.tags]
+        db = "{{ db_config['DatabaseName'] }}" # Global database tag
+        port = "5432"
+        {% if database_rate_count_metrics_enabled %}
+        interval = "{{ interval }}s" # Helpful for determining rollup for counter and rate metrics
+        {% endif %}
+
+    # pg_stat_database metrics (gauges)
+    [[inputs.postgresql_extensible.query]]
+        sqlquery = """
+            SELECT
+                datname,
+                numbackends AS connections,
+                pg_database_size(datname) AS database_size
+            FROM pg_stat_database
+        """
+        version = 901
+        withdbname = false
+        tagvalue = ""
+
+    # pg_stat_database metrics > 9.20 (gauges)
+    [[inputs.postgresql_extensible.query]]
+        sqlquery = """
+            SELECT
+                datname,
+                deadlocks
+            FROM pg_stat_database
+        """
+        version = 920
+        withdbname = false
+        tagvalue = ""
+
+    # before_xid_wraparound metric
+    [[inputs.postgresql_extensible.query]]
+        sqlquery = """
+            SELECT
+                datname,
+                2^31 - age(datfrozenxid) AS before_xid_wraparound
+            FROM pg_database
+        """
+        version = 901
+        withdbname = false
+        tagvalue = ""
+
+    # db.count metric
+    [[inputs.postgresql_extensible.query]]
+        sqlquery = """
+            SELECT COUNT(*) AS \"count\"
+            FROM pg_database
+            WHERE datistemplate = false
+        """
+        version = 901
+        withdbname = false
+        tagvalue = ""
+        measurement = "postgresql.db"
+
+    # locks metrics
+    [[inputs.postgresql_extensible.query]]
+        sqlquery = """
+            SELECT
+                mode AS lock_mode,
+                locktype AS lock_type,
+                pn.nspname AS schema,
+                pd.datname AS datname,
+                pc.relname AS table,
+                COUNT(*) AS locks
+            FROM pg_locks l
+            JOIN pg_database pd ON (l.database = pd.oid)
+            JOIN pg_class pc ON (l.relation = pc.oid)
+            LEFT JOIN pg_namespace pn ON (pn.oid = pc.relnamespace)
+            WHERE l.mode IS NOT NULL
+            AND pc.relname NOT LIKE 'pg_%%'
+            GROUP BY pd.datname, pc.relname, pn.nspname, locktype, mode
+        """
+        version = 901
+        withdbname = false
+        tagvalue = "lock_mode,lock_type,schema,table"
+
+    # max_connections and percent_usage_connections metrics
+    [[inputs.postgresql_extensible.query]]
+        sqlquery = """
+            WITH max_con AS (SELECT setting::float FROM pg_settings WHERE name = 'max_connections')
+            SELECT
+                MAX(setting) AS max_connections,
+                SUM(numbackends)/MAX(setting) AS percent_usage_connections
+            FROM pg_stat_database, max_con
+        """
+        version = 901
+        withdbname = false
+        tagvalue = ""
+
+    # table.count metric
+    [[inputs.postgresql_extensible.query]]
+        sqlquery = """
+            SELECT
+                schemaname AS schema,
+                COUNT(*) AS \"count\"
+            FROM (
+                SELECT schemaname
+                FROM pg_stat_user_tables
+                ORDER BY schemaname, relname
+                LIMIT 200
+            ) AS subquery
+            GROUP BY schema
+        """
+        version = 901
+        withdbname = false
+        tagvalue = "schema"
+        measurement = "postgresql.table" 
+    {% if database_rate_count_metrics_enabled %}
+
+    # pg_stat_database metrics (rates)
+    [[inputs.postgresql_extensible.query]]
+        sqlquery = """
+            SELECT
+                datname,
+                blks_hit AS buffer_hit_rate,
+                xact_commit AS commits_rate,
+                blks_read AS disk_read_rate,
+                xact_rollback AS rollbacks_rate,
+                tup_deleted AS rows_deleted_rate,
+                tup_fetched AS rows_fetched_rate,
+                tup_inserted AS rows_inserted_rate,
+                tup_returned AS rows_returned_rate,
+                tup_updated AS rows_updated_rate
+            FROM pg_stat_database
+        """
+        version = 901
+        withdbname = false
+        tagvalue = ""
+
+    # pg_stat_database metrics > 9.20 (rates)
+    [[inputs.postgresql_extensible.query]]
+        sqlquery = """
+            SELECT
+                datname,
+                temp_files AS temp_files_rate,
+                temp_files AS temp_files_rate
+            FROM pg_stat_database
+        """
+        version = 920
+        withdbname = false
+        tagvalue = ""
+
+    # pg_stat_bgwriter metrics (monotonic counters)
+    [[inputs.postgresql_extensible.query]]
+        sqlquery = """
+            SELECT
+                buffers_alloc AS buffers_alloc_count,
+                buffers_backend AS buffers_backend_count,
+                buffers_backend_fsync AS buffers_backend_fsync_count,
+                buffers_checkpoint AS buffers_checkpoint_count,
+                buffers_clean AS buffers_clean_count,
+                checkpoints_req AS checkpoints_requested_count,
+                checkpoints_timed AS checkpoints_timed_count,
+                maxwritten_clean AS maxwritten_clean_count,
+                checkpoint_sync_time AS sync_time_count,
+                checkpoint_write_time AS write_time_count
+            FROM pg_stat_bgwriter
+        """
+        version = 901
+        withdbname = false
+        tagvalue = ""
+        measurement = "postgresql.bgwriter"
+
+    # pg_stat_archiver metrics (monotonic counters)
+    [[inputs.postgresql_extensible.query]]
+        sqlquery = """
+            SELECT
+                archived_count AS archived_count_count,
+                failed_count AS failed_count_count
+            FROM pg_stat_archiver
+        """
+        version = 901
+        withdbname = false
+        tagvalue = ""
+        measurement = "postgresql.archiver"
+    {% endif %}
+{% endif %}
+{% endif %}
+
+{% if datadog_api_key and db_config and database_diskstorage_metric_enabled %}
+# Database diskstorage metric input
+[[inputs.exec]]
+    commands = ["echo \"$DATABASE_DISKSTORAGE\""]
+    name_override = "mx.database.diskstorage_size"
+    data_format = "value"
+    data_type = "float"
+{% endif %}
+
+{% if datadog_api_key %}
+# Datadog output
+[[outputs.datadog]]
+    apikey = "{{ datadog_api_key }}"
+    {% if datadog_api_url %}
+    url = "{{ datadog_api_url }}"
+    {% endif %}
+{% endif %}
+
+{% if http_outputs %}
+# InfluxDB HTTP outputs
+{% for http_output in http_outputs %}
+[[outputs.http]]
+    url = "{{ http_output.url }}"
+    method = "POST"
+    data_format = "influx"
+    timeout = "30s"
+    {% if http_output.credentials %}
+    [outputs.http.headers]
+        Authorization = "Basic {{ http_output.credentials }}"
+    {% endif %}
+    {% if http_output.kpionly %}
+    [outputs.http.tagpass]
+        KPI = ["true"]
+    {% endif %}
+{% endfor %}
+{% endif %}

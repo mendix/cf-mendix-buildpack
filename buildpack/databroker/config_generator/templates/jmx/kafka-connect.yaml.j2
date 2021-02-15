@@ -203,6 +203,7 @@ instances:
       bean_regex: 'debezium\.postgres:type=connector-metrics,context=streaming,server=.*'
   host: localhost
   port: 11003
+  jvm_direct: true
   java_bin_path: {{ java_bin_path }}
   java_options: -Xmx50m -Xms15m
   refresh_beans: 120
