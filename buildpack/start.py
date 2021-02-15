@@ -110,7 +110,17 @@ if __name__ == "__main__":
         dynatrace.update_config(m2ee, util.get_vcap_data()["application_name"])
         mx_java_agent.update_config(m2ee)
         telegraf.update_config(m2ee, util.get_vcap_data()["application_name"])
-        datadog.update_config(m2ee)
+        (
+            databroker_jmx_instance_cfg,
+            databroker_jmx_config_files,
+        ) = databroker_processes.get_datadog_config(
+            datadog._get_user_checks_dir()
+        )
+        datadog.update_config(
+            m2ee,
+            extra_jmx_instance_config=databroker_jmx_instance_cfg,
+            jmx_config_files=databroker_jmx_config_files,
+        )
 
         @atexit.register
         def terminate_process():
@@ -171,7 +181,7 @@ if __name__ == "__main__":
 
         nginx.configure(m2ee)
         telegraf.run()
-        datadog.run(m2ee.config.get_runtime_version())
+        datadog.run()
         metering.run()
 
         runtime.run(m2ee)
@@ -200,7 +210,7 @@ if __name__ == "__main__":
 
         nginx_process = nginx.run()
 
-        databroker_processes.run(m2ee.client, runtime.database.get_config())
+        databroker_processes.run(m2ee, runtime.database.get_config())
 
         def loop_until_process_dies():
             @backoff.on_predicate(backoff.constant, interval=10, logger=None)

@@ -60,25 +60,23 @@ def check_database_environment():
         return False
 
 
-def preflight_check():
+def preflight_check(runtime_version):
     if not check_database_environment():
         raise ValueError("Missing environment variables")
 
-    mx_version_str = runtime.get_version(BUILD_DIR)
     stack = os.getenv("CF_STACK")
     logging.info(
         "Preflight check on Mendix runtime version [%s] and stack [%s]...",
-        mx_version_str,
+        runtime_version,
         stack,
     )
-    mx_version = MXVersion(str(mx_version_str))
 
     if not stack in SUPPORTED_STACKS:
         raise NotImplementedError("Stack [{}] is not supported".format(stack))
-    if not runtime.check_deprecation(mx_version):
+    if not runtime.check_deprecation(runtime_version):
         raise NotImplementedError(
             "Mendix runtime version [{}] is not supported".format(
-                mx_version_str
+                runtime_version
             )
         )
     logging.info("Preflight check completed")
@@ -129,15 +127,16 @@ if __name__ == "__main__":
         format="%(levelname)s: %(message)s",
     )
 
+    runtime_version = runtime.get_version(BUILD_DIR)
+
     try:
-        preflight_check()
+        preflight_check(runtime_version)
     except (ValueError, NotImplementedError) as error:
         logging.error(error)
         exit(1)
 
     if is_source_push():
         logging.info("Source push detected, starting MxBuild...")
-        runtime_version = runtime.get_version(BUILD_DIR)
         try:
             mxbuild.stage(
                 BUILD_DIR,
@@ -165,8 +164,8 @@ if __name__ == "__main__":
     appdynamics.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
     dynatrace.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
     newrelic.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
-    mx_java_agent.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
-    telegraf.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
+    mx_java_agent.stage(DOT_LOCAL_LOCATION, CACHE_DIR, runtime_version)
+    telegraf.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)
     datadog.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)
     metering.stage(BUILDPACK_DIR, BUILD_DIR, CACHE_DIR)
     runtime.stage(BUILDPACK_DIR, BUILD_DIR, CACHE_DIR)

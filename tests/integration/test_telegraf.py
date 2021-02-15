@@ -1,3 +1,4 @@
+from buildpack import telegraf
 from tests.integration import basetest
 
 
@@ -8,9 +9,7 @@ class TestCaseTelegraf(basetest.BaseTest):
             env_vars={"APPMETRICS_TARGET": '{"url": "https://foo.bar/write"}'},
         )
         self.start_container()
-
         self.assert_app_running()
-
-        # Validate telegraf is running and has port 8125 opened for StatsD
-        output = self.run_on_container("lsof -i | grep '^telegraf.*:8125'")
-        assert output and str(output).find("telegraf") >= 0
+        self.assert_listening_on_port(telegraf.get_statsd_port(), "telegraf")
+        self.assert_string_not_in_recent_logs("E! [inputs.postgresql]")
+        self.assert_string_not_in_recent_logs("E! [processors.")
