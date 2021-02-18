@@ -417,19 +417,20 @@ def _download(build_path, cache_dir):
     )
 
 
+def _set_permissions(glob_files):
+    files = glob.glob(glob_files)
+    for exec_file in files:
+        logging.debug("Setting [{}] to be executable...".format(exec_file))
+        st = os.stat(exec_file)
+        os.chmod(exec_file, st.st_mode | stat.S_IEXEC)
+
+
 def stage(buildpack_path, build_path, cache_path):
     if not is_enabled():
         return
 
     logging.debug("Staging Datadog...")
     _download(build_path, cache_path)
-
-    logging.debug("Setting permissions...")
-    files = glob.glob(("{}/*.sh").format(AGENT_DIR))
-    for exec_file in files:
-        logging.debug("Setting [{}] to be executable...".format(exec_file))
-        st = os.stat(exec_file)
-        os.chmod(exec_file, st.st_mode | stat.S_IEXEC)
 
 
 def run():
@@ -442,6 +443,9 @@ def run():
             "Please push or restage your app to complete Datadog installation."
         )
         return
+
+    logging.debug("Setting Datadog Agent script permissions...")
+    _set_permissions("{}/*.sh".format(AGENT_DIR))
 
     # Start the run script "borrowed" from the official DD buildpack
     # and include settings as environment variables
