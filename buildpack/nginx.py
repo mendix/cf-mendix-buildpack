@@ -175,10 +175,17 @@ def get_http_headers():
     return result
 
 
+def get_nginx_bin_path():
+    nginx_bin_path = os.environ.get(
+        "NGINX_CUSTOM_BIN_PATH", "nginx/sbin/nginx"
+    )
+    return nginx_bin_path
+
+
 def run():
     nginx_process = subprocess.Popen(
         [
-            "nginx/sbin/nginx",
+            get_nginx_bin_path(),
             "-p",
             "nginx",
             "-c",
