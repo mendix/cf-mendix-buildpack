@@ -53,6 +53,11 @@ def _is_samesite_cookie_workaround_enabled(mx_version):
         return False
 
 
+def is_custom_nginx():
+    if "NGINX_CUSTOM_BIN_PATH" in os.environ:
+        return True
+
+
 def stage(buildpack_path, build_path, cache_path):
     logging.debug("Staging nginx...")
     shutil.copytree(
@@ -60,13 +65,19 @@ def stage(buildpack_path, build_path, cache_path):
         os.path.join(build_path, "nginx"),
     )
 
-    util.download_and_unpack(
-        util.get_blobstore_url(
-            "/mx-buildpack/nginx_1.19.1_linux_x64_cflinuxfs3_b5af01b0.tgz"
-        ),
-        os.path.join(build_path, "nginx"),
-        cache_dir=cache_path,
-    )
+    if not is_custom_nginx():
+        logging.debug("Downloading nginx...")
+        util.download_and_unpack(
+            util.get_blobstore_url(
+                "/mx-buildpack/nginx_1.19.1_linux_x64_cflinuxfs3_b5af01b0.tgz"
+            ),
+            os.path.join(build_path, "nginx"),
+            cache_dir=cache_path,
+        )
+    else:
+        logging.debug(
+            "Custom nginx path provided, nginx will not be downloaded"
+        )
 
 
 def configure(m2ee):
