@@ -161,11 +161,45 @@ def _set_up_dd_java_agent(m2ee, jmx_config_files):
     ]:
         return
 
-    # Extend with Java Agent and JMX options
+    # Inject Datadog Java agent
     m2ee.config._conf["m2ee"]["javaopts"].extend(
         [
             "-javaagent:{}".format(jar),
             "-D{}={}".format("dd.tags", _get_datadog_tags()),
+            "-D{}={}".format("dd.service", get_service()),
+        ]
+    )
+
+    # Expllicitly set tracing flag
+    m2ee.config._conf["m2ee"]["javaopts"].extend(
+        [
+            "-D{}={}".format(
+                "dd.trace.enabled", str(_is_tracing_enabled()).lower()
+            ),
+        ]
+    )
+
+    # Extend with tracing options
+    if _is_tracing_enabled():
+        m2ee.config._conf["m2ee"]["javaopts"].extend(
+            ["-D{}={}".format("dd.logs.injection", "true"),]
+        )
+
+        # Extend with database service mapping
+        dbconfig = database.get_config()
+        if dbconfig and "postgres" in dbconfig["DatabaseType"].lower():
+            m2ee.config._conf["m2ee"]["javaopts"].extend(
+                [
+                    "-D{}={}".format(
+                        "dd.service.mapping",
+                        "{}:{}.db".format("postgresql", get_service()),
+                    ),
+                ]
+            )
+
+    # Extend with JMX options
+    m2ee.config._conf["m2ee"]["javaopts"].extend(
+        [
             "-D{}={}".format("dd.jmxfetch.enabled", "true"),
             "-D{}={}".format("dd.jmxfetch.statsd.port", get_statsd_port()),
         ]
@@ -180,30 +214,6 @@ def _set_up_dd_java_agent(m2ee, jmx_config_files):
                 ),
             ]
         )
-
-    # Extend with tracing options
-    if _is_tracing_enabled():
-        m2ee.config._conf["m2ee"]["javaopts"].extend(
-            [
-                "-D{}={}".format("dd.trace.enabled", "true"),
-                "-D{}={}".format("dd.service", get_service()),
-                "-D{}={}".format("dd.logs.injection", "true"),
-            ]
-        )
-
-        # Extend with database service mapping
-        dbconfig = database.get_config()
-        if dbconfig:
-            m2ee.config._conf["m2ee"]["javaopts"].extend(
-                [
-                    "-D{}={}".format(
-                        "dd.service.mapping",
-                        "{}:{}.db".format(
-                            dbconfig["DatabaseType"].lower(), get_service()
-                        ),
-                    ),
-                ]
-            )
 
 
 def _get_runtime_jmx_config(extra_jmx_instance_config=None):
@@ -321,8 +331,8 @@ def _set_up_environment():
     if "TAGS" in e:
         del e["TAGS"]
 
-    # Set Mendix Datadog sidecar specific environment variables
-    # e["DD_ENABLE_USER_CHECKS"] = "true"
+    # Explicitly enable or disable tracing
+    e["DD_TRACE_ENABLED"] = str(_is_tracing_enabled()).lower()
 
     # Set Datadog Cloud Foundry Buildpack specific environment variables
     e["DATADOG_DIR"] = str(AGENT_DIR)
