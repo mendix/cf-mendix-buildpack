@@ -91,12 +91,12 @@ def stage(buildpack_dir, build_path, cache_path):
 def get_java_version(mx_version):
     if mx_version >= MXVersion("8.0.0"):
         java_version = {
-            "version": os.getenv("JAVA_VERSION", "11.0.8"),
+            "version": os.getenv("JAVA_VERSION", "11.0.10"),
             "vendor": "AdoptOpenJDK",
         }
     elif mx_version >= MXVersion("7.23.1"):
         java_version = {
-            "version": os.getenv("JAVA_VERSION", "8u262"),
+            "version": os.getenv("JAVA_VERSION", "8u282"),
             "vendor": "AdoptOpenJDK",
         }
     else:
