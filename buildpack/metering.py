@@ -14,6 +14,7 @@ SIDECAR_ARCHIVE = "metering-sidecar-linux-amd64-{}.tar.gz".format(
 SIDECAR_URL_ROOT = "/mx-buildpack/experimental/{}".format(NAMESPACE)
 SIDECAR_DIR = os.path.abspath("/home/vcap/app/metering")
 SIDECAR_FILENAME = "metering-sidecar"
+SIDECAR_CONFIG_FILE = "conf.json"
 
 
 def _download(build_path, cache_dir):
@@ -82,32 +83,57 @@ def _set_up_environment():
             dbconfig["DatabaseHost"],
             dbconfig["DatabaseName"],
         )
-    project_id = _get_project_id(SIDECAR_DIR + "/conf.json")
+    project_id = _get_project_id(SIDECAR_DIR + "/" + SIDECAR_CONFIG_FILE)
     os.environ["MXUMS_PROJECT_ID"] = project_id
     e = dict(os.environ.copy())
     return e
 
 
-def stage(buildpack_path, build_path, cache_dir):
-    if _is_usage_metering_enabled():
-        logging.info("Usage metering is enabled")
-        _download(build_path, cache_dir)
-
-        project_id = _get_project_id(
-            os.path.join(build_path, "model", "metadata.json")
-        )
-        config = {"ProjectID": project_id}
-
-        logging.debug("Writing metering sidecar configuration file...")
-        write_file(os.path.join(build_path, NAMESPACE) + "/conf.json", config)
-
+def _is_sidecar_installed():
+    if os.path.exists(SIDECAR_DIR + "/" + SIDECAR_FILENAME):
+        if os.path.exists(SIDECAR_DIR + "/" + SIDECAR_CONFIG_FILE):
+            return True
+        else:
+            logging.info("metering sidecar configuration not found")
     else:
-        logging.info("Usage metering is NOT enabled")
+        logging.info("metering sidecar not found")
+    return False
+
+
+def stage(buildpack_path, build_path, cache_dir):
+    try:
+        if _is_usage_metering_enabled():
+            logging.info("Usage metering is enabled")
+            _download(build_path, cache_dir)
+
+            project_id = _get_project_id(
+                os.path.join(build_path, "model", "metadata.json")
+            )
+            config = {"ProjectID": project_id}
+
+            logging.debug("Writing metering sidecar configuration file...")
+            write_file(
+                os.path.join(build_path, NAMESPACE)
+                + "/"
+                + SIDECAR_CONFIG_FILE,
+                config,
+            )
+        else:
+            logging.info("Usage metering is NOT enabled")
+    except Exception as exception:
+        logging.info(
+            "Encountered an exception while staging the metering sidecar. This is nothing to worry about."
+        )
 
 
 def run():
-    logging.info("Starting metering sidecar")
-    if _is_usage_metering_enabled():
-        subprocess.Popen(
-            SIDECAR_DIR + "/" + SIDECAR_FILENAME, env=_set_up_environment()
+    try:
+        if _is_usage_metering_enabled() and _is_sidecar_installed():
+            logging.info("Starting metering sidecar")
+            subprocess.Popen(
+                SIDECAR_DIR + "/" + SIDECAR_FILENAME, env=_set_up_environment()
+            )
+    except Exception as exception:
+        logging.info(
+            "Encountered an exception while starting the metering sidecar. This is nothing to worry about."
         )
