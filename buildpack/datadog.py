@@ -359,7 +359,19 @@ def _get_logging_config():
             "name": "postgres_credentials",
             "pattern": r"\'jdbc:postgresql://(.*)\'",
             "replace_placeholder": "[SECRET REDACTED]",
-        }
+        },
+        {
+            "type": "mask_sequences",
+            "name": "s3_location",
+            "pattern": r"S3 storage, bucket location: (.*)",
+            "replace_placeholder": "[SECRET REDACTED]",
+        },
+        {
+            "type": "mask_sequences",
+            "name": "s3_endpoint",
+            "pattern": r"Endpoint set to: s3-(.*)",
+            "replace_placeholder": "[SECRET REDACTED]",
+        },
     ]
 
     # Optional redaction rules; can be toggled with an environment variable
