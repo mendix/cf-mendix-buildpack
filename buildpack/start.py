@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 import atexit
-import datetime
-import json
 import logging
 import os
 import signal
@@ -11,14 +9,12 @@ import traceback
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 import backoff
-import requests
 
 from buildpack import (
     appdynamics,
     databroker,
     datadog,
     dynatrace,
-    instadeploy,
     java,
     metering,
     mx_java_agent,
@@ -28,6 +24,7 @@ from buildpack import (
     telegraf,
     util,
 )
+from buildpack.runtime_components import metrics
 
 
 class Maintenance(BaseHTTPRequestHandler):
@@ -60,14 +57,7 @@ if os.environ.get("DEBUG_CONTAINER", "false").lower() == "true":
     httpd.serve_forever()
 
 
-def emit(**stats):
-    stats["version"] = "1.0"
-    stats["timestamp"] = datetime.datetime.now().isoformat()
-    logging.info("MENDIX-METRICS: %s", json.dumps(stats))
-
-
 if __name__ == "__main__":
-    app_is_restarting = False
     m2ee = None
     nginx_process = None
     databroker_processes = databroker.Databroker()
@@ -121,6 +111,7 @@ if __name__ == "__main__":
             extra_jmx_instance_config=databroker_jmx_instance_cfg,
             jmx_config_files=databroker_jmx_config_files,
         )
+        nginx.configure(m2ee)
 
         @atexit.register
         def terminate_process():
@@ -160,9 +151,9 @@ if __name__ == "__main__":
         def sigusr_handler(_signo, _stack_frame):
             logging.debug("Handling SIGUSR...")
             if _signo == signal.SIGUSR1:
-                emit(jvm={"errors": 1.0})
+                metrics.emit(jvm={"errors": 1.0})
             elif _signo == signal.SIGUSR2:
-                emit(jvm={"ooms": 1.0})
+                metrics.emit(jvm={"ooms": 1.0})
             else:
                 # Should not happen
                 pass
@@ -179,37 +170,14 @@ if __name__ == "__main__":
         signal.signal(signal.SIGUSR1, sigusr_handler)
         signal.signal(signal.SIGUSR2, sigusr_handler)
 
-        nginx.configure(m2ee)
         telegraf.run()
         datadog.run()
         metering.run()
 
         runtime.run(m2ee)
-
-        def reload_callback():
-            m2ee.client.request("reload_model")
-
-        def restart_callback():
-            global app_is_restarting
-
-            if not m2ee:
-                logging.warning("M2EE client not set")
-            app_is_restarting = True
-            if not runtime.shutdown(m2ee, 10):
-                logging.warning("Could not kill runtime with M2EE")
-            runtime.complete_start_procedure_safe_to_use_for_restart(m2ee)
-            app_is_restarting = False
-
-        instadeploy.set_up_instadeploy_if_deploy_password_is_set(
-            reload_callback,
-            restart_callback,
-            m2ee.config.get_runtime_version(),
-            runtime.get_java_version(m2ee.config.get_runtime_version()),
-        )
         runtime.run_components(m2ee)
 
         nginx_process = nginx.run()
-
         databroker_processes.run(m2ee, runtime.database.get_config())
 
         def loop_until_process_dies():
@@ -221,20 +189,17 @@ if __name__ == "__main__":
                 if not success:
                     runtime.stop(m2ee)
                     return True
-                return not (app_is_restarting or m2ee.runner.check_pid())
+                return not m2ee.runner.check_pid()
 
             logging.debug("Waiting until runtime process dies...")
             _await_process_dies()
 
         loop_until_process_dies()
 
-        emit(jvm={"crash": 1.0})
+        metrics.emit(jvm={"crash": 1.0})
         logging.info("Runtime process stopped, stopping container...")
 
     except Exception:
         ex = traceback.format_exc()
         logging.error("Starting application failed: %s", ex)
-        callback_url = os.environ.get("BUILD_STATUS_CALLBACK_URL")
-        if callback_url:
-            requests.put(callback_url, ex)
         raise

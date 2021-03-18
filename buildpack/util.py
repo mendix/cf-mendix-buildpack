@@ -230,10 +230,6 @@ def get_admin_port():
     return get_nginx_port() + 2
 
 
-def get_deploy_port():
-    return get_nginx_port() + 3
-
-
 def is_development_mode():
     return os.getenv("DEVELOPMENT_MODE", "").lower() == "true"
 

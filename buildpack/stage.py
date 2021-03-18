@@ -20,7 +20,6 @@ from buildpack import (
     util,
 )
 from buildpack.runtime_components import database
-from lib.m2ee.version import MXVersion
 
 BUILDPACK_DIR = os.path.dirname(
     os.path.dirname(os.path.join(os.path.dirname(__file__), ".."))
@@ -60,24 +59,22 @@ def check_database_environment():
         return False
 
 
-def preflight_check(runtime_version):
+def preflight_check(version):
     if not check_database_environment():
         raise ValueError("Missing environment variables")
 
     stack = os.getenv("CF_STACK")
     logging.info(
         "Preflight check on Mendix runtime version [%s] and stack [%s]...",
-        runtime_version,
+        version,
         stack,
     )
 
     if not stack in SUPPORTED_STACKS:
         raise NotImplementedError("Stack [{}] is not supported".format(stack))
-    if not runtime.check_deprecation(runtime_version):
+    if not runtime.check_deprecation(version):
         raise NotImplementedError(
-            "Mendix runtime version [{}] is not supported".format(
-                runtime_version
-            )
+            "Mendix runtime version [{}] is not supported".format(version)
         )
     logging.info("Preflight check completed")
 
@@ -159,7 +156,7 @@ if __name__ == "__main__":
         BUILDPACK_DIR,
         CACHE_DIR,
         DOT_LOCAL_LOCATION,
-        runtime.get_java_version(runtime.get_version(BUILD_DIR)),
+        runtime.get_java_version(runtime_version),
     )
     appdynamics.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
     dynatrace.stage(DOT_LOCAL_LOCATION, CACHE_DIR)

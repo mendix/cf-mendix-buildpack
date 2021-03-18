@@ -6,8 +6,6 @@ import shutil
 import subprocess
 import zipfile
 
-import requests
-
 from buildpack import java, mono, util
 from buildpack.util import NotFoundException
 
@@ -57,7 +55,7 @@ def stage(build_path, cache_path, local_path, runtime_version, java_version):
         logging.debug("subprocess call %s", args)
         subprocess.check_call(args, env=mono_env)
     except subprocess.CalledProcessError as ex:
-        buildstatus_callback(BUILD_ERRORS_JSON)
+        log_buildstatus_errors(BUILD_ERRORS_JSON)
         raise RuntimeError(ex)
 
     for file_name in os.listdir(build_path):
@@ -81,7 +79,7 @@ def stage(build_path, cache_path, local_path, runtime_version, java_version):
         logging.warning("Could not write source push indicator: %s", str(ex))
 
 
-def buildstatus_callback(error_file):
+def log_buildstatus_errors(error_file):
     generic_build_failure = {
         "problems": [
             {
@@ -101,50 +99,6 @@ def buildstatus_callback(error_file):
         logging.exception("Could not read mxbuild error file\n%s", input_str)
         builddata = json.dumps(generic_build_failure)
     logging.error("MxBuild returned errors: %s", builddata)
-    callback_url = os.environ.get("BUILD_STATUS_CALLBACK_URL")
-    if callback_url:
-        logging.info("Submitting build status")
-        put_buildstatus(callback_url, builddata)
-        logging.info("Submitted build status")
-    else:
-        logging.warning(
-            "No build status callback url set, "
-            "so not going to submit the status"
-        )
-
-
-def put_buildstatus(callback_url, builddata):
-    r = requests.put(callback_url, builddata)
-    return r.status_code
-
-
-def start_mxbuild_server(local_path, runtime_version, java_version):
-    cache = "/tmp/downloads"  # disable caching here, not in compile step
-    mono_location = mono.ensure_and_get_mono(runtime_version, cache)
-    mono_env = mono.get_env_with_monolib(mono_location)
-    path = os.path.join(os.getcwd(), "runtimes", str(runtime_version))
-    if not os.path.isdir(os.path.join(path, "modeler")):
-        ensure_mxbuild_in_directory(
-            os.path.join(local_path, "mxbuild"), runtime_version, cache
-        )
-        path = os.path.join(local_path, "mxbuild")
-
-    jvm_location = java.ensure_and_get_jvm(
-        java_version, cache, local_path, package="jdk"
-    )
-    subprocess.Popen(
-        [
-            os.path.join(mono_location, "bin/mono"),
-            "--config",
-            os.path.join(mono_location, "etc/mono/config"),
-            os.path.join(path, "modeler", "mxbuild.exe"),
-            "--serve",
-            "--port=6666",
-            "--java-home=%s" % jvm_location,
-            "--java-exe-path=%s/bin/java" % jvm_location,
-        ],
-        env=mono_env,
-    )
 
 
 def _checkout_from_git_rootfs(directory, mx_version):

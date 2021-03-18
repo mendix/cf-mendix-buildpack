@@ -7,8 +7,8 @@ import sys
 import threading
 import time
 from abc import ABCMeta, abstractmethod
-from timeit import default_timer as timer
 from distutils.util import strtobool
+from timeit import default_timer as timer
 
 import psycopg2
 import requests
@@ -18,6 +18,12 @@ from lib.m2ee import munin
 
 BUILDPACK_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, os.path.join(BUILDPACK_DIR, "lib"))
+
+
+def emit(**stats):
+    stats["version"] = "1.0"
+    stats["timestamp"] = datetime.datetime.now().isoformat()
+    logging.info("MENDIX-METRICS: %s", json.dumps(stats))
 
 
 def int_or_default(value, default=0):

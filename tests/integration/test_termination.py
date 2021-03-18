@@ -21,10 +21,7 @@ class TestCaseTermination(basetest.BaseTest):
     def test_termination_broken_application(self):
         self.stage_container(
             "Sample-StartError-7.23.2.mda",
-            env_vars={
-                "DEPLOY_PASSWORD": self._mx_password,
-                "METRICS_INTERVAL": "10",
-            },
+            env_vars={"METRICS_INTERVAL": "10",},
         )
         self.start_container(status="unhealthy")
         self.assert_string_in_recent_logs("start failed, stopping")
@@ -32,11 +29,7 @@ class TestCaseTermination(basetest.BaseTest):
 
     def test_java_crash_triggers_unhealthy(self):
         self.stage_container(
-            "sample-6.2.0.mda",
-            env_vars={
-                "DEPLOY_PASSWORD": self._mx_password,
-                "METRICS_INTERVAL": "10",
-            },
+            "sample-6.2.0.mda", env_vars={"METRICS_INTERVAL": "10",},
         )
         self.start_container()
         self.assert_app_running()
