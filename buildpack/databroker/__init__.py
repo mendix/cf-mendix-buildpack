@@ -4,6 +4,8 @@
 # Add databroker components to an mx app container
 #
 
+import atexit
+import backoff
 import os
 import logging
 import json
@@ -79,6 +81,8 @@ class Databroker:
         self.restart_retries = 0
         self.is_producer_app = is_producer_app()
 
+        atexit.register(self.stop, self)
+
     def __setup_configs(self, database_config):
         metadata = open(METADATA_FILE, "rt")
         dep = open(DEP_FILE, "rt")
@@ -130,23 +134,12 @@ class Databroker:
                 extra_jmx_instance_config = consumer.jmx_metrics
         return (extra_jmx_instance_config, jmx_config_files)
 
-    def run(self, m2ee, database_config):
+    def run(self, database_config):
         if not self.is_producer_app:
             return
         logging.info("Databroker: Initializing components")
 
         try:
-            logging.info(
-                "Databroker: Waiting for database initialization to complete"
-            )
-            if not m2ee.client.ping(timeout=30):
-                raise Exception(
-                    "Failed to receive successful ping from admin api"
-                )
-            logging.info(
-                "Databroker: database is now available, starting broker components"
-            )
-
             complete_conf = self.__setup_configs(database_config)
             if should_run_kafka_connect():
                 self.kafka_connect = connect.run(complete_conf)
@@ -158,6 +151,12 @@ class Databroker:
             )
             raise Exception("Databroker initailization failed") from ex
 
+        if not self.restart_if_any_component_not_healthy():
+            logging.error(
+                "Databroker: component restart retries exhaused. Stopping the app"
+            )
+            exit(0)
+        
     def stop(self):
         if not self.is_producer_app:
             return
@@ -176,21 +175,21 @@ class Databroker:
         if self.kafka_streams:
             self.kafka_streams.kill()
 
+    @backoff.on_predicate(
+        backoff.constant,
+        interval=10,
+        max_tries=MAX_DATABROKER_COMPONENT_RESTART_RETRIES,
+    )
     def restart_if_any_component_not_healthy(self):
         if not self.is_producer_app:
             return True
 
-        if self.restart_retries > MAX_DATABROKER_COMPONENT_RESTART_RETRIES:
-            logging.error(
-                "Databroker: component restart retries exhaused. Stopping the app"
-            )
-            return False
-
+        result = True
         if self.kafka_connect and not self.kafka_connect.is_alive():
             self.kafka_connect.restart()
-            self.restart_retries += 1
+            result = False
         if self.kafka_streams and not self.kafka_streams.is_alive():
             self.kafka_streams.restart()
-            self.restart_retries += 1
+            result = False
 
-        return True
+        return result

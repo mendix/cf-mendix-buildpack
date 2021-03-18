@@ -475,7 +475,7 @@ class PaidAppsMetricsEmitterThread(BaseMetricsEmitterThread):
     @property
     def _select_stats_to_emit(self):
         selected_stats = []
-        if util.i_am_primary_instance():
+        if util.is_cluster_leader():
             selected_stats = [
                 self._inject_database_stats,
                 self._inject_storage_stats,

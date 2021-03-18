@@ -125,7 +125,7 @@ def _get_http_outputs():
 def _get_db_config():
     if (
         include_db_metrics() or datadog.get_api_key()
-    ) and util.i_am_primary_instance():
+    ) and util.is_cluster_leader():
         db_config = database.get_config()
         if db_config and db_config["DatabaseType"] == "PostgreSQL":
             return db_config
