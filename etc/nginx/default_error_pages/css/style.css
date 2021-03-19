@@ -1,0 +1,59 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Noto Sans', sans-serif;
+    background-color: #ffffff;
+    min-width: 400px;
+}
+
+.centered {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 90vh;
+    z-index: -1;
+}
+
+.topbar {
+    background-color: #0a1325;
+    height: 4rem;
+    width: 100%;
+}
+
+.topbar_wrapper {
+    background: url("../img/mendix_logo.png") no-repeat 24px 10px;
+    background-size: 116px 44px;
+    height: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+}
+
+.error_img {
+    height: auto; 
+    width: 100%;
+    max-width: 690px;
+}
+
+h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.6;
+    text-align: center;
+    margin: 32px 0 16px 0;
+    color: #232b3b;
+}
+
+p {
+    color: #474e5c;
+    font-size: 1rem;
+    line-height: 1.6;
+    text-align: center;
+    width: 400px;
+    margin-bottom: 24px;
+}

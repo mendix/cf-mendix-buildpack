@@ -159,30 +159,21 @@ http {
             satisfy any;
         }
 
-        location @403 {
-            root {{ root }}/nginx/monsters/;
-            try_files /403-appnode-app.html =403;
-            allow all;
-        }
         location @403-custom {
-            try_files /error_page/403.html @403;
+            try_files /error_page/403.html =403;
             allow all;
         }
 
-        location @404 {
-            root {{ root }}/nginx/monsters/;
-            try_files /404-appnode-app.html =404;
-        }
         location @404-custom {
-            try_files /error_page/404.html @404;
+            try_files /error_page/404.html =404;
         }
 
         location @503-for-post {
             return 503;
         }
         location @503 {
-            root {{ root }}/nginx/monsters/;
-            try_files /503-appnode-app.html =503;
+            root {{ root }}/nginx/default_error_pages/;
+            try_files /offline.html =503;
         }
         location @503-custom {
             try_files /error_page/offline.html @503;
