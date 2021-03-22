@@ -37,11 +37,14 @@ JAVA_AGENT_URL_ROOT = "/mx-buildpack/{}".format(NAMESPACE)
 
 ROOT_DIR = os.path.abspath(".local")
 SIDECAR_ROOT_DIR = os.path.join(ROOT_DIR, NAMESPACE)
-AGENT_DIR = os.path.join(SIDECAR_ROOT_DIR, "lib")
 AGENT_USER_CHECKS_DIR = os.path.abspath("/home/vcap/app/datadog_integrations")
 
 STATSD_PORT = 8125
 LOGS_PORT = 9032
+
+
+def _get_agent_dir(root=ROOT_DIR):
+    return os.path.join(root, NAMESPACE, "lib")
 
 
 def _get_user_checks_dir():
@@ -108,7 +111,7 @@ def is_database_diskstorage_metric_enabled():
 
 
 def _is_installed():
-    return os.path.exists(AGENT_DIR)
+    return os.path.exists(_get_agent_dir())
 
 
 def get_service():
@@ -335,7 +338,7 @@ def _set_up_environment():
     e["DD_TRACE_ENABLED"] = str(_is_tracing_enabled()).lower()
 
     # Set Datadog Cloud Foundry Buildpack specific environment variables
-    e["DATADOG_DIR"] = str(AGENT_DIR)
+    e["DATADOG_DIR"] = str(_get_agent_dir())
     e["RUN_AGENT"] = "true"
     e["DD_LOGS_ENABLED"] = "true"
     e["DD_ENABLE_CHECKS"] = "false"
@@ -450,12 +453,27 @@ def _download(build_path, cache_dir):
     )
 
 
-def _set_permissions(glob_files):
+def _set_executable(glob_files):
     files = glob.glob(glob_files)
-    for exec_file in files:
-        logging.debug("Setting [{}] to be executable...".format(exec_file))
-        st = os.stat(exec_file)
-        os.chmod(exec_file, st.st_mode | stat.S_IEXEC)
+    for f in files:
+        if not os.access(f, os.X_OK):
+            logging.debug(
+                "Setting executable permissions for [{}]...".format(f)
+            )
+            try:
+                os.chmod(
+                    f,
+                    os.stat(f).st_mode
+                    | stat.S_IXUSR
+                    | stat.S_IXGRP
+                    | stat.S_IXOTH,
+                )
+            except PermissionError as err:
+                logging.exception(
+                    "Cannot set executable permissions for [{}]".format(f), err
+                )
+        else:
+            logging.debug("[{}] is already executable, skipping".format(f))
 
 
 def stage(buildpack_path, build_path, cache_path):
@@ -464,6 +482,9 @@ def stage(buildpack_path, build_path, cache_path):
 
     logging.debug("Staging Datadog...")
     _download(build_path, cache_path)
+
+    logging.debug("Setting Datadog Agent script permissions if required...")
+    _set_executable("{}/*.sh".format(_get_agent_dir(build_path)))
 
 
 def run():
@@ -477,8 +498,8 @@ def run():
         )
         return
 
-    logging.debug("Setting Datadog Agent script permissions...")
-    _set_permissions("{}/*.sh".format(AGENT_DIR))
+    logging.debug("Setting Datadog Agent script permissions if required...")
+    _set_executable("{}/*.sh".format(_get_agent_dir()))
 
     # Start the run script "borrowed" from the official DD buildpack
     # and include settings as environment variables
@@ -490,7 +511,7 @@ def run():
     )
 
     subprocess.Popen(
-        os.path.join(AGENT_DIR, "run-datadog.sh"), env=agent_environment
+        os.path.join(_get_agent_dir(), "run-datadog.sh"), env=agent_environment
     )
 
     # The runtime does not handle a non-open logs endpoint socket
