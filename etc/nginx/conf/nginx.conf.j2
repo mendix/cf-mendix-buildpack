@@ -172,7 +172,7 @@ http {
             return 503;
         }
         location @503-custom {
-            try_files /error_page/503.html =503;
+            try_files /error_page/offline.html =503;
         }
     }
 }
