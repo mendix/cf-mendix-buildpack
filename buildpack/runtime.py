@@ -48,6 +48,12 @@ def _get_runtime_url(blobstore, build_path):
 
 def stage(buildpack_dir, build_path, cache_path):
 
+    logging.debug("Creating directory structure for Mendix runtime...")
+    for name in ["runtimes", "log", "database", "data", "bin", ".postgresql"]:
+        util.mkdir_p(os.path.join(build_path, name))
+    for name in ["files", "tmp", "database"]:
+        util.mkdir_p(os.path.join(build_path, "data", name))
+
     logging.debug("Staging required components for Mendix runtime...")
     database.stage(buildpack_dir, build_path)
     logs.stage(buildpack_dir, build_path)

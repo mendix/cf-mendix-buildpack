@@ -31,7 +31,7 @@ DOT_LOCAL_LOCATION = os.path.join(BUILD_DIR, ".local")
 SUPPORTED_STACKS = [
     "cflinuxfs3",
     None,
-]  # None is allowed, but not supported in Cloud V4
+]  # None is allowed, but not supported
 
 
 def check_environment_variable(variable, explanation):
@@ -80,12 +80,8 @@ def preflight_check(version):
 
 
 def set_up_directory_structure():
-    logging.debug("Creating directory structure...")
+    logging.debug("Creating buildpack directory structure...")
     util.mkdir_p(DOT_LOCAL_LOCATION)
-    for name in ["runtimes", "log", "database", "data", "bin", ".postgresql"]:
-        util.mkdir_p(os.path.join(BUILD_DIR, name))
-    for name in ["files", "tmp", "database"]:
-        util.mkdir_p(os.path.join(BUILD_DIR, "data", name))
 
 
 def copy_buildpack_resources():
@@ -133,7 +129,6 @@ if __name__ == "__main__":
         exit(1)
 
     if is_source_push():
-        logging.info("Source push detected, starting MxBuild...")
         try:
             mxbuild.stage(
                 BUILD_DIR,
@@ -145,10 +140,6 @@ if __name__ == "__main__":
         except RuntimeError as error:
             logging.error(error)
             exit(1)
-        finally:
-            for folder in ("mxbuild", "mono"):
-                path = os.path.join(DOT_LOCAL_LOCATION, folder)
-                shutil.rmtree(path, ignore_errors=True)
 
     set_up_directory_structure()
     copy_buildpack_resources()

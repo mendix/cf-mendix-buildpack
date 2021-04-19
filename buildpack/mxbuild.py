@@ -14,15 +14,17 @@ BUILD_ERRORS_JSON = "/tmp/builderrors.json"
 
 
 def stage(build_path, cache_path, local_path, runtime_version, java_version):
+    logging.info("Building from source...")
+
     mono_location = mono.ensure_and_get_mono(runtime_version, cache_path)
-    logging.info("Mono available: %s", mono_location)
+    logging.debug("Mono available: %s", mono_location)
     mono_env = mono.get_env_with_monolib(mono_location)
 
     mxbuild_location = os.path.join(local_path, "mxbuild")
 
-    ensure_mxbuild_in_directory(mxbuild_location, runtime_version, cache_path)
+    _ensure_mxbuild_in_directory(mxbuild_location, runtime_version, cache_path)
 
-    jvm_location = java.ensure_and_get_jvm(
+    jdk_location = java.ensure_and_get_jvm(
         java_version, cache_path, local_path
     )
 
@@ -35,8 +37,8 @@ def stage(build_path, cache_path, local_path, runtime_version, java_version):
         os.path.join(mxbuild_location, "modeler/mxbuild.exe"),
         "--target=package",
         "--output=/tmp/model.mda",
-        "--java-home=%s" % jvm_location,
-        "--java-exe-path=%s" % os.path.join(jvm_location, "bin/java"),
+        "--java-home=%s" % jdk_location,
+        "--java-exe-path=%s" % os.path.join(jdk_location, "bin/java"),
     ]
 
     if runtime_version >= 6.4 or os.environ.get("FORCE_WRITE_BUILD_ERRORS"):
@@ -46,7 +48,7 @@ def stage(build_path, cache_path, local_path, runtime_version, java_version):
     if os.environ.get("FORCED_MXBUILD_URL"):
         args.append("--loose-version-check")
         logging.warning(
-            "Using forced mxbuild version, the model will be converted"
+            "Using forced MxBuild version, the model will be converted"
         )
 
     args.append(util.get_mpr_file_from_dir(build_path))
@@ -55,7 +57,7 @@ def stage(build_path, cache_path, local_path, runtime_version, java_version):
         logging.debug("subprocess call %s", args)
         subprocess.check_call(args, env=mono_env)
     except subprocess.CalledProcessError as ex:
-        log_buildstatus_errors(BUILD_ERRORS_JSON)
+        _log_buildstatus_errors(BUILD_ERRORS_JSON)
         raise RuntimeError(ex)
 
     for file_name in os.listdir(build_path):
@@ -78,8 +80,14 @@ def stage(build_path, cache_path, local_path, runtime_version, java_version):
     except OSError as ex:
         logging.warning("Could not write source push indicator: %s", str(ex))
 
+    logging.debug("Deleting Mxbuild, Mono and JDK...")
+    for path in (mono_location, mxbuild_location, jdk_location):
+        shutil.rmtree(path, ignore_errors=True)
 
-def log_buildstatus_errors(error_file):
+    logging.info("Building from source completed")
+
+
+def _log_buildstatus_errors(error_file):
     generic_build_failure = {
         "problems": [
             {
@@ -151,7 +159,7 @@ def _checkout_from_git_rootfs(directory, mx_version):
     )
 
 
-def ensure_mxbuild_in_directory(directory, mx_version, cache_dir):
+def _ensure_mxbuild_in_directory(directory, mx_version, cache_dir):
     if os.path.isdir(os.path.join(directory, "modeler")):
         return
     util.mkdir_p(directory)
