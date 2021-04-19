@@ -420,12 +420,14 @@ Additionally, we configure the following Datadog environment variables for you:
 | Environment Variable | Value | Can Be Overridden? | Description |
 |-|-|-|-|
 | `DD_HOSTNAME` | `<app>-<env>.mendixcloud.com-<instance>` | No | Human-readable host name for your application |
+| `DD_ENV` | `<env>` | Yes | Reserved tag. Set to the value of the `env` tag. Defaults to `none`.
+| `DD_SERVICE` | `<app>` | Yes | Reserved tag. Set as as described before. Is only set when `DD_TRACE_ENABLED` is set to `true`. |
+| `DD_VERSION` | `<model_version>` | Yes | Reserved tag. Set to the value of the `version` tag. Defaults to the Mendix model version of the application. |
+| `DD_TAGS` | `tag1:value1,...:...` | Yes | Global tags for Datadog Agent(s). Derived from the runtime settings in Mendix Public Cloud or the `TAGS` environment variable. |
+| `DD_TRACE_ENABLED` | `false` | Yes | Enables Datadog APM and the Trace Agent(s). **Enabling Datadog APM is experimental and enables tracing via the [Datadog Java Trace Agent](https://docs.datadoghq.com/tracing/setup/java/) tracing functionality.** |
 | `DD_JMXFETCH_ENABLED` | `true` | No | Enables Datadog Java Trace Agent JMX metrics fetching |
-| `DD_LOGS_ENABLED` | `true` | No | Enables sending your application logs directly to Datadog |
 | `DD_SERVICE_MAPPING` | `<database>:<app>.db` | No | Links your database to your app in Datadog APM |
-| `DD_SERVICE_NAME` | `<app>` | No | Defaults to your application name as described before. Is only set when `DD_TRACE_ENABLED` is set to `true` . |
-| `DD_TAGS` | `tag1:value1,...:...` | No | Derived from the runtime settings in Mendix Public Cloud or the `TAGS` environment variable |
-| `DD_TRACE_ENABLED` | `false` | Yes | Disables Datadog APM by default. **Enabling Datadog APM is experimental and enables tracing via the [Datadog Java Trace Agent](https://docs.datadoghq.com/tracing/setup/java/) tracing functionality.** |
+| `DD_LOGS_ENABLED` | `true` | No | Enables sending your application logs directly to Datadog |
 
 Other environment variables can be set as per the [Datadog Agent documentation](https://docs.datadoghq.com/agent/).
 

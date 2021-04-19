@@ -42,7 +42,7 @@ class TestCaseDeployWithDatadog(basetest.BaseTestWithPostgreSQL):
 
     def _test_dd_tags(self):
         self.assert_string_in_recent_logs(
-            "'DD_TAGS': 'app:testapp,env:dev,service:testapp'"
+            "'DD_TAGS': 'app:testapp,env:dev,service:testapp,version:"
         )
 
     def _test_datadog(self, mda_file):

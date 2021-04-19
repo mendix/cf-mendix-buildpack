@@ -107,8 +107,11 @@ if __name__ == "__main__":
         ) = databroker_processes.get_datadog_config(
             datadog._get_user_checks_dir()
         )
+
+        model_version = runtime.get_model_version(os.path.abspath("."))
         datadog.update_config(
             m2ee,
+            model_version=model_version,
             extra_jmx_instance_config=databroker_jmx_instance_cfg,
             jmx_config_files=databroker_jmx_config_files,
         )
@@ -145,7 +148,7 @@ if __name__ == "__main__":
 
         # Start components and runtime
         telegraf.run()
-        datadog.run()
+        datadog.run(model_version)
         metering.run()
         nginx.run()
         runtime.run(m2ee)
