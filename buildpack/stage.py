@@ -34,15 +34,6 @@ SUPPORTED_STACKS = [
 ]  # None is allowed, but not supported
 
 
-def check_environment_variable(variable, explanation):
-    value = os.environ.get(variable)
-    if value is None:
-        logging.warning(explanation)
-        return False
-    else:
-        return True
-
-
 def check_database_environment():
     try:
         database.get_config()
@@ -61,7 +52,7 @@ def check_database_environment():
 
 def preflight_check(version):
     if not check_database_environment():
-        raise ValueError("Missing environment variables")
+        raise ValueError("Missing database configuration")
 
     stack = os.getenv("CF_STACK")
     logging.info(
@@ -130,7 +121,7 @@ if __name__ == "__main__":
 
     if is_source_push():
         try:
-            mxbuild.stage(
+            mxbuild.build_from_source(
                 BUILD_DIR,
                 CACHE_DIR,
                 DOT_LOCAL_LOCATION,

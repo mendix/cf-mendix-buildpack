@@ -13,15 +13,15 @@ from buildpack.util import NotFoundException
 BUILD_ERRORS_JSON = "/tmp/builderrors.json"
 
 
-def stage(build_path, cache_path, local_path, runtime_version, java_version):
+def build_from_source(
+    build_path, cache_path, local_path, runtime_version, java_version
+):
     logging.info("Building from source...")
 
     mono_location = mono.ensure_and_get_mono(runtime_version, cache_path)
-    logging.debug("Mono available: %s", mono_location)
     mono_env = mono.get_env_with_monolib(mono_location)
 
     mxbuild_location = os.path.join(local_path, "mxbuild")
-
     _ensure_mxbuild_in_directory(mxbuild_location, runtime_version, cache_path)
 
     jdk_location = java.ensure_and_get_jvm(
@@ -54,7 +54,6 @@ def stage(build_path, cache_path, local_path, runtime_version, java_version):
     args.append(util.get_mpr_file_from_dir(build_path))
 
     try:
-        logging.debug("subprocess call %s", args)
         subprocess.check_call(args, env=mono_env)
     except subprocess.CalledProcessError as ex:
         _log_buildstatus_errors(BUILD_ERRORS_JSON)
@@ -82,7 +81,9 @@ def stage(build_path, cache_path, local_path, runtime_version, java_version):
 
     logging.debug("Deleting Mxbuild, Mono and JDK...")
     for path in (mono_location, mxbuild_location, jdk_location):
-        shutil.rmtree(path, ignore_errors=True)
+        shutil.rmtree(path, ignore_errors=False)
+        if os.path.exists(path):
+            logging.error("%s not deleted", path)
 
     logging.info("Building from source completed")
 
@@ -104,7 +105,7 @@ def _log_buildstatus_errors(error_file):
             input_str = errorfile.read()
             builddata = json.dumps(json.loads(input_str))
     except (IOError, ValueError):
-        logging.exception("Could not read mxbuild error file\n%s", input_str)
+        logging.exception("Could not read MxBuild error file\n%s", input_str)
         builddata = json.dumps(generic_build_failure)
     logging.error("MxBuild returned errors: %s", builddata)
 
@@ -148,12 +149,12 @@ def _checkout_from_git_rootfs(directory, mx_version):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
-            logging.debug("found mx version after updating runtimes.git")
+            logging.debug("Found mx version after updating runtimes.git")
             return
         except Exception:
-            logging.debug("tried updating git repo, also failed")
+            logging.debug("Tried updating git repo, also failed")
     raise NotFoundException(
-        "Could not download mxbuild "
+        "Could not download MxBuild "
         + str(mx_version)
         + " from updated git repo"
     )

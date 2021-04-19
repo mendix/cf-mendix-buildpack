@@ -156,7 +156,7 @@ class Databroker:
                 "Databroker: component restart retries exhaused. Stopping the app"
             )
             exit(0)
-        
+
     def stop(self):
         if not self.is_producer_app:
             return

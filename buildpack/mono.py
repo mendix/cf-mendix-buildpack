@@ -68,7 +68,7 @@ def _compose_mono_url_path(mono_version):
 
 
 def ensure_and_get_mono(mx_version, cache_dir):
-    logging.debug("Ensuring mono for Mendix %s", mx_version)
+    logging.debug("Ensuring Mono for Mendix %s", mx_version)
     mono_version = _detect_mono_version(mx_version)
     fallback_location = "/tmp/opt"
 
@@ -85,7 +85,9 @@ def ensure_and_get_mono(mx_version, cache_dir):
         mono_location = "/tmp/opt/mono-3.10.0"
         os.symlink(mono_subpath[0], mono_location)
         logging.debug(
-            "Using {mono_location}".format(mono_location=mono_location)
+            "Mono available: {mono_location}".format(
+                mono_location=mono_location
+            )
         )
         logging.warning(
             "The staging phase is likely going to fail when the default "
@@ -107,6 +109,8 @@ def ensure_and_get_mono(mx_version, cache_dir):
             )
             mono_location = _get_mono_path(fallback_location, mono_version)
         logging.debug(
-            "Using {mono_location}".format(mono_location=mono_location)
+            "Mono available: {mono_location}".format(
+                mono_location=mono_location
+            )
         )
         return mono_location
