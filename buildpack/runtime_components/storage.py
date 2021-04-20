@@ -2,15 +2,15 @@ import json
 import logging
 import re
 import os
-
+import requests
+import time
 from buildpack import util
 
 
 def _get_s3_specific_config(vcap_services, m2ee):
     access_key = secret = bucket = encryption_keys = key_suffix = None
-    endpoint = None
+    tvm_endpoint = tvm_username = tvm_password = endpoint = amazon_s3 = None
     v2_auth = ""
-    amazon_s3 = None
 
     blobstore_type = os.getenv("MENDIX_BLOBSTORE_TYPE")
 
@@ -23,9 +23,17 @@ def _get_s3_specific_config(vcap_services, m2ee):
 
     if amazon_s3:
         _conf = vcap_services[amazon_s3][0]["credentials"]
-        access_key = _conf["access_key_id"]
-        secret = _conf["secret_access_key"]
         bucket = _conf["bucket"]  # see below at hacky for actual conf
+        if "access_key_id" in _conf:
+            access_key = _conf["access_key_id"]
+        if "secret_access_key" in _conf:
+            secret = _conf["secret_access_key"]
+        if "tvm_endpoint" in _conf:
+            tvm_endpoint = _conf["tvm_endpoint"]
+        if "tvm_username" in _conf:
+            tvm_username = _conf["tvm_username"]
+        if "tvm_password" in _conf:
+            tvm_password = _conf["tvm_password"]
         if "encryption_keys" in _conf:
             encryption_keys = _conf["encryption_keys"]
         if "key_suffix" in _conf:
@@ -53,6 +61,9 @@ def _get_s3_specific_config(vcap_services, m2ee):
 
     access_key = os.getenv("S3_ACCESS_KEY_ID", access_key)
     secret = os.getenv("S3_SECRET_ACCESS_KEY", secret)
+    tvm_endpoint = os.getenv("S3_TVM_ENDPOINT", tvm_endpoint)
+    tvm_username = os.getenv("S3_TVM_USERNAME", tvm_username)
+    tvm_password = os.getenv("S3_TVM_PASSWORD", tvm_password)
     bucket = os.getenv("S3_BUCKET_NAME", bucket)
     if "S3_ENCRYPTION_KEYS" in os.environ:
         encryption_keys = json.loads(os.getenv("S3_ENCRYPTION_KEYS"))
@@ -65,16 +76,49 @@ def _get_s3_specific_config(vcap_services, m2ee):
     v2_auth = os.getenv("S3_USE_V2_AUTH", v2_auth).lower() == "true"
     sse = os.getenv("S3_USE_SSE", "").lower() == "true"
 
-    if not (access_key and secret and bucket):
+    if not bucket:
         return None
 
-    logging.info("S3 config detected, activating external file store")
-    config = {
-        "com.mendix.core.StorageService": "com.mendix.storage.s3",
-        "com.mendix.storage.s3.AccessKeyId": access_key,
-        "com.mendix.storage.s3.SecretAccessKey": secret,
-        "com.mendix.storage.s3.BucketName": bucket,
-    }
+    if access_key and secret:
+        logging.info("S3 config detected, activating external file store")
+        config = {
+            "com.mendix.core.StorageService": "com.mendix.storage.s3",
+            "com.mendix.storage.s3.AccessKeyId": access_key,
+            "com.mendix.storage.s3.SecretAccessKey": secret,
+            "com.mendix.storage.s3.BucketName": bucket,
+        }
+    elif (
+        tvm_endpoint
+        and tvm_username
+        and tvm_password
+        and m2ee.config.get_runtime_version() < 9.2
+    ):
+        logging.info(
+            "S3 TVM config detected, fetching IAM credentials from TVM"
+        )
+        access_key, secret = _get_credentials_from_tvm(
+            tvm_endpoint, tvm_username, tvm_password
+        )
+        config = {
+            "com.mendix.core.StorageService": "com.mendix.storage.s3",
+            "com.mendix.storage.s3.AccessKeyId": access_key,
+            "com.mendix.storage.s3.SecretAccessKey": secret,
+            "com.mendix.storage.s3.BucketName": bucket,
+        }
+    elif tvm_endpoint and tvm_username and tvm_password:
+        logging.info("S3 TVM config detected, activating external file store")
+        config = {
+            "com.mendix.core.StorageService": "com.mendix.storage.s3",
+            "com.mendix.storage.s3.tokenService.Url": "https://%s/v1/gettoken"
+            % tvm_endpoint,
+            "com.mendix.storage.s3.tokenService.Username": tvm_username,
+            "com.mendix.storage.s3.tokenService.Password": tvm_password,
+            "com.mendix.storage.s3.tokenService.RefreshPercentage": 80,
+            "com.mendix.storage.s3.tokenService.RetryIntervalInSeconds": 10,
+            "com.mendix.storage.s3.BucketName": bucket,
+        }
+    else:
+        return None
 
     if dont_perform_deletes:
         logging.debug("disabling perform deletes for runtime")
@@ -94,6 +138,51 @@ def _get_s3_specific_config(vcap_services, m2ee):
     if m2ee.config.get_runtime_version() >= 6 and sse:
         config["com.mendix.storage.s3.UseSSE"] = sse
     return config
+
+
+def _get_credentials_from_tvm(tvm_endpoint, tvm_username, tvm_password):
+    retry = 3
+    while True:
+        response = requests.get(
+            "https://%s/v1/getcredentials" % tvm_endpoint,
+            headers={
+                "User-Agent": "Mendix Runtime %s"
+                % util.get_buildpack_version()
+            },
+            auth=(tvm_username, tvm_password),
+        )
+
+        if response.ok:
+            break
+        elif not response.ok and retry == 0:
+            logging.error("Failed to get IAM credential from TVM")
+            raise Exception(
+                "failed to get IAM credential from TVM for tvm_user %s"
+                % tvm_username
+            )
+        else:
+            retry = retry - 1
+            time.sleep(5)
+            logging.error(
+                "Failed to get IAM credential from TVM (HTTP {}), Retrying... {}".format(
+                    response.status_code, retry
+                )
+            )
+            logging.error("Number of retries left = {}".format(retry))
+
+    result = response.json()
+    if "AccessKeyId" not in result:
+        raise Exception(
+            "failed to get IAM credential from TVM for tvm_user %s (missing AccessKeyId)"
+            % tvm_username
+        )
+    if "SecretAccessKey" not in result:
+        raise Exception(
+            "failed to get IAM credential from TVM for tvm_user %s (missing SecretAccessKey)"
+            % tvm_username
+        )
+
+    return result["AccessKeyId"], result["SecretAccessKey"]
 
 
 def _get_swift_specific_config(vcap_services, m2ee):
