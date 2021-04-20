@@ -20,7 +20,7 @@ class TestCaseMpkAppDeployed(basetest.BaseTest):
         self.assert_app_running()
 
     # TODO determine if we need this test
-    def test_mpk_app_deploys_can_log_in(self):
+    def test_mpk_app_deployed_can_log_in(self):
         self.stage_container(
             "MontBlancApp720WithSampleData.mpk", use_snapshot=True
         )

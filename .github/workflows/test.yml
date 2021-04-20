@@ -84,7 +84,8 @@ jobs:
       run: make install_requirements
     - name: Install Cloud Foundry development tools
       run: |
-        wget -q -O - https://packages.cloudfoundry.org/debian/cli.cloudfoundry.org.key | sudo apt-key add -
+        wget --no-check-certificate -v -O gpg.key https://packages.cloudfoundry.org/debian/cli.cloudfoundry.org.key
+        sudo apt-key add gpg.key
         echo "deb https://packages.cloudfoundry.org/debian stable main" | sudo tee /etc/apt/sources.list.d/cloudfoundry-cli.list
         sudo apt-get update && sudo apt-get install -y cf-cli
         sudo curl -s https://download.mendix.com/Mendix-CA-G2.crt -o /usr/local/share/ca-certificates/ca.crt && sudo update-ca-certificates

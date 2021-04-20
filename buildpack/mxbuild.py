@@ -6,8 +6,6 @@ import shutil
 import subprocess
 import zipfile
 
-import requests
-
 from buildpack import java, mono, util
 from buildpack.util import NotFoundException
 
@@ -15,16 +13,18 @@ from buildpack.util import NotFoundException
 BUILD_ERRORS_JSON = "/tmp/builderrors.json"
 
 
-def stage(build_path, cache_path, local_path, runtime_version, java_version):
+def build_from_source(
+    build_path, cache_path, local_path, runtime_version, java_version
+):
+    logging.info("Building from source...")
+
     mono_location = mono.ensure_and_get_mono(runtime_version, cache_path)
-    logging.info("Mono available: %s", mono_location)
     mono_env = mono.get_env_with_monolib(mono_location)
 
     mxbuild_location = os.path.join(local_path, "mxbuild")
+    _ensure_mxbuild_in_directory(mxbuild_location, runtime_version, cache_path)
 
-    ensure_mxbuild_in_directory(mxbuild_location, runtime_version, cache_path)
-
-    jvm_location = java.ensure_and_get_jvm(
+    jdk_location = java.ensure_and_get_jvm(
         java_version, cache_path, local_path
     )
 
@@ -37,8 +37,8 @@ def stage(build_path, cache_path, local_path, runtime_version, java_version):
         os.path.join(mxbuild_location, "modeler/mxbuild.exe"),
         "--target=package",
         "--output=/tmp/model.mda",
-        "--java-home=%s" % jvm_location,
-        "--java-exe-path=%s" % os.path.join(jvm_location, "bin/java"),
+        "--java-home=%s" % jdk_location,
+        "--java-exe-path=%s" % os.path.join(jdk_location, "bin/java"),
     ]
 
     if runtime_version >= 6.4 or os.environ.get("FORCE_WRITE_BUILD_ERRORS"):
@@ -48,16 +48,15 @@ def stage(build_path, cache_path, local_path, runtime_version, java_version):
     if os.environ.get("FORCED_MXBUILD_URL"):
         args.append("--loose-version-check")
         logging.warning(
-            "Using forced mxbuild version, the model will be converted"
+            "Using forced MxBuild version, the model will be converted"
         )
 
     args.append(util.get_mpr_file_from_dir(build_path))
 
     try:
-        logging.debug("subprocess call %s", args)
         subprocess.check_call(args, env=mono_env)
     except subprocess.CalledProcessError as ex:
-        buildstatus_callback(BUILD_ERRORS_JSON)
+        _log_buildstatus_errors(BUILD_ERRORS_JSON)
         raise RuntimeError(ex)
 
     for file_name in os.listdir(build_path):
@@ -80,8 +79,16 @@ def stage(build_path, cache_path, local_path, runtime_version, java_version):
     except OSError as ex:
         logging.warning("Could not write source push indicator: %s", str(ex))
 
+    logging.debug("Deleting Mxbuild, Mono and JDK...")
+    for path in (mono_location, mxbuild_location, jdk_location):
+        shutil.rmtree(path, ignore_errors=False)
+        if os.path.exists(path):
+            logging.error("%s not deleted", path)
 
-def buildstatus_callback(error_file):
+    logging.info("Building from source completed")
+
+
+def _log_buildstatus_errors(error_file):
     generic_build_failure = {
         "problems": [
             {
@@ -98,53 +105,9 @@ def buildstatus_callback(error_file):
             input_str = errorfile.read()
             builddata = json.dumps(json.loads(input_str))
     except (IOError, ValueError):
-        logging.exception("Could not read mxbuild error file\n%s", input_str)
+        logging.exception("Could not read MxBuild error file\n%s", input_str)
         builddata = json.dumps(generic_build_failure)
     logging.error("MxBuild returned errors: %s", builddata)
-    callback_url = os.environ.get("BUILD_STATUS_CALLBACK_URL")
-    if callback_url:
-        logging.info("Submitting build status")
-        put_buildstatus(callback_url, builddata)
-        logging.info("Submitted build status")
-    else:
-        logging.warning(
-            "No build status callback url set, "
-            "so not going to submit the status"
-        )
-
-
-def put_buildstatus(callback_url, builddata):
-    r = requests.put(callback_url, builddata)
-    return r.status_code
-
-
-def start_mxbuild_server(local_path, runtime_version, java_version):
-    cache = "/tmp/downloads"  # disable caching here, not in compile step
-    mono_location = mono.ensure_and_get_mono(runtime_version, cache)
-    mono_env = mono.get_env_with_monolib(mono_location)
-    path = os.path.join(os.getcwd(), "runtimes", str(runtime_version))
-    if not os.path.isdir(os.path.join(path, "modeler")):
-        ensure_mxbuild_in_directory(
-            os.path.join(local_path, "mxbuild"), runtime_version, cache
-        )
-        path = os.path.join(local_path, "mxbuild")
-
-    jvm_location = java.ensure_and_get_jvm(
-        java_version, cache, local_path, package="jdk"
-    )
-    subprocess.Popen(
-        [
-            os.path.join(mono_location, "bin/mono"),
-            "--config",
-            os.path.join(mono_location, "etc/mono/config"),
-            os.path.join(path, "modeler", "mxbuild.exe"),
-            "--serve",
-            "--port=6666",
-            "--java-home=%s" % jvm_location,
-            "--java-exe-path=%s/bin/java" % jvm_location,
-        ],
-        env=mono_env,
-    )
 
 
 def _checkout_from_git_rootfs(directory, mx_version):
@@ -186,18 +149,18 @@ def _checkout_from_git_rootfs(directory, mx_version):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
-            logging.debug("found mx version after updating runtimes.git")
+            logging.debug("Found mx version after updating runtimes.git")
             return
         except Exception:
-            logging.debug("tried updating git repo, also failed")
+            logging.debug("Tried updating git repo, also failed")
     raise NotFoundException(
-        "Could not download mxbuild "
+        "Could not download MxBuild "
         + str(mx_version)
         + " from updated git repo"
     )
 
 
-def ensure_mxbuild_in_directory(directory, mx_version, cache_dir):
+def _ensure_mxbuild_in_directory(directory, mx_version, cache_dir):
     if os.path.isdir(os.path.join(directory, "modeler")):
         return
     util.mkdir_p(directory)

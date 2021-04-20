@@ -54,11 +54,6 @@ http {
         keepalive 8;
     }
 
-    upstream mendix_mxbuild {
-        server 127.0.0.1:{{ deploy_port }};
-        keepalive 8;
-    }
-
     server {
         listen {{ nginx_port }};
         server_name _;
@@ -147,18 +142,6 @@ http {
             satisfy any;
         }
 
-        location /_mxbuild/ {
-            auth_basic "Restricted";
-            auth_basic_user_file {{ root }}/nginx/.htpasswd-mxbuild;
-            {% if instadeploy_enabled %}
-            proxy_pass http://mendix_mxbuild;
-            {% else %}
-            return 501;
-            {% endif %}
-            error_page 502 503 504 =503 @503-for-post;
-            satisfy any;
-        }
-
         location @403-custom {
             try_files /error_page/403.html =403;
             allow all;
@@ -168,9 +151,6 @@ http {
             try_files /error_page/404.html =404;
         }
 
-        location @503-for-post {
-            return 503;
-        }
         location @503-custom {
             try_files /error_page/offline.html =503;
         }

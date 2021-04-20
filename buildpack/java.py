@@ -74,8 +74,9 @@ def ensure_and_get_jvm(
 ):
 
     jdk = determine_jdk(java_version, package)
+    jdk_dir = compose_jvm_target_dir(jdk)
 
-    rootfs_java_path = "/{}".format(compose_jvm_target_dir(jdk))
+    rootfs_java_path = "/{}".format(jdk_dir)
     if not os.path.isdir(rootfs_java_path):
         logging.debug(
             "Downloading and installing Java {} if required...".format(
@@ -84,7 +85,7 @@ def ensure_and_get_jvm(
         )
         util.download_and_unpack(
             util.get_blobstore_url(_compose_jre_url_path(jdk)),
-            os.path.join(dot_local_location, compose_jvm_target_dir(jdk)),
+            os.path.join(dot_local_location, jdk_dir),
             cache_dir,
         )
         logging.debug("Java {} installed".format(package.upper()))
@@ -94,7 +95,7 @@ def ensure_and_get_jvm(
     return util.get_existing_directory_or_raise(
         [
             "/" + compose_jvm_target_dir(jdk),
-            os.path.join(dot_local_location, compose_jvm_target_dir(jdk)),
+            os.path.join(dot_local_location, jdk_dir),
         ],
         "Java not found",
     )

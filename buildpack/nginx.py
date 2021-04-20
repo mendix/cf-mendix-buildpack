@@ -7,7 +7,7 @@ import re
 import shutil
 import subprocess
 
-from buildpack import instadeploy, util
+from buildpack import util
 from buildpack.runtime_components import security
 from lib.m2ee.version import MXVersion
 
@@ -94,16 +94,12 @@ def configure(m2ee):
     with open(template_path, "r") as file_:
         template = Template(file_.read(), trim_blocks=True, lstrip_blocks=True)
     rendered = template.render(
-        instadeploy_enabled=instadeploy.use_instadeploy(
-            m2ee.config.get_runtime_version()
-        ),
         samesite_cookie_workaround_enabled=samesite_cookie_workaround_enabled,
         locations=get_access_restriction_locations(),
         default_headers=get_http_headers(),
         nginx_port=str(util.get_nginx_port()),
         runtime_port=str(util.get_runtime_port()),
         admin_port=str(util.get_admin_port()),
-        deploy_port=str(util.get_deploy_port()),
         root=os.getcwd(),
     )
 
@@ -129,9 +125,6 @@ def configure(m2ee):
     logging.debug("proxy_params configuration file written")
 
     generate_password_file({"MxAdmin": security.get_m2ee_password()})
-    generate_password_file(
-        {"deploy": os.getenv("DEPLOY_PASSWORD")}, file_name_suffix="-mxbuild"
-    )
 
 
 def get_proxy_buffer_size():

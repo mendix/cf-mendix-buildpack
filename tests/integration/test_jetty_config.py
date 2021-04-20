@@ -21,4 +21,4 @@ class TestCaseJettyConfig(basetest.BaseTest):
             "sample-6.2.0.mda", env_vars={"JETTY_CONFIG": "invalid json"}
         )
         self.start_container()
-        self.assert_string_in_recent_logs("Failed to configure jetty")
+        self.assert_string_in_recent_logs("Failed to configure Jetty")
