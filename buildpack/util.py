@@ -210,7 +210,9 @@ def lazy_remove_file(filename):
             raise
 
 
-def i_am_primary_instance():
+# The Mendix runtime knows the concept of "cluster leader" and "cluster member"
+# The first instance in a Cloud Foundry deployment is always the cluster leader
+def is_cluster_leader():
     return os.getenv("CF_INSTANCE_INDEX", "0") == "0"
 
 
@@ -228,10 +230,6 @@ def get_runtime_port():
 
 def get_admin_port():
     return get_nginx_port() + 2
-
-
-def get_deploy_port():
-    return get_nginx_port() + 3
 
 
 def is_development_mode():

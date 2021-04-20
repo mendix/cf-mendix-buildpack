@@ -20,7 +20,6 @@ from buildpack import (
     util,
 )
 from buildpack.runtime_components import database
-from lib.m2ee.version import MXVersion
 
 BUILDPACK_DIR = os.path.dirname(
     os.path.dirname(os.path.join(os.path.dirname(__file__), ".."))
@@ -32,16 +31,7 @@ DOT_LOCAL_LOCATION = os.path.join(BUILD_DIR, ".local")
 SUPPORTED_STACKS = [
     "cflinuxfs3",
     None,
-]  # None is allowed, but not supported in Cloud V4
-
-
-def check_environment_variable(variable, explanation):
-    value = os.environ.get(variable)
-    if value is None:
-        logging.warning(explanation)
-        return False
-    else:
-        return True
+]  # None is allowed, but not supported
 
 
 def check_database_environment():
@@ -60,35 +50,29 @@ def check_database_environment():
         return False
 
 
-def preflight_check(runtime_version):
+def preflight_check(version):
     if not check_database_environment():
-        raise ValueError("Missing environment variables")
+        raise ValueError("Missing database configuration")
 
     stack = os.getenv("CF_STACK")
     logging.info(
         "Preflight check on Mendix runtime version [%s] and stack [%s]...",
-        runtime_version,
+        version,
         stack,
     )
 
     if not stack in SUPPORTED_STACKS:
         raise NotImplementedError("Stack [{}] is not supported".format(stack))
-    if not runtime.check_deprecation(runtime_version):
+    if not runtime.check_deprecation(version):
         raise NotImplementedError(
-            "Mendix runtime version [{}] is not supported".format(
-                runtime_version
-            )
+            "Mendix runtime version [{}] is not supported".format(version)
         )
     logging.info("Preflight check completed")
 
 
 def set_up_directory_structure():
-    logging.debug("Creating directory structure...")
+    logging.debug("Creating buildpack directory structure...")
     util.mkdir_p(DOT_LOCAL_LOCATION)
-    for name in ["runtimes", "log", "database", "data", "bin", ".postgresql"]:
-        util.mkdir_p(os.path.join(BUILD_DIR, name))
-    for name in ["files", "tmp", "database"]:
-        util.mkdir_p(os.path.join(BUILD_DIR, "data", name))
 
 
 def copy_buildpack_resources():
@@ -136,9 +120,8 @@ if __name__ == "__main__":
         exit(1)
 
     if is_source_push():
-        logging.info("Source push detected, starting MxBuild...")
         try:
-            mxbuild.stage(
+            mxbuild.build_from_source(
                 BUILD_DIR,
                 CACHE_DIR,
                 DOT_LOCAL_LOCATION,
@@ -148,10 +131,6 @@ if __name__ == "__main__":
         except RuntimeError as error:
             logging.error(error)
             exit(1)
-        finally:
-            for folder in ("mxbuild", "mono"):
-                path = os.path.join(DOT_LOCAL_LOCATION, folder)
-                shutil.rmtree(path, ignore_errors=True)
 
     set_up_directory_structure()
     copy_buildpack_resources()
@@ -159,7 +138,7 @@ if __name__ == "__main__":
         BUILDPACK_DIR,
         CACHE_DIR,
         DOT_LOCAL_LOCATION,
-        runtime.get_java_version(runtime.get_version(BUILD_DIR)),
+        runtime.get_java_version(runtime_version),
     )
     appdynamics.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
     dynatrace.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
