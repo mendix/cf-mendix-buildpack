@@ -26,12 +26,12 @@ from buildpack.runtime_components import database
 
 NAMESPACE = "datadog"
 
-SIDECAR_VERSION = "4.19.0"
+SIDECAR_VERSION = "4.21.0"
 SIDECAR_ARTIFACT_NAME = "datadog-cloudfoundry-buildpack-{}.zip".format(
     SIDECAR_VERSION
 )
 SIDECAR_URL_ROOT = "/mx-buildpack/{}".format(NAMESPACE)
-JAVA_AGENT_VERSION = "0.68.0"
+JAVA_AGENT_VERSION = "0.78.2"
 JAVA_AGENT_ARTIFACT_NAME = "dd-java-agent-{}.jar".format(JAVA_AGENT_VERSION)
 JAVA_AGENT_URL_ROOT = "/mx-buildpack/{}".format(NAMESPACE)
 
@@ -341,14 +341,12 @@ def _get_runtime_jmx_config(extra_jmx_instance_config=None):
 
 
 def _set_up_environment(model_version):
-
-    # Trace variables need to be set in the global environment
-    # since the Datadog Java Trace Agent does not live inside the Datadog Agent process
-
     e = dict(os.environ.copy())
 
     # Everything in datadog.yaml can be configured with environment variables
     # This is the "official way" of working with the DD buildpack, so let's do this to ensure forward compatibility
+    # Trace variables need to be set in the global environment
+    # since the Datadog Java Trace Agent does not live inside the Datadog Agent process
     e["DD_API_KEY"] = get_api_key()
     e["DD_HOSTNAME"] = util.get_hostname()
 
@@ -512,6 +510,32 @@ def _set_executable(glob_files):
             logging.debug("[{}] is already executable, skipping".format(f))
 
 
+def _patch_run_datadog_script(script_dir):
+    # The Datadog CF buildpack includes a stop routine which bases itself
+    # on the Datadog agent being started before the main buildpack process.
+    # This works great in multi-buildpack scenarios where the environment variables
+    # are set while deploying the application.
+    #
+    # This is not the case here, and we cannot use the official method since we're 
+    # setting Datadog environment variables at start, and the agent runs before start.
+    # Also, the stop_datadog call assumes a different PID than present, causing a kill
+    # call to fail. This applies to all Datadog buildpack versions > 4.20.0.
+    #
+    # Therefore, the stop_datadog call needs to be patched out.
+    # This should be removed when we start using multi-buildpacks
+    script = os.path.join(script_dir, "run-datadog.sh")
+    with open(script, "r+") as f:
+        lines = f.readlines()
+        f.seek(0)
+        for line in lines:
+            if "stop_datadog &" in line:
+                f.write("# {}".format(line))
+            else:
+                f.write(line)
+        f.truncate()
+
+    
+
 def stage(buildpack_path, build_path, cache_path):
     if not is_enabled():
         return
@@ -521,6 +545,9 @@ def stage(buildpack_path, build_path, cache_path):
 
     logging.debug("Setting Datadog Agent script permissions if required...")
     _set_executable("{}/*.sh".format(_get_agent_dir(build_path)))
+
+    logging.debug("Patching run-datadog.sh...")
+    _patch_run_datadog_script(_get_agent_dir(build_path))
 
 
 def run(model_version):
