@@ -15,6 +15,7 @@ class TestCaseDeployWithDatadog(basetest.BaseTestWithPostgreSQL):
                 ),
                 "DD_TRACE_ENABLED": "true",
                 # "DD_TRACE_DEBUG": "true",
+                "DD_PROFILING_ENABLED": "true",
                 "DATADOG_DATABASE_DISKSTORAGE_METRIC": "true",
                 "DATABASE_DISKSTORAGE": 10.0,
                 "DATADOG_DATABASE_RATE_COUNT_METRICS": "true",

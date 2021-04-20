@@ -427,6 +427,7 @@ Additionally, we configure the following Datadog environment variables for you:
 | `DD_VERSION` | `<model_version>` | Yes | Reserved tag. Set to the value of the `version` tag. Defaults to the Mendix model version of the application. |
 | `DD_TAGS` | `tag1:value1,...:...` | Yes | Global tags for Datadog Agent(s). Derived from the runtime settings in Mendix Public Cloud or the `TAGS` environment variable. |
 | `DD_TRACE_ENABLED` | `false` | Yes | Enables Datadog APM and the Trace Agent(s). **Enabling Datadog APM is experimental and enables tracing via the [Datadog Java Trace Agent](https://docs.datadoghq.com/tracing/setup/java/) tracing functionality.** |
+| `DD_PROFILING_ENABLED` | `false` | Yes | Enables Datadog APM and the Trace Agent(s). **Enabling Datadog Profiling is experimental and can only be enabled for Mendix 7.23.1 and up, and requires tracing to be enabled.** |
 | `DD_JMXFETCH_ENABLED` | `true` | No | Enables Datadog Java Trace Agent JMX metrics fetching |
 | `DD_SERVICE_MAPPING` | `<database>:<app>.db` | No | Links your database to your app in Datadog APM |
 | `DD_LOGS_ENABLED` | `true` | No | Enables sending your application logs directly to Datadog |

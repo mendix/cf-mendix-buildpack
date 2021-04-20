@@ -20,6 +20,7 @@ from distutils.util import strtobool
 
 import backoff
 import yaml
+from lib.m2ee.version import MXVersion
 
 from buildpack import util
 from buildpack.runtime_components import database
@@ -116,6 +117,14 @@ def _is_checks_enabled():
     return strtobool(os.environ.get("DD_ENABLE_CHECKS", "false"))
 
 
+# Toggles Datadog profiling. Can only enabled when using AdoptOpenJDK and
+# when tracing is enabled.
+def _is_profiling_enabled(runtime_version):
+    if runtime_version < MXVersion("7.23.1") or not _is_tracing_enabled():
+        return False
+    return strtobool(os.environ.get("DD_PROFILING_ENABLED", "false"))
+
+
 def _is_installed():
     return os.path.exists(_get_agent_dir())
 
@@ -184,7 +193,9 @@ def get_statsd_port():
     return STATSD_PORT
 
 
-def _set_up_dd_java_agent(m2ee, model_version, jmx_config_files):
+def _set_up_dd_java_agent(
+    m2ee, model_version, runtime_version, jmx_config_files
+):
     jar = os.path.join(SIDECAR_ROOT_DIR, JAVA_AGENT_ARTIFACT_NAME)
 
     # Check if already configured
@@ -211,6 +222,16 @@ def _set_up_dd_java_agent(m2ee, model_version, jmx_config_files):
         [
             "-D{}={}".format(
                 "dd.trace.enabled", str(bool(_is_tracing_enabled())).lower()
+            ),
+        ]
+    )
+
+    # Explicitly set profiling flag
+    m2ee.config._conf["m2ee"]["javaopts"].extend(
+        [
+            "-D{}={}".format(
+                "dd.profiling.enabled",
+                str(bool(_is_profiling_enabled(runtime_version))).lower(),
             ),
         ]
     )
@@ -346,7 +367,7 @@ def _get_runtime_jmx_config(extra_jmx_instance_config=None):
     return config
 
 
-def _set_up_environment(model_version):
+def _set_up_environment(model_version, runtime_version):
     e = dict(os.environ.copy())
 
     # Everything in datadog.yaml can be configured with environment variables
@@ -372,8 +393,11 @@ def _set_up_environment(model_version):
     if "DD_SERVICE_NAME" in e:
         del e["DD_SERVICE_NAME"]
 
-    # Explicitly enable or disable tracing
+    # Explicitly enable or disable tracing and profiling
     e["DD_TRACE_ENABLED"] = str(bool(_is_tracing_enabled())).lower()
+    e["DD_PROFILING_ENABLED"] = str(
+        bool(_is_profiling_enabled(runtime_version))
+    ).lower()
 
     # Set Datadog Cloud Foundry Buildpack specific environment variables
     e["DATADOG_DIR"] = str(_get_agent_dir())
@@ -438,7 +462,11 @@ def _get_logging_config():
 
 
 def update_config(
-    m2ee, model_version, extra_jmx_instance_config=None, jmx_config_files=[]
+    m2ee,
+    model_version,
+    runtime_version,
+    extra_jmx_instance_config=None,
+    jmx_config_files=[],
 ):
     if not is_enabled() or not _is_installed():
         return
@@ -470,7 +498,10 @@ def update_config(
     # Set up Datadog Java Trace Agent
     jmx_config_files.append(_get_jmx_conf_file())
     _set_up_dd_java_agent(
-        m2ee, model_version, jmx_config_files=jmx_config_files,
+        m2ee,
+        model_version,
+        runtime_version,
+        jmx_config_files=jmx_config_files,
     )
 
 
@@ -555,7 +586,7 @@ def stage(buildpack_path, build_path, cache_path):
     _patch_run_datadog_script(_get_agent_dir(build_path))
 
 
-def run(model_version):
+def run(model_version, runtime_version):
     if not is_enabled():
         return
 
@@ -573,7 +604,7 @@ def run(model_version):
     # and include settings as environment variables
     logging.info("Starting Datadog Agent...")
 
-    agent_environment = _set_up_environment(model_version)
+    agent_environment = _set_up_environment(model_version, runtime_version)
     logging.debug(
         "Datadog Agent environment variables: [{}]".format(agent_environment)
     )
