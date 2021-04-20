@@ -110,6 +110,12 @@ def is_database_diskstorage_metric_enabled():
     )
 
 
+# Toggles the system checks. Note that these may not mean anything as they
+# might show the host metrics instead of the container metrics.
+def _is_checks_enabled():
+    return strtobool(os.environ.get("DD_ENABLE_CHECKS", "false"))
+
+
 def _is_installed():
     return os.path.exists(_get_agent_dir())
 
@@ -373,7 +379,7 @@ def _set_up_environment(model_version):
     e["DATADOG_DIR"] = str(_get_agent_dir())
     e["RUN_AGENT"] = "true"
     e["DD_LOGS_ENABLED"] = "true"
-    e["DD_ENABLE_CHECKS"] = "false"
+    e["DD_ENABLE_CHECKS"] = str(bool(_is_checks_enabled())).lower()
     e["LOGS_CONFIG"] = json.dumps(_get_logging_config())
 
     return e
@@ -516,7 +522,7 @@ def _patch_run_datadog_script(script_dir):
     # This works great in multi-buildpack scenarios where the environment variables
     # are set while deploying the application.
     #
-    # This is not the case here, and we cannot use the official method since we're 
+    # This is not the case here, and we cannot use the official method since we're
     # setting Datadog environment variables at start, and the agent runs before start.
     # Also, the stop_datadog call assumes a different PID than present, causing a kill
     # call to fail. This applies to all Datadog buildpack versions > 4.20.0.
@@ -534,7 +540,6 @@ def _patch_run_datadog_script(script_dir):
                 f.write(line)
         f.truncate()
 
-    
 
 def stage(buildpack_path, build_path, cache_path):
     if not is_enabled():
