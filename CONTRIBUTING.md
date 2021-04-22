@@ -10,7 +10,6 @@ The following rules and guidelines apply when contributing to the buildpack:
 
 * For general Mendix support, please reach out to our regular channels instead of opening an issue specific to this buildpack.
 * We require that you accept the [`LICENSE`](LICENSE).
-* If you're not a maintainer or if you're otherwise using your own fork to develop and submit your PR on, and base your PR on the `develop` branch.
 * We follow a `develop` to `master` flow, where `master` is always the latest tested / released / working branch. Features are in `DEP-*` branches and may only be merged to `develop`. Releases (`release-*`) and fixes (also `DEP-*`) have separate branches and may be merged into `master`. For inspiration, check [this article](https://nvie.com/posts/a-successful-git-branching-model/).
 * New releases are always tagged `vX.X.X` . We make liberal use of semantic versioning.
 * Our code complies to PEP8, is formatted in [`black`]((https://github.com/psf/black)) and linted in `pylint`.
@@ -21,11 +20,44 @@ We have no formal issue template. If you submit an issue, please make sure that 
 
 ## PRs
 
-The following guidelines must be respected to get ar PR merged to `master`:
+The following guidelines apply to pull requests:
 
-* Rebase your git history in such a way that each commit makes one consistent change. Don't include separate "fixup" commits later on.
-* Submit your PR with all the information we need to review it. The same applies to PRs as it does to issues.
-* The code must pass linting and all integration tests (in Travis). Code which does not pass will not be considered / reviewed.
-* Always bump the version number in `VERSION` to an appropriate value if you're planning a release. Releasing is automated and based on a merge to `master` with a tag that does not exist yet.
-* There is a minimum of one reviewer per PR.
-* After a PR is merged, a release must be created with the appropriate version, a sensical title and proper release notes.
+* Base your PR on the **right branch**. Anything other than releases and hotfixes must be based on the `develop` branch and must be targeted to the `develop` branch.
+* Submit your PR with **all the information** we need to review it. This includes a sensical title and accurate description.
+* The code must **pass linting and all (integration) tests**. Code which does not pass will not be considered / reviewed.
+* Please ensure that you have a **condensed commit history**; thousands of small commits are hard to squash.
+* There is a **minimum of one reviewer** per PR.
+
+### Merge Procedure
+
+0. Ensure that your branch is based on the latest `develop` version.
+1. Ask at least one person to review the PR.
+2. Merge to `develop` using the **"Squash and Merge"** strategy.
+
+After a PR is merged to `develop`, be sure to:
+* **Delete** your branch.
+
+## Releases and Hotfixes
+
+The following guidelines apply to releases and hotfixes:
+
+* Release and hotfix are PRs, and therefore must follow the **PR guidelines**.
+* Release and hotfix PRs contain a version bump in the form of a commit of `VERSION`.
+* Release PRs only contain a version bump commit besides the changes from `develop`. Hotfix PRs may contain commits that are not in `develop`.
+* Release and hotfix PR **titles** must be prefixed by the version, e.g. `vx.x.x: Release Title`.
+* Base the release or hotfix PR on the `develop` (release) or `master` (hotfix) branch, and target the `master` branch.
+* After a release or hotfix PR is merged to `master`:
+  * A draft release is created automatically.
+  * Changes need manual merging back into `develop`.
+
+### Release Procedure
+
+0. Ensure that your branch is based on the latest `develop` (release) or `master` (hotfix) version.
+1. Add an **commit to the PR to bump the version number** in `VERSION` to an appropriate value.
+2. Ask at least one person to review the PR. This review counts as a release approval; in the case of a release, this is a formality.
+3. Merge to `master` using the **"Rebase and Merge"** strategy.
+
+After a release or hotfix PR is merged to `master`, be sure to:
+* **"Undraft"** the release to release it.
+* **Rebase** `develop` on the latest `master` branch, and **force push** it.
+* **Delete** your release or hotfix branch.
