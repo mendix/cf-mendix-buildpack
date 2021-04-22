@@ -18,4 +18,4 @@ class TestCaseDatadogUtilFunctions(unittest.TestCase):
         for (tags, outcome) in tags_cases:
             with self.subTest(tags=tags, outcome=outcome):
                 os.environ["TAGS"] = json.dumps(tags)
-                self.assertEqual(datadog.get_service(), outcome)
+                self.assertEqual(datadog.get_service_tag(), outcome)

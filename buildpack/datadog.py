@@ -20,18 +20,19 @@ from distutils.util import strtobool
 
 import backoff
 import yaml
+from lib.m2ee.version import MXVersion
 
 from buildpack import util
 from buildpack.runtime_components import database
 
 NAMESPACE = "datadog"
 
-SIDECAR_VERSION = "4.19.0"
+SIDECAR_VERSION = "4.21.0"
 SIDECAR_ARTIFACT_NAME = "datadog-cloudfoundry-buildpack-{}.zip".format(
     SIDECAR_VERSION
 )
 SIDECAR_URL_ROOT = "/mx-buildpack/{}".format(NAMESPACE)
-JAVA_AGENT_VERSION = "0.68.0"
+JAVA_AGENT_VERSION = "0.78.2"
 JAVA_AGENT_ARTIFACT_NAME = "dd-java-agent-{}.jar".format(JAVA_AGENT_VERSION)
 JAVA_AGENT_URL_ROOT = "/mx-buildpack/{}".format(NAMESPACE)
 
@@ -110,14 +111,45 @@ def is_database_diskstorage_metric_enabled():
     )
 
 
+# Toggles the system checks. Note that these may not mean anything as they
+# might show the host metrics instead of the container metrics.
+def _is_checks_enabled():
+    return strtobool(os.environ.get("DD_ENABLE_CHECKS", "false"))
+
+
+# Toggles Datadog profiling. Can only enabled when using AdoptOpenJDK and
+# when tracing is enabled.
+def _is_profiling_enabled(runtime_version):
+    if runtime_version < MXVersion("7.23.1") or not _is_tracing_enabled():
+        return False
+    return strtobool(os.environ.get("DD_PROFILING_ENABLED", "false"))
+
+
 def _is_installed():
     return os.path.exists(_get_agent_dir())
 
 
-def get_service():
-    dd_service_name = os.environ.get("DD_SERVICE_NAME")
-    if dd_service_name:
-        return dd_service_name
+def _get_tag_from_env(tag, env_var, default):
+    dd_env = os.environ.get(env_var)
+    if dd_env:
+        return dd_env
+    else:
+        tags = util.get_tags()
+        if tag in tags:
+            return tags[tag]
+    return default
+
+
+def get_env_tag():
+    return _get_tag_from_env("env", "DD_ENV", "none")
+
+
+def get_service_tag():
+    dd_service = os.environ.get(
+        "DD_SERVICE", os.environ.get("DD_SERVICE_NAME")
+    )
+    if dd_service:
+        return dd_service
     else:
         service_from_tags = _get_service_from_tags()
         if service_from_tags:
@@ -137,12 +169,19 @@ def _get_service_from_tags():
     return None
 
 
+def get_version_tag(model_version="unversioned"):
+    return _get_tag_from_env("version", "DD_VERSION", model_version)
+
+
 # Appends user tags with mandatory tags if required
-def _get_datadog_tags():
+def _get_datadog_tags(model_version):
     tags = util.get_tags()
+    if not "env" in tags:
+        tags["env"] = get_env_tag()
     if not "service" in tags:
-        # app and / or service tag not set
-        tags["service"] = get_service()
+        tags["service"] = get_service_tag()
+    if not "version" in tags:
+        tags["version"] = get_version_tag(model_version)
 
     tags_strings = []
     for k, v in tags.items():
@@ -154,7 +193,9 @@ def get_statsd_port():
     return STATSD_PORT
 
 
-def _set_up_dd_java_agent(m2ee, jmx_config_files):
+def _set_up_dd_java_agent(
+    m2ee, model_version, runtime_version, jmx_config_files
+):
     jar = os.path.join(SIDECAR_ROOT_DIR, JAVA_AGENT_ARTIFACT_NAME)
 
     # Check if already configured
@@ -165,11 +206,14 @@ def _set_up_dd_java_agent(m2ee, jmx_config_files):
         return
 
     # Inject Datadog Java agent
+    # Add tags and explicit reserved tags
     m2ee.config._conf["m2ee"]["javaopts"].extend(
         [
             "-javaagent:{}".format(jar),
-            "-D{}={}".format("dd.tags", _get_datadog_tags()),
-            "-D{}={}".format("dd.service", get_service()),
+            "-D{}={}".format("dd.tags", _get_datadog_tags(model_version)),
+            "-D{}={}".format("dd.env", get_env_tag()),
+            "-D{}={}".format("dd.service", get_service_tag()),
+            "-D{}={}".format("dd.version", get_version_tag(model_version)),
         ]
     )
 
@@ -177,7 +221,17 @@ def _set_up_dd_java_agent(m2ee, jmx_config_files):
     m2ee.config._conf["m2ee"]["javaopts"].extend(
         [
             "-D{}={}".format(
-                "dd.trace.enabled", str(_is_tracing_enabled()).lower()
+                "dd.trace.enabled", str(bool(_is_tracing_enabled())).lower()
+            ),
+        ]
+    )
+
+    # Explicitly set profiling flag
+    m2ee.config._conf["m2ee"]["javaopts"].extend(
+        [
+            "-D{}={}".format(
+                "dd.profiling.enabled",
+                str(bool(_is_profiling_enabled(runtime_version))).lower(),
             ),
         ]
     )
@@ -195,7 +249,7 @@ def _set_up_dd_java_agent(m2ee, jmx_config_files):
                 [
                     "-D{}={}".format(
                         "dd.service.mapping",
-                        "{}:{}.db".format("postgresql", get_service()),
+                        "{}:{}.db".format("postgresql", get_service_tag()),
                     ),
                 ]
             )
@@ -313,15 +367,13 @@ def _get_runtime_jmx_config(extra_jmx_instance_config=None):
     return config
 
 
-def _set_up_environment():
-
-    # Trace variables need to be set in the global environment
-    # since the Datadog Java Trace Agent does not live inside the Datadog Agent process
-
+def _set_up_environment(model_version, runtime_version):
     e = dict(os.environ.copy())
 
     # Everything in datadog.yaml can be configured with environment variables
     # This is the "official way" of working with the DD buildpack, so let's do this to ensure forward compatibility
+    # Trace variables need to be set in the global environment
+    # since the Datadog Java Trace Agent does not live inside the Datadog Agent process
     e["DD_API_KEY"] = get_api_key()
     e["DD_HOSTNAME"] = util.get_hostname()
 
@@ -330,18 +382,28 @@ def _set_up_environment():
     e["DD_DOGSTATSD_PORT"] = str(get_statsd_port())
 
     # Transform and append tags
-    e["DD_TAGS"] = _get_datadog_tags()
+    e["DD_TAGS"] = _get_datadog_tags(model_version)
     if "TAGS" in e:
         del e["TAGS"]
 
-    # Explicitly enable or disable tracing
-    e["DD_TRACE_ENABLED"] = str(_is_tracing_enabled()).lower()
+    # Explicitly add reserved tags
+    e["DD_ENV"] = get_env_tag()
+    e["DD_VERSION"] = get_version_tag(model_version)
+    e["DD_SERVICE"] = get_service_tag()
+    if "DD_SERVICE_NAME" in e:
+        del e["DD_SERVICE_NAME"]
+
+    # Explicitly enable or disable tracing and profiling
+    e["DD_TRACE_ENABLED"] = str(bool(_is_tracing_enabled())).lower()
+    e["DD_PROFILING_ENABLED"] = str(
+        bool(_is_profiling_enabled(runtime_version))
+    ).lower()
 
     # Set Datadog Cloud Foundry Buildpack specific environment variables
     e["DATADOG_DIR"] = str(_get_agent_dir())
     e["RUN_AGENT"] = "true"
     e["DD_LOGS_ENABLED"] = "true"
-    e["DD_ENABLE_CHECKS"] = "false"
+    e["DD_ENABLE_CHECKS"] = str(bool(_is_checks_enabled())).lower()
     e["LOGS_CONFIG"] = json.dumps(_get_logging_config())
 
     return e
@@ -352,7 +414,7 @@ def _get_logging_config():
         "type": "tcp",
         "port": str(LOGS_PORT),
         "source": "mendix",
-        "service": get_service(),
+        "service": get_service_tag(),
     }
 
     # Standard rules for e.g. credential redaction
@@ -399,7 +461,13 @@ def _get_logging_config():
     return [config]
 
 
-def update_config(m2ee, extra_jmx_instance_config=None, jmx_config_files=[]):
+def update_config(
+    m2ee,
+    model_version,
+    runtime_version,
+    extra_jmx_instance_config=None,
+    jmx_config_files=[],
+):
     if not is_enabled() or not _is_installed():
         return
 
@@ -430,7 +498,10 @@ def update_config(m2ee, extra_jmx_instance_config=None, jmx_config_files=[]):
     # Set up Datadog Java Trace Agent
     jmx_config_files.append(_get_jmx_conf_file())
     _set_up_dd_java_agent(
-        m2ee, jmx_config_files=jmx_config_files,
+        m2ee,
+        model_version,
+        runtime_version,
+        jmx_config_files=jmx_config_files,
     )
 
 
@@ -476,6 +547,31 @@ def _set_executable(glob_files):
             logging.debug("[{}] is already executable, skipping".format(f))
 
 
+def _patch_run_datadog_script(script_dir):
+    # The Datadog CF buildpack includes a stop routine which bases itself
+    # on the Datadog agent being started before the main buildpack process.
+    # This works great in multi-buildpack scenarios where the environment variables
+    # are set while deploying the application.
+    #
+    # This is not the case here, and we cannot use the official method since we're
+    # setting Datadog environment variables at start, and the agent runs before start.
+    # Also, the stop_datadog call assumes a different PID than present, causing a kill
+    # call to fail. This applies to all Datadog buildpack versions > 4.20.0.
+    #
+    # Therefore, the stop_datadog call needs to be patched out.
+    # This should be removed when we start using multi-buildpacks
+    script = os.path.join(script_dir, "run-datadog.sh")
+    with open(script, "r+") as f:
+        lines = f.readlines()
+        f.seek(0)
+        for line in lines:
+            if "stop_datadog &" in line:
+                f.write("# {}".format(line))
+            else:
+                f.write(line)
+        f.truncate()
+
+
 def stage(buildpack_path, build_path, cache_path):
     if not is_enabled():
         return
@@ -486,8 +582,11 @@ def stage(buildpack_path, build_path, cache_path):
     logging.debug("Setting Datadog Agent script permissions if required...")
     _set_executable("{}/*.sh".format(_get_agent_dir(build_path)))
 
+    logging.debug("Patching run-datadog.sh...")
+    _patch_run_datadog_script(_get_agent_dir(build_path))
 
-def run():
+
+def run(model_version, runtime_version):
     if not is_enabled():
         return
 
@@ -505,7 +604,7 @@ def run():
     # and include settings as environment variables
     logging.info("Starting Datadog Agent...")
 
-    agent_environment = _set_up_environment()
+    agent_environment = _set_up_environment(model_version, runtime_version)
     logging.debug(
         "Datadog Agent environment variables: [{}]".format(agent_environment)
     )

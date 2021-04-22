@@ -148,7 +148,7 @@ def update_config(m2ee, app_name):
     tags = util.get_tags()
     if datadog.is_enabled() and "service" not in tags:
         # app and / or service tag not set
-        tags["service"] = datadog.get_service()
+        tags["service"] = datadog.get_service_tag()
 
     with open(template_path, "r") as file_:
         template = Template(file_.read(), trim_blocks=True, lstrip_blocks=True)

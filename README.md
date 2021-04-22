@@ -8,9 +8,9 @@ The latest [release](https://github.com/mendix/cf-mendix-buildpack/releases/late
 
 | Mendix Version | Minimal Buildpack Release |
 | ----           | ----                      |
-| `8.x`          | `v3.4.0`                  |
-| `7.23.x`       | `v3.1.0`                  |
-| `6.x`, `7.x`   | `v1.0`                    |
+| `8.x` | `v3.4.0` |
+| `7.23.x` | `v3.1.0` |
+| `6.x` , `7.x` | `v1.0` |
 
 The buildpack is heavily tied to the Mendix Public Cloud, but can be used independently.
 Release notes are available for the [buildpack](https://github.com/mendix/cf-mendix-buildpack/releases/), [Mendix itself](https://docs.mendix.com/releasenotes/studio-pro/) and the [Mendix Public Cloud](https://docs.mendix.com/releasenotes/developer-portal/deployment).
@@ -124,6 +124,7 @@ cf restart <YOUR_APP>
 The scheduled events can be configured using environment variable `SCHEDULED_EVENTS` .
 
 Possible values are `ALL` , `NONE` or a comma separated list of the scheduled events that you would like to enable. For example: `ModuleA.ScheduledEvent,ModuleB.OtherScheduledEvent`
+
 When scaling to multiple instances, the scheduled events that are enabled via the settings above will only be executed on instance `0` . The other instances will not execute scheduled events at all.
 
 ### Configuring External Filestore
@@ -228,7 +229,7 @@ Google Chrome will - at a certain moment - [enforce cookie security](https://www
 
 The buildpack can inject these two properties into all cookies for affected runtime versions.
 
-This workaround is disabled by default. If your application supports injecting these cookies, you can choose to enable cookie header injection by setting the `SAMESITE_COOKIE_PRE_MX812` environment variable to `true`.
+This workaround is disabled by default. If your application supports injecting these cookies, you can choose to enable cookie header injection by setting the `SAMESITE_COOKIE_PRE_MX812` environment variable to `true` .
 
 ### Horizontal Scaling
 
@@ -264,6 +265,7 @@ NOTE: The previously documented setting `CLUSTER_ENABLED` and the REDIS related 
 If you are running Cloud Foundry without a connection to the Internet, you should specify an on-premises web server that hosts Mendix Runtime files and other buildpack resources. You can set the endpoint with the following environment variable:
 
  `BLOBSTORE: https://my-intranet-webserver.my-company.com/mendix/`
+
 The preferred way to set up this on-premises web server is as a transparent proxy to `https://cdn.mendix.com/` . This prevents manual work by system administrators every time a new Mendix version is released.
 
 Alternatively you can make the required mendix runtime files `mendix-VERSION.tar.gz` available under `BLOBSTORE/runtime/` . The original files can be downloaded from `https://cdn.mendix.com/` . You should also make the Java version available on:
@@ -412,20 +414,24 @@ Please note that application metric collection **requires Mendix 7.14 or higher*
 For correlation purposes, we set the Datadog `service` for you to match your **application name**. This name is derived in the following order:
 
 1. Your Mendix `service:` tag if you have set this in the runtime settings or `TAGS` environment variable.<br/>*Format:* `["service:myfirstapp", "tag2:value2", ...]`.
-2. Your Mendix `app:` tag if you have set this in the runtime settings or `TAGS` environment variable.<br/>*Example:* for `app:myfirstapp` , `service` will be set to `myfirstapp`.
-3. The first part of the Cloud Foundry route URI configured for your application, without numeric characters.<br/>*Example:* for a route URI `myfirstapp1000-test.example.com` , `service` will be set to `myfirstapp` .
+2. Your Mendix `app:` tag if you have set this in the runtime settings or `TAGS` environment variable.<br/>*Example:* for `app:myfirstapp` ,  `service` will be set to `myfirstapp`.
+3. The first part of the Cloud Foundry route URI configured for your application, without numeric characters.<br/>*Example:* for a route URI `myfirstapp1000-test.example.com` ,  `service` will be set to `myfirstapp` .
 
 Additionally, we configure the following Datadog environment variables for you:
 
 | Environment Variable | Value | Can Be Overridden? | Description |
 |-|-|-|-|
-| `DD_HOSTNAME` | `<app>-<env>.mendixcloud.com-<instance>` | No | Human-readable host name for your application |
+| `DD_HOSTNAME` | `<app>-<env>.mendixcloud.com<-instance>` | No | Human-readable host name for your application |
+| `DD_ENV` | `<env>` | Yes | Reserved tag. Set to the value of the `env` tag. Defaults to `none` .
+| `DD_SERVICE` | `<app>` | Yes | Reserved tag. Set as as described before. Is only set when `DD_TRACE_ENABLED` is set to `true` . |
+| `DD_VERSION` | `<model_version>` | Yes | Reserved tag. Set to the value of the `version` tag. Defaults to the Mendix model version of the application. |
+| `DD_TAGS` | `tag1:value1,...:...` | Yes | Global tags for Datadog Agent(s). Derived from the runtime settings in Mendix Public Cloud or the `TAGS` environment variable. |
+| `DD_TRACE_ENABLED` | `false` | Yes | Enables Datadog APM and the Trace Agent(s). **Enabling Datadog APM is experimental and enables tracing via the [Datadog Java Trace Agent](https://docs.datadoghq.com/tracing/setup/java/) tracing functionality.** |
+| `DD_PROFILING_ENABLED` | `false` | Yes | Enables Datadog APM and the Trace Agent(s). **Enabling Datadog Profiling is experimental and can only be enabled for Mendix 7.23.1 and up, and requires tracing to be enabled.** |
 | `DD_JMXFETCH_ENABLED` | `true` | No | Enables Datadog Java Trace Agent JMX metrics fetching |
-| `DD_LOGS_ENABLED` | `true` | No | Enables sending your application logs directly to Datadog |
 | `DD_SERVICE_MAPPING` | `<database>:<app>.db` | No | Links your database to your app in Datadog APM |
-| `DD_SERVICE_NAME` | `<app>` | No | Defaults to your application name as described before. Is only set when `DD_TRACE_ENABLED` is set to `true` . |
-| `DD_TAGS` | `tag1:value1,...:...` | No | Derived from the runtime settings in Mendix Public Cloud or the `TAGS` environment variable |
-| `DD_TRACE_ENABLED` | `false` | Yes | Disables Datadog APM by default. **Enabling Datadog APM is experimental and enables tracing via the [Datadog Java Trace Agent](https://docs.datadoghq.com/tracing/setup/java/) tracing functionality.** |
+| `DD_LOGS_ENABLED` | `true` | No | Enables sending your application logs directly to Datadog |
+| `DD_CHECKS_ENABLED` | `false` | Yes | Enables system metrics. These are disabled by default, as the metrics might be host metrics instead of container metrics. |
 
 Other environment variables can be set as per the [Datadog Agent documentation](https://docs.datadoghq.com/agent/).
 
@@ -433,9 +439,9 @@ Other environment variables can be set as per the [Datadog Agent documentation](
 
 Telegraf [does not support (Datadog) metric types correctly yet](https://github.com/influxdata/telegraf/issues/6822) (e.g. rate, counter, gauge). This means that all database metrics are currently pushed to Datadog as a gauge.
 
-The most important metrics (`before_xid_wraparound`, `connections`, `database_size`, `db.count`, `locks`, `max_connections`, `percent_usage_connections`, `table.count`, `deadlocks`) are gauges and are compatible with the Datadog PostgreSQL integration and associated dashboards.
+The most important metrics ( `before_xid_wraparound` , `connections` , `database_size` , `db.count` , `locks` , `max_connections` , `percent_usage_connections` , `table.count` , `deadlocks` ) are gauges and are compatible with the Datadog PostgreSQL integration and associated dashboards.
 
-*If you do require the additional rate and counter metrics, there is a workaround available.* First, set the `DATADOG_DATABASE_RATE_COUNT_METRICS` environment variable to `true`. After that variable is enabled, the rate and counter metrics are suffixed by either `_count` or `_rate` to prevent collisions with the official Datadog metrics. In the Datadog UI, the [metric type and unit can be changed](https://docs.datadoghq.com/developers/metrics/type_modifiers/?tab=count#modify-a-metrics-type-within-datadog) to reflect this. We also set a helpful `interval` tag (`10s`) which can be used here. Additionally, gauge metrics can be [rolled up in Datadog dashboards](https://docs.datadoghq.com/dashboards/functions/rollup/). The correct type and unit for other submitted metrics can be found [here](https://github.com/DataDog/integrations-core/blob/master/postgres/metadata.csv).
+*If you do require the additional rate and counter metrics, there is a workaround available.* First, set the `DATADOG_DATABASE_RATE_COUNT_METRICS` environment variable to `true` . After that variable is enabled, the rate and counter metrics are suffixed by either `_count` or `_rate` to prevent collisions with the official Datadog metrics. In the Datadog UI, the [metric type and unit can be changed](https://docs.datadoghq.com/developers/metrics/type_modifiers/?tab=count#modify-a-metrics-type-within-datadog) to reflect this. We also set a helpful `interval` tag ( `10s` ) which can be used here. Additionally, gauge metrics can be [rolled up in Datadog dashboards](https://docs.datadoghq.com/dashboards/functions/rollup/). The correct type and unit for other submitted metrics can be found [here](https://github.com/DataDog/integrations-core/blob/master/postgres/metadata.csv).
 
 ### Dynatrace
 
@@ -490,6 +496,7 @@ You can see the available Log Nodes in your application in the Mendix Modeler. T
 * `INFO`
 * `DEBUG`
 * `TRACE`
+
 Example:
 
 ``` shell
@@ -514,7 +521,7 @@ You can enable the Mendix Debugger by setting a `DEBUGGER_PASSWORD` environment 
 
 We recommend "pinning to" - using a specific [release](https://github.com/mendix/cf-mendix-buildpack/releases) of - the buildpack. This will prevent you from being affected by bugs that are inadvertently introduced, but you will need to set up a procedure to regularly move to new versions of the buildpack.
 
-To push with a specific release of the buildpack, replace `<RELEASE>` in the buildpack URL below in your `cf push` command with the release you want to pin to, e.g. `v4.11.0`:
+To push with a specific release of the buildpack, replace `<RELEASE>` in the buildpack URL below in your `cf push` command with the release you want to pin to, e.g. `v4.11.0` :
 
 ``` shell
 cf push <YOUR_APP> -b https://github.com/mendix/cf-mendix-buildpack/releases/download/<RELEASE>/cf-mendix-buildpack.zip -p <YOUR_MDA>.mda -t 180
@@ -582,8 +589,8 @@ When it is desired to push MPKs produced by Mendix Studio Pro 6.x to containers 
 
 # Developing and Contributing
 
-Please see [`DEVELOPING.md`](DEVELOPING.md) and [`CONTRIBUTING.md`](CONTRIBUTING.md).
+Please see [ `DEVELOPING.md` ](DEVELOPING.md) and [ `CONTRIBUTING.md` ](CONTRIBUTING.md).
 
 # License
 
-This project is licensed under the Apache License v2 (for details, see the [`LICENSE`](LICENSE) file).
+This project is licensed under the Apache License v2 (for details, see the [ `LICENSE` ](LICENSE) file).

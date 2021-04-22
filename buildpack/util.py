@@ -39,8 +39,12 @@ def get_domain():
     return get_vcap_data()["application_uris"][0].split("/")[0]
 
 
-def get_hostname():
-    return get_domain() + "-" + os.getenv("CF_INSTANCE_INDEX", "")
+def get_hostname(add_instance_index=True):
+    result = get_domain()
+    cf_instance_index = os.getenv("CF_INSTANCE_INDEX")
+    if cf_instance_index and add_instance_index:
+        result += "-{}".format(cf_instance_index)
+    return result
 
 
 def get_app_from_domain():
