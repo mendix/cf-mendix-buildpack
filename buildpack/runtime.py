@@ -111,13 +111,21 @@ def get_java_version(mx_version):
     return java_version
 
 
-def get_version(build_path):
+def _get_metadata_value(key, build_path):
     file_name = os.path.join(build_path, "model", "metadata.json")
     try:
         with open(file_name) as file_handle:
             data = json.loads(file_handle.read())
-            return MXVersion(data["RuntimeVersion"])
+            return data[key]
     except IOError:
+        logging.warning("Cannot retrieve metadata key %s", key)
+        return None
+
+
+def get_version(build_path):
+    result = _get_metadata_value("RuntimeVersion", build_path)
+
+    if result == None:
         mpr = util.get_mpr_file_from_dir(build_path)
         if not mpr:
             raise Exception("No model/metadata.json or .mpr found in archive")
@@ -125,7 +133,12 @@ def get_version(build_path):
         cursor = sqlite3.connect(mpr).cursor()
         cursor.execute("SELECT _ProductVersion FROM _MetaData LIMIT 1")
         record = cursor.fetchone()
-        return MXVersion(record[0])
+        result = record[0]
+    return MXVersion(result)
+
+
+def get_model_version(build_path):
+    return _get_metadata_value("ModelVersion", build_path)
 
 
 def _activate_license():
@@ -386,7 +399,7 @@ def _configure_debugger(m2ee):
         )
 
 
-def _display_running_version(m2ee):
+def _display_running_model_version(m2ee):
     if m2ee.config.get_runtime_version() >= 6.0:
         feedback = m2ee.client.about().get_feedback()
         if "model_version" in feedback:
@@ -566,7 +579,7 @@ def run(m2ee):
     _start_app(m2ee)
     security.create_admin_user(m2ee, util.is_development_mode())
     logs.update_config(m2ee)
-    _display_running_version(m2ee)
+    _display_running_model_version(m2ee)
     _configure_debugger(m2ee)
 
     backup.run()
