@@ -353,7 +353,7 @@ class BaseTestWithPostgreSQL(BaseTest):
     def stage_container(self, package_name, env_vars=None):
         # The PostgreSQL container has to start here:
         # We need the port number before staging
-
+        DEFAULT_PORT = 5432
         result = self._cmd(
             (
                 "docker",
@@ -361,7 +361,7 @@ class BaseTestWithPostgreSQL(BaseTest):
                 "--name",
                 self._database_container_name,
                 "-p",
-                str(5432),
+                str(DEFAULT_PORT),
                 "-e",
                 "POSTGRES_USER={}".format(self._database_user),
                 "-e",
@@ -381,14 +381,21 @@ class BaseTestWithPostgreSQL(BaseTest):
                 "Cannot create database container: {}".format(result[0])
             )
 
-        result = self._cmd(("docker", "port", self._database_container_name))
+        result = self._cmd(
+            (
+                "docker",
+                "port",
+                self._database_container_name,
+                "{}/tcp".format(DEFAULT_PORT),
+            ),
+        )
 
         if not result[1]:
             raise RuntimeError(
                 "Cannot get database container port: {}".format(result[0])
             )
 
-        self._database_port = result[0].split(":")[1]
+        self._database_port = int(result[0].split(":")[1].rstrip())
 
         # update database_host with correct exposed port of db
         if env_vars and "MXRUNTIME_DatabaseHost" in env_vars:
