@@ -27,12 +27,12 @@ from buildpack.runtime_components import database
 
 NAMESPACE = "datadog"
 
-SIDECAR_VERSION = "4.21.0"
+SIDECAR_VERSION = "4.22.0"
 SIDECAR_ARTIFACT_NAME = "datadog-cloudfoundry-buildpack-{}.zip".format(
     SIDECAR_VERSION
 )
 SIDECAR_URL_ROOT = "/mx-buildpack/{}".format(NAMESPACE)
-JAVA_AGENT_VERSION = "0.78.2"
+JAVA_AGENT_VERSION = "0.78.3"
 JAVA_AGENT_ARTIFACT_NAME = "dd-java-agent-{}.jar".format(JAVA_AGENT_VERSION)
 JAVA_AGENT_URL_ROOT = "/mx-buildpack/{}".format(NAMESPACE)
 
@@ -405,6 +405,9 @@ def _set_up_environment(model_version, runtime_version):
     e["DD_LOGS_ENABLED"] = "true"
     e["DD_ENABLE_CHECKS"] = str(bool(_is_checks_enabled())).lower()
     e["LOGS_CONFIG"] = json.dumps(_get_logging_config())
+    e[
+        "SUPPRESS_DD_AGENT_OUTPUT"
+    ] = "false"  # Has to be set explicitly since DD buildpack 4.22.0
 
     return e
 
