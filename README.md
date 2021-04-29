@@ -4,13 +4,15 @@
 
 This document contains general information on the Mendix Cloud Foundry Buildpack.
 
-The latest [release](https://github.com/mendix/cf-mendix-buildpack/releases/latest) supports Mendix versions 6, 7 and 8. See the table which buildpack release introduced support for a Mendix version. [This section](#buildpack-releases-and-version-pinning) describes how to use a specific release.
+The latest [release](https://github.com/mendix/cf-mendix-buildpack/releases/latest) supports Mendix versions 7 (LTS), 8 (LTS) and 9. See the table which buildpack release introduced support for a Mendix version, and in which release versions [are end-of-support](https://docs.mendix.com/releasenotes/studio-pro/lts-mts). [This section](#buildpack-releases-and-version-pinning) describes how to use a specific release.
 
-| Mendix Version | Minimal Buildpack Release |
-| ----           | ----                      |
-| `8.x` | `v3.4.0` |
-| `7.23.x` | `v3.1.0` |
-| `6.x` , `7.x` | `v1.0` |
+| Mendix Version | Supported | End-of-Support |
+| ---- | ---- | ---- |
+| `9.x` | `v4.16.0` | - |
+| `8.18.x` ([LTS](https://docs.mendix.com/releasenotes/studio-pro/lts-mts)) | `v3.4.0` | - |
+| `8 < 8.x` | `v3.4.0` | `v4.16.0` |
+| `7.23.x` ([LTS](https://docs.mendix.com/releasenotes/studio-pro/lts-mts)) | `v3.1.0` | - |
+| `6.x` , `7 < 7.23.x` | `v1.0` | `v4.16.0` |
 
 The buildpack is heavily tied to the Mendix Public Cloud, but can be used independently.
 Release notes are available for the [buildpack](https://github.com/mendix/cf-mendix-buildpack/releases/), [Mendix itself](https://docs.mendix.com/releasenotes/studio-pro/) and the [Mendix Public Cloud](https://docs.mendix.com/releasenotes/developer-portal/deployment).
