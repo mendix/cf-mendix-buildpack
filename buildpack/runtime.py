@@ -32,11 +32,21 @@ if len(handlers) > 2:
 logging.getLogger("m2ee").propagate = False
 
 
-def check_deprecation(version):
-    if version >= MXVersion("5.0.0") and version < MXVersion("6.0.0"):
+def is_version_supported(version):
+    if version < MXVersion("6.0.0"):
         return False
 
     return True
+
+
+def is_version_end_of_support(version):
+    # LTS versions: https://docs.mendix.com/releasenotes/studio-pro/lts-mts
+    if version >= MXVersion("6.0.0") and version < MXVersion("7.23"):
+        return True
+    if version >= MXVersion("8.0.0") and version < MXVersion("8.18"):
+        return True
+
+    return False
 
 
 def _get_runtime_url(blobstore, build_path):

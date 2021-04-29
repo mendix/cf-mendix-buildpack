@@ -56,16 +56,26 @@ def preflight_check(version):
 
     stack = os.getenv("CF_STACK")
     logging.info(
-        "Preflight check on Mendix runtime version [%s] and stack [%s]...",
+        "Preflight check on Mendix version [%s] and stack [%s]...",
         version,
         stack,
     )
 
     if not stack in SUPPORTED_STACKS:
-        raise NotImplementedError("Stack [{}] is not supported".format(stack))
-    if not runtime.check_deprecation(version):
         raise NotImplementedError(
-            "Mendix runtime version [{}] is not supported".format(version)
+            "Stack [{}] is not supported by this buildpack".format(stack)
+        )
+    if not runtime.is_version_supported(version):
+        raise NotImplementedError(
+            "Mendix version [{}] is not supported by this buildpack".format(
+                version
+            )
+        )
+    if runtime.is_version_end_of_support(version):
+        logging.warning(
+            "Mendix version [{}] is end-of-support. Please upgrade to a supported Mendix version (https://docs.mendix.com/releasenotes/studio-pro/lts-mts).".format(
+                version
+            )
         )
     logging.info("Preflight check completed")
 
