@@ -143,11 +143,23 @@ When deploying Mendix 6.7 or higher to CF on Azure with the Azure Service Broker
 
 #### S3 Settings
 
-Mendix can use external file stores with an S3 compatible api. Use the following environment variables to enable this.
+Mendix can use external file stores with an S3 compatible api. There are two ways to enable this.
+
+##### Use IAM Credentials
+Create an IAM user and provide IAM user credential using following environment variables.
 
 * `S3_ACCESS_KEY_ID` : credentials access key
 * `S3_SECRET_ACCESS_KEY` : credentials secret
 * `S3_BUCKET_NAME` : bucket name
+
+##### Implement TVM (Token Vending Machine)
+Create a TVM (Token Vending Machine) and provide TVM credential using following environment variable.
+
+* `S3_TVM_ENDPOINT` : tvm_endpoint
+* `S3_TVM_USERNAME` : tvm_username
+* `S3_TVM_PASSWORD` : tvm_password
+
+Please check [s3-tvm-spec](https://github.com/mendix/s3-tvm-spec) for api documentation help for tvm.
 
 The following environment variables are optional:
 
