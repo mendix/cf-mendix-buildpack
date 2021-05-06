@@ -25,8 +25,6 @@ def run():
     if amazon_s3 in vcap_services:
         s3_credentials = vcap_services[amazon_s3][0]["credentials"]
         backup_service["filesCredentials"] = {
-            "accessKey": s3_credentials["access_key_id"],
-            "secretKey": s3_credentials["secret_access_key"],
             "bucketName": s3_credentials["bucket"],
         }
         if "key_suffix" in s3_credentials:  # Not all s3 plans have this field
