@@ -40,7 +40,8 @@ def update_config(m2ee):
     runtime_version = m2ee.config.get_runtime_version()
     if not meets_version_requirements(runtime_version):
         logging.warning(
-            "Not enabling Mendix Java Agent: runtime version must be 7.14 or up. Application metrics will not be shipped to third-party monitoring services."
+            "Not enabling Mendix Java Agent: runtime version must be 7.14 or up. "
+            "Application metrics will not be shipped to third-party monitoring services."
         )
     if is_enabled(runtime_version):
         _enable_mx_java_agent(m2ee)
@@ -58,38 +59,79 @@ def _enable_mx_java_agent(m2ee):
         return
 
     logging.debug("Enabling Mendix Java Agent...")
-    agent_config = ""
-    agent_config_str = None
+
+    mx_agent_args = []
 
     if "METRICS_AGENT_CONFIG" in os.environ:
-        agent_config_str = os.environ.get("METRICS_AGENT_CONFIG")
+        mx_agent_args.append(
+            _to_arg(
+                "config",
+                _to_file(
+                    "METRICS_AGENT_CONFIG",
+                    os.environ.get("METRICS_AGENT_CONFIG"),
+                ),
+            )
+        )
     elif "MetricsAgentConfig" in m2ee.config._conf["mxruntime"]:
         logging.warning(
             "Passing MetricsAgentConfig with custom runtime "
             "settings is deprecated. "
             "Please use the METRICS_AGENT_CONFIG environment variable."
         )
-        agent_config_str = m2ee.config._conf["mxruntime"]["MetricsAgentConfig"]
+        mx_agent_args.append(
+            _to_arg(
+                "config",
+                _to_file(
+                    "METRICS_AGENT_CONFIG",
+                    m2ee.config._conf["mxruntime"]["MetricsAgentConfig"],
+                ),
+            )
+        )
 
-    if agent_config_str:
-        try:
-            # Ensure that this contains valid JSON
-            json.loads(agent_config_str)
-            config_file_path = os.path.join(
-                _get_destination_dir(), "MetricsAgentConfig.json"
+    if "METRICS_AGENT_INSTRUMENTATION_CONFIG" in os.environ:
+        mx_agent_args.append(
+            _to_arg(
+                "instrumentation_config",
+                _to_file(
+                    "METRICS_AGENT_INSTRUMENTATION_CONFIG",
+                    os.environ.get("METRICS_AGENT_INSTRUMENTATION_CONFIG"),
+                ),
             )
-            with open(config_file_path, "w") as fh:
-                fh.write(agent_config_str)
-            agent_config = "=config=" + config_file_path
-        except ValueError:
-            logging.error(
-                "Error parsing JSON from MetricsAgentConfig", exc_info=True,
-            )
+        )
+
+    mx_agent_args = list(filter(lambda x: x, mx_agent_args))
+    mx_agent_args_str = f'={",".join(mx_agent_args)}' if mx_agent_args else ""
 
     m2ee.config._conf["m2ee"]["javaopts"].extend(
-        ["-javaagent:{}{}".format(jar, agent_config)]
+        ["-javaagent:{}{}".format(jar, mx_agent_args_str)]
     )
+
     # If not explicitly set, default to StatsD
     m2ee.config._conf["mxruntime"].setdefault(
         "com.mendix.metrics.Type", "statsd"
     )
+
+
+def _to_file(name, json_content):
+    try:
+        # Ensure that this contains valid JSON
+        json.loads(json_content)
+
+        file_name = name.title().replace("_", "") + ".json"
+        file_path = os.path.join(_get_destination_dir(), file_name)
+
+        with open(file_path, "w") as fh:
+            fh.write(json_content)
+
+        return file_path
+    except ValueError:
+        logging.error(
+            "Error parsing JSON from %s", name, exc_info=True,
+        )
+        return None
+
+
+def _to_arg(key, value):
+    if key and value:
+        return key + "=" + value
+    return None
