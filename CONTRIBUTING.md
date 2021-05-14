@@ -1,6 +1,6 @@
 # Contributing to the Mendix Buildpack
 
-This document contains guidelines for contributing to the Mendix Buildpack (issues, PRs). Use in conjunction with [`DEVELOPING.md`](DEVELOPING.md) and [`LICENSE`](LICENSE).
+This document contains guidelines for contributing to the Mendix Buildpack (issues, PRs). Use in conjunction with [ `DEVELOPING.md` ](DEVELOPING.md) and [ `LICENSE` ](LICENSE).
 
 We welcome your contributions! Please reach out to a maintainer if you need help or if you have any questions after reading this document.
 
@@ -34,7 +34,8 @@ The following guidelines apply to pull requests:
 1. Ask at least one person to review the PR.
 2. Merge to `develop` using the **"Squash and Merge"** strategy.
 
-After a PR is merged to `develop`, be sure to:
+After a PR is merged to `develop` , be sure to:
+
 * **Delete** your branch.
 
 ## Releases and Hotfixes
@@ -46,9 +47,7 @@ The following guidelines apply to releases and hotfixes:
 * Release PRs only contain a version bump commit besides the changes from `develop`. Hotfix PRs may contain commits that are not in `develop`.
 * Release and hotfix PR **titles** must be prefixed by the version, e.g. `vx.x.x: Release Title`.
 * Base the release or hotfix PR on the `develop` (release) or `master` (hotfix) branch, and target the `master` branch.
-* After a release or hotfix PR is merged to `master`:
-  * A draft release is created automatically.
-  * Changes need manual merging back into `develop`.
+* Please clean up any branch that has been merged into `develop` or `master`.
 
 ### Release Procedure
 
@@ -57,7 +56,8 @@ The following guidelines apply to releases and hotfixes:
 2. Ask at least one person to review the PR. This review counts as a release approval; in the case of a release, this is a formality.
 3. Merge to `master` using the **"Rebase and Merge"** strategy.
 
-After a release or hotfix PR is merged to `master`, be sure to:
+After a release or hotfix PR is merged to `master`, a draft release is created automatically. Be sure to:
+
 * **"Undraft"** the release to release it.
-* **Rebase** `develop` on the latest `master` branch, and **force push** it.
 * **Delete** your release or hotfix branch.
+* If the automatic merge fails, **merge** `master` (fast-forward) into `develop`, and **push** it to ensure that the version bump commit is in `develop`.
