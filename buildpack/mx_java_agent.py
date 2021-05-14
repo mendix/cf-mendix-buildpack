@@ -124,8 +124,8 @@ def _to_file(name, json_content):
         file_name = name.title().replace("_", "") + ".json"
         file_path = os.path.join(_get_destination_dir(), file_name)
 
-        with open(file_path, "w") as file_handler:
-            file_handler.write(json_content)
+        with open(file_path, "w") as fh:
+            fh.write(json_content)
 
         return file_path
     except ValueError:
