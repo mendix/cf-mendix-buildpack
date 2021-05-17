@@ -1,0 +1,146 @@
+{
+  "timingConfigs": [
+    {
+      "type": "microflow",
+      "fullClassNames": [
+        "com.mendix.modules.microflowengine.microflow.impl.MicroflowImpl"
+      ],
+      "tags": {
+        "\"microflow\"": "name"
+      },
+      "bucketName": "\"mx.microflow.time\"",
+      "methodName": "executeAction",
+      "filterByName": true
+    },
+    {
+      "type": "requesthandler",
+      "fullClassNames": [
+        "com.mendix.integration.webservices.publish.handling.WebServiceCallBodyProcessor"
+      ],
+      "tags": {
+        "\"operation\"": "operationName"
+      },
+      "bucketName": "\"mx.soap.time\"",
+      "methodName": "executeActionInMonitor",
+      "filterByName": false
+    },
+    {
+      "type": "requesthandler",
+      "fullClassNames": [
+        "com.mendix.integration.requesthandlers.ServiceRequestHandler"
+      ],
+      "tags": {
+        "\"method\"": "request.getHttpServletRequest().getMethod().toLowerCase()"
+      },
+      "bucketName": "\"mx.odata.time\"",
+      "methodName": "processRequest",
+      "filterByName": false
+    },
+    {
+      "type": "requesthandler",
+      "fullClassNames": [
+        "com.mendix.integration.requesthandlers.RestRequestHandler"
+      ],
+      "tags": {
+        "\"method\"": "request.getHttpServletRequest().getMethod().toLowerCase()"
+      },
+      "bucketName": "\"mx.rest.time\"",
+      "methodName": "processRequest",
+      "filterByName": false
+    },
+    {
+      "type": "requesthandler",
+      "fullClassNames": [
+        "com.mendix.integration.requesthandlers.ProcessorRequestHandler",
+        "com.mendix.webui.requesthandling.ClientRequestHandler",
+        "com.mendix.webui.requesthandling.FileRequestHandler",
+        "com.mendix.webui.requesthandling.PageUrlRequestHandler"
+      ],
+      "tags": {
+        "\"method\"": "request.getHttpServletRequest().getMethod().toLowerCase()"
+      },
+      "bucketName": "\"mx.client.time\"",
+      "methodName": "processRequest",
+      "filterByName": false
+    }, {
+      "type": "action",
+      "fullClassNames": [
+        "com.mendix.modules.microflowengine.actions.actioncall.JavaAction"
+      ],
+      "tags": {
+        "\"activity\"": "getInputConstants().get(com.mendix.modules.microflowengine.actions.impl.MicroflowActionConstants.ACTION_NAME)",
+        "\"microflow\"": "microflow.getName()"
+      },
+      "bucketName": "\"mx.activity.time\"",
+      "methodName": "execute",
+      "filterByName": false
+    },
+    {
+      "type": "action",
+      "fullClassNames": [
+        "com.mendix.modules.microflowengine.actions.mxobject.ChangeAction",
+        "com.mendix.modules.microflowengine.actions.mxobject.DeleteAction",
+        "com.mendix.modules.microflowengine.actions.mxobject.CreateChangeAction",
+        "com.mendix.modules.microflowengine.actions.mxobject.RetrieveByXPathAction",
+        "com.mendix.modules.microflowengine.actions.mxobject.RetrieveFromCacheAction",
+        "com.mendix.modules.microflowengine.actions.mxobject.RollbackAction",
+        "com.mendix.modules.microflowengine.actions.mxobject.CastAction",
+        "com.mendix.modules.microflowengine.actions.list.AggregateAction",
+        "com.mendix.modules.microflowengine.actions.list.ChangeListAction",
+        "com.mendix.modules.microflowengine.actions.list.ListOperationAction",
+        "com.mendix.modules.microflowengine.actions.SubMicroflowAction",
+        "com.mendix.modules.microflowengine.actions.list.AggregateUsingDatabaseAction",
+        "com.mendix.modules.microflowengine.actions.mxobject.CommitAction",
+        "com.mendix.integration.actions.microflow.ExportAction",
+        "com.mendix.integration.actions.microflow.ImportAction",
+        "com.mendix.integration.actions.microflow.RestCallAction",
+        "com.mendix.integration.actions.microflow.WebServiceCallAction",
+        "com.mendix.webui.actions.client.DeleteAction",
+        "com.mendix.webui.actions.client.CommitAction",
+        "com.mendix.webui.actions.client.ExecuteAction",
+        "com.mendix.webui.actions.client.ChangeAction",
+        "com.mendix.webui.actions.client.InstantiateAction",
+        "com.mendix.webui.actions.client.RetrieveAggregatesAction",
+        "com.mendix.webui.actions.client.RetrieveByIdsAction",
+        "com.mendix.webui.actions.client.RetrieveByPathAction",
+        "com.mendix.webui.actions.client.RollbackAction",
+        "com.mendix.webui.actions.client.ValidateAction",
+        "com.mendix.webui.actions.microflow.ShowPageAction"
+      ],
+      "tags": {
+        "\"activity\"": "getName()",
+        "\"microflow\"": "microflow.getName()"
+      },
+      "bucketName": "\"mx.activity.time\"",
+      "methodName": "execute",
+      "filterByName": false
+    }
+  ],
+  "timingInstrumentationFields": [
+    {
+      "variableName": "projectId",
+      "type": "java.lang.String",
+      "assignment": "com.mendix.core.Core.getProjectId().toString();"
+    },
+    {
+      "variableName": "xasId",
+      "type": "java.lang.String",
+      "assignment": "com.mendix.core.Core.getXASId().toString();"
+    },
+    {
+      "variableName": "clusterId",
+      "type": "java.lang.String",
+      "assignment": "System.getenv(\"CF_INSTANCE_INDEX\");"
+    },
+    {
+      "variableName": "projectVersion",
+      "type": "java.lang.String",
+      "assignment": "com.mendix.core.Core.getModelVersion();"
+    },
+    {
+      "variableName": "appRootUrl",
+      "type": "java.lang.String",
+      "assignment": "com.mendix.core.Core.getConfiguration().getApplicationRootUrl();"
+    }
+  ]
+}
