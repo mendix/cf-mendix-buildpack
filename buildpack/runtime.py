@@ -447,14 +447,6 @@ def _stop(m2ee, timeout=10):
 
 
 def await_termination(m2ee):
-    # Shutdown handler; called on exit(0) or exit(1)
-    @atexit.register
-    def _terminate():
-        if m2ee:
-            stop(m2ee)
-        else:
-            logging.warning("Cannot terminate runtime: M2EE client not set")
-
     @backoff.on_predicate(backoff.constant, interval=10, logger=None)
     def _await_termination(m2ee):
         return not m2ee.runner.check_pid()
@@ -571,11 +563,11 @@ def _display_java_version():
 
 
 def run(m2ee):
-    # Handler for child process signals
-    def sigchild_handler(_signo, _stack_frame):
-        os.waitpid(-1, os.WNOHANG)
+    # Shutdown handler; called on exit(0) or exit(1)
+    def _terminate():
+        stop(m2ee)
 
-    signal.signal(signal.SIGCHLD, sigchild_handler)
+    atexit.register(_terminate)
 
     _display_java_version()
     util.mkdir_p("model/lib/userlib")
