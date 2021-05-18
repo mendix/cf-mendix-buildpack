@@ -88,16 +88,20 @@ def _enable_mx_java_agent(m2ee):
             )
         )
 
+    # Default config for fallback
+    instrumentation_config = os.path.join(
+        _get_destination_dir(), "DefaultInstrumentationConfig.json"
+    )
+
     if "METRICS_AGENT_INSTRUMENTATION_CONFIG" in os.environ:
-        mx_agent_args.append(
-            _to_arg(
-                "instrumentation_config",
-                _to_file(
-                    "METRICS_AGENT_INSTRUMENTATION_CONFIG",
-                    os.environ.get("METRICS_AGENT_INSTRUMENTATION_CONFIG"),
-                ),
-            )
+        instrumentation_config = _to_file(
+            "METRICS_AGENT_INSTRUMENTATION_CONFIG",
+            os.environ.get("METRICS_AGENT_INSTRUMENTATION_CONFIG"),
         )
+
+    mx_agent_args.append(
+        _to_arg("instrumentation_config", instrumentation_config)
+    )
 
     mx_agent_args = list(filter(lambda x: x, mx_agent_args))
     mx_agent_args_str = f'={",".join(mx_agent_args)}' if mx_agent_args else ""
