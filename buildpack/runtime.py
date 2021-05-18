@@ -1,3 +1,4 @@
+import atexit
 import json
 import logging
 import os
@@ -447,13 +448,21 @@ def _stop(m2ee, timeout=10):
 
 
 def await_termination(m2ee):
+    # Shutdown handler; called on exit(0) or exit(1)
+    @atexit.register
+    def _terminate():
+        if m2ee:
+            stop(m2ee)
+        else:
+            logging.warning("Cannot terminate runtime: M2EE client not set")
+
     @backoff.on_predicate(backoff.constant, interval=10, logger=None)
     def _await_termination(m2ee):
         return not m2ee.runner.check_pid()
 
-    logging.debug("Waiting until runtime process terminates...")
+    logging.debug("Waiting until runtime process is terminated...")
     _await_termination(m2ee)
-    logging.info("Runtime process terminated")
+    logging.debug("Runtime process has been terminated")
 
 
 def await_database_ready(m2ee, timeout=30):
@@ -576,7 +585,6 @@ def run(m2ee):
 
     # Handler for child process signals
     def sigchild_handler(_signo, _stack_frame):
-        logging.debug("Handling SIGCHILD...")
         os.waitpid(-1, os.WNOHANG)
 
     signal.signal(signal.SIGCHLD, sigchild_handler)

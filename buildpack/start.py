@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
-import atexit
 import logging
 import os
-import signal
 import sys
-import time
 import traceback
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
@@ -117,35 +114,6 @@ if __name__ == "__main__":
         )
         nginx.configure(m2ee)
 
-        # Main shutdown handler; called on exit(0) or exit(1)
-        @atexit.register
-        def _terminate():
-            if m2ee:
-                runtime.stop(m2ee)
-            else:
-                logging.warning(
-                    "Cannot terminate runtime: M2EE client not set"
-                )
-            try:
-                process_group = os.getpgrp()
-                logging.debug(
-                    "Terminating process group with PGID [%s]",
-                    format(process_group),
-                )
-                os.killpg(process_group, signal.SIGTERM)
-                time.sleep(3)
-                logging.debug(
-                    "Killing process group with PGID [%s]",
-                    format(process_group),
-                )
-                os.killpg(process_group, signal.SIGKILL)
-            except OSError as error:
-                logging.debug(
-                    "Failed to terminate or kill complete process group: {}".format(
-                        error
-                    )
-                )
-
         # Start components and runtime
         telegraf.run()
         datadog.run(model_version, runtime_version)
@@ -161,7 +129,8 @@ if __name__ == "__main__":
         # Wait loop for runtime termination
         runtime.await_termination(m2ee)
 
+    except KeyboardInterrupt:
+        logging.debug("Interrupt signal received")
     except Exception:
         ex = traceback.format_exc()
-        logging.error("Starting application failed: %s", ex)
-        raise
+        logging.error("Starting application failed. %s", ex)
