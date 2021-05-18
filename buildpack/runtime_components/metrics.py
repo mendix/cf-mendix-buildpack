@@ -1,7 +1,9 @@
+import atexit
 import datetime
 import json
 import logging
 import os
+import signal
 import socket
 import sys
 import threading
@@ -19,8 +21,24 @@ from lib.m2ee import munin
 BUILDPACK_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, os.path.join(BUILDPACK_DIR, "lib"))
 
+# Handler for exit(0) and exit(1)
+def _stop():
+    _emit(jvm={"crash": 1.0})
 
-def emit(**stats):
+
+# Handler for user signals
+def _sigusr_handler(_signo, _stack_frame):
+    logging.debug("Handling SIGUSR...")
+    if _signo == signal.SIGUSR1:
+        _emit(jvm={"errors": 1.0})
+    elif _signo == signal.SIGUSR2:
+        _emit(jvm={"ooms": 1.0})
+    else:
+        pass
+    sys.exit(1)
+
+
+def _emit(**stats):
     stats["version"] = "1.0"
     stats["timestamp"] = datetime.datetime.now().isoformat()
     logging.info("MENDIX-METRICS: %s", json.dumps(stats))
@@ -37,6 +55,10 @@ def int_or_default(value, default=0):
 def run(m2ee):
     metrics_interval = os.getenv("METRICS_INTERVAL")
     if metrics_interval:
+        atexit.register(_stop)
+        signal.signal(signal.SIGUSR1, _sigusr_handler)
+        signal.signal(signal.SIGUSR2, _sigusr_handler)
+
         if util.is_free_app():
             thread = FreeAppsMetricsEmitterThread(int(metrics_interval), m2ee)
         else:

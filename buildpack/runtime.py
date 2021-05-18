@@ -428,7 +428,6 @@ def stop(m2ee, timeout=10):
             if not m2ee.kill(timeout):
                 logging.warning("M2EE could not kill runtime")
                 result = False
-    metrics.emit(jvm={"crash": 1.0})
     return result
 
 
@@ -572,24 +571,11 @@ def _display_java_version():
 
 
 def run(m2ee):
-    # Handler for user signals
-    def sigusr_handler(_signo, _stack_frame):
-        logging.debug("Handling SIGUSR...")
-        if _signo == signal.SIGUSR1:
-            metrics.emit(jvm={"errors": 1.0})
-        elif _signo == signal.SIGUSR2:
-            metrics.emit(jvm={"ooms": 1.0})
-        else:
-            pass
-        sys.exit(1)
-
     # Handler for child process signals
     def sigchild_handler(_signo, _stack_frame):
         os.waitpid(-1, os.WNOHANG)
 
     signal.signal(signal.SIGCHLD, sigchild_handler)
-    signal.signal(signal.SIGUSR1, sigusr_handler)
-    signal.signal(signal.SIGUSR2, sigusr_handler)
 
     _display_java_version()
     util.mkdir_p("model/lib/userlib")
