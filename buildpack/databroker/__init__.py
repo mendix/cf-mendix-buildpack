@@ -81,7 +81,7 @@ class Databroker:
         self.restart_retries = 0
         self.is_producer_app = is_producer_app()
 
-        atexit.register(self.stop, self)
+        atexit.register(self.stop)
 
     def __setup_configs(self, database_config):
         metadata = open(METADATA_FILE, "rt")
