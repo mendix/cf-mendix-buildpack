@@ -146,13 +146,13 @@ if __name__ == "__main__":
         if databroker.is_enabled():
             runtime.await_database_ready(m2ee)
             databroker_processes.run(runtime.database.get_config())
-
     except Exception:
         ex = traceback.format_exc()
         logging.error("Starting application failed. %s", ex)
+        sys.exit(1)
 
-    try:
     # Wait loop for runtime termination
+    try:
         runtime.await_termination(m2ee)
     except KeyboardInterrupt:
         logging.debug("Interrupt or termination signal received")

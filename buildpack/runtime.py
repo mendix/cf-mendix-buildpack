@@ -451,9 +451,10 @@ def await_termination(m2ee):
     def _await_termination(m2ee):
         return not m2ee.runner.check_pid()
 
-    logging.debug("Waiting until runtime process is terminated...")
-    _await_termination(m2ee)
-    logging.debug("Runtime process has been terminated")
+    if m2ee:
+        logging.debug("Waiting until runtime process is terminated...")
+        _await_termination(m2ee)
+        logging.debug("Runtime process has been terminated")
 
 
 def await_database_ready(m2ee, timeout=30):
@@ -468,10 +469,9 @@ def await_database_ready(m2ee, timeout=30):
 def _start_app(m2ee):
     logging.info("The buildpack is starting the runtime...")
     if not m2ee.start_appcontainer():
-        logging.error(
+        raise RuntimeError(
             "Cannot start the Mendix runtime. Most likely, the runtime is already active or still active"
         )
-        sys.exit(1)
 
     @backoff.on_predicate(backoff.expo, max_time=240)
     def _await_runtime_config():
@@ -484,8 +484,7 @@ def _start_app(m2ee):
     is_runtime_config = _await_runtime_config()
 
     if not is_runtime_config:
-        logging.error("Cannot set runtime configuration")
-        sys.exit(1)
+        raise RuntimeError("Cannot set runtime configuration")
 
     logging.debug("Runtime Application Container has been started")
 
@@ -542,10 +541,7 @@ def _start_app(m2ee):
             else:
                 abort = True
     if abort:
-        logging.warning(
-            "Application start failed, stopping the Mendix Runtime..."
-        )
-        sys.exit(1)
+        raise RuntimeError("Application start failed")
 
 
 def _display_java_version():
@@ -565,7 +561,8 @@ def _display_java_version():
 def run(m2ee):
     # Shutdown handler; called on exit(0) or exit(1)
     def _terminate():
-        stop(m2ee)
+        if m2ee:
+            stop(m2ee)
 
     atexit.register(_terminate)
 

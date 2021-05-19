@@ -24,7 +24,7 @@ class TestCaseTermination(basetest.BaseTest):
             env_vars={"METRICS_INTERVAL": "10",},
         )
         self.start_container(status="unhealthy")
-        self.assert_string_in_recent_logs("start failed, stopping")
+        self.assert_string_in_recent_logs("start failed")
         self.assert_string_not_in_recent_logs("health check never passed")
 
     def test_java_crash_triggers_unhealthy(self):
