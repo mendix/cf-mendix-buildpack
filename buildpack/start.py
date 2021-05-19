@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
-import atexit
 import logging
 import os
 import signal
 import sys
-import time
 import traceback
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
@@ -47,6 +45,24 @@ class Maintenance(BaseHTTPRequestHandler):
         self._handle_all()
 
 
+# Handler for child process signals
+# Required to kill zombie processes
+def _sigchild_handler(_signo, _stack_frame):
+    os.waitpid(-1, os.WNOHANG)
+
+
+# Handler for system termination signal (SIGTERM)
+# This is required for Cloud Foundry: https://docs.cloudfoundry.org/devguide/deploy-apps/app-lifecycle.html#shutdown
+def _sigterm_handler(_signo, _stack_frame):
+    # Call sys.exit() so that all atexit handlers are explicitly called
+    sys.exit()
+
+
+def _register_signal_handlers():
+    signal.signal(signal.SIGCHLD, _sigchild_handler)
+    signal.signal(signal.SIGTERM, _sigterm_handler)
+
+
 if os.environ.get("DEBUG_CONTAINER", "false").lower() == "true":
     logging.warning(Maintenance.MESSAGE)
     port = int(os.environ.get("PORT", 8080))
@@ -58,6 +74,8 @@ if __name__ == "__main__":
     m2ee = None
     nginx_process = None
     databroker_processes = databroker.Databroker()
+
+    _register_signal_handlers()
 
     logging.basicConfig(
         level=util.get_buildpack_loglevel(),
@@ -117,35 +135,6 @@ if __name__ == "__main__":
         )
         nginx.configure(m2ee)
 
-        # Main shutdown handler; called on exit(0) or exit(1)
-        @atexit.register
-        def _terminate():
-            if m2ee:
-                runtime.stop(m2ee)
-            else:
-                logging.warning(
-                    "Cannot terminate runtime: M2EE client not set"
-                )
-            try:
-                process_group = os.getpgrp()
-                logging.debug(
-                    "Terminating process group with PGID [%s]",
-                    format(process_group),
-                )
-                os.killpg(process_group, signal.SIGTERM)
-                time.sleep(3)
-                logging.debug(
-                    "Killing process group with PGID [%s]",
-                    format(process_group),
-                )
-                os.killpg(process_group, signal.SIGKILL)
-            except OSError as error:
-                logging.debug(
-                    "Failed to terminate or kill complete process group: {}".format(
-                        error
-                    )
-                )
-
         # Start components and runtime
         telegraf.run()
         datadog.run(model_version, runtime_version)
@@ -157,11 +146,13 @@ if __name__ == "__main__":
         if databroker.is_enabled():
             runtime.await_database_ready(m2ee)
             databroker_processes.run(runtime.database.get_config())
-
-        # Wait loop for runtime termination
-        runtime.await_termination(m2ee)
-
     except Exception:
         ex = traceback.format_exc()
-        logging.error("Starting application failed: %s", ex)
-        raise
+        logging.error("Starting application failed. %s", ex)
+        sys.exit(1)
+
+    # Wait loop for runtime termination
+    try:
+        runtime.await_termination(m2ee)
+    except KeyboardInterrupt:
+        logging.debug("Interrupt or termination signal received")
