@@ -3,10 +3,18 @@ from tests.integration import basetest
 
 class TestCaseTermination(basetest.BaseTest):
 
+    # Tests if the runtime is gracefully shut down
+    def test_termination_graceful_shutdown(self):
+        self.stage_container("Mendix8.1.1.58432_StarterApp.mda")
+        self.start_container()
+        self.assert_app_running()
+        self.terminate_container()
+        self.assert_string_in_recent_logs("Mendix Runtime is shutting down")
+        self.assert_string_in_recent_logs("Mendix Runtime is now shut down")
+
     # Tests that the process terminates with a stack trace when Python code
     # errors. The env variable S3_ENCRYPTION_KEYS is used here, it doesn't
     # have a try-except on it.
-    # TODO determine if we can unit test this / should test this
     def test_termination_stacktrace(self):
         self.stage_container(
             "Mendix8.1.1.58432_StarterApp.mda",
@@ -27,7 +35,7 @@ class TestCaseTermination(basetest.BaseTest):
         self.assert_string_in_recent_logs("start failed")
         self.assert_string_not_in_recent_logs("health check never passed")
 
-    def test_java_crash_triggers_unhealthy(self):
+    def test_termination_java_crash_triggers_unhealthy(self):
         self.stage_container(
             "sample-6.2.0.mda", env_vars={"METRICS_INTERVAL": "10",},
         )
