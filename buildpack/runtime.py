@@ -1,3 +1,4 @@
+import atexit
 import json
 import logging
 import os
@@ -427,7 +428,6 @@ def stop(m2ee, timeout=10):
             if not m2ee.kill(timeout):
                 logging.warning("M2EE could not kill runtime")
                 result = False
-    metrics.emit(jvm={"crash": 1.0})
     return result
 
 
@@ -451,9 +451,10 @@ def await_termination(m2ee):
     def _await_termination(m2ee):
         return not m2ee.runner.check_pid()
 
-    logging.debug("Waiting until runtime process terminates...")
-    _await_termination(m2ee)
-    logging.info("Runtime process terminated")
+    if m2ee:
+        logging.debug("Waiting until runtime process is terminated...")
+        _await_termination(m2ee)
+        logging.debug("Runtime process has been terminated")
 
 
 def await_database_ready(m2ee, timeout=30):
@@ -468,10 +469,9 @@ def await_database_ready(m2ee, timeout=30):
 def _start_app(m2ee):
     logging.info("The buildpack is starting the runtime...")
     if not m2ee.start_appcontainer():
-        logging.error(
+        raise RuntimeError(
             "Cannot start the Mendix runtime. Most likely, the runtime is already active or still active"
         )
-        sys.exit(1)
 
     @backoff.on_predicate(backoff.expo, max_time=240)
     def _await_runtime_config():
@@ -484,8 +484,7 @@ def _start_app(m2ee):
     is_runtime_config = _await_runtime_config()
 
     if not is_runtime_config:
-        logging.error("Cannot set runtime configuration")
-        sys.exit(1)
+        raise RuntimeError("Cannot set runtime configuration")
 
     logging.debug("Runtime Application Container has been started")
 
@@ -542,10 +541,7 @@ def _start_app(m2ee):
             else:
                 abort = True
     if abort:
-        logging.warning(
-            "Application start failed, stopping the Mendix Runtime..."
-        )
-        sys.exit(1)
+        raise RuntimeError("Application start failed")
 
 
 def _display_java_version():
@@ -563,25 +559,12 @@ def _display_java_version():
 
 
 def run(m2ee):
-    # Handler for user signals
-    def sigusr_handler(_signo, _stack_frame):
-        logging.debug("Handling SIGUSR...")
-        if _signo == signal.SIGUSR1:
-            metrics.emit(jvm={"errors": 1.0})
-        elif _signo == signal.SIGUSR2:
-            metrics.emit(jvm={"ooms": 1.0})
-        else:
-            pass
-        sys.exit(1)
+    # Shutdown handler; called on exit(0) or exit(1)
+    def _terminate():
+        if m2ee:
+            stop(m2ee)
 
-    # Handler for child process signals
-    def sigchild_handler(_signo, _stack_frame):
-        logging.debug("Handling SIGCHILD...")
-        os.waitpid(-1, os.WNOHANG)
-
-    signal.signal(signal.SIGCHLD, sigchild_handler)
-    signal.signal(signal.SIGUSR1, sigusr_handler)
-    signal.signal(signal.SIGUSR2, sigusr_handler)
+    atexit.register(_terminate)
 
     _display_java_version()
     util.mkdir_p("model/lib/userlib")
