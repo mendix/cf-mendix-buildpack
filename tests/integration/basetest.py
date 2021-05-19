@@ -91,6 +91,17 @@ class BaseTest(unittest.TestCase):
                 )
             )
 
+    def terminate_container(self, signal="SIGTERM"):
+        if self._container_id:
+            return self._cmd(
+                (
+                    "docker",
+                    "kill",
+                    "--signal={}".format(signal),
+                    "{}".format(self._container_id),
+                )
+            )[0]
+
     def stage_container(self, package_name, env_vars=None, use_snapshot=False):
         package_url = os.environ.get(
             "PACKAGE_URL",
