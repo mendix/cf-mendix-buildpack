@@ -116,7 +116,7 @@ def _get_s3_specific_config(vcap_services, m2ee):
             "S3 TVM config detected, fetching IAM credentials from TVM"
         )
         access_key, secret = _get_credentials_from_tvm(
-            tvm_endpoint, tvm_username, tvm_password
+            tvm_endpoint, tvm_username, tvm_password, m2ee
         )
         config = {
             "com.mendix.core.StorageService": "com.mendix.storage.s3",
@@ -147,14 +147,16 @@ def _get_s3_specific_config(vcap_services, m2ee):
     return config
 
 
-def _get_credentials_from_tvm(tvm_endpoint, tvm_username, tvm_password):
+def _get_credentials_from_tvm(tvm_endpoint, tvm_username, tvm_password, m2ee):
     retry = 3
     while True:
         response = requests.get(
             "https://%s/v1/getcredentials" % tvm_endpoint,
             headers={
-                "User-Agent": "Mendix Runtime %s"
-                % util.get_buildpack_version()
+                "User-Agent": "Mendix Buildpack {} (for Mendix {})".format(
+                    util.get_buildpack_version(),
+                    m2ee.config.get_runtime_version(),
+                )
             },
             auth=(tvm_username, tvm_password),
         )
