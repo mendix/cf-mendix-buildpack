@@ -155,4 +155,4 @@ if __name__ == "__main__":
     try:
         runtime.await_termination(m2ee)
     except KeyboardInterrupt:
-        logging.debug("Interrupt or termination signal received")
+        logging.debug("Interrupt signal received")
