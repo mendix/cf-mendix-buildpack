@@ -4,7 +4,6 @@ import logging
 import os
 import signal
 import sys
-import time
 import traceback
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
@@ -50,25 +49,25 @@ class Maintenance(BaseHTTPRequestHandler):
 # Exit handler to kill process group
 @atexit.register
 def _kill_process_group():
+    logging.debug("Terminating process group...")
+
     def _kill_process_group_with_signal(signum):
         try:
             process_group = os.getpgrp()
+            os.killpg(process_group, signum)
             logging.debug(
-                "Sending [{}] to process group [{}]".format(
-                    signum, process_group
+                "Successfully sent [{}] to process group [{}]".format(
+                    signum.name, process_group
                 ),
             )
-            os.killpg(process_group, signum)
         except OSError as error:
             logging.debug(
                 "Failed to send [{}] to process group [{}]: {}".format(
-                    signum, process_group, error
+                    signum.name, process_group, error
                 )
             )
 
     _kill_process_group_with_signal(signal.SIGTERM)
-    time.sleep(3)
-    _kill_process_group_with_signal(signal.SIGKILL)
 
 
 # Handler for child process signals
@@ -172,13 +171,15 @@ if __name__ == "__main__":
         if databroker.is_enabled():
             runtime.await_database_ready(m2ee)
             databroker_processes.run(runtime.database.get_config())
+    except RuntimeError as re:
+        # Only the runtime throws RuntimeErrors (no pun intended)
+        # Don't use the stack trace for these
+        logging.error("Starting application failed: %s", re)
+        sys.exit(1)
     except Exception:
         ex = traceback.format_exc()
         logging.error("Starting application failed. %s", ex)
         sys.exit(1)
 
     # Wait loop for runtime termination
-    try:
-        runtime.await_termination(m2ee)
-    except KeyboardInterrupt:
-        logging.debug("Interrupt signal received")
+    runtime.await_termination(m2ee)

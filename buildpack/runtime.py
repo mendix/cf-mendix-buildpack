@@ -3,10 +3,8 @@ import json
 import logging
 import os
 import shutil
-import signal
 import sqlite3
 import subprocess
-import sys
 import time
 
 import backoff
@@ -422,12 +420,8 @@ def stop(m2ee, timeout=10):
     if not _stop(m2ee, timeout):
         logging.debug("Terminating runtime with M2EE...")
         if not m2ee.terminate(timeout):
-            logging.debug(
-                "M2EE terminate command failed, killing runtime with M2EE..."
-            )
-            if not m2ee.kill(timeout):
-                logging.warning("M2EE could not kill runtime")
-                result = False
+            logging.warning("Could not terminate runtime")
+            result = False
     return result
 
 
@@ -446,15 +440,19 @@ def _stop(m2ee, timeout=10):
     return True
 
 
-def await_termination(m2ee):
-    @backoff.on_predicate(backoff.constant, interval=10, logger=None)
+def await_termination(m2ee, interval=1):
+    @backoff.on_predicate(backoff.constant, interval=interval, logger=None)
     def _await_termination(m2ee):
         return not m2ee.runner.check_pid()
 
     if m2ee:
         logging.debug("Waiting until runtime process is terminated...")
-        _await_termination(m2ee)
-        logging.debug("Runtime process has been terminated")
+        try:
+            _await_termination(m2ee)
+        except KeyboardInterrupt:
+            logging.debug("Waiting for runtime termination interrupted")
+        finally:
+            logging.debug("Runtime process has been terminated")
 
 
 def await_database_ready(m2ee, timeout=30):
