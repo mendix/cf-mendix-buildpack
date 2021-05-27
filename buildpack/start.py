@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
+import atexit
 import logging
 import os
 import signal
 import sys
+import time
 import traceback
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
@@ -43,6 +45,30 @@ class Maintenance(BaseHTTPRequestHandler):
 
     def do_HEAD(self):
         self._handle_all()
+
+
+# Exit handler to kill process group
+@atexit.register
+def _kill_process_group():
+    def _kill_process_group_with_signal(signum):
+        try:
+            process_group = os.getpgrp()
+            logging.debug(
+                "Sending [{}] to process group [{}]".format(
+                    signum, process_group
+                ),
+            )
+            os.killpg(process_group, signum)
+        except OSError as error:
+            logging.debug(
+                "Failed to send [{}] to process group [{}]: {}".format(
+                    signum, process_group, error
+                )
+            )
+
+    _kill_process_group_with_signal(signal.SIGTERM)
+    time.sleep(3)
+    _kill_process_group_with_signal(signal.SIGKILL)
 
 
 # Handler for child process signals
