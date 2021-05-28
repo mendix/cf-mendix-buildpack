@@ -220,7 +220,8 @@ class Location:
     def __init__(self):
         self.path = None
         self.index = None
-        self.proxy_intercept_errors = "off"
+        self.proxy_buffering_enabled = True
+        self.proxy_intercept_errors_enabled = False
         self.satisfy = "any"
         self.ipfilter_ips = None
         self.basic_auth_enabled = False
@@ -239,6 +240,8 @@ def get_access_restriction_locations():
     # Default for satisfy is any
 
     restrictions = json.loads(os.environ.get("ACCESS_RESTRICTIONS", "{}"))
+    if "/file" not in restrictions:
+        restrictions["/file"] = {}
     if "/" not in restrictions:
         restrictions["/"] = {}
 
@@ -254,6 +257,9 @@ def get_access_restriction_locations():
             raise Exception(
                 "Can not override access restrictions on system path %s" % path
             )
+        if path in ["/file"]:
+            location.proxy_buffering_enabled = False
+            location.proxy_intercept_errors_enabled = True
         if path in [
             "/",
             "/p/",
@@ -264,7 +270,7 @@ def get_access_restriction_locations():
             "/ws-doc/",
             "/rest-doc",
         ]:
-            location.proxy_intercept_errors = "on"
+            location.proxy_intercept_errors_enabled = True
 
         if "satisfy" in config:
             if config["satisfy"] in ["any", "all"]:

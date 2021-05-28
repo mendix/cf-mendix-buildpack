@@ -71,7 +71,13 @@ http {
         error_page 503 @503-custom;
 
         {% macro location_body(location) -%}
-        proxy_intercept_errors {{ location.proxy_intercept_errors }};
+        {% if not location.proxy_buffering_enabled %}
+        proxy_buffering off;
+        proxy_request_buffering off;
+        {% endif %}
+        {% if location.proxy_intercept_errors_enabled %}
+        proxy_intercept_errors on;
+        {% endif %}
         satisfy {{ location.satisfy }};
         {% if location.ipfilter_ips is not none %}
         {% for ip in location.ipfilter_ips %}
