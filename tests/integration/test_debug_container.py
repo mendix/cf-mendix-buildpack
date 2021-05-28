@@ -8,7 +8,7 @@ class TestCaseDebugContainer(basetest.BaseTest):
             "BuildpackTestApp-mx-7-16.mda",
             env_vars={"DEBUG_CONTAINER": "true"},
         )
-        self.start_container(status="unhealthy")
+        self.start_container(health="unhealthy")
 
     def _assert_maintenance(self, response):
         assert response.status_code == 503

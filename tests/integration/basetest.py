@@ -51,7 +51,7 @@ class BaseTest(unittest.TestCase):
     def _get_random_id(self):
         return str(uuid.uuid4()).split("-")[0]
 
-    def start_container(self, start_timeout=120, status="healthy"):
+    def start_container(self, start_timeout=120, health="healthy"):
         try:
             self._container_process = subprocess.Popen(
                 ("cf", "local", "run", self._app_name),
@@ -81,13 +81,13 @@ class BaseTest(unittest.TestCase):
 
         self._container_id = _await_container_id()
 
-        is_status_reached = self.await_container_status(status, start_timeout)
+        is_status_reached = self.await_container_health(health, start_timeout)
 
         if not is_status_reached:
             print(self.get_recent_logs())
             raise RuntimeError(
                 "Container did not reach [{}] status within [{}] seconds".format(
-                    status, start_timeout
+                    health, start_timeout
                 )
             )
 
@@ -172,21 +172,21 @@ class BaseTest(unittest.TestCase):
             "MXRUNTIME_DatabaseType": "HSQLDB",
         }
 
-    def await_container_status(self, status, max_time=120):
+    def await_container_health(self, health, max_time=120):
         @backoff.on_predicate(
             backoff.constant, interval=1, max_time=max_time, logger=None
         )
-        def _await_container_status(status):
-            return self._get_container_status() == status
+        def _await_container_status(health):
+            return self._get_container_health() == health
 
-        return _await_container_status(status)
+        return _await_container_status(health)
 
     def _get_container_id(self):
         return self._cmd(
             ("docker", "ps", "-aq", "-f", "name={}*".format(self._app_name))
         )[0]
 
-    def _get_container_status(self):
+    def _get_container_health(self):
         status = self._cmd(
             (
                 "docker",
@@ -199,6 +199,20 @@ class BaseTest(unittest.TestCase):
         if not status[1]:
             return None
         return status[0]
+
+    def get_container_exitcode(self):
+        status = self._cmd(
+            (
+                "docker",
+                "inspect",
+                "-f",
+                "{{.State.ExitCode}}",
+                self._container_id,
+            )
+        )
+        if not status[1]:
+            return None
+        return int(status[0])
 
     def _remove_container(self, id_or_name=None):
         if not id_or_name:
@@ -418,7 +432,7 @@ class BaseTestWithPostgreSQL(BaseTest):
             package_name=package_name, env_vars=env_vars
         )
 
-    def start_container(self, start_timeout=120, status="healthy"):
+    def start_container(self, start_timeout=120, health="healthy"):
         # Wait until the database is up
         @backoff.on_predicate(backoff.expo, lambda x: x > 0, max_time=30)
         def _await_database():
@@ -428,7 +442,7 @@ class BaseTestWithPostgreSQL(BaseTest):
 
         _await_database()
 
-        super().start_container(start_timeout=start_timeout, status=status)
+        super().start_container(start_timeout=start_timeout, health=health)
 
     def tearDown(self):
         self._remove_container(self._database_container_name)

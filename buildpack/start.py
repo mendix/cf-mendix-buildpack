@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import atexit
 import logging
 import os
 import signal
@@ -43,6 +44,30 @@ class Maintenance(BaseHTTPRequestHandler):
 
     def do_HEAD(self):
         self._handle_all()
+
+
+# Exit handler to kill process group
+@atexit.register
+def _kill_process_group():
+    logging.debug("Terminating process group...")
+
+    def _kill_process_group_with_signal(signum):
+        try:
+            process_group = os.getpgrp()
+            os.killpg(process_group, signum)
+            logging.debug(
+                "Successfully sent [{}] to process group [{}]".format(
+                    signum.name, process_group
+                ),
+            )
+        except OSError as error:
+            logging.debug(
+                "Failed to send [{}] to process group [{}]: {}".format(
+                    signum.name, process_group, error
+                )
+            )
+
+    _kill_process_group_with_signal(signal.SIGTERM)
 
 
 # Handler for child process signals
@@ -146,13 +171,15 @@ if __name__ == "__main__":
         if databroker.is_enabled():
             runtime.await_database_ready(m2ee)
             databroker_processes.run(runtime.database.get_config())
+    except RuntimeError as re:
+        # Only the runtime throws RuntimeErrors (no pun intended)
+        # Don't use the stack trace for these
+        logging.error("Starting application failed: %s", re)
+        sys.exit(1)
     except Exception:
         ex = traceback.format_exc()
         logging.error("Starting application failed. %s", ex)
         sys.exit(1)
 
     # Wait loop for runtime termination
-    try:
-        runtime.await_termination(m2ee)
-    except KeyboardInterrupt:
-        logging.debug("Interrupt or termination signal received")
+    runtime.await_termination(m2ee)
