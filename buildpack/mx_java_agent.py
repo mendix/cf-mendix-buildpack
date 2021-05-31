@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import shutil
 
 from buildpack import datadog, telegraf, util
 
@@ -24,7 +25,7 @@ def _get_destination_dir(dot_local=ROOT_DIR):
     return os.path.abspath(os.path.join(dot_local, NAMESPACE))
 
 
-def stage(install_dir, cache_dir, runtime_version):
+def stage(buildpack_dir, install_dir, cache_dir, runtime_version):
     if is_enabled(runtime_version):
         util.download_and_unpack(
             util.get_blobstore_url(
@@ -33,6 +34,18 @@ def stage(install_dir, cache_dir, runtime_version):
             _get_destination_dir(install_dir),
             cache_dir=cache_dir,
             unpack=False,
+        )
+        shutil.copy(
+            os.path.join(
+                buildpack_dir,
+                "etc",
+                "mx-java-agent",
+                "DefaultInstrumentationConfig.json",
+            ),
+            os.path.join(
+                _get_destination_dir(install_dir),
+                "DefaultInstrumentationConfig.json",
+            ),
         )
 
 
@@ -88,16 +101,20 @@ def _enable_mx_java_agent(m2ee):
             )
         )
 
+    # Default config for fallback
+    instrumentation_config = os.path.join(
+        _get_destination_dir(), "DefaultInstrumentationConfig.json"
+    )
+
     if "METRICS_AGENT_INSTRUMENTATION_CONFIG" in os.environ:
-        mx_agent_args.append(
-            _to_arg(
-                "instrumentation_config",
-                _to_file(
-                    "METRICS_AGENT_INSTRUMENTATION_CONFIG",
-                    os.environ.get("METRICS_AGENT_INSTRUMENTATION_CONFIG"),
-                ),
-            )
+        instrumentation_config = _to_file(
+            "METRICS_AGENT_INSTRUMENTATION_CONFIG",
+            os.environ.get("METRICS_AGENT_INSTRUMENTATION_CONFIG"),
         )
+
+    mx_agent_args.append(
+        _to_arg("instrumentation_config", instrumentation_config)
+    )
 
     mx_agent_args = list(filter(lambda x: x, mx_agent_args))
     mx_agent_args_str = f'={",".join(mx_agent_args)}' if mx_agent_args else ""
