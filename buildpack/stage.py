@@ -153,7 +153,9 @@ if __name__ == "__main__":
     appdynamics.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
     dynatrace.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
     newrelic.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
-    mx_java_agent.stage(DOT_LOCAL_LOCATION, CACHE_DIR, runtime_version)
+    mx_java_agent.stage(
+        BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR, runtime_version
+    )
     telegraf.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)
     datadog.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)
     metering.stage(BUILDPACK_DIR, BUILD_DIR, CACHE_DIR)
