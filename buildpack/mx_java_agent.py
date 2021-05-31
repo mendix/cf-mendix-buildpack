@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import shutil
 
 from buildpack import datadog, telegraf, util
 
@@ -24,7 +25,7 @@ def _get_destination_dir(dot_local=ROOT_DIR):
     return os.path.abspath(os.path.join(dot_local, NAMESPACE))
 
 
-def stage(install_dir, cache_dir, runtime_version):
+def stage(buildpack_dir, install_dir, cache_dir, runtime_version):
     if is_enabled(runtime_version):
         util.download_and_unpack(
             util.get_blobstore_url(
@@ -33,6 +34,18 @@ def stage(install_dir, cache_dir, runtime_version):
             _get_destination_dir(install_dir),
             cache_dir=cache_dir,
             unpack=False,
+        )
+        shutil.copy(
+            os.path.join(
+                buildpack_dir,
+                "etc",
+                "mx-java-agent",
+                "DefaultInstrumentationConfig.json",
+            ),
+            os.path.join(
+                _get_destination_dir(install_dir),
+                "DefaultInstrumentationConfig.json",
+            ),
         )
 
 

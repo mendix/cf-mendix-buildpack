@@ -73,22 +73,6 @@ def stage(buildpack_dir, build_path, cache_path):
         os.path.join(build_path, ".local", "m2ee.yaml"),
     )
 
-    util.mkdir_p(os.path.join(build_path, ".local", "mx-agent"))
-    shutil.copy(
-        os.path.join(
-            buildpack_dir,
-            "etc",
-            "mx-java-agent",
-            "DefaultInstrumentationConfig.json",
-        ),
-        os.path.join(
-            build_path,
-            ".local",
-            "mx-agent",
-            "DefaultInstrumentationConfig.json",
-        ),
-    )
-
     git_repo_found = os.path.isdir("/usr/local/share/mendix-runtimes.git")
 
     if git_repo_found and not os.environ.get("FORCED_MXRUNTIME_URL"):
