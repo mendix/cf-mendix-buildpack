@@ -98,6 +98,10 @@ def _get_s3_specific_config(vcap_services, m2ee):
                 m2ee.config.get_runtime_version() >= MXVersion("8.18.7")
                 and m2ee.config.get_runtime_version() < 9
             )
+            or (
+                m2ee.config.get_runtime_version() >= MXVersion("7.23.22")
+                and m2ee.config.get_runtime_version() < 8
+            )
         )
     ):
         logging.info("S3 TVM config detected, activating external file store")
