@@ -259,7 +259,6 @@ def get_access_restriction_locations():
             )
         if path in ["/file"]:
             location.proxy_buffering_enabled = False
-            location.proxy_intercept_errors_enabled = True
         if path in [
             "/",
             "/p/",
@@ -269,6 +268,7 @@ def get_access_restriction_locations():
             "/odata-doc/",
             "/ws-doc/",
             "/rest-doc",
+            "/file",
         ]:
             location.proxy_intercept_errors_enabled = True
 

@@ -75,9 +75,7 @@ http {
         proxy_buffering off;
         proxy_request_buffering off;
         {% endif %}
-        {% if location.proxy_intercept_errors_enabled %}
-        proxy_intercept_errors on;
-        {% endif %}
+        proxy_intercept_errors {{ "on" if location.proxy_intercept_errors_enabled else "off" }};
         satisfy {{ location.satisfy }};
         {% if location.ipfilter_ips is not none %}
         {% for ip in location.ipfilter_ips %}
