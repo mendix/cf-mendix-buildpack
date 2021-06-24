@@ -161,7 +161,7 @@ def update_config(m2ee, app_name):
         database_diskstorage_metric_enabled=datadog.is_database_diskstorage_metric_enabled(),
         database_rate_count_metrics_enabled=datadog.is_database_rate_count_metrics_enabled(),
         datadog_api_key=datadog.get_api_key(),
-        datadog_url="{}series/".format(datadog.get_api_url()),
+        datadog_api_url="{}series/".format(datadog.get_api_url()),
         http_outputs=_get_http_outputs(),
     )
 

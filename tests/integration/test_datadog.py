@@ -13,6 +13,7 @@ class TestCaseDeployWithDatadog(basetest.BaseTestWithPostgreSQL):
                 "DD_API_KEY": os.environ.get(
                     "DD_API_KEY", "NON-VALID-TEST-KEY"
                 ),
+                "DD_SITE": os.environ.get("DD_SITE", "datadoghq.com"),
                 "DD_TRACE_ENABLED": "true",
                 # "DD_TRACE_DEBUG": "true",
                 "DD_PROFILING_ENABLED": "true",
