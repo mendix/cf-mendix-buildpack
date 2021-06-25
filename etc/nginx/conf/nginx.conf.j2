@@ -117,7 +117,7 @@ http {
         {% endif %}
         {% if location.client_cert_enabled or location.issuer_dn_regex %}
 
-        location /client-cert-check-internal-{{ location.index }} {
+        location {{ client_cert_check_internal_path_prefix }}-{{ location.index }} {
             internal;
             {% if location.issuer_dn_regex %}
             if ($http_ssl_client_i_dn ~* ^(?!({{ location.issuer_dn_regex }})$)(\w*)) {
@@ -139,7 +139,7 @@ http {
         {% endif %}
 
         {% endfor %}
-        location /_mxadmin/ {
+        location {{ mxadmin_path }} {
             auth_basic "Restricted";
             auth_basic_user_file {{ root }}/nginx/.htpasswd;
             proxy_pass http://mendix_admin/;
