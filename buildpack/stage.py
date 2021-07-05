@@ -93,10 +93,11 @@ def copy_buildpack_resources():
     shutil.copytree(
         os.path.join(BUILDPACK_DIR, "lib"), os.path.join(BUILD_DIR, "lib")
     )
-    shutil.copy(
-        os.path.join(BUILDPACK_DIR, ".commit"),
-        os.path.join(BUILD_DIR, ".commit"),
-    )
+    commit_file_path = os.path.join(BUILDPACK_DIR, ".commit")
+    if os.path.isfile(commit_file_path):
+        shutil.copy(
+            commit_file_path, os.path.join(BUILD_DIR, ".commit"),
+        )
     shutil.copy(
         os.path.join(BUILDPACK_DIR, "VERSION"),
         os.path.join(BUILD_DIR, "VERSION"),

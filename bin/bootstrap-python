@@ -10,8 +10,7 @@ CACHE_PATH=$2
 # Minimal packaging for the buildpack includes pip and setuptools wheels.
 REQUIREMENTS_PATH="${BUILDPACK_PATH}/requirements.txt"
 WHEELS_PATH="${BUILDPACK_PATH}/vendor/wheels"
-PIP_WHL_PATH=$(ls $WHEELS_PATH/pip*.whl | head -n1)
-SETUPTOOLS_WHL_PATH=$(ls $WHEELS_PATH/setuptools*.whl | head -n1)
+PIP_WHL_PATH=$(ls $WHEELS_PATH/pip*.whl 2>/dev/null | head -n1)
 
 PIP_VERBOSITY_FLAGS=""
 if [[ -z $BUILDPACK_XTRACE ]] || [[ $BUILDPACK_XTRACE == "false" ]]
@@ -19,25 +18,37 @@ then
     PIP_VERBOSITY_FLAGS="--quiet"
 fi
 
-if [[ -z $PIP_WHL_PATH ]] || [[ -z $(ls $WHEELS_PATH/setuptools*.whl | head -n1) ]]
-then
-    echo "ERROR: pip or setuptools wheels not present in buildpack, cannot stage app"
-    exit 1
-fi
-
-PIP_CMD="python3 ${PIP_WHL_PATH}/pip"
 PIP_WHEELDIR="${CACHE_PATH}/pip/wheels"
 # Set the correct Python site-packages directory to install to
 SITE_PACKAGES_PATH="${BUILD_PATH}/$(python3 -m site --user-site | cut -d '/' -f4-)"
 
 echo " ---> Copying bundled Python dependencies to cache...";
 mkdir -p $PIP_WHEELDIR;
-cp -rf $WHEELS_PATH/* $PIP_WHEELDIR/;
+cp -rf $WHEELS_PATH/* $PIP_WHEELDIR/ 2>/dev/null
 
-echo " ---> Bootstrapping pip and setuptools..."
-$PIP_CMD install $PIP_VERBOSITY_FLAGS --user --no-warn-script-location --no-index --find-links=$PIP_WHEELDIR pip setuptools
+echo " ---> Bootstrapping pip, setuptools and wheel..."
+PIP_CMD="pip"
+if ! [[ -x "$(command -v ${PIP_CMD})" ]]
+then
+    # pip is not included on the root FS
+    if [[ -n "${PIP_WHL_PATH}" ]]
+    then
+        # Bootstrap wheels are bundled in the buildpack
+        python3 ${PIP_WHL_PATH}/pip install $PIP_VERBOSITY_FLAGS --user --no-warn-script-location --no-index --find-links=$PIP_WHEELDIR pip setuptools wheel
+    else
+        # Bootstrap wheels are not bundled in the buildpack
+        curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+        python3 get-pip.py install $PIP_VERBOSITY_FLAGS --user --no-warn-script-location
+    fi
+    PIP_CMD="/home/vcap/.local/bin/pip"
+else
+    # pip is bundled on the root FS
+    $PIP_CMD install --upgrade --user --no-warn-script-location pip setuptools wheel
+fi
 
-if [[ $(ls -1q $PIP_WHEELDIR/*.whl | wc -l) = 2 ]]
+# Only download Python dependencies if they are not bundled
+# We can assume that they're not if the amount of bundled wheels is less than 3 (the bootstrap requirements)
+if [[ $(ls -1q $PIP_WHEELDIR/*.whl 2>/dev/null | wc -l) -lt 4 ]]
 then
     echo " ---> Downloading Python dependencies...";
     $PIP_CMD download $PIP_VERBOSITY_FLAGS -r $REQUIREMENTS_PATH --prefer-binary -d $PIP_WHEELDIR;

@@ -3,19 +3,17 @@ PREFIX=$(shell p='$(TEST_PREFIX)'; echo "$${p:-test}")
 TEST_PROCESSES := $(if $(TEST_PROCESSES),$(TEST_PROCESSES),2)
 TEST_FILES := $(if $(TEST_FILES),$(TEST_FILES),tests/integration/test_*.py)
 
-PIP_VERSION=21.0.1
-SETUPTOOLS_VERSION=52.0.0
 PIP_TOOLS_VERSION=5.5.0
 
 .PHONY: vendor
 vendor: download_wheels
 
 .PHONY: download_wheels
-download_wheels: requirements
-	rm -rf vendor/wheels
-	mkdir -p vendor/wheels
-	pip3 download -d vendor/wheels/ --only-binary :all: pip==$(PIP_VERSION) setuptools==$(SETUPTOOLS_VERSION)
-	pip3 download -d vendor/wheels/ --no-deps --platform manylinux1_x86_64 --python-version 36 -r requirements.txt
+download_wheels: requirements create_build_dirs
+	rm -rf build/vendor/wheels
+	mkdir -p build/vendor/wheels
+	pip3 download -d build/vendor/wheels/ --only-binary :all: pip setuptools wheel
+	pip3 download -d build/vendor/wheels/ --no-deps --platform manylinux1_x86_64 --python-version 36 -r requirements.txt
 
 .PHONY: create_build_dirs
 create_build_dirs:
@@ -33,7 +31,7 @@ build: create_build_dirs vendor write_commit
 
 .PHONY: install_piptools
 install_piptools:
-	pip3 install pip==$(PIP_VERSION) setuptools==$(SETUPTOOLS_VERSION)
+	pip3 install --upgrade pip setuptools wheel
 	pip3 install pip-tools==$(PIP_TOOLS_VERSION)
 
 .PHONY: install_requirements
