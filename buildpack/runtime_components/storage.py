@@ -5,6 +5,7 @@ import os
 import requests
 import time
 from buildpack import util
+from lib.m2ee.version import MXVersion
 
 
 def _get_s3_specific_config(vcap_services, m2ee):
@@ -91,21 +92,18 @@ def _get_s3_specific_config(vcap_services, m2ee):
         tvm_endpoint
         and tvm_username
         and tvm_password
-        and m2ee.config.get_runtime_version() < 9.2
+        and (
+            m2ee.config.get_runtime_version() >= 9.2
+            or (
+                m2ee.config.get_runtime_version() >= MXVersion("8.18.7")
+                and m2ee.config.get_runtime_version() < 9
+            )
+            or (
+                m2ee.config.get_runtime_version() >= MXVersion("7.23.22")
+                and m2ee.config.get_runtime_version() < 8
+            )
+        )
     ):
-        logging.info(
-            "S3 TVM config detected, fetching IAM credentials from TVM"
-        )
-        access_key, secret = _get_credentials_from_tvm(
-            tvm_endpoint, tvm_username, tvm_password
-        )
-        config = {
-            "com.mendix.core.StorageService": "com.mendix.storage.s3",
-            "com.mendix.storage.s3.AccessKeyId": access_key,
-            "com.mendix.storage.s3.SecretAccessKey": secret,
-            "com.mendix.storage.s3.BucketName": bucket,
-        }
-    elif tvm_endpoint and tvm_username and tvm_password:
         logging.info("S3 TVM config detected, activating external file store")
         config = {
             "com.mendix.core.StorageService": "com.mendix.storage.s3",
@@ -115,6 +113,19 @@ def _get_s3_specific_config(vcap_services, m2ee):
             "com.mendix.storage.s3.tokenService.Password": tvm_password,
             "com.mendix.storage.s3.tokenService.RefreshPercentage": 80,
             "com.mendix.storage.s3.tokenService.RetryIntervalInSeconds": 10,
+            "com.mendix.storage.s3.BucketName": bucket,
+        }
+    elif tvm_endpoint and tvm_username and tvm_password:
+        logging.info(
+            "S3 TVM config detected, fetching IAM credentials from TVM"
+        )
+        access_key, secret = _get_credentials_from_tvm(
+            tvm_endpoint, tvm_username, tvm_password, m2ee
+        )
+        config = {
+            "com.mendix.core.StorageService": "com.mendix.storage.s3",
+            "com.mendix.storage.s3.AccessKeyId": access_key,
+            "com.mendix.storage.s3.SecretAccessKey": secret,
             "com.mendix.storage.s3.BucketName": bucket,
         }
     else:
@@ -140,14 +151,16 @@ def _get_s3_specific_config(vcap_services, m2ee):
     return config
 
 
-def _get_credentials_from_tvm(tvm_endpoint, tvm_username, tvm_password):
+def _get_credentials_from_tvm(tvm_endpoint, tvm_username, tvm_password, m2ee):
     retry = 3
     while True:
         response = requests.get(
             "https://%s/v1/getcredentials" % tvm_endpoint,
             headers={
-                "User-Agent": "Mendix Runtime %s"
-                % util.get_buildpack_version()
+                "User-Agent": "Mendix Buildpack {} (for Mendix {})".format(
+                    util.get_buildpack_version(),
+                    m2ee.config.get_runtime_version(),
+                )
             },
             auth=(tvm_username, tvm_password),
         )
