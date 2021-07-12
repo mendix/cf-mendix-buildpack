@@ -27,10 +27,10 @@ def run():
         backup_service["filesCredentials"] = {
             "bucketName": s3_credentials["bucket"],
         }
-        if "key_suffix" in s3_credentials:  # Not all s3 plans have this field
-            backup_service["filesCredentials"]["keySuffix"] = s3_credentials[
-                "key_suffix"
-            ]
+        if "key_prefix" in s3_credentials:
+            backup_service["filesCredentials"][
+                "keySuffix"
+            ] = "_" + s3_credentials["key_prefix"].replace("/", "")
 
     try:
         db_config = database.get_config()
