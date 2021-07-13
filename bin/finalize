@@ -8,8 +8,10 @@ CACHE_PATH=$2
 DEPS_PATH=$3/$4
 
 VERSION=$(cat $BUILDPACK_PATH/VERSION | tr -d '[:space:]')
-COMMIT=$(cat $BUILDPACK_PATH/.commit | tr -d '[:space:]')
-
+COMMIT_PATH="${BUILDPACK_PATH}/.commit"
+COMMIT="development"
+if [[ -f "${COMMIT_PATH}" ]]; then COMMIT=$(cat ${COMMIT_PATH} | tr -d '[:space:]'); fi
+    
 echo " ---> Mendix Cloud Foundry Buildpack $VERSION [$COMMIT] staging..."
 
 # Set the buildpack metadata
