@@ -240,3 +240,5 @@ requirements-**.txt
 .local
 mxbuild/
 .noseids
+source.tar
+.commit

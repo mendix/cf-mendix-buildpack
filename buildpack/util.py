@@ -246,7 +246,7 @@ def get_current_buildpack_commit():
             short_commit = commit_file.readline().strip()
             return short_commit
     except OSError:
-        return "unknown_commit"
+        return "development"
 
 
 def get_buildpack_version():
