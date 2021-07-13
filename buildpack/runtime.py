@@ -14,7 +14,6 @@ from lib.m2ee.version import MXVersion
 
 from buildpack import util
 from buildpack.runtime_components import (
-    backup,
     database,
     logs,
     metrics,
@@ -573,7 +572,6 @@ def run(m2ee):
     _display_running_model_version(m2ee)
     _configure_debugger(m2ee)
 
-    backup.run()
     metrics.run(m2ee)
     logs.run()
 
