@@ -1,6 +1,7 @@
 import atexit
 import json
 import logging
+import re
 import os
 import shutil
 import sqlite3
@@ -20,6 +21,8 @@ from buildpack.runtime_components import (
     security,
     storage,
 )
+
+BASE_PATH = os.path.abspath(".")
 
 logger.setLevel(util.get_buildpack_loglevel())
 
@@ -119,7 +122,7 @@ def get_java_version(mx_version):
     return java_version
 
 
-def _get_metadata_value(key, build_path):
+def get_metadata_value(key, build_path=BASE_PATH):
     file_name = os.path.join(build_path, "model", "metadata.json")
     try:
         with open(file_name) as file_handle:
@@ -130,8 +133,8 @@ def _get_metadata_value(key, build_path):
         return None
 
 
-def get_version(build_path):
-    result = _get_metadata_value("RuntimeVersion", build_path)
+def get_version(build_path=BASE_PATH):
+    result = get_metadata_value("RuntimeVersion", build_path)
 
     if result == None:
         mpr = util.get_mpr_file_from_dir(build_path)
@@ -145,8 +148,40 @@ def get_version(build_path):
     return MXVersion(result)
 
 
-def get_model_version(build_path):
-    return _get_metadata_value("ModelVersion", build_path)
+def get_model_version(build_path=BASE_PATH):
+    return get_metadata_value("ModelVersion", build_path)
+
+
+# Extracts REST request handler paths from the static Swagger templates included in the model binary
+# This is a workaround for the lack of proper REST request handler metadata in model/metadata.json
+def get_rest_request_handler_paths(build_path=BASE_PATH):
+    filename = os.path.join(build_path, "model", "model.mdp")
+
+    # Run the strings command line tool to extract Swagger templates from the model binary
+    output = (
+        subprocess.check_output(
+            ["strings", filename, "|", "grep", "swagger"],
+            stderr=subprocess.STDOUT,
+        )
+        .decode("utf8")
+        .strip()
+        .split("\n")
+    )
+
+    # Extract paths from the Swagger templates
+    return _get_paths_from_swagger_templates(output)
+
+
+def _get_paths_from_swagger_templates(templates):
+    # Match templates for basePath and return capture groups
+    pattern = r"\"basePath\":\"([a-zA-Z0-9/.-_~!$&'()*+,;=:@]+)\""
+    result = []
+    for template in templates:
+        matches = re.search(pattern, template)
+        if matches:
+            result.append(re.search(pattern, template).group(1))
+
+    return set(result)
 
 
 def _activate_license():

@@ -7,7 +7,7 @@ import re
 import shutil
 import subprocess
 
-from buildpack import util
+from buildpack import runtime, util
 from buildpack.runtime_components import security
 from lib.m2ee.version import MXVersion
 
@@ -26,11 +26,22 @@ DEFAULT_HEADERS = {
 CONFIG_FILE = "nginx/conf/nginx.conf"
 PROXY_FILE = "nginx/conf/proxy_params"
 
+DEFAULT_REQUEST_HANDLER_PATHS = [
+    "/p/",
+    "/rest-doc/",
+    "/link/",
+    "/api-doc/",
+    "/odata-doc/",
+    "/ws-doc/",
+]
+FILE_HANDLER_PATH = "/file"
+DEFAULT_LOCATION_PATHS = ["/", FILE_HANDLER_PATH]
+MXADMIN_PATH = "/_mxadmin/"
+CLIENT_CERT_CHECK_INTERNAL_PATH_PREFIX = "/client-cert-check-internal"
+RESERVED_PATH_PREFIXES = [MXADMIN_PATH, CLIENT_CERT_CHECK_INTERNAL_PATH_PREFIX]
 
 # Fix for Chrome SameSite enforcement (from Chrome 80 onwards)
 # Runtime will set this cookie in runtime versions >= SAMESITE_COOKIE_WORKAROUND_LESS_MX_VERSION
-
-
 def _is_samesite_cookie_workaround_enabled(mx_version):
     SAMESITE_COOKIE_WORKAROUND_ENV_KEY = "SAMESITE_COOKIE_PRE_MX812"
     SAMESITE_COOKIE_WORKAROUND_DEFAULT = False
@@ -53,7 +64,7 @@ def _is_samesite_cookie_workaround_enabled(mx_version):
         return False
 
 
-def is_custom_nginx():
+def _is_custom_nginx():
     if "NGINX_CUSTOM_BIN_PATH" in os.environ:
         return True
 
@@ -65,7 +76,7 @@ def stage(buildpack_path, build_path, cache_path):
         os.path.join(build_path, "nginx"),
     )
 
-    if not is_custom_nginx():
+    if not _is_custom_nginx():
         logging.debug("Downloading nginx...")
         util.download_and_unpack(
             util.get_blobstore_url(
@@ -95,12 +106,14 @@ def configure(m2ee):
         template = Template(file_.read(), trim_blocks=True, lstrip_blocks=True)
     rendered = template.render(
         samesite_cookie_workaround_enabled=samesite_cookie_workaround_enabled,
-        locations=get_access_restriction_locations(),
-        default_headers=get_http_headers(),
+        locations=_get_locations(),
+        default_headers=_get_http_headers(),
         nginx_port=str(util.get_nginx_port()),
         runtime_port=str(util.get_runtime_port()),
         admin_port=str(util.get_admin_port()),
         root=os.getcwd(),
+        mxadmin_path=MXADMIN_PATH,
+        client_cert_check_internal_path_prefix=CLIENT_CERT_CHECK_INTERNAL_PATH_PREFIX,
     )
 
     logging.debug("Writing nginx configuration file...")
@@ -115,8 +128,8 @@ def configure(m2ee):
     with open(template_path, "r") as file_:
         template = Template(file_.read(), trim_blocks=True, lstrip_blocks=True)
     rendered = template.render(
-        proxy_buffers=get_proxy_buffers(),
-        proxy_buffer_size=get_proxy_buffer_size(),
+        proxy_buffers=_get_proxy_buffers(),
+        proxy_buffer_size=_get_proxy_buffer_size(),
     )
 
     logging.debug("Writing proxy_params configuration file...")
@@ -124,20 +137,22 @@ def configure(m2ee):
         file_.write(rendered)
     logging.debug("proxy_params configuration file written")
 
-    generate_password_file({"MxAdmin": security.get_m2ee_password()})
+    _generate_password_file({"MxAdmin": security.get_m2ee_password()})
 
 
-def get_proxy_buffer_size():
-    proxy_buffer_size = os.environ.get("NGINX_PROXY_BUFFER_SIZE", None)
-    return proxy_buffer_size
+def _get_proxy_buffer_size():
+    return os.environ.get("NGINX_PROXY_BUFFER_SIZE", None)
 
 
-def get_proxy_buffers():
-    proxy_buffers = os.environ.get("NGINX_PROXY_BUFFERS", None)
-    return proxy_buffers
+def _get_proxy_buffers():
+    return os.environ.get("NGINX_PROXY_BUFFERS", None)
 
 
-def get_http_headers():
+def _get_access_restrictions():
+    return os.environ.get("ACCESS_RESTRICTIONS", "{}")
+
+
+def _get_http_headers():
     headers_from_json = {}
 
     # this is kept for X-Frame-Options backward compatibility
@@ -179,7 +194,7 @@ def get_http_headers():
     return result
 
 
-def get_nginx_bin_path():
+def _get_nginx_bin_path():
     nginx_bin_path = os.environ.get(
         "NGINX_CUSTOM_BIN_PATH", "nginx/sbin/nginx"
     )
@@ -189,7 +204,7 @@ def get_nginx_bin_path():
 def run():
     nginx_process = subprocess.Popen(
         [
-            get_nginx_bin_path(),
+            _get_nginx_bin_path(),
             "-p",
             "nginx",
             "-c",
@@ -199,7 +214,7 @@ def run():
     return nginx_process
 
 
-def generate_password_file(users_passwords, file_name_suffix=""):
+def _generate_password_file(users_passwords, file_name_suffix=""):
     with open("nginx/.htpasswd" + file_name_suffix, "w") as fh:
         for user, password in users_passwords.items():
             if not password:
@@ -218,60 +233,124 @@ def generate_password_file(users_passwords, file_name_suffix=""):
 
 class Location:
     def __init__(self):
+        # General location parameters
         self.path = None
         self.index = None
         self.proxy_buffering_enabled = True
         self.proxy_intercept_errors_enabled = False
+
+        # Access restriction parameters
         self.satisfy = "any"
         self.ipfilter_ips = None
         self.basic_auth_enabled = False
         self.client_cert_enabled = False
         self.issuer_dn_regex = None
+        self.issuer_dn = None
 
 
-def get_access_restriction_locations():
-    # Example for ACCESS_RESTRICTIONS
+# Adds a "/" after a path for comparison
+# This is required to check if a path is indeed a subpath of another path
+def _get_slashed_path(path):
+    return path if path.endswith("/") else path + "/"
+
+
+# Gets the location configuration for the most specific path that matches the path
+# This is required to ensure that "nested" locations have the same configuration as their parent
+def _get_most_specific_location_config(path, locations):
+    sorted_paths = sorted(locations.keys())
+    sorted_paths.reverse()
+    for sorted_path in sorted_paths:
+        if _is_subpath_of(path, sorted_path):
+            return locations[sorted_path]
+    return {}
+
+
+# Returns if a path is a subpath of others
+# others can be a string or collection of strings
+def _is_subpath_of(path, others):
+    if isinstance(others, str):
+        return path == others or path.startswith(_get_slashed_path(others))
+    return any(_is_subpath_of(path, p) for p in others)
+
+
+def _get_locations(locations_env=_get_access_restrictions()):
+    # Load access restriction configuration
+    # ACCESS_RESTRICTIONS example:
     # {
     #     "/": {'ipfilter': ['10.0.0.0/8'], 'client_cert': true, 'satisfy': 'any'},
     #     "/ws/MyWebService/": {'ipfilter': ['10.0.0.0/8'], 'client_cert': true, 'satisfy': 'all'},
     #     "/CustomRequestHandler/": {'ipfilter': ['10.0.0.0/8']},
     #     "/CustomRequestHandler2/": {'basic_auth': {'user1': 'password', 'user2': 'password2'}},
     # }
-    # Default for satisfy is any
+    #
+    # Note: Default for satisfy is any
+    locations = json.loads(locations_env)
 
-    restrictions = json.loads(os.environ.get("ACCESS_RESTRICTIONS", "{}"))
-    if "/file" not in restrictions:
-        restrictions["/file"] = {}
-    if "/" not in restrictions:
-        restrictions["/"] = {}
+    # Add default locations
+    for default_path in DEFAULT_LOCATION_PATHS:
+        locations[default_path] = _get_most_specific_location_config(
+            default_path, locations
+        )
 
+    # Get request handlers and determine which request handlers are "dynamic",
+    # i.e. most likely for an API, e.g. REST
+    dynamic_handler_paths = []
+    request_handlers = runtime.get_metadata_value("RequestHandlers")
+    paths = [handler["Name"] for handler in request_handlers]
+    dynamic_handler_paths = list(
+        set(paths) - set(DEFAULT_REQUEST_HANDLER_PATHS)
+    )
+
+    # Add dynamic request handler locations
+    for dynamic_handler_path in dynamic_handler_paths:
+        locations[
+            _get_slashed_path(dynamic_handler_path)
+        ] = _get_most_specific_location_config(dynamic_handler_path, locations)
+
+    # Get REST request handlers from metadata and add locations
+    rest_handler_paths = runtime.get_rest_request_handler_paths()
+    for rest_handler_path in rest_handler_paths:
+        locations[
+            _get_slashed_path(rest_handler_path)
+        ] = _get_most_specific_location_config(rest_handler_path, locations)
+
+    # Convert dictionary into list of locations
     index = 0
     result = []
 
-    for path, config in restrictions.items():
+    for path, config in locations.items():
         location = Location()
         location.path = path
         location.index = index
 
-        if path in ["/_mxadmin/"] or "/client-cert-check-internal" in path:
+        # Reserved path prefixes are restricted
+        if any(path.startswith(prefix) for prefix in RESERVED_PATH_PREFIXES):
             raise Exception(
-                "Can not override access restrictions on system path %s" % path
+                "Can not override access restrictions on reserved path [%s]"
+                % path
             )
-        if path in ["/file"]:
+
+        # Disable proxy buffering for files
+        if path == FILE_HANDLER_PATH:
             location.proxy_buffering_enabled = False
-        if path in [
-            "/",
-            "/p/",
-            "/rest-doc/",
-            "/link/",
-            "/api-doc/",
-            "/odata-doc/",
-            "/ws-doc/",
-            "/rest-doc",
-            "/file",
-        ]:
+
+        # Enable error interception for default runtime paths
+        # This is required for custom error pages
+        if (
+            _is_subpath_of(path, DEFAULT_REQUEST_HANDLER_PATHS)
+            or path in DEFAULT_LOCATION_PATHS
+        ):
             location.proxy_intercept_errors_enabled = True
 
+        # Explicitly disable error interception for dynamic request handlers
+        # This is not strictly required (default is disabled), but it might be in the future
+        if _is_subpath_of(path, dynamic_handler_paths) or _is_subpath_of(
+            path, rest_handler_paths
+        ):
+            location.proxy_intercept_errors_enabled = False
+
+        # Add the  access restrictions configuration
+        # "Satisfy" specifies if restrictions should be evaluated as "AND" (all) or "OR" (any)
         if "satisfy" in config:
             if config["satisfy"] in ["any", "all"]:
                 location.satisfy = config["satisfy"]
@@ -280,18 +359,23 @@ def get_access_restriction_locations():
                     "Invalid satisfy value: %s" % config["satisfy"]
                 )
 
+        # Add IP filter configuration
         if "ipfilter" in config:
             location.ipfilter_ips = []
             for ip in config["ipfilter"]:
                 location.ipfilter_ips.append(ip)
 
+        # Add HTTP basic auth configuration
         if "basic_auth" in config:
             location.basic_auth_enabled = True
-            generate_password_file(config["basic_auth"], str(index))
+            _generate_password_file(config["basic_auth"], str(index))
 
+        # Add client certificate configuration
         if config.get("client-cert") or config.get("client_cert"):
             location.client_cert_enabled = True
 
+        # Add "Issuer DN" check for the client certificate chain. The required header is passed on from an upstream proxy,
+        # which in the case of Mendix Cloud is the Front-Facing Fleet
         # This scenario isn't covered by integration tests. Please test manually if Nginx is properly matching the
         # SSL-Client-I-DN HTTP header with the configuration in the ACCESS_RESTRICTIONS environment variable.
         if "issuer_dn" in config:

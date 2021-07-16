@@ -130,9 +130,9 @@ if __name__ == "__main__":
         m2ee = runtime.setup(util.get_vcap_data())
 
         # Get versions
-        runtime_version = runtime.get_version(os.path.abspath("."))
+        runtime_version = runtime.get_version()
         java_version = runtime.get_java_version(runtime_version)["version"]
-        model_version = runtime.get_model_version(os.path.abspath("."))
+        model_version = runtime.get_model_version()
 
         # Update runtime configuration based on component configuration
         java.update_config(
