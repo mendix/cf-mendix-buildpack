@@ -3,9 +3,9 @@ import logging
 import os
 import re
 import shutil
-import subprocess
 import tempfile
 from abc import ABC, abstractmethod
+from cryptography.hazmat.primitives import serialization
 from urllib.parse import parse_qs, unquote, urlencode
 
 from buildpack import util
@@ -327,10 +327,14 @@ class UrlDatabaseConfiguration(DatabaseConfiguration):
             )
             jdbc_params.update({"sslmode": "verify-full"})
 
-        if database_type == "PostgreSQL":
-            self.extract_inline_cert(jdbc_params, self.SSLCERT, "postgresql.crt");
-            self.extract_inline_cert(jdbc_params, self.SSLKEY, "postgresql.pk8");
-            self.extract_inline_cert(jdbc_params, self.SSLROOTCERT, "root.crt");
+        if database_type == "PostgreSQL" and not self.url.startswith("jdbc:"):
+            self.extract_inline_cert(
+                jdbc_params, self.SSLCERT, "postgresql.crt"
+            )
+            self.extract_inline_cert(
+                jdbc_params, self.SSLKEY, "postgresql.pk8"
+            )
+            self.extract_inline_cert(jdbc_params, self.SSLROOTCERT, "root.crt")
 
         extra_url_params_str = self.env_vars.get(
             "DATABASE_CONNECTION_PARAMS", "{}"
@@ -358,37 +362,51 @@ class UrlDatabaseConfiguration(DatabaseConfiguration):
         self.m2ee_config = config
 
     def extract_inline_cert(self, jdbc_params, param, filename):
-        list = jdbc_params.get(param)
-        if list is not None:
-            for i,inline in enumerate(list):
+        lst = jdbc_params.get(param)
+        if lst is not None:
+            if not isinstance(lst, list):
+                lst = [lst]
+                jdbc_params[param] = lst
+            for i, inline in enumerate(lst):
                 if inline.startswith("-----BEGIN"):
                     tmp_cert_file = self.create_cert_file(filename)
                     try:
-                        logging.debug("extract %s to %s", param, tmp_cert_file.name)
-                        if inline.startswith("-----BEGIN RSA PRIVATE KEY-----"):
+                        logging.debug(
+                            "extract %s to %s", param, tmp_cert_file.name
+                        )
+                        if inline.startswith(
+                            "-----BEGIN RSA PRIVATE KEY-----"
+                        ):
                             self.to_pk8(inline, tmp_cert_file)
                         else:
-                            tmp_cert_file.write(inline)
+                            tmp_cert_file.write(inline.encode())
                     finally:
                         tmp_cert_file.close()
-                    list[i] = self.to_java_path(tmp_cert_file.name)
+                    lst[i] = self.to_java_path(tmp_cert_file.name)
 
-    def to_java_path(self, file_path):
+    @classmethod
+    def to_java_path(cls, file_path):
         # Convert absolute path to the java subsystem
         return file_path
 
-    def to_pk8(self, inline, tmp_cert_file):
-        tmp_cert_file.close()
-        dst_path = tmp_cert_file.name
-        # Cannot pass absolute path to openssl possibly belonging to a different subsystem
-        (dst_dir, dst_name) = os.path.split(dst_path)
-        subprocess.run(
-            ["openssl", "pkcs8", "-topk8", "-outform", "DER", "-inform", "PEM", "-out", dst_name, "-nocrypt"],
-            input=inline, cwd=dst_dir, encoding="ascii").check_returncode()
+    @classmethod
+    def to_pk8(cls, inline, tmp_cert_file):
+        private_key = serialization.load_pem_private_key(
+            inline.encode(), password=None
+        )
+        keybytes = private_key.private_bytes(
+            encoding=serialization.Encoding.DER,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption(),
+        )
+        tmp_cert_file.write(keybytes)
 
-    def create_cert_file(self, default_file_name):
+    @classmethod
+    def create_cert_file(cls, default_file_name):
         (prefix, suffix) = os.path.splitext(default_file_name)
-        return tempfile.NamedTemporaryFile(mode="w",suffix=suffix,prefix=prefix,delete=False)
+        return tempfile.NamedTemporaryFile(
+            mode="wb", suffix=suffix, prefix=prefix, delete=False
+        )
 
     def get_jdbc_strings(self, url, config, jdbc_params):
         # JDBC strings might be different from connection uri strings

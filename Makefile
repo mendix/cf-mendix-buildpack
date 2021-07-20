@@ -13,7 +13,7 @@ download_wheels: requirements create_build_dirs
 	rm -rf build/vendor/wheels
 	mkdir -p build/vendor/wheels
 	pip3 download -d build/vendor/wheels/ --only-binary :all: pip setuptools wheel
-	pip3 download -d build/vendor/wheels/ --no-deps --platform manylinux1_x86_64 --python-version 36 -r requirements.txt
+	pip3 download -d build/vendor/wheels/ --no-deps --platform manylinux2010_x86_64 --python-version 36 -r requirements.txt
 
 .PHONY: create_build_dirs
 create_build_dirs:
