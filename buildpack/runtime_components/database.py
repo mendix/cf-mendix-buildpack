@@ -3,6 +3,8 @@ import logging
 import os
 import re
 import shutil
+import subprocess
+import tempfile
 from abc import ABC, abstractmethod
 from urllib.parse import parse_qs, unquote, urlencode
 
@@ -247,6 +249,12 @@ class DatabaseConfiguration(ABC):
 class UrlDatabaseConfiguration(DatabaseConfiguration):
     # Returns a database configuration based on the original code from util.
 
+    SSLROOTCERT = "sslrootcert"
+
+    SSLKEY = "sslkey"
+
+    SSLCERT = "sslcert"
+
     def __init__(self, url, env_vars=None):
         super().__init__(env_vars)
         logging.debug("Detected URL based database configuration.")
@@ -319,6 +327,11 @@ class UrlDatabaseConfiguration(DatabaseConfiguration):
             )
             jdbc_params.update({"sslmode": "verify-full"})
 
+        if database_type == "PostgreSQL":
+            self.extract_inline_cert(jdbc_params, self.SSLCERT, "postgresql.crt");
+            self.extract_inline_cert(jdbc_params, self.SSLKEY, "postgresql.pk8");
+            self.extract_inline_cert(jdbc_params, self.SSLROOTCERT, "root.crt");
+
         extra_url_params_str = self.env_vars.get(
             "DATABASE_CONNECTION_PARAMS", "{}"
         )
@@ -343,6 +356,39 @@ class UrlDatabaseConfiguration(DatabaseConfiguration):
                 config.update({"DatabaseUseSsl": True})
 
         self.m2ee_config = config
+
+    def extract_inline_cert(self, jdbc_params, param, filename):
+        list = jdbc_params.get(param)
+        if list is not None:
+            for i,inline in enumerate(list):
+                if inline.startswith("-----BEGIN"):
+                    tmp_cert_file = self.create_cert_file(filename)
+                    try:
+                        logging.debug("extract %s to %s", param, tmp_cert_file.name)
+                        if inline.startswith("-----BEGIN RSA PRIVATE KEY-----"):
+                            self.to_pk8(inline, tmp_cert_file)
+                        else:
+                            tmp_cert_file.write(inline)
+                    finally:
+                        tmp_cert_file.close()
+                    list[i] = self.to_java_path(tmp_cert_file.name)
+
+    def to_java_path(self, file_path):
+        # Convert absolute path to the java subsystem
+        return file_path
+
+    def to_pk8(self, inline, tmp_cert_file):
+        tmp_cert_file.close()
+        dst_path = tmp_cert_file.name
+        # Cannot pass absolute path to openssl possibly belonging to a different subsystem
+        (dst_dir, dst_name) = os.path.split(dst_path)
+        subprocess.run(
+            ["openssl", "pkcs8", "-topk8", "-outform", "DER", "-inform", "PEM", "-out", dst_name, "-nocrypt"],
+            input=inline, cwd=dst_dir, encoding="ascii").check_returncode()
+
+    def create_cert_file(self, default_file_name):
+        (prefix, suffix) = os.path.splitext(default_file_name)
+        return tempfile.NamedTemporaryFile(mode="w",suffix=suffix,prefix=prefix,delete=False)
 
     def get_jdbc_strings(self, url, config, jdbc_params):
         # JDBC strings might be different from connection uri strings
