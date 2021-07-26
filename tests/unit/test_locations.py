@@ -1,3 +1,4 @@
+import json
 import unittest
 
 from buildpack import nginx, runtime
@@ -5,20 +6,28 @@ from buildpack import nginx, runtime
 
 class TestCaseLocationUtilFunctions(unittest.TestCase):
     def test_get_paths_from_templates(self):
-        TEST_SWAGGER_TEMPLATES = [
-            r'{"swagger":"2.0","basePath":"/api/1"}',
-            r'{"swagger":"2.0","basePath":"/api/2","value":"jdjdj\r\n\r\n"}',
-            r'{"swagger":"2.0","basePatth":"/api/3"}',
+        test_templates = [
+            {"swagger": "2.0", "basePath": "/api/1"},
+            {"swagger": "2.0", "basePath": "/api/2", "value": "jdjdj\r\n\r\n"},
+            {"swagger": "2.0", "basePatth": "/api/3"},
             "",
         ]
 
         result = runtime._get_paths_from_swagger_templates(
-            TEST_SWAGGER_TEMPLATES
+            [json.dumps(t) for t in test_templates]
         )
 
         assert "/api/1" in result
         assert "/api/2" in result
         assert "/api/3" not in result
+
+    def test_special_chars_in_template_path(self):
+        for char in list("/.-_~!$&'()*+,;=:@"):
+            path = "/rest/my{}api/v1".format(char)
+            template = {"swagger": "2.0", "basePath": path}
+            assert path in runtime._get_paths_from_swagger_templates(
+                [json.dumps(template)]
+            )
 
     def test_get_most_specific_location_config(self):
         locations = {}

@@ -174,7 +174,7 @@ def get_rest_request_handler_paths(build_path=BASE_PATH):
 
 def _get_paths_from_swagger_templates(templates):
     # Match templates for basePath and return capture groups
-    pattern = r"\"basePath\":\"([a-zA-Z0-9/.-_~!$&'()*+,;=:@]+)\""
+    pattern = r"\"basePath\":\s?\"([a-zA-Z0-9/\.\-_~!$&'()*+,;=:@]+)\""
     result = []
     for template in templates:
         matches = re.search(pattern, template)
