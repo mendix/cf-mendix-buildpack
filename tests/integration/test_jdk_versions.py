@@ -3,7 +3,7 @@ import os
 from buildpack import java, runtime
 from tests.integration import basetest
 
-CERT_TO_CHECK = "staat der nederlanden root ca - g3"
+CERT_TO_CHECK = "staat der nederlanden ev root ca"
 
 
 class TestJDKVersions(basetest.BaseTest):
