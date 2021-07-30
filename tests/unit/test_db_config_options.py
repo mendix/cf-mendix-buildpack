@@ -1,10 +1,25 @@
+import datetime
 import os
 import unittest
 
-from buildpack.runtime_components.database import get_config
+from urllib.parse import parse_qs, urlparse, urlencode, urlunparse
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography import x509
+from cryptography.x509 import NameAttribute
+from cryptography.x509.base import Certificate
+from cryptography.x509.oid import NameOID
+from buildpack.runtime_components.database import (
+    get_config,
+    UrlDatabaseConfiguration,
+)
 
 
 class TestDatabaseConfigOptions(unittest.TestCase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.cert_map = {}
+
     def clean_env(self):
 
         # Setting different environment variables for test in the same process
@@ -48,6 +63,41 @@ class TestDatabaseConfigOptions(unittest.TestCase):
         assert config
         assert config["DatabaseType"] == "PostgreSQL"
 
+    def test_inline_certs(self):
+        self.cert_map = CertGen().cert_map
+        self.clean_env()
+        c = UrlDatabaseConfiguration
+        native_params = {
+            c.SSLCERT: self.get_cert("postgresql.crt"),
+            c.SSLROOTCERT: self.get_cert("root.crt"),
+            c.SSLKEY: self.get_cert("postgresql.rsa.key"),
+        }
+        parts = urlparse("postgres://user:secret@host/database")
+        parts = parts._replace(query=urlencode(native_params))
+        native_url = urlunparse(parts)
+        os.environ["DATABASE_URL"] = native_url
+
+        config = get_config()
+        assert config
+        assert config["DatabaseType"] == "PostgreSQL"
+        native_params[c.SSLKEY] = self.get_cert("postgresql.pk8")
+        jdbc_params = parse_qs(urlparse(config["DatabaseJdbcUrl"]).query)
+        self.cmp_cert(native_params, jdbc_params, c.SSLCERT)
+        self.cmp_cert(native_params, jdbc_params, c.SSLROOTCERT)
+        self.cmp_cert(native_params, jdbc_params, c.SSLKEY)
+
+    def get_cert(self, cert_resource):
+        return self.cert_map[cert_resource]
+
+    @classmethod
+    def cmp_cert(cls, native_params, jdbc_params, param):
+        expected_string = native_params[param]
+        actual_file = jdbc_params[param][0]
+        with open(actual_file, "rb") as io_actual:
+            actual_string = io_actual.read().decode("iso-8859-1")
+            assert expected_string == actual_string, param + " differ"
+        os.remove(actual_file)
+
     def test_vcap(self):
         self.clean_env()
         os.environ[
@@ -84,3 +134,97 @@ class TestDatabaseConfigOptions(unittest.TestCase):
         config = get_config()
         assert config
         assert config["DatabaseType"] == "PostgreSQL"
+
+
+# Class to generate a test certificate chain
+# https://cryptography.io/en/latest/x509/tutorial/
+class CertGen:
+    def __init__(self):
+        self.init_root_cert()
+        self.init_postgresql_cert()
+        self.dump_to_storage()
+
+    def dump_to_storage(self):
+        self.cert_map = {}
+        self._dump_cert(self.root_cert, "root.crt")
+        self._dump_cert(self.postgresql_cert, "postgresql.crt")
+        self._dump_key(
+            self.postgresql_key,
+            "postgresql.rsa.key",
+            serialization.Encoding.PEM,
+            serialization.PrivateFormat.TraditionalOpenSSL,
+        )
+        self._dump_key(
+            self.postgresql_key,
+            "postgresql.pk8",
+            serialization.Encoding.DER,
+            serialization.PrivateFormat.PKCS8,
+        )
+
+    def _dump_key(self, key, keyout_name, enc, fmt):
+        self.cert_map[keyout_name] = key.private_bytes(
+            encoding=enc,
+            format=fmt,
+            encryption_algorithm=serialization.NoEncryption(),
+        ).decode("iso-8859-1")
+
+    def _dump_cert(self, cert: Certificate, out_name):
+        self.cert_map[out_name] = cert.public_bytes(
+            serialization.Encoding.PEM
+        ).decode("iso-8859-1")
+
+    def init_root_cert(self):
+        self.root_key = self._newkey()
+        ca_subj = x509.Name(
+            [
+                NameAttribute(NameOID.COUNTRY_NAME, u"US"),
+                NameAttribute(NameOID.ORGANIZATION_NAME, u"Authority, Inc"),
+                NameAttribute(NameOID.COMMON_NAME, u"Authority CA"),
+            ]
+        )
+        self.root_cert = self._sign(
+            ca_subj, self.root_key, ca_subj, self.root_key.public_key(), 3651
+        )
+
+    def init_postgresql_cert(self) -> Certificate:
+        self.postgresql_key = self._newkey()
+        subj = x509.Name(
+            [
+                NameAttribute(NameOID.COUNTRY_NAME, u"US"),
+                NameAttribute(NameOID.ORGANIZATION_NAME, u"Authority, Inc"),
+                NameAttribute(NameOID.COMMON_NAME, u"SQL Client"),
+            ]
+        )
+        self.postgresql_cert = self._sign(
+            self.root_cert.subject,
+            self.root_key,
+            subj,
+            self.postgresql_key.public_key(),
+            3650,
+        )
+
+    @classmethod
+    def _newkey(cls):
+        # Generate our key
+        return rsa.generate_private_key(public_exponent=65537, key_size=2048,)
+
+    @classmethod
+    def _sign(
+        cls, issuer: x509.Name, ca_key, subject: x509.Name, req_pub_key, days
+    ) -> Certificate:
+        # pylint: disable=too-many-arguments
+        return (
+            x509.CertificateBuilder()
+            .subject_name(subject)
+            .issuer_name(issuer)
+            .public_key(req_pub_key)
+            .serial_number(x509.random_serial_number())
+            .not_valid_before(datetime.datetime.utcnow())
+            .not_valid_after(
+                # Our certificate will be valid for 10 days
+                datetime.datetime.utcnow()
+                + datetime.timedelta(days=days)
+                # Sign our certificate with our private key
+            )
+            .sign(ca_key, hashes.SHA256())
+        )

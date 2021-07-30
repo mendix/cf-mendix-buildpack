@@ -1,5 +1,4 @@
 black==19.10b0
-cryptography==3.2.1
 idna==2.8
 nose-timer==1.0.0
 pylint==2.5.3
