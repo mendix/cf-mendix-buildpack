@@ -65,7 +65,9 @@ class M2EEConfig:
         # if this file does not exist (i.e. < 3.0) try_load_json returns {}
         self._model_metadata = self._try_load_json(
             os.path.join(
-                self._conf["m2ee"]["app_base"], "model", "metadata.json",
+                self._conf["m2ee"]["app_base"],
+                "model",
+                "metadata.json",
             )
         )
 

@@ -100,7 +100,8 @@ class Databroker:
             if self.is_producer_app:
                 # kafka connect cfg
                 os.makedirs(
-                    os.path.join(user_checks_dir, "jmx_2.d"), exist_ok=True,
+                    os.path.join(user_checks_dir, "jmx_2.d"),
+                    exist_ok=True,
                 )
                 kafka_connect_cfg = (
                     jmx_cfg_generator.generate_kafka_connect_jmx_config()
@@ -109,12 +110,14 @@ class Databroker:
                     user_checks_dir, "jmx_2.d", "conf.yaml"
                 )
                 write_file(
-                    kafka_connect_cfg_path, kafka_connect_cfg,
+                    kafka_connect_cfg_path,
+                    kafka_connect_cfg,
                 )
 
                 # kafka streams cfg
                 os.makedirs(
-                    os.path.join(user_checks_dir, "jmx_3.d"), exist_ok=True,
+                    os.path.join(user_checks_dir, "jmx_3.d"),
+                    exist_ok=True,
                 )
                 kafka_streams_cfg = (
                     jmx_cfg_generator.generate_kafka_streams_jmx_config()
@@ -123,7 +126,8 @@ class Databroker:
                     user_checks_dir, "jmx_3.d", "conf.yaml"
                 )
                 write_file(
-                    kafka_streams_cfg_path, kafka_streams_cfg,
+                    kafka_streams_cfg_path,
+                    kafka_streams_cfg,
                 )
                 jmx_config_files = [
                     kafka_connect_cfg_path,

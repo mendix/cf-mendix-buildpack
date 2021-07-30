@@ -39,12 +39,9 @@ def update_config(m2ee, app_name):
     if os.getenv(APPDYNAMICS_AGENT_NODE_NAME):
         m2ee.config._conf["m2ee"]["custom_environment"][
             APPDYNAMICS_AGENT_NODE_NAME
-        ] = (
-            "%s-%s"
-            % (
-                os.getenv(APPDYNAMICS_AGENT_NODE_NAME),
-                os.getenv("CF_INSTANCE_INDEX", "0"),
-            )
+        ] = "%s-%s" % (
+            os.getenv(APPDYNAMICS_AGENT_NODE_NAME),
+            os.getenv("CF_INSTANCE_INDEX", "0"),
         )
 
 

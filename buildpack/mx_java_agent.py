@@ -143,7 +143,9 @@ def _to_file(name, json_content):
         return file_path
     except ValueError:
         logging.error(
-            "Error parsing JSON from %s", name, exc_info=True,
+            "Error parsing JSON from %s",
+            name,
+            exc_info=True,
         )
         return None
 

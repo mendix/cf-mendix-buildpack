@@ -2,6 +2,7 @@ PROJECT_NAME := $(if $(PROJECT_NAME),$(PROJECT_NAME),cf-mendix-buildpack)
 PREFIX=$(shell p='$(TEST_PREFIX)'; echo "$${p:-test}")
 TEST_PROCESSES := $(if $(TEST_PROCESSES),$(TEST_PROCESSES),2)
 TEST_FILES := $(if $(TEST_FILES),$(TEST_FILES),tests/integration/test_*.py)
+MAX_LINE_LENGTH=$(shell cat .pylintrc | grep max-line-length | cut -d '=' -f 2 | xargs)
 
 PIP_TOOLS_VERSION=6.2.0
 
@@ -43,10 +44,9 @@ requirements: install_piptools
 	pip-compile requirements*.in -o requirements-all.txt
 	pip-compile requirements.in
 
-.PHONY: lint
-lint:
-	black --line-length=79 --check --diff buildpack lib/m2ee/* tests/*/
-	pylint --disable=W,R,C buildpack lib/m2ee/* tests/*/
+.PHONY: write_commit
+write_commit:
+	git rev-parse --short HEAD > build/.commit
 
 .PHONY: clean
 clean:
@@ -76,8 +76,9 @@ test: test_unit test_integration
 
 .PHONY: format
 format:
-	black --line-length=79 buildpack tests lib/m2ee/*
+	black --line-length=${MAX_LINE_LENGTH} buildpack lib/m2ee/* tests/*/
 
-.PHONY: write_commit
-write_commit:
-	git rev-parse --short HEAD > build/.commit
+.PHONY: lint
+lint:
+	black --line-length=${MAX_LINE_LENGTH} --check --diff buildpack lib/m2ee/* tests/*/
+	pylint --disable=W,R,C buildpack lib/m2ee/* tests/*/

@@ -63,7 +63,10 @@ KAFKA_CONNECT_JMX_PORT = "11003"
 def _download_pkgs(install_path, cache_dir):
     # Download kafka connect and debezium
     KAFKA_CONNECT_DOWNLOAD_URL = "{}{}-{}.{}".format(
-        BASE_URL, KAFKA_CONNECT_FILENAME, KAFKA_CONNECT_VERSION, PKG_FILE_EXT,
+        BASE_URL,
+        KAFKA_CONNECT_FILENAME,
+        KAFKA_CONNECT_VERSION,
+        PKG_FILE_EXT,
     )
     util.download_and_unpack(
         util.get_blobstore_url(KAFKA_CONNECT_DOWNLOAD_URL),
@@ -100,9 +103,10 @@ def run(complete_conf):
     java_path = os.path.join(os.getcwd(), LOCAL, "bin")
     os.environ["PATH"] += os.pathsep + java_path
     os.environ["JMX_PORT"] = KAFKA_CONNECT_JMX_PORT
-    os.environ["KAFKA_LOG4J_OPTS"] = (
-        "-Dlog4j.configuration=file:"
-        + os.path.join(os.getcwd(), LOG4J_CFG_PATH)
+    os.environ[
+        "KAFKA_LOG4J_OPTS"
+    ] = "-Dlog4j.configuration=file:" + os.path.join(
+        os.getcwd(), LOG4J_CFG_PATH
     )
     kafka_connect_heap_opts = os.environ.get(
         "DATABROKER_KAFKA_CONNECT_HEAP_OPTS", "-Xms512M -Xmx2G"
@@ -111,7 +115,9 @@ def run(complete_conf):
     env = dict(os.environ)
 
     kafka_connect_process = DataBrokerProcess(
-        PROCESS_NAME, (KAFKA_CONNECT_START_PATH, KAFKA_CONNECT_CFG_PATH), env,
+        PROCESS_NAME,
+        (KAFKA_CONNECT_START_PATH, KAFKA_CONNECT_CFG_PATH),
+        env,
     )
 
     # Wait for kafka connect to initialize and then issue a request for debezium connector

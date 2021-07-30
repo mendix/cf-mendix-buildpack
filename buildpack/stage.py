@@ -96,7 +96,8 @@ def copy_buildpack_resources():
     commit_file_path = os.path.join(BUILDPACK_DIR, ".commit")
     if os.path.isfile(commit_file_path):
         shutil.copy(
-            commit_file_path, os.path.join(BUILD_DIR, ".commit"),
+            commit_file_path,
+            os.path.join(BUILD_DIR, ".commit"),
         )
     shutil.copy(
         os.path.join(BUILDPACK_DIR, "VERSION"),

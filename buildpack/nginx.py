@@ -92,8 +92,10 @@ def stage(buildpack_path, build_path, cache_path):
 
 
 def configure(m2ee):
-    samesite_cookie_workaround_enabled = _is_samesite_cookie_workaround_enabled(
-        MXVersion(str(m2ee.config.get_runtime_version()))
+    samesite_cookie_workaround_enabled = (
+        _is_samesite_cookie_workaround_enabled(
+            MXVersion(str(m2ee.config.get_runtime_version()))
+        )
     )
     if samesite_cookie_workaround_enabled:
         logging.info("SameSite cookie workaround is enabled")
