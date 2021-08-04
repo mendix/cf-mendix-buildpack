@@ -161,7 +161,9 @@ def _get_service_from_tags():
     dict_filter = lambda x, y: dict([(i, x[i]) for i in x if i in set(y)])
 
     service_tags = sorted(
-        OrderedDict(dict_filter(util.get_tags(), ("app", "service")),).items(),
+        OrderedDict(
+            dict_filter(util.get_tags(), ("app", "service")),
+        ).items(),
         reverse=True,
     )
     if service_tags:
@@ -239,7 +241,9 @@ def _set_up_dd_java_agent(
     # Extend with tracing options
     if _is_tracing_enabled():
         m2ee.config._conf["m2ee"]["javaopts"].extend(
-            ["-D{}={}".format("dd.logs.injection", "true"),]
+            [
+                "-D{}={}".format("dd.logs.injection", "true"),
+            ]
         )
 
         # Extend with database service mapping

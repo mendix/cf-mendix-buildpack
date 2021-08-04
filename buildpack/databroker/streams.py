@@ -56,7 +56,10 @@ PDR_STREAMS_JAR = os.path.join(
 def _download_pkgs(install_path, cache_dir):
     # Download producer streams artifact
     PDR_STREAMS_DOWNLOAD_URL = "{}{}-{}.{}".format(
-        BASE_URL, PDR_STREAMS_FILENAME, get_pdr_stream_version(), TAR_EXT,
+        BASE_URL,
+        PDR_STREAMS_FILENAME,
+        get_pdr_stream_version(),
+        TAR_EXT,
     )
     util.download_and_unpack(
         util.get_blobstore_url(PDR_STREAMS_DOWNLOAD_URL),
@@ -71,7 +74,10 @@ def stage(install_path, cache_dir):
 
 def setup_configs(complete_conf):
     TPLY_CONF_PATH = os.path.join(
-        os.getcwd(), LOCAL, PDR_STREAMS_HOME, AZKARRA_TPLY_CONF_NAME,
+        os.getcwd(),
+        LOCAL,
+        PDR_STREAMS_HOME,
+        AZKARRA_TPLY_CONF_NAME,
     )
     topologies_config = stream_generator.generate_config(complete_conf)
     write_file(TPLY_CONF_PATH, topologies_config)

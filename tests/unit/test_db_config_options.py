@@ -206,7 +206,10 @@ class CertGen:
     @classmethod
     def _newkey(cls):
         # Generate our key
-        return rsa.generate_private_key(public_exponent=65537, key_size=2048,)
+        return rsa.generate_private_key(
+            public_exponent=65537,
+            key_size=2048,
+        )
 
     @classmethod
     def _sign(

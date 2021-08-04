@@ -703,7 +703,8 @@ class TestMemoryPoolAliases(TestCase):
             "tenured": 17,
         }
         self.assertEqual(
-            expected, _standardize_memory_pools_output(input, java_version=8),
+            expected,
+            _standardize_memory_pools_output(input, java_version=8),
         )
 
     def test_poolnames_parallelgc(self):
@@ -723,7 +724,8 @@ class TestMemoryPoolAliases(TestCase):
             "tenured": 17,
         }
         self.assertEqual(
-            expected, _standardize_memory_pools_output(input, java_version=8),
+            expected,
+            _standardize_memory_pools_output(input, java_version=8),
         )
 
     def test_poolnames_java11_parallel_gc(self):
@@ -745,7 +747,8 @@ class TestMemoryPoolAliases(TestCase):
             "tenured": 7,
         }
         self.assertEqual(
-            expected, _standardize_memory_pools_output(input, java_version=11),
+            expected,
+            _standardize_memory_pools_output(input, java_version=11),
         )
 
     def test_poolnames_concmarksweepgc(self):
@@ -765,7 +768,8 @@ class TestMemoryPoolAliases(TestCase):
             "tenured": 17,
         }
         self.assertEqual(
-            expected, _standardize_memory_pools_output(input, java_version=8),
+            expected,
+            _standardize_memory_pools_output(input, java_version=8),
         )
 
     def test_poolnames_g1gc(self):
@@ -785,7 +789,8 @@ class TestMemoryPoolAliases(TestCase):
             "tenured": 17,
         }
         self.assertEqual(
-            expected, _standardize_memory_pools_output(input, java_version=8),
+            expected,
+            _standardize_memory_pools_output(input, java_version=8),
         )
 
 

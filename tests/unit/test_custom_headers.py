@@ -36,7 +36,8 @@ class TestCaseCustomHeaderConfig(unittest.TestCase):
         )
         header_config = nginx._get_http_headers()
         self.assertIn(
-            ("Referrer-Policy", "no-referrer-when-downgrade"), header_config,
+            ("Referrer-Policy", "no-referrer-when-downgrade"),
+            header_config,
         )
 
     def test_invalid_header_referrerPolicy(self):

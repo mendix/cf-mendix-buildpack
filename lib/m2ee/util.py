@@ -190,9 +190,24 @@ def download_and_unpack_runtime(url, path):
         return
 
     logger.info("Going to download and extract %s to %s" % (url, path))
-    p1 = subprocess.Popen(["wget", "-O", "-", url,], stdout=subprocess.PIPE)
+    p1 = subprocess.Popen(
+        [
+            "wget",
+            "-O",
+            "-",
+            url,
+        ],
+        stdout=subprocess.PIPE,
+    )
     p2 = subprocess.Popen(
-        ["tar", "xz", "-C", path,], stdin=p1.stdout, stdout=subprocess.PIPE
+        [
+            "tar",
+            "xz",
+            "-C",
+            path,
+        ],
+        stdin=p1.stdout,
+        stdout=subprocess.PIPE,
     )
     p1.stdout.close()
     stdout, stderr = p2.communicate()

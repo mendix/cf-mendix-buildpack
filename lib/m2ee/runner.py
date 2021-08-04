@@ -139,7 +139,12 @@ class M2EERunner:
         # start java subprocess (second fork)
         logger.trace("[%s] Starting the JVM..." % os.getpid())
         try:
-            proc = subprocess.Popen(cmd, close_fds=True, cwd="/", env=env,)
+            proc = subprocess.Popen(
+                cmd,
+                close_fds=True,
+                cwd="/",
+                env=env,
+            )
         except OSError as ose:
             if ose.errno == errno.ENOENT:
                 logger.error(

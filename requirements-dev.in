@@ -1,5 +1,5 @@
-black==19.10b0
-idna==2.8
-nose-timer==1.0.0
-pylint==2.5.3
-pyopenssl==19.1.0
+black==21.7b0
+idna==3.2
+nose-timer==1.0.1
+pylint==2.9.6
+pyopenssl==20.0.1

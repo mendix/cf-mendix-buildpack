@@ -154,7 +154,8 @@ def download_and_unpack(
 
         logging.debug(
             "Dependency [{file_name}] is now present at [{destination}]".format(
-                file_name=file_name, destination=destination,
+                file_name=file_name,
+                destination=destination,
             )
         )
 

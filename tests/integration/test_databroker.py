@@ -13,7 +13,8 @@ KAFKA_CLUSTER_NAME = "kafka-cluster"
 KAFKA_CONNECT_URL = "http://localhost:8083"
 KAFKA_PG_CONNECTOR_NAME = "mx-databroker-PostgreSQL-source-connector"
 KAFKA_PG_CONNECTOR_STATUS_API = "{}/connectors/{}/status".format(
-    KAFKA_CONNECT_URL, KAFKA_PG_CONNECTOR_NAME,
+    KAFKA_CONNECT_URL,
+    KAFKA_PG_CONNECTOR_NAME,
 )
 KAFKA_BROKER_PORT = 9092
 KAFKA_ZOOKEEPER_PORT = 2181
@@ -43,7 +44,8 @@ class TestCaseDataBroker(basetest.BaseTestWithPostgreSQL):
                 "NUM_PARTITIONS={}".format(3),
                 "-d",
                 "{}:{}".format(
-                    KAFKA_CLUSTER_IMAGE_NAME, KAFKA_CLUSTER_IMAGE_VERSION,
+                    KAFKA_CLUSTER_IMAGE_NAME,
+                    KAFKA_CLUSTER_IMAGE_VERSION,
                 ),
             )
         )
@@ -51,7 +53,8 @@ class TestCaseDataBroker(basetest.BaseTestWithPostgreSQL):
         if not result[1]:
             raise RuntimeError(
                 "Cannot create {} container: {}".format(
-                    KAFKA_CLUSTER_NAME, result[0],
+                    KAFKA_CLUSTER_NAME,
+                    result[0],
                 )
             )
 
@@ -97,7 +100,8 @@ class TestCaseDataBroker(basetest.BaseTestWithPostgreSQL):
                 "MXRUNTIME_DatabaseUserName": "test",
                 "MXRUNTIME_DatabasePassword": "test",
                 "MX_MyFirstModule_broker_url": "{}:{}".format(
-                    self._host, KAFKA_BROKER_PORT,
+                    self._host,
+                    KAFKA_BROKER_PORT,
                 ),
             },
         )
@@ -124,7 +128,8 @@ class TestCaseDataBroker(basetest.BaseTestWithPostgreSQL):
         # check azkarra is running by verify expected topics have been created
         topics = self.run_on_container(
             "./opt/kafka_2.12-{}/bin/kafka-topics.sh --list --zookeeper localhost:{}".format(
-                KAFKA_CLUSTER_IMAGE_VERSION, KAFKA_ZOOKEEPER_PORT,
+                KAFKA_CLUSTER_IMAGE_VERSION,
+                KAFKA_ZOOKEEPER_PORT,
             ),
             target_container=self.kafka_container_name,
         )
