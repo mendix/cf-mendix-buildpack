@@ -214,5 +214,6 @@ def run():
     logging.info("Starting the Telegraf metrics agent...")
     e = dict(os.environ)
     subprocess.Popen(
-        (EXECUTABLE_PATH, "--config", CONFIG_FILE_PATH), env=e,
+        (EXECUTABLE_PATH, "--config", CONFIG_FILE_PATH),
+        env=e,
     )

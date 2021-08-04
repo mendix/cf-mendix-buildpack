@@ -145,7 +145,7 @@ def _get_jre_major_version_from_version_string(version_string):
 
 def _guess_java_version(m2ee_response, runtime_version, m2ee_stats):
     # type: ("lib.m2ee.client.M2EEResponse", "lib.m2ee.version.MXVersion", dict) -> "Optional[int]"
-    """"This internal function has a more unit-testable API than
+    """ "This internal function has a more unit-testable API than
     `guess_java_version`, which enables us to preserve compatibility, whilst
     simultaneously adding unit testing.
     """
@@ -358,13 +358,21 @@ def _standard_pool_name(given_pool_name):
 
     # mapping of standard memory pool name to all known names.
     pool_name_aliases = {
-        "Eden Space": ("PS Eden Space", "Par Eden Space", "G1 Eden Space",),
+        "Eden Space": (
+            "PS Eden Space",
+            "Par Eden Space",
+            "G1 Eden Space",
+        ),
         "Survivor Space": (
             "PS Survivor Space",
             "Par Survivor Space",
             "G1 Survivor Space",
         ),
-        "Tenured Gen": ("PS Old Gen", "CMS Old Gen", "G1 Old Gen",),
+        "Tenured Gen": (
+            "PS Old Gen",
+            "CMS Old Gen",
+            "G1 Old Gen",
+        ),
     }
 
     for standard_name, valid_names in pool_name_aliases.items():
