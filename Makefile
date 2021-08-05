@@ -2,9 +2,11 @@ PROJECT_NAME := $(if $(PROJECT_NAME),$(PROJECT_NAME),cf-mendix-buildpack)
 PREFIX=$(shell p='$(TEST_PREFIX)'; echo "$${p:-test}")
 TEST_PROCESSES := $(if $(TEST_PROCESSES),$(TEST_PROCESSES),2)
 TEST_FILES := $(if $(TEST_FILES),$(TEST_FILES),tests/integration/test_*.py)
-MAX_LINE_LENGTH=$(shell cat .pylintrc | grep max-line-length | cut -d '=' -f 2 | xargs)
+MAX_LINE_LENGTH = $(shell cat .pylintrc | grep max-line-length | cut -d '=' -f 2 | xargs)
 
-PIP_TOOLS_VERSION=6.2.0
+PIP_TOOLS_VERSION = 6.2.0
+PYTHON_PLATFORM := $(if $(PYTHON_PLATFORM),$(PYTHON_PLATFORM),manylinux2014_x86_64)
+PYTHON_VERSION := $(if $(PYTHON_VERSION),$(PYTHON_VERSION),36)
 
 .PHONY: vendor
 vendor: download_wheels
@@ -14,7 +16,7 @@ download_wheels: requirements create_build_dirs
 	rm -rf build/vendor/wheels
 	mkdir -p build/vendor/wheels
 	pip3 download -d build/vendor/wheels/ --only-binary :all: pip setuptools wheel
-	pip3 download -d build/vendor/wheels/ --no-deps --platform manylinux2014_x86_64 --python-version 36 -r requirements.txt
+	pip3 download -d build/vendor/wheels/ --no-deps --platform ${PYTHON_PLATFORM} --python-version ${PYTHON_VERSION} -r requirements.txt
 
 .PHONY: create_build_dirs
 create_build_dirs:

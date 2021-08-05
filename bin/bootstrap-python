@@ -22,14 +22,23 @@ then
 fi
 
 PIP_WHEELDIR="${CACHE_PATH}/pip/wheels"
+mkdir -p $PIP_WHEELDIR
 # Set the correct Python site-packages directory to install to
 SITE_PACKAGES_PATH="${BUILD_PATH}/$(python3 -m site --user-site | cut -d '/' -f4-)"
 
-echo " ---> Copying bundled Python dependencies to cache...";
-mkdir -p $PIP_WHEELDIR;
-cp -rf $WHEELS_PATH/* $PIP_WHEELDIR/ 2>/dev/null
+# Invalidate the cache and copy over wheels if they are bundled
+# If no wheels are included, the cache will be left alone, as dependencies are downloaded
+echo " ---> Check if Python dependencies need to be cached..."
+if [[ $(ls -1q $WHEELS_PATH/* 2>/dev/null | wc -l) -gt 0 ]] && [[ $(diff $WHEELS_PATH $PIP_WHEELDIR 2>/dev/null | wc -l) -gt 0 ]]
+then
+    echo " ---> Invalidating Python wheels cache..."
+    rm -rf $PIP_WHEELDIR
+    echo " ---> Copying bundled Python dependencies to cache...";
+    mkdir -p $PIP_WHEELDIR
+    cp -rf $WHEELS_PATH/* $PIP_WHEELDIR/ 2>/dev/null
+fi    
 
-echo " ---> Bootstrapping pip, setuptools and wheel..."
+echo " ---> Bootstrapping pip..."
 PIP_CMD="pip"
 if ! [[ -x "$(command -v ${PIP_CMD})" ]]
 then
@@ -50,16 +59,14 @@ else
 fi
 
 # Only download Python dependencies if they are not bundled
-# We can assume that they're not if the amount of bundled wheels is less than 3 (the bootstrap requirements)
-if [[ $(ls -1q $PIP_WHEELDIR/*.whl 2>/dev/null | wc -l) -lt 4 ]]
+if [[ $(ls -1q $WHEELS_PATH/* 2>/dev/null | wc -l) -gt 0 ]]
 then
-    echo " ---> Downloading Python dependencies...";
-    $PIP_CMD download $PIP_VERBOSITY_FLAGS -r $REQUIREMENTS_PATH --prefer-binary -d $PIP_WHEELDIR;
+    echo " ---> Using bundled Python dependencies"
 else
-    # Assume that more than two wheels present implies that dependencies are bundled
-    echo " ---> Using bundled Python dependencies";
+    echo " ---> Downloading Python dependencies..."
+    $PIP_CMD download $PIP_VERBOSITY_FLAGS -r $REQUIREMENTS_PATH --prefer-binary -d $PIP_WHEELDIR
 fi
 
 echo " ---> Installing Python dependencies to ${SITE_PACKAGES_PATH}..."
-$PIP_CMD install $PIP_VERBOSITY_FLAGS --target $SITE_PACKAGES_PATH --no-warn-script-location --no-index --find-links=$PIP_WHEELDIR -r $REQUIREMENTS_PATH
+$PIP_CMD install $PIP_VERBOSITY_FLAGS --target $SITE_PACKAGES_PATH --prefer-binary --no-warn-script-location --no-index --find-links=$PIP_WHEELDIR -r $REQUIREMENTS_PATH
 echo " ---> Finished installing Python dependencies"
