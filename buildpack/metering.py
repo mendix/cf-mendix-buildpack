@@ -7,7 +7,7 @@ from buildpack import util
 from buildpack.runtime_components import database
 
 NAMESPACE = "metering"
-SIDECAR_VERSION = "v1.1.0"
+SIDECAR_VERSION = "v2.0.0"
 SIDECAR_ARCHIVE = "metering-sidecar-linux-amd64-{}.tar.gz".format(
     SIDECAR_VERSION
 )
