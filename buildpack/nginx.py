@@ -80,7 +80,7 @@ def stage(buildpack_path, build_path, cache_path):
         logging.debug("Downloading nginx...")
         util.download_and_unpack(
             util.get_blobstore_url(
-                "/mx-buildpack/nginx_1.19.1_linux_x64_cflinuxfs3_b5af01b0.tgz"
+                "/mx-buildpack/nginx_1.21.1_linux_x64_cflinuxfs3_f0918d6b.tgz"
             ),
             os.path.join(build_path, "nginx"),
             cache_dir=cache_path,
