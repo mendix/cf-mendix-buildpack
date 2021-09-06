@@ -164,8 +164,8 @@ if __name__ == "__main__":
         telegraf.run()
         datadog.run(model_version, runtime_version)
         metering.run()
-        nginx.run()
         runtime.run(m2ee)
+        nginx.run()
 
         # Wait for the runtime to be ready before starting Databroker
         if databroker.is_enabled():
