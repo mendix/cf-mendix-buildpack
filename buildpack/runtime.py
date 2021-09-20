@@ -22,6 +22,8 @@ from buildpack.runtime_components import (
     storage,
 )
 
+from buildpack.databroker import business_events
+
 BASE_PATH = os.path.abspath(".")
 
 logger.setLevel(util.get_buildpack_loglevel())
@@ -378,6 +380,14 @@ def _set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
         "MicroflowConstants": _get_constants(metadata),
         "ScheduledEventExecution": scheduled_event_execution,
     }
+
+    business_events_cfg = business_events.get_config(
+        util.get_vcap_services_data()
+    )
+    # append Business Events config to MicroflowConstants dict
+    app_config["MicroflowConstants"].update(business_events_cfg)
+    logging.info("Business Events config added to MicroflowConstants")
+    logging.info(app_config["MicroflowConstants"])
 
     if my_scheduled_events is not None:
         app_config["MyScheduledEvents"] = my_scheduled_events
