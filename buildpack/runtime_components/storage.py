@@ -80,6 +80,7 @@ def _get_s3_specific_config(vcap_services, m2ee):
     if not bucket:
         return None
 
+    cas = os.getenv("CERTIFICATE_AUTHORITIES", None)
     if access_key and secret:
         logging.info("S3 config detected, activating external file store")
         config = {
@@ -103,6 +104,7 @@ def _get_s3_specific_config(vcap_services, m2ee):
                 and m2ee.config.get_runtime_version() < 8
             )
         )
+        and not cas
     ):
         logging.info("S3 TVM config detected, activating external file store")
         config = {
