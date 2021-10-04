@@ -386,8 +386,7 @@ def _set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
     )
     # append Business Events config to MicroflowConstants dict
     app_config["MicroflowConstants"].update(business_events_cfg)
-    logging.info("Business Events config added to MicroflowConstants")
-    logging.info(app_config["MicroflowConstants"])
+    logging.debug("Business Events config added to MicroflowConstants")
 
     if my_scheduled_events is not None:
         app_config["MyScheduledEvents"] = my_scheduled_events
