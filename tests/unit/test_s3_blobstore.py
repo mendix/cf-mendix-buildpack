@@ -1,5 +1,7 @@
 import json
 import buildpack.runtime_components.storage as storage
+import buildpack.runtime_components.security as security
+import os
 from unittest.mock import Mock
 
 
@@ -152,6 +154,36 @@ class TestCaseS3BlobStoreDryRun:
         assert (
             config["com.mendix.storage.s3.tokenService.RetryIntervalInSeconds"]
             == 10
+        )
+        assert (
+            config["com.mendix.storage.s3.BucketName"]
+            == "fake-key-prefix-from-tvm-vcap"
+        )
+        assert (
+            config["com.mendix.storage.s3.EndPoint"]
+            == "fake-s3-endpoint-from-tvm-vcap/fake-bucket-from-tvm-vcap"
+        )
+
+    """
+    When environment variable CERTIFICATE_AUTHORITIES is set and the Mendix
+    Runtime does support STS, IAM credentials must be used
+    """
+
+    def test_s3_blobstore_tvm_runtime_with_sts_and_cas(self):
+        vcap = json.loads(self.s3_tvm_storage_vcap_example)
+        m2ee = M2EEStub(9.2)
+        storage._get_credentials_from_tvm = Mock(
+            return_value=("fake-access-key", "fake-secret-access-key")
+        )
+        os.environ["CERTIFICATE_AUTHORITIES"] = "fake-certificate-authority"
+        config = storage._get_s3_specific_config(vcap, m2ee)
+        assert (
+            config["com.mendix.core.StorageService"] == "com.mendix.storage.s3"
+        )
+        assert config["com.mendix.storage.s3.AccessKeyId"] == "fake-access-key"
+        assert (
+            config["com.mendix.storage.s3.SecretAccessKey"]
+            == "fake-secret-access-key"
         )
         assert (
             config["com.mendix.storage.s3.BucketName"]
