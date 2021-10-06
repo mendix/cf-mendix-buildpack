@@ -158,7 +158,9 @@ if __name__ == "__main__":
     mx_java_agent.stage(
         BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR, runtime_version
     )
-    telegraf.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)
+    telegraf.stage(
+        BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR, runtime_version
+    )
     datadog.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)
     metering.stage(BUILDPACK_DIR, BUILD_DIR, CACHE_DIR)
     runtime.stage(BUILDPACK_DIR, BUILD_DIR, CACHE_DIR)
