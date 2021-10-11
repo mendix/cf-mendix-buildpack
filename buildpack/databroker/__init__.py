@@ -10,7 +10,7 @@ import os
 import logging
 import json
 
-from buildpack.databroker import connect, streams
+from buildpack.databroker import connect, streams, business_events
 from buildpack.databroker.config_generator.scripts.configloader import (
     configinitializer,
 )

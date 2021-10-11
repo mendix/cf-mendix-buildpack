@@ -10,16 +10,8 @@ import time
 
 import backoff
 from buildpack import util
-
-# This is bad and can cause circular dependencies; remove at first opportunity
-from buildpack.databroker import business_events
-
-# Move to start script at first opportunity
-from buildpack.telemetry import logs, metrics
-
 from buildpack.infrastructure import database, storage
 from lib.m2ee import M2EE as m2ee_class
-from lib.m2ee import logger
 from lib.m2ee.version import MXVersion
 
 from . import security
@@ -69,8 +61,7 @@ def stage(buildpack_dir, build_path, cache_path):
         util.mkdir_p(os.path.join(build_path, "data", name))
 
     logging.debug("Staging required components for Mendix runtime...")
-    database.stage(buildpack_dir, build_path)
-    logs.stage(buildpack_dir, build_path, cache_path)
+    database.stage(buildpack_dir, build_path) #TODO: move out of here
 
     logging.debug("Staging the Mendix runtime...")
     shutil.copy(
@@ -384,13 +375,6 @@ def _set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
         "ScheduledEventExecution": scheduled_event_execution,
     }
 
-    business_events_cfg = business_events.get_config(
-        util.get_vcap_services_data()
-    )
-    # append Business Events config to MicroflowConstants dict
-    app_config["MicroflowConstants"].update(business_events_cfg)
-    logging.debug("Business Events config added to MicroflowConstants")
-
     if my_scheduled_events is not None:
         app_config["MyScheduledEvents"] = my_scheduled_events
 
@@ -602,7 +586,11 @@ def _display_java_version():
         logging.info(line)
 
 
-def run(m2ee):
+def _set_loglevels(m2ee, loglevels):
+    m2ee.set_log_levels("*", nodes=loglevels, force=True)
+
+
+def run(m2ee, loglevels):
     # Shutdown handler; called on exit(0) or exit(1)
     def _terminate():
         if m2ee:
@@ -612,15 +600,11 @@ def run(m2ee):
 
     _display_java_version()
     util.mkdir_p("model/lib/userlib")
-    logs.set_up_logging_file()
     _start_app(m2ee)
     security.create_admin_user(m2ee, util.is_development_mode())
-    logs.update_config(m2ee)
     _display_running_model_version(m2ee)
     _configure_debugger(m2ee)
-
-    metrics.run(m2ee)
-    logs.run()
+    _set_loglevels(m2ee, loglevels)
 
 
 def _pre_process_m2ee_yaml():

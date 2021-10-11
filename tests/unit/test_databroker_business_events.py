@@ -44,7 +44,7 @@ class TestDataBrokerBusinessEvents(unittest.TestCase):
 
     def test_business_events_config(self):
         os.environ["VCAP_SERVICES"] = self.kafka_vcap
-        business_events_cfg = business_events.get_config(
+        business_events_cfg = business_events._get_config(
             util.get_vcap_services_data()
         )
         prefix = business_events.CONSTANTS_PREFIX

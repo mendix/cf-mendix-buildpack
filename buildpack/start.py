@@ -13,7 +13,9 @@ from buildpack.telemetry import (
     appdynamics,
     datadog,
     dynatrace,
+    logs,
     metering,
+    metrics,
     mx_java_agent,
     newrelic,
     telegraf,
@@ -156,12 +158,17 @@ if __name__ == "__main__":
             jmx_config_files=databroker_jmx_config_files,
         )
         nginx.configure(m2ee)
+        databroker.business_events.update_config(
+            m2ee, util.get_vcap_services_data()
+        )
 
         # Start components and runtime
         telegraf.run(runtime_version)
         datadog.run(model_version, runtime_version)
         metering.run()
-        runtime.run(m2ee)
+        logs.run(m2ee)
+        runtime.run(m2ee, logs.get_loglevels())
+        metrics.run(m2ee)
         nginx.run()
 
         # Wait for the runtime to be ready before starting Databroker
