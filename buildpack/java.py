@@ -221,3 +221,4 @@ def update_config(m2ee_section, vcap_data, java_version):
     _set_jvm_memory(m2ee_section, vcap_data, java_version)
     _set_jvm_locale(m2ee_section, java_version)
     _set_user_provided_java_options(m2ee_section)
+    # Empty comment
