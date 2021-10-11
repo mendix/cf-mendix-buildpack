@@ -15,7 +15,7 @@ from timeit import default_timer as timer
 import psycopg2
 import requests
 from buildpack import util
-from buildpack.runtime_components import database
+from buildpack.infrastructure import database
 from lib.m2ee import munin
 from lib.m2ee.version import MXVersion
 

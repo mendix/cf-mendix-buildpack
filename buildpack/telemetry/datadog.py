@@ -21,7 +21,7 @@ import yaml
 from lib.m2ee.version import MXVersion
 
 from buildpack import util
-from buildpack.runtime_components import database
+from buildpack.infrastructure import database
 
 NAMESPACE = "datadog"
 

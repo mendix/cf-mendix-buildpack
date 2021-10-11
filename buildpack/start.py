@@ -7,19 +7,16 @@ import sys
 import traceback
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-from buildpack import (
+from buildpack import databroker, util
+from buildpack.core import java, nginx, runtime
+from buildpack.telemetry import (
     appdynamics,
-    databroker,
     datadog,
     dynatrace,
-    java,
     metering,
     mx_java_agent,
     newrelic,
-    nginx,
-    runtime,
     telegraf,
-    util,
 )
 
 

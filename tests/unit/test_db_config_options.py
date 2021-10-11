@@ -9,7 +9,7 @@ from cryptography import x509
 from cryptography.x509 import NameAttribute
 from cryptography.x509.base import Certificate
 from cryptography.x509.oid import NameOID
-from buildpack.runtime_components.database import (
+from buildpack.infrastructure.database import (
     get_config,
     UrlDatabaseConfiguration,
 )

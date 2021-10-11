@@ -6,7 +6,9 @@ import shutil
 import subprocess
 import zipfile
 
-from buildpack import java, mono, runtime, util
+from buildpack import util
+from buildpack.core import java, mono, runtime
+from buildpack.util import NotFoundException
 
 BUILD_ERRORS_JSON = "/tmp/builderrors.json"
 

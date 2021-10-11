@@ -4,22 +4,18 @@ import os
 import shutil
 import sys
 
-from buildpack import (
+from buildpack import databroker, util
+from buildpack.core import java, mxbuild, nginx, runtime
+from buildpack.infrastructure import database
+from buildpack.telemetry import (
     appdynamics,
-    dynatrace,
-    databroker,
     datadog,
-    java,
+    dynatrace,
     metering,
     mx_java_agent,
-    mxbuild,
     newrelic,
-    nginx,
-    runtime,
     telegraf,
-    util,
 )
-from buildpack.runtime_components import database
 
 BUILDPACK_DIR = os.path.abspath(
     os.path.dirname(

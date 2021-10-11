@@ -1,6 +1,6 @@
 import os
 
-from buildpack import java, runtime
+from buildpack.core import java, runtime
 from tests.integration import basetest
 
 CERT_TO_CHECK = "staat der nederlanden ev root ca"

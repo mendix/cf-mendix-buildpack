@@ -1,7 +1,7 @@
 import os
 import json
 
-import buildpack.runtime_components.storage as storage
+import buildpack.infrastructure.storage as storage
 
 
 class M2EEConfigStub:

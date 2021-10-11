@@ -3,7 +3,9 @@ import logging
 import os
 import shutil
 
-from buildpack import datadog, telegraf, util
+from buildpack import util
+
+from . import datadog, telegraf
 
 NAMESPACE = "mx-agent"
 ARTIFACT = "mx-agent-v0.12.0.jar"

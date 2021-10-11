@@ -1,30 +1,32 @@
 import atexit
 import json
 import logging
-import re
 import os
+import re
 import shutil
 import sqlite3
 import subprocess
 import time
 
 import backoff
+from buildpack import util
+
+# This is bad and can cause circular dependencies; remove at first opportunity
+from buildpack.databroker import business_events
+
+# Move to start script at first opportunity
+from buildpack.telemetry import logs, metrics
+
+from buildpack.infrastructure import database, storage
 from lib.m2ee import M2EE as m2ee_class
 from lib.m2ee import logger
 from lib.m2ee.version import MXVersion
 
-from buildpack import util
-from buildpack.runtime_components import (
-    database,
-    logs,
-    metrics,
-    security,
-    storage,
-)
-
-from buildpack.databroker import business_events
+from . import security
 
 BASE_PATH = os.path.abspath(".")
+
+from lib.m2ee import logger
 
 logger.setLevel(util.get_buildpack_loglevel())
 

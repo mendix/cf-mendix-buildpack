@@ -7,8 +7,8 @@ import re
 import shutil
 import subprocess
 
-from buildpack import runtime, util
-from buildpack.runtime_components import security
+from buildpack import util
+from buildpack.core import runtime, security
 from lib.m2ee.version import MXVersion
 
 from jinja2 import Template

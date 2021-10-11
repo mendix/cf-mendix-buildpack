@@ -1,6 +1,6 @@
 import os
 
-from buildpack.runtime_components.database import DatabaseConfigurationFactory
+from buildpack.infrastructure.database import DatabaseConfigurationFactory
 
 # IMPORTANT: to run this test successfully you need to set PYTHONPATH before
 # running nosetest.

@@ -12,11 +12,11 @@ import shutil
 import subprocess
 from distutils.util import strtobool
 
+from buildpack import util
+from buildpack.infrastructure import database
 from jinja2 import Template
 
-from buildpack import datadog, mx_java_agent, util
-from buildpack.runtime_components import database, metrics
-
+from . import datadog, metrics, mx_java_agent
 
 VERSION = "1.16.3"
 NAMESPACE = "telegraf"

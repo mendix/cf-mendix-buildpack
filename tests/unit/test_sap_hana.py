@@ -2,7 +2,7 @@ import json
 import os
 import urllib.parse
 
-from buildpack.runtime_components.database import (
+from buildpack.infrastructure.database import (
     DatabaseConfigurationFactory,
     SapHanaDatabaseConfiguration,
 )

@@ -1,4 +1,4 @@
-from buildpack.appdynamics import APPDYNAMICS_VERSION
+from buildpack.telemetry.appdynamics import APPDYNAMICS_VERSION
 from tests.integration import basetest
 
 

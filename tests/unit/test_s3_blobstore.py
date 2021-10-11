@@ -1,8 +1,9 @@
 import json
-import buildpack.runtime_components.storage as storage
-import buildpack.runtime_components.security as security
 import os
 from unittest.mock import Mock
+
+import buildpack.core.security as security
+import buildpack.infrastructure.storage as storage
 
 
 class M2EEConfigStub:
