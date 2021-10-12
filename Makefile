@@ -4,7 +4,8 @@ TEST_PROCESSES := $(if $(TEST_PROCESSES),$(TEST_PROCESSES),2)
 TEST_FILES := $(if $(TEST_FILES),$(TEST_FILES),tests/integration/test_*.py)
 MAX_LINE_LENGTH = $(shell cat .pylintrc | grep max-line-length | cut -d '=' -f 2 | xargs)
 
-PIP_TOOLS_VERSION = 6.2.0
+PIP_TOOLS_VERSION = 6.3.1
+PIP_VERSION = 21.2.4
 PYTHON_PLATFORM := $(if $(PYTHON_PLATFORM),$(PYTHON_PLATFORM),manylinux2014_x86_64)
 PYTHON_VERSION := $(if $(PYTHON_VERSION),$(PYTHON_VERSION),36)
 
@@ -15,7 +16,7 @@ vendor: download_wheels
 download_wheels: requirements create_build_dirs
 	rm -rf build/vendor/wheels
 	mkdir -p build/vendor/wheels
-	pip3 download -d build/vendor/wheels/ --only-binary :all: pip setuptools wheel
+	pip3 download -d build/vendor/wheels/ --only-binary :all: pip==${PIP_VERSION} setuptools wheel
 	pip3 download -d build/vendor/wheels/ --no-deps --platform ${PYTHON_PLATFORM} --python-version ${PYTHON_VERSION} -r requirements.txt
 
 .PHONY: create_build_dirs
@@ -34,7 +35,7 @@ build: create_build_dirs vendor write_commit
 
 .PHONY: install_piptools
 install_piptools:
-	pip3 install --upgrade pip setuptools wheel
+	pip3 install --upgrade pip==${PIP_VERSION} setuptools wheel
 	pip3 install pip-tools==$(PIP_TOOLS_VERSION)
 
 .PHONY: install_requirements
