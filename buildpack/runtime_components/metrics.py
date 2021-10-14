@@ -17,9 +17,25 @@ import requests
 from buildpack import util
 from buildpack.runtime_components import database
 from lib.m2ee import munin
+from lib.m2ee.version import MXVersion
 
 BUILDPACK_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, os.path.join(BUILDPACK_DIR, "lib"))
+
+# Runtime configuration for influx registry
+# This enables the new stream of metrics coming from micrometer instead
+# of the admin port.
+# https://docs.mendix.com/refguide/metrics#registries-configuration
+METRICS_REGISTRY = [
+    {
+        "type": "influx",
+        "settings": {
+            "uri": "http://localhost:8086",
+            "db": "mendix",
+            "step": "10s",
+        },
+    }
+]
 
 # Handler for exit(0) and exit(1)
 def _stop():
@@ -71,6 +87,41 @@ def run(m2ee):
 
 def get_metrics_url():
     return os.getenv("TRENDS_STORAGE_URL")
+
+
+def _micrometer_runtime_requirement(runtime_version):
+    """Check if metrics via micrometer is supported by runtime."""
+    # TODO: DISABLE_MICROMETER_METRICS is a temporary flag to disable metrics
+    # collection via micrometer till we are ready to do the switchover
+    # from admin port metrics to micrometer based metrics
+    disable_micrometer = strtobool(
+        os.getenv("DISABLE_MICROMETER_METRICS", "true")
+    )
+
+    runtime_version_supported = runtime_version >= MXVersion("9.7.0")
+
+    if not disable_micrometer and runtime_version_supported:
+        return True
+
+    return False
+
+
+def micrometer_metrics_enabled(runtime_version):
+    """Check for metrics from micrometer."""
+    return bool(get_metrics_url()) and _micrometer_runtime_requirement(
+        runtime_version
+    )
+
+
+def configure_influx_registry(m2ee):
+    """Add custom environment variables to runtime.
+
+    This ensures runtime micrometer sends metrics to telegraf.
+    """
+    if not micrometer_metrics_enabled(m2ee.config.get_runtime_version()):
+        return {}
+
+    return {"Metrics.Registries": METRICS_REGISTRY}
 
 
 def bypass_loggregator():

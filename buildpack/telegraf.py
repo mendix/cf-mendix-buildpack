@@ -15,8 +15,7 @@ from distutils.util import strtobool
 from jinja2 import Template
 
 from buildpack import datadog, mx_java_agent, util
-from buildpack.runtime_components import database
-from lib.m2ee.version import MXVersion
+from buildpack.runtime_components import database, metrics
 
 
 VERSION = "1.16.3"
@@ -32,6 +31,7 @@ CONFIG_FILE_PATH = os.path.join(CONFIG_FILE_DIR, "telegraf.conf")
 TEMPLATE_FILENAME = "telegraf.toml.j2"
 STATSD_PORT = 8125
 STATSD_PORT_ALT = 18125
+
 
 # APPMETRICS_TARGET is a variable which includes JSON (single or array) with the following values:
 # - url: complete url of the endpoint. Mandatory.
@@ -61,43 +61,15 @@ def include_db_metrics():
     return strtobool(os.getenv("APPMETRICS_INCLUDE_DB", "true"))
 
 
-def _get_trends_storage_url():
-    return os.getenv("TRENDS_STORAGE_URL", "")
-
-
 def _get_app_index():
     return os.getenv("CF_INSTANCE_INDEX", 0)
-
-
-def _micrometer_runtime_requirement(runtime_version):
-    """Check if metrics via micrometer is supported by runtime."""
-    # TODO: force_enabled is a temporary flag to ensure we do NOT enable
-    # metrics collections via micrometer till we are ready to do the switchover
-    # from admin port metrics to micrometer based metrics
-    force_enabled = strtobool(
-        os.getenv("FORCE_ENABLE_MICROMETER_METRICS", "false")
-    )
-    # TODO: Confirm and update the runtime version which supports all metrics
-    runtime_version_supported = runtime_version >= MXVersion("9.6.0")
-
-    if force_enabled and runtime_version_supported:
-        return True
-
-    return False
-
-
-def _micrometer_metrics_enabled(runtime_version):
-    """Check for metrics from micrometer."""
-    return bool(_get_trends_storage_url()) and _micrometer_runtime_requirement(
-        runtime_version
-    )
 
 
 def is_enabled(runtime_version):
     return (
         _get_appmetrics_target() is not None
         or datadog.is_enabled()
-        or _micrometer_metrics_enabled(runtime_version)
+        or metrics.micrometer_metrics_enabled(runtime_version)
     )
 
 
@@ -200,8 +172,8 @@ def update_config(m2ee, app_name):
         datadog_api_key=datadog.get_api_key(),
         datadog_api_url="{}series/".format(datadog.get_api_url()),
         http_outputs=_get_http_outputs(),
-        trends_storage_url=_get_trends_storage_url(),
-        micrometer_metrics=_micrometer_metrics_enabled(runtime_version),
+        trends_storage_url=metrics.get_metrics_url(),
+        micrometer_metrics=metrics.micrometer_metrics_enabled(runtime_version),
         cf_instance_index=_get_app_index(),
         app_name=app_name,
     )
@@ -210,6 +182,11 @@ def update_config(m2ee, app_name):
     with open(CONFIG_FILE_PATH, "w") as file_:
         file_.write(rendered)
     logging.debug("Telegraf configuration file written")
+
+    logging.debug("Update runtime configuration... ")
+    m2ee.config._conf["mxruntime"].update(
+        metrics.configure_influx_registry(m2ee)
+    )
 
 
 def stage(buildpack_path, build_path, cache_dir, runtime_version):
