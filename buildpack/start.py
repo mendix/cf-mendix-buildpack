@@ -119,12 +119,6 @@ if __name__ == "__main__":
                 "CF_INSTANCE_INDEX environment variable not found, assuming cluster leader responsibility..."
             )
 
-        # Set environment variables that the runtime needs for initial setup
-        if databroker.is_enabled():
-            os.environ[
-                "MXRUNTIME_{}".format(databroker.RUNTIME_DATABROKER_FLAG)
-            ] = "true"
-
         # Initialize the runtime
         m2ee = runtime.setup(util.get_vcap_data())
 
@@ -134,9 +128,7 @@ if __name__ == "__main__":
         model_version = runtime.get_model_version()
 
         # Update runtime configuration based on component configuration
-        java.update_config(
-            m2ee.config._conf["m2ee"], util.get_vcap_data(), java_version
-        )
+        java.update_config(m2ee, util.get_vcap_data(), java_version)
         newrelic.update_config(m2ee, util.get_vcap_data()["application_name"])
         appdynamics.update_config(
             m2ee, util.get_vcap_data()["application_name"]
@@ -158,6 +150,7 @@ if __name__ == "__main__":
             jmx_config_files=databroker_jmx_config_files,
         )
         nginx.configure(m2ee)
+        databroker.update_config(m2ee)
         databroker.business_events.update_config(
             m2ee, util.get_vcap_services_data()
         )

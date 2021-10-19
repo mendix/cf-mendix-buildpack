@@ -58,17 +58,13 @@ def update_config(m2ee, app_name):
     # dynamic default
     default_env.update({"DT_TENANTTOKEN": manifest.get("tenantToken")})
 
-    m2ee_section = m2ee.config._conf["m2ee"]
-    if "custom_environment" not in m2ee_section:
-        m2ee_section["custom_environment"] = {}
-
     for key, dv in default_env.items():
         value = os.environ.get(key, dv)
         if value:
-            m2ee_section["custom_environment"][key] = value
-    m2ee_section["custom_environment"][
-        "DT_CONNECTION_POINT"
-    ] = get_connection_endpoint()
+            util.upsert_custom_environment_variable(m2ee, key, value)
+    util.upsert_custom_environment_variable(
+        m2ee, "DT_CONNECTION_POINT", get_connection_endpoint()
+    )
 
     agent_path = os.path.join(".local", get_agent_path())
     if not os.path.exists(agent_path):
@@ -76,10 +72,13 @@ def update_config(m2ee, app_name):
             "Dynatrace Agent not found: {agent_path}".format(agent_path)
         )
 
-    m2ee.config._conf["m2ee"]["javaopts"].append(
-        "-agentpath:{path}".format(path=os.path.abspath(agent_path))
+    util.upsert_javaopts(
+        m2ee,
+        [
+            "-agentpath:{path}".format(path=os.path.abspath(agent_path)),
+            "-Xshare:off",
+        ],
     )
-    m2ee.config._conf["m2ee"]["javaopts"].append("-Xshare:off")
 
 
 def get_manifest():

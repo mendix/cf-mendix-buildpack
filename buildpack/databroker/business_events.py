@@ -12,11 +12,8 @@ CONSTANTS_PREFIX = "BusinessEvents"
 
 
 def update_config(m2ee, vcap_services_data):
-    business_events_cfg = _get_config(vcap_services_data)
     # append Business Events config to MicroflowConstants dict
-    m2ee.config._conf["mxruntime"]["MicroflowConstants"].update(
-        business_events_cfg
-    )
+    util.upsert_microflow_constants(m2ee, _get_config(vcap_services_data))
     logging.debug("Business Events config added to MicroflowConstants")
 
 

@@ -33,21 +33,24 @@ def update_config(m2ee, app_name):
         )
         return
     logging.info("Adding new relic")
-    m2ee_section = m2ee.config._conf["m2ee"]
-    if "custom_environment" not in m2ee_section:
-        m2ee_section["custom_environment"] = {}
-    m2ee_section["custom_environment"][
-        "NEW_RELIC_LICENSE_KEY"
-    ] = get_new_relic_license_key()
-    m2ee_section["custom_environment"]["NEW_RELIC_APP_NAME"] = app_name
-    m2ee_section["custom_environment"]["NEW_RELIC_LOG"] = os.path.join(
-        _get_destination_dir(), "newrelic", "agent.log"
+
+    util.upsert_custom_environment_variable(
+        m2ee, "NEW_RELIC_LICENSE_KEY", get_new_relic_license_key()
+    )
+    util.upsert_custom_environment_variable(
+        m2ee, "NEW_RELIC_APP_NAME", app_name
+    )
+    util.upsert_custom_environment_variable(
+        m2ee,
+        "NEW_RELIC_LOG",
+        os.path.join(_get_destination_dir(), "newrelic", "agent.log"),
     )
 
-    m2ee.config._conf["m2ee"]["javaopts"].append(
+    util.upsert_javaopts(
+        m2ee,
         "-javaagent:{}".format(
             os.path.join(_get_destination_dir(), "newrelic", "newrelic.jar")
-        )
+        ),
     )
 
 

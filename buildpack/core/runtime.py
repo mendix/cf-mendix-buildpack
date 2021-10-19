@@ -61,7 +61,7 @@ def stage(buildpack_dir, build_path, cache_path):
         util.mkdir_p(os.path.join(build_path, "data", name))
 
     logging.debug("Staging required components for Mendix runtime...")
-    database.stage(buildpack_dir, build_path) #TODO: move out of here
+    database.stage(buildpack_dir, build_path)  # TODO: move out of here
 
     logging.debug("Staging the Mendix runtime...")
     shutil.copy(
@@ -289,21 +289,24 @@ def _set_jetty_config(m2ee):
         return None
     try:
         jetty_config = json.loads(jetty_config_json)
-        jetty = m2ee.config._conf["m2ee"]["jetty"]
-        jetty.update(jetty_config)
-        logging.debug("Jetty configured: [%s]", json.dumps(jetty))
+        util.upsert_m2ee_tools_setting(
+            m2ee, "jetty", jetty_config, overwrite=True, append=True
+        )
+        logging.debug(
+            "Jetty configured: [%s]",
+            json.dumps(util.get_m2ee_tools_setting(m2ee, "jetty")),
+        )
     except Exception:
         logging.warning("Failed to configure Jetty", exc_info=True)
 
 
-def _get_custom_settings(metadata, existing_config):
+def _get_custom_settings(metadata):
     if os.getenv("USE_DATA_SNAPSHOT", "false").lower() == "true":
         custom_settings_key = "Configuration"
         if custom_settings_key in metadata:
             config = {}
             for k, v in metadata[custom_settings_key].items():
-                if k not in existing_config:
-                    config[k] = v
+                config[k] = v
             return config
     return {}
 
@@ -364,7 +367,7 @@ def _get_application_root_url(vcap_data):
         return ""
 
 
-def _set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
+def _set_runtime_config(m2ee, metadata, vcap_data):
     scheduled_event_execution, my_scheduled_events = _get_scheduled_events(
         metadata
     )
@@ -394,27 +397,47 @@ def _set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
         app_config["com.mendix.core.SessionIdCookieName"] = "JSESSIONID"
 
     util.mkdir_p(os.path.join(os.getcwd(), "model", "resources"))
-    mxruntime_config.update(app_config)
+    util.upsert_custom_runtime_settings(
+        m2ee, app_config, overwrite=True, append=True
+    )
 
     # db configuration might be None, database should then be set up with
     # MXRUNTIME_Database... custom runtime settings.
     runtime_db_config = database.get_config()
     if runtime_db_config:
-        mxruntime_config.update(runtime_db_config)
+        util.upsert_custom_runtime_settings(
+            m2ee, runtime_db_config, overwrite=True, append=True
+        )
 
-    mxruntime_config.update(storage.get_config(m2ee))
-    mxruntime_config.update(security.get_certificate_authorities())
-    mxruntime_config.update(
-        security.get_client_certificates(m2ee.config.get_runtime_version())
+    util.upsert_custom_runtime_settings(
+        m2ee, storage.get_config(m2ee), overwrite=True, append=True
     )
-    mxruntime_config.update(_get_custom_settings(metadata, mxruntime_config))
-    mxruntime_config.update(_get_license_subscription())
-    mxruntime_config.update(_get_custom_runtime_settings())
+    util.upsert_custom_runtime_settings(
+        m2ee,
+        security.get_certificate_authorities(),
+        overwrite=True,
+        append=True,
+    )
+    util.upsert_custom_runtime_settings(
+        m2ee,
+        security.get_client_certificates(m2ee.config.get_runtime_version()),
+        overwrite=True,
+        append=True,
+    )
+    util.upsert_custom_runtime_settings(
+        m2ee, _get_custom_settings(metadata), overwrite=False, append=True
+    )
+    util.upsert_custom_runtime_settings(
+        m2ee, _get_license_subscription(), overwrite=True, append=True
+    )
+    util.upsert_custom_runtime_settings(
+        m2ee, _get_custom_runtime_settings(), overwrite=True, append=True
+    )
 
 
 def _set_application_name(m2ee, name):
     logging.debug("Application name is %s" % name)
-    m2ee.config._conf["m2ee"]["app_name"] = name
+    util.upsert_m2ee_tools_setting(m2ee, "app_name", name, overwrite=True)
 
 
 def _configure_debugger(m2ee):
@@ -642,10 +665,9 @@ def setup(vcap_data):
     )
 
     _set_runtime_config(
-        client.config._model_metadata,
-        client.config._conf["mxruntime"],
-        vcap_data,
         client,
+        client.config._model_metadata,
+        vcap_data,
     )
     _set_application_name(client, vcap_data["application_name"])
     _set_jetty_config(client)

@@ -142,16 +142,13 @@ def _update_java_cacert(cache_dir, jvm_location):
     logging.debug("Import of Mozilla certificates finished")
 
 
-def _set_jvm_locale(m2ee_section, java_version):
-    javaopts = m2ee_section["javaopts"]
-
+def _set_jvm_locale(m2ee, java_version):
     # override locale providers for java8
     if java_version.startswith("8"):
-        javaopts.append("-Djava.locale.providers=JRE,SPI,CLDR")
+        util.upsert_javaopts(m2ee, "-Djava.locale.providers=JRE,SPI,CLDR")
 
 
-def _set_user_provided_java_options(m2ee_section):
-    javaopts = m2ee_section["javaopts"]
+def _set_user_provided_java_options(m2ee):
     options = os.environ.get("JAVA_OPTS", None)
     if options:
         try:
@@ -162,10 +159,10 @@ def _set_user_provided_java_options(m2ee_section):
                 exc_info=True,
             )
             raise
-        javaopts.extend(options)
+        util.upsert_javaopts(m2ee, options)
 
 
-def _set_jvm_memory(m2ee_section, vcap, java_version):
+def _set_jvm_memory(m2ee, vcap, java_version):
     max_memory = os.environ.get("MEMORY_LIMIT")
 
     if max_memory:
@@ -200,27 +197,26 @@ def _set_jvm_memory(m2ee_section, vcap, java_version):
                     env_heap_size, str(limit) + "M", heap_size
                 )
             )
-    javaopts = m2ee_section["javaopts"]
 
-    javaopts.append("-Xmx%s" % heap_size)
-    javaopts.append("-Xms%s" % heap_size)
+    util.upsert_javaopts(m2ee, "-Xmx%s" % heap_size)
+    util.upsert_javaopts(m2ee, "-Xms%s" % heap_size)
 
     if java_version.startswith("7"):
-        javaopts.append("-XX:MaxPermSize=256M")
+        util.upsert_javaopts(m2ee, "-XX:MaxPermSize=256M")
     else:
-        javaopts.append("-XX:MaxMetaspaceSize=256M")
+        util.upsert_javaopts(m2ee, "-XX:MaxMetaspaceSize=256M")
 
     logging.debug("Java heap size set to %s", heap_size)
 
     if os.getenv("MALLOC_ARENA_MAX"):
         logging.info("Using provided environment setting for MALLOC_ARENA_MAX")
     else:
-        m2ee_section["custom_environment"]["MALLOC_ARENA_MAX"] = str(
-            max(1, limit / 1024) * 2
+        util.upsert_custom_environment_variable(
+            m2ee, "MALLOC_ARENA_MAX", str(max(1, limit / 1024) * 2)
         )
 
 
-def update_config(m2ee_section, vcap_data, java_version):
-    _set_jvm_memory(m2ee_section, vcap_data, java_version)
-    _set_jvm_locale(m2ee_section, java_version)
-    _set_user_provided_java_options(m2ee_section)
+def update_config(m2ee, vcap_data, java_version):
+    _set_jvm_memory(m2ee, vcap_data, java_version)
+    _set_jvm_locale(m2ee, java_version)
+    _set_user_provided_java_options(m2ee)
