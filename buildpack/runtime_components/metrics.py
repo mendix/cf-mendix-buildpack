@@ -121,6 +121,9 @@ def configure_influx_registry(m2ee):
     if not micrometer_metrics_enabled(m2ee.config.get_runtime_version()):
         return {}
 
+    logging.info(
+        "Configuring runtime to push metrics to influx via micrometer"
+    )
     return {"Metrics.Registries": METRICS_REGISTRY}
 
 

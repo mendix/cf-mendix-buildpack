@@ -183,7 +183,7 @@ def update_config(m2ee, app_name):
         file_.write(rendered)
     logging.debug("Telegraf configuration file written")
 
-    logging.debug("Update runtime configuration... ")
+    logging.debug("Update runtime configuration for metrics registry... ")
     m2ee.config._conf["mxruntime"].update(
         metrics.configure_influx_registry(m2ee)
     )
