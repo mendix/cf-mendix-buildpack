@@ -44,7 +44,7 @@ def update_config(m2ee, app_name):
     )
 
     m2ee.config._conf["m2ee"]["javaopts"].append(
-        "-javaagent:{path}".format(
+        "-javaagent:{}".format(
             os.path.join(_get_destination_dir(), "newrelic", "newrelic.jar")
         )
     )
