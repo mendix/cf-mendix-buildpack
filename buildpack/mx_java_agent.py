@@ -12,7 +12,7 @@ ROOT_DIR = ".local"
 
 def is_enabled(runtime_version):
     return meets_version_requirements(runtime_version) and (
-        telegraf.is_enabled() or datadog.is_enabled()
+        telegraf.is_enabled(runtime_version) or datadog.is_enabled()
     )
 
 

@@ -52,7 +52,7 @@
 #   The workaround is to append _rate and _count to those metrics and to do rollup in Datadog based on the Telegraf agent interval settings
 [[inputs.postgresql_extensible]]
     address = "postgres://{{ db_config['DatabaseUserName'] }}:{{ db_config['DatabasePassword'] }}@{{ db_config['DatabaseHost'] }}/{{ db_config['DatabaseName'] }}"
-    
+
     # Drop fields not present in the Datadog Agent PostgreSQL check
     fielddrop = ["datname"]
 
@@ -165,7 +165,7 @@
         version = 901
         withdbname = false
         tagvalue = "schema"
-        measurement = "postgresql.table" 
+        measurement = "postgresql.table"
     {% if database_rate_count_metrics_enabled %}
 
     # pg_stat_database metrics (rates)
@@ -254,6 +254,9 @@
     {% if datadog_api_url %}
     url = "{{ datadog_api_url }}"
     {% endif %}
+    # Ignore any micrometer_metrics
+    [outputs.datadog.tagdrop]
+        micrometer_metrics = ["true"]
 {% endif %}
 
 {% if http_outputs %}
@@ -271,6 +274,64 @@
     {% if http_output.kpionly %}
     [outputs.http.tagpass]
         KPI = ["true"]
+    {% else %}
+    # Ignore any micrometer_metrics
+    [outputs.http.tagdrop]
+        micrometer_metrics = ["true"]
     {% endif %}
 {% endfor %}
+{% endif %}
+
+{% if micrometer_metrics %}
+####################################################################################
+# App metrics via micrometer                                                       #
+####################################################################################
+# Input telegraf input
+[[inputs.influxdb_listener]]
+  ## Address and port to host HTTP listener on
+  service_address = ":8086"
+
+  ## maximum duration before timing out read of the request
+  read_timeout = "10s"
+  ## maximum duration before timing out write of the response
+  write_timeout = "10s"
+
+  ## Maximum allowed HTTP request body size in bytes.
+  ## 0 means to use the default of 32MiB.
+  max_body_size = 0
+
+  [inputs.influxdb_listener.tags]
+  micrometer_metrics = "true"
+  instance_index = "{{ cf_instance_index }}"
+  app_name = "{{ app_name }}"
+
+[[outputs.http]]
+  ## URL is the address to send metrics to
+  url = "{{ trends_storage_url }}"
+
+  ## Timeout for HTTP message
+  timeout = "10s"
+
+  ## HTTP method, one of: "POST" or "PUT"
+  method = "POST"
+
+  ## Data format to output.
+  data_format = "json"
+  json_timestamp_units = "1ns"
+
+  # tagexlude drops the custom tag set for micrometer metrics
+  # and any other non-relevant tags
+  tagexclude = ["micrometer_metrics", "host", "metric_type"]
+
+  ## Additional HTTP headers
+  [outputs.http.headers]
+  Content-Type = "application/json"
+  # custom header field
+  Micrometer-Metrics = "true"
+
+  # Pass only those metrics that has below tag set
+  [outputs.http.tagpass]
+  micrometer_metrics = ["true"]
+
+####################################################################################
 {% endif %}
