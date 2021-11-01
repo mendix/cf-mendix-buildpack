@@ -161,7 +161,7 @@ if __name__ == "__main__":
         nginx.configure(m2ee)
 
         # Start components and runtime
-        telegraf.run()
+        telegraf.run(runtime_version)
         datadog.run(model_version, runtime_version)
         metering.run()
         runtime.run(m2ee)

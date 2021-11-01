@@ -15,7 +15,8 @@ from distutils.util import strtobool
 from jinja2 import Template
 
 from buildpack import datadog, mx_java_agent, util
-from buildpack.runtime_components import database
+from buildpack.runtime_components import database, metrics
+
 
 VERSION = "1.16.3"
 NAMESPACE = "telegraf"
@@ -30,6 +31,7 @@ CONFIG_FILE_PATH = os.path.join(CONFIG_FILE_DIR, "telegraf.conf")
 TEMPLATE_FILENAME = "telegraf.toml.j2"
 STATSD_PORT = 8125
 STATSD_PORT_ALT = 18125
+
 
 # APPMETRICS_TARGET is a variable which includes JSON (single or array) with the following values:
 # - url: complete url of the endpoint. Mandatory.
@@ -59,8 +61,16 @@ def include_db_metrics():
     return strtobool(os.getenv("APPMETRICS_INCLUDE_DB", "true"))
 
 
-def is_enabled():
-    return _get_appmetrics_target() is not None or datadog.is_enabled()
+def _get_app_index():
+    return os.getenv("CF_INSTANCE_INDEX", 0)
+
+
+def is_enabled(runtime_version):
+    return (
+        _get_appmetrics_target() is not None
+        or datadog.is_enabled()
+        or metrics.micrometer_metrics_enabled(runtime_version)
+    )
 
 
 def _is_installed():
@@ -133,14 +143,13 @@ def _get_db_config():
 
 
 def update_config(m2ee, app_name):
-    if not is_enabled() or not _is_installed():
+    runtime_version = m2ee.config.get_runtime_version()
+    if not is_enabled(runtime_version) or not _is_installed():
         return
 
     # Populate Telegraf config template
     statsd_port = None
-    if mx_java_agent.meets_version_requirements(
-        m2ee.config.get_runtime_version()
-    ):
+    if mx_java_agent.meets_version_requirements(runtime_version):
         statsd_port = get_statsd_port()
 
     template_path = os.path.join(CONFIG_FILE_DIR, TEMPLATE_FILENAME)
@@ -163,6 +172,10 @@ def update_config(m2ee, app_name):
         datadog_api_key=datadog.get_api_key(),
         datadog_api_url="{}series/".format(datadog.get_api_url()),
         http_outputs=_get_http_outputs(),
+        trends_storage_url=metrics.get_metrics_url(),
+        micrometer_metrics=metrics.micrometer_metrics_enabled(runtime_version),
+        cf_instance_index=_get_app_index(),
+        app_name=app_name,
     )
 
     logging.debug("Writing Telegraf configuration file...")
@@ -170,9 +183,14 @@ def update_config(m2ee, app_name):
         file_.write(rendered)
     logging.debug("Telegraf configuration file written")
 
+    logging.debug("Update runtime configuration for metrics registry... ")
+    m2ee.config._conf["mxruntime"].update(
+        metrics.configure_influx_registry(m2ee)
+    )
 
-def stage(buildpack_path, build_path, cache_dir):
-    if not is_enabled():
+
+def stage(buildpack_path, build_path, cache_dir, runtime_version):
+    if not is_enabled(runtime_version):
         return
 
     logging.debug("Staging the Telegraf metrics agent...")
@@ -199,8 +217,8 @@ def stage(buildpack_path, build_path, cache_dir):
     )
 
 
-def run():
-    if not is_enabled():
+def run(runtime_version):
+    if not is_enabled(runtime_version):
         return
 
     if not _is_installed():
