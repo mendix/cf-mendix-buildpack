@@ -1,10 +1,10 @@
 import socket
 import re
-import os
 
 import backoff
 
-from tests.integration import basetest
+from . import basetest
+from .runner import CfLocalRunnerWithPostgreSQL
 
 # Constants
 KAFKA_CLUSTER_IMAGE_NAME = "johnnypark/kafka-zookeeper"
@@ -25,9 +25,30 @@ MAX_RETRY_COUNT = 8
 BACKOFF_TIME = 10
 
 
-class TestCaseDataBroker(basetest.BaseTestWithPostgreSQL):
+class CfLocalRunnerWithKafka(CfLocalRunnerWithPostgreSQL):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-    kafka_container_name = None
+        self._database_postgres_image = POSTGRES_DB_DOCKER_IMAGE
+        self._database_postgres_version = POSTGRES_DB_VERSION
+
+        self._kafka_container_name = "{}-{}".format(
+            self._app_name, KAFKA_CLUSTER_NAME
+        )
+
+    def _get_environment(self, env_vars):
+        environment = super()._get_environment(env_vars)
+
+        environment.update(
+            {
+                "MX_MyFirstModule_broker_url": "{}:{}".format(
+                    self.get_host(),
+                    KAFKA_BROKER_PORT,
+                )
+            }
+        )
+
+        return environment
 
     def _start_kafka_cluster(self):
         result = self._cmd(
@@ -35,7 +56,7 @@ class TestCaseDataBroker(basetest.BaseTestWithPostgreSQL):
                 "docker",
                 "run",
                 "--name",
-                self.kafka_container_name,
+                self._kafka_container_name,
                 "-p",
                 "{}:{}".format(KAFKA_BROKER_PORT, KAFKA_BROKER_PORT),
                 "-e",
@@ -58,7 +79,11 @@ class TestCaseDataBroker(basetest.BaseTestWithPostgreSQL):
                 )
             )
 
-    def _start_databroker_containers(self):
+    def stage(self, *args, **kwargs):
+        result = super().stage(*args, **kwargs)
+
+        self._start_kafka_cluster()
+
         @backoff.on_predicate(backoff.expo, lambda x: x > 0, max_time=30)
         def _await_kafka_cluster():
             return socket.socket(
@@ -67,46 +92,53 @@ class TestCaseDataBroker(basetest.BaseTestWithPostgreSQL):
 
         _await_kafka_cluster()
 
-        self.start_container()
+        return result
 
-    def tearDown(self):
-        self._remove_container(self.kafka_container_name)
-        super().tearDown()
+    def is_debezium_running(self):
+        return self.run_on_container("curl " + KAFKA_PG_CONNECTOR_STATUS_API)
+
+    def is_azkarra_running(self):
+        topics = self.run_on_container(
+            "./opt/kafka_2.12-{}/bin/kafka-topics.sh --list --zookeeper localhost:{}".format(
+                KAFKA_CLUSTER_IMAGE_VERSION,
+                KAFKA_ZOOKEEPER_PORT,
+            ),
+            target_container=self._kafka_container_name,
+        )
+
+        expect_public_topic_pattern = r".*?\.{}".format(
+            DATABROKER_TOPIC_FORMAT_VERSION
+        )
+
+        return (
+            len(
+                re.findall(
+                    r"(mx-databroker-connect-(?:configs|offsets|status))",
+                    topics,
+                )
+            )
+            == 3
+            and len(re.findall(expect_public_topic_pattern, topics)) > 0
+        )
+
+
+class TestCaseDataBroker(basetest.BaseTestWithPostgreSQL):
+    def _init_cflocal_runner(self, *args, **kwargs):
+        return CfLocalRunnerWithKafka(*args, **kwargs)
 
     def test_databroker_running(self):
-        # change the default db image
-        self._database_postgres_image = POSTGRES_DB_DOCKER_IMAGE
-        self._database_postgres_version = POSTGRES_DB_VERSION
-
-        # start local kafka cluster
-        self.kafka_container_name = "{}-{}-{}".format(
-            self._get_prefix(), self._app_id, KAFKA_CLUSTER_NAME
-        )
-        self._start_kafka_cluster()
-
-        os.environ[
-            "PACKAGE_URL"
-        ] = "https://dghq119eo3niv.cloudfront.net/test-app/MyProducer902.mda"
+        # os.environ[
+        #     "PACKAGE_URL"
+        # ] = "https://dghq119eo3niv.cloudfront.net/test-app/MyProducer902.mda"
         self.stage_container(
-            "ProducerApp.mda",
+            package="https://dghq119eo3niv.cloudfront.net/test-app/MyProducer902.mda",
             env_vars={
                 "DATABROKER_ENABLED": "true",
                 "FORCED_MXRUNTIME_URL": "https://dghq119eo3niv.cloudfront.net/",
-                "MXRUNTIME_DatabaseType": "PostgreSQL",
-                "MXRUNTIME_DatabaseHost": "{}:{}".format(
-                    self._host, self._database_port
-                ),
-                "MXRUNTIME_DatabaseName": "test",
-                "MXRUNTIME_DatabaseUserName": "test",
-                "MXRUNTIME_DatabasePassword": "test",
-                "MX_MyFirstModule_broker_url": "{}:{}".format(
-                    self._host,
-                    KAFKA_BROKER_PORT,
-                ),
             },
         )
 
-        self._start_databroker_containers()
+        self.start_container()
 
         # check app is running
         self.assert_app_running()
@@ -118,36 +150,13 @@ class TestCaseDataBroker(basetest.BaseTestWithPostgreSQL):
             max_tries=MAX_RETRY_COUNT,
         )
         def check_if_dbz_running():
-            return self.run_on_container(
-                "curl " + KAFKA_PG_CONNECTOR_STATUS_API
-            )
+            return self._runner.is_debezium_running()
 
         response = check_if_dbz_running()
         assert str(response).find('"state":"RUNNING"') > 0
 
         # check azkarra is running by verify expected topics have been created
-        topics = self.run_on_container(
-            "./opt/kafka_2.12-{}/bin/kafka-topics.sh --list --zookeeper localhost:{}".format(
-                KAFKA_CLUSTER_IMAGE_VERSION,
-                KAFKA_ZOOKEEPER_PORT,
-            ),
-            target_container=self.kafka_container_name,
-        )
-        assert (
-            len(
-                re.findall(
-                    r"(mx-databroker-connect-(?:configs|offsets|status))",
-                    topics,
-                )
-            )
-            == 3
-        )
-
-        expect_public_topic_pattern = r".*?\.{}".format(
-            DATABROKER_TOPIC_FORMAT_VERSION
-        )
-
-        assert len(re.findall(expect_public_topic_pattern, topics)) > 0
+        assert self._runner.is_azkarra_running()
 
         # check streaming service
         output = self.get_recent_logs()

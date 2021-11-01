@@ -237,6 +237,7 @@ dmypy.json
 requirements-**.txt
 
 .vscode
+*.env
 .local
 mxbuild/
 .noseids

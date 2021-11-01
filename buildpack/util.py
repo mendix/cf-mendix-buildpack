@@ -6,6 +6,7 @@ import os
 import re
 import shutil
 import subprocess
+import urllib
 
 import requests
 
@@ -279,3 +280,15 @@ def get_tags():
                 )
             )
     return result
+
+
+def is_url(url):
+    try:
+        result = urllib.parse.urlparse(url)
+        return all([result.scheme, result.netloc])
+    except ValueError:
+        return False
+
+
+def is_path_accessible(path):
+    return os.path.exists(path) and os.access(os.path.dirname(path), os.R_OK)

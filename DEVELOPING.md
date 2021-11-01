@@ -1,6 +1,6 @@
 # Mendix Buildpack Development
 
-This document describes best practices of developing the Mendix Buildpack. Use in conjunction with [`CONTRIBUTING.md`](CONTRIBUTING.md).
+This document describes best practices of developing the Mendix Buildpack. Use in conjunction with [ `CONTRIBUTING.md` ](CONTRIBUTING.md).
 
 ## Buildpack Structure
 
@@ -28,7 +28,7 @@ For developing the buildpack, you must set up the following:
 
 ### Installing `pyenv`
 
-[`pyenv`](https://github.com/pyenv/pyenv) in combination with [`pyenv-virtualenv`](https://github.com/pyenv/pyenv-virtualenv) can be used to create a local Python virtual environment to develop in. Note that you'll have to create an environment with the latest version of Python 3.6 - the default in the Cloud Foundry root filesystem (`cflinuxfs3`) we use to deploy applications on.
+[ `pyenv` ](https://github.com/pyenv/pyenv) in combination with [ `pyenv-virtualenv` ](https://github.com/pyenv/pyenv-virtualenv) can be used to create a local Python virtual environment to develop in. Note that you'll have to create an environment with the latest version of Python 3.6 - the default in the Cloud Foundry root filesystem ( `cflinuxfs3` ) we use to deploy applications on.
 
 ### Developing in `Docker`
 
@@ -55,7 +55,7 @@ A few `make` targets to use are:
 
 For integration tests, you need to have installed the prerequisites. Once you have those in place, you can set up the following environment variables:
 
-``` shell
+```shell
 export TEST_PREFIX="<prefix identifying your test run; default=test>"
 export TEST_PROCESSES="<amount of simultaneous tests to run; default=2>"
 export TEST_HOST="<custom host the tests will use to connect to dependencies; default=host.docker.internal>"
@@ -79,7 +79,7 @@ We have split up tests into unit tests, which do not need to fully start a Mendi
 
 To run all the tests locally you need to do is to go to the root folder and run the following command:
 
-``` shell
+```shell
 make test
 ```
 
@@ -87,7 +87,7 @@ make test
 
 To run the unit (offline) tests only, run the following command:
 
-``` shell
+```shell
 make test_unit
 ```
 
@@ -95,14 +95,39 @@ make test_unit
 
 To run the integration (online) tests only, run the following command:
 
-``` shell
+```shell
 make test_integration
 ```
 
-You can keep watch on the tests with regular Docker commands such as `docker ps`.
+You can keep watch on the tests with regular Docker commands such as `docker ps` .
 
 To run one or more separate tests do:
 
-``` shell
+```shell
 make test_integration TEST_FILES='file1, file2'
 ```
+
+## Running an application via a Command Line Interface (CLI)
+
+As extension of the integration tests, a Command Line Interface (CLI) is available. This CLI enables you to run an arbitrary MDA with `cf-local` without having to do the heavy lifting yourself.
+The CLI loosely follows the Docker CLI commands for `run` , `rm` and `logs` .
+
+The CLI can be accessed by running the following command from the project root:
+
+```shell
+python3 tests/integration/runner.py
+```
+
+The CLI features a help prompt to get you started:
+
+```shell
+python3 tests/integration/runner.py --help
+```
+
+An example that runs the `myapp` application with a PostgreSQL database container and two environment variables:
+
+```shell
+python3 tests/integration/runner.py run --name myapp --with-db -e ENV1=VALUE1 -e ENV2=VALUE2 myapp.mda
+```
+
+After running the application, standard Docker commands and Docker tooling can be used to manipulate the application container(s).
