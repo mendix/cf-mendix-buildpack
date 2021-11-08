@@ -30,7 +30,7 @@ For developing the buildpack, you must set up the following:
 
 [ `pyenv` ](https://github.com/pyenv/pyenv) in combination with [ `pyenv-virtualenv` ](https://github.com/pyenv/pyenv-virtualenv) can be used to create a local Python virtual environment to develop in. Note that you'll have to create an environment with the latest version of Python 3.6 - the default in the Cloud Foundry root filesystem ( `cflinuxfs3` ) we use to deploy applications on.
 
-### Developing in `Docker`
+### Developing in Docker
 
 As an alternative to running Python on your host you can run it in a Docker container. To do this:
 
@@ -46,8 +46,8 @@ The buildpack makes use of the `make` system. For dependency management, `pip-co
 
 A few `make` targets to use are:
 
-* `vendor` : downloads the Python runtime dependencies as wheels into `vendor/wheels`
-* `install_requirements` : installs all requirements and generates requirements.txt
+* `vendor` : downloads the Python runtime dependencies as wheels into `build/vendor/wheels`, and copies over vendorized dependencies to the `build/vendor/`
+* `install_requirements` : installs all requirements and generates `requirements.txt`
 
 **Never change the `requirements*.txt` files directly!** Use `requirements*.in` to that.
 
@@ -70,6 +70,12 @@ To ensure that your CF cluster has the buildpack you're developing available, us
 * `clean` : removes all the nasties, including leftover Mendix files, from your working directory
 * `lint` : ensures that code adheres to our standards
 * `build` : builds the buildpack, i.e. updates / fetches all dependencies that need to be in source control, including all runtime Python dependencies as wheels, and compresses it to `dist/`
+
+### Vendoring Dependencies
+
+You can include ("vendor in") any dependency you want in your build by adding it to `vendor/` directory. This will ensure that the dependency is packaged in the buildpack artifact. This is especially useful for testing dependencies you have built yourself locally, but are not available online yet.
+
+The dependency resolution will detect dependencies in `vendor/` regardless of subdirectory. The only condition is that you use the same file name as the dependency you would like to vendor in instead of getting it online.
 
 ## Testing
 

@@ -17,12 +17,13 @@ SIDECAR_FILENAME = "metering-sidecar"
 SIDECAR_CONFIG_FILE = "conf.json"
 
 
-def _download(build_path, cache_dir):
-    util.download_and_unpack(
+def _download(buildpack_dir, build_path, cache_dir):
+    util.resolve_dependency(
         util.get_blobstore_url(
             "{}/{}".format(SIDECAR_URL_ROOT, SIDECAR_ARCHIVE)
         ),
         os.path.join(build_path, NAMESPACE),
+        buildpack_dir=buildpack_dir,
         cache_dir=cache_dir,
     )
 
@@ -104,7 +105,7 @@ def stage(buildpack_path, build_path, cache_dir):
     try:
         if _is_usage_metering_enabled():
             logging.info("Usage metering is enabled")
-            _download(build_path, cache_dir)
+            _download(buildpack_path, build_path, cache_dir)
 
             project_id = _get_project_id(
                 os.path.join(build_path, "model", "metadata.json")

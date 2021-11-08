@@ -60,7 +60,7 @@ BACKOFF_TIME = 5
 KAFKA_CONNECT_JMX_PORT = "11003"
 
 
-def _download_pkgs(install_path, cache_dir):
+def _download_pkgs(buildpack_dir, install_path, cache_dir):
     # Download kafka connect and debezium
     KAFKA_CONNECT_DOWNLOAD_URL = "{}{}-{}.{}".format(
         BASE_URL,
@@ -68,24 +68,26 @@ def _download_pkgs(install_path, cache_dir):
         KAFKA_CONNECT_VERSION,
         PKG_FILE_EXT,
     )
-    util.download_and_unpack(
+    util.resolve_dependency(
         util.get_blobstore_url(KAFKA_CONNECT_DOWNLOAD_URL),
         os.path.join(install_path, BASE_DIR, KAFKA_CONNECT_DIR),
+        buildpack_dir=buildpack_dir,
         cache_dir=cache_dir,
     )
 
     DBZ_DOWNLOAD_URL = "{}{}-{}.{}".format(
         BASE_URL, DBZ_FILENAME, DBZ_VERSION, PKG_FILE_EXT
     )
-    util.download_and_unpack(
+    util.resolve_dependency(
         util.get_blobstore_url(DBZ_DOWNLOAD_URL),
         os.path.join(install_path, BASE_DIR, DBZ_DIR),
+        buildpack_dir=buildpack_dir,
         cache_dir=cache_dir,
     )
 
 
-def stage(install_path, cache_dir):
-    _download_pkgs(install_path, cache_dir)
+def stage(buildpack_dir, install_path, cache_dir):
+    _download_pkgs(buildpack_dir, install_path, cache_dir)
 
 
 def setup_configs(complete_conf):

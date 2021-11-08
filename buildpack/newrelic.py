@@ -8,16 +8,17 @@ NAMESPACE = "newrelic"
 ROOT_DIR = ".local"
 
 
-def stage(install_path, cache_path):
+def stage(buildpack_dir, install_path, cache_path):
     if get_new_relic_license_key():
-        util.download_and_unpack(
+        util.resolve_dependency(
             util.get_blobstore_url(
                 "/mx-buildpack/newrelic/newrelic-java-{}.zip".format(
                     AGENT_VERSION
                 )
             ),
             _get_destination_dir(install_path),
-            cache_path,
+            buildpack_dir=buildpack_dir,
+            cache_dir=cache_path,
         )
 
 

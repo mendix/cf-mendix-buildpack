@@ -66,12 +66,12 @@ def should_run_kafka_connect():
         return False
 
 
-def stage(install_path, cache_dir):
+def stage(buildpack_dir, install_path, cache_dir):
     if not is_enabled():
         return
 
-    connect.stage(install_path, cache_dir)
-    streams.stage(install_path, cache_dir)
+    connect.stage(buildpack_dir, install_path, cache_dir)
+    streams.stage(buildpack_dir, install_path, cache_dir)
 
 
 class Databroker:
