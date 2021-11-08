@@ -1,25 +1,13 @@
 import json
 import os
-from unittest.mock import Mock
+from unittest import TestCase
+from unittest import mock
 
-import buildpack.core.security as security
-import buildpack.infrastructure.storage as storage
-
-
-class M2EEConfigStub:
-    def __init__(self, version):
-        self.version = version
-
-    def get_runtime_version(self):
-        return self.version
+from buildpack.infrastructure import storage
+from lib.m2ee.version import MXVersion
 
 
-class M2EEStub:
-    def __init__(self, version):
-        self.config = M2EEConfigStub(version)
-
-
-class TestCaseS3BlobStoreDryRun:
+class TestCaseS3BlobStoreDryRun(TestCase):
 
     s3_storage_vcap_example = """
 {
@@ -81,10 +69,13 @@ class TestCaseS3BlobStoreDryRun:
 }
     """  # noqa
 
+    @mock.patch(
+        "buildpack.core.runtime.get_runtime_version",
+        mock.MagicMock(return_value=MXVersion(7.23)),
+    )
     def test_s3_blobstore(self):
         vcap = json.loads(self.s3_storage_vcap_example)
-        m2ee = M2EEStub(7.23)
-        config = storage._get_s3_specific_config(vcap, m2ee)
+        config = storage._get_s3_specific_config(vcap)
         assert (
             config["com.mendix.core.StorageService"] == "com.mendix.storage.s3"
         )
@@ -105,13 +96,19 @@ class TestCaseS3BlobStoreDryRun:
             == "fake-s3-endpoint-from-vcap/fake-bucket-from-vcap"
         )
 
+    @mock.patch(
+        "buildpack.core.runtime.get_runtime_version",
+        mock.MagicMock(return_value=MXVersion(7.23)),
+    )
+    @mock.patch(
+        "buildpack.infrastructure.storage._get_credentials_from_tvm",
+        mock.MagicMock(
+            return_value=("fake-access-key", "fake-secret-access-key")
+        ),
+    )
     def test_s3_blobstore_tvm_runtime_without_sts(self):
         vcap = json.loads(self.s3_tvm_storage_vcap_example)
-        m2ee = M2EEStub(7.23)
-        storage._get_credentials_from_tvm = Mock(
-            return_value=("fake-access-key", "fake-secret-access-key")
-        )
-        config = storage._get_s3_specific_config(vcap, m2ee)
+        config = storage._get_s3_specific_config(vcap)
         assert (
             config["com.mendix.core.StorageService"] == "com.mendix.storage.s3"
         )
@@ -129,10 +126,13 @@ class TestCaseS3BlobStoreDryRun:
             == "fake-s3-endpoint-from-tvm-vcap/fake-bucket-from-tvm-vcap"
         )
 
+    @mock.patch(
+        "buildpack.core.runtime.get_runtime_version",
+        mock.MagicMock(return_value=MXVersion(9.2)),
+    )
     def test_s3_blobstore_tvm_runtime_with_sts(self):
         vcap = json.loads(self.s3_tvm_storage_vcap_example)
-        m2ee = M2EEStub(9.2)
-        config = storage._get_s3_specific_config(vcap, m2ee)
+        config = storage._get_s3_specific_config(vcap)
         assert (
             config["com.mendix.core.StorageService"] == "com.mendix.storage.s3"
         )
@@ -170,14 +170,20 @@ class TestCaseS3BlobStoreDryRun:
     Runtime does support STS, IAM credentials must be used
     """
 
+    @mock.patch(
+        "buildpack.core.runtime.get_runtime_version",
+        mock.MagicMock(return_value=MXVersion(9.2)),
+    )
+    @mock.patch(
+        "buildpack.infrastructure.storage._get_credentials_from_tvm",
+        mock.MagicMock(
+            return_value=("fake-access-key", "fake-secret-access-key")
+        ),
+    )
     def test_s3_blobstore_tvm_runtime_with_sts_and_cas(self):
         vcap = json.loads(self.s3_tvm_storage_vcap_example)
-        m2ee = M2EEStub(9.2)
-        storage._get_credentials_from_tvm = Mock(
-            return_value=("fake-access-key", "fake-secret-access-key")
-        )
         os.environ["CERTIFICATE_AUTHORITIES"] = "fake-certificate-authority"
-        config = storage._get_s3_specific_config(vcap, m2ee)
+        config = storage._get_s3_specific_config(vcap)
         assert (
             config["com.mendix.core.StorageService"] == "com.mendix.storage.s3"
         )

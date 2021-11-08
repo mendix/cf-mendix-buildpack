@@ -18,10 +18,10 @@ from distutils.util import strtobool
 
 import backoff
 import yaml
-from lib.m2ee.version import MXVersion
-
 from buildpack import util
+from buildpack.core import runtime
 from buildpack.infrastructure import database
+from lib.m2ee.version import MXVersion
 
 NAMESPACE = "datadog"
 
@@ -471,7 +471,7 @@ def update_config(
         return
 
     # Set up runtime logging
-    if m2ee.config.get_runtime_version() >= 7.15:
+    if runtime.get_runtime_version() >= 7.15:
         util.upsert_logging_config(
             m2ee,
             {

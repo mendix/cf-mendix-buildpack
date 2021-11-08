@@ -1,4 +1,5 @@
 import os
+from unittest import TestCase
 
 from buildpack.infrastructure.database import DatabaseConfigurationFactory
 
@@ -7,7 +8,7 @@ from buildpack.infrastructure.database import DatabaseConfigurationFactory
 # export PYTHONPATH=<buildpack-root>/lib
 
 
-class TestCaseRdsDryRun:
+class TestCaseRdsDryRun(TestCase):
 
     rds_vcap_example = """
 {

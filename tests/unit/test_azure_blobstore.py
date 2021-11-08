@@ -1,20 +1,13 @@
-import os
 import json
+import os
+from unittest import TestCase
+from unittest import mock
 
-import buildpack.infrastructure.storage as storage
-
-
-class M2EEConfigStub:
-    def get_runtime_version(self):
-        return 7.13
-
-
-class M2EEStub:
-    def __init__(self):
-        self.config = M2EEConfigStub()
+from buildpack.infrastructure import storage
+from lib.m2ee.version import MXVersion
 
 
-class TestCaseAzureBlobStoreDryRun:
+class TestCaseAzureBlobStoreDryRun(TestCase):
 
     azure_storage_vcap_example = """
 {
@@ -44,11 +37,14 @@ class TestCaseAzureBlobStoreDryRun:
 }
     """  # noqa
 
+    @mock.patch(
+        "buildpack.core.runtime.get_runtime_version",
+        mock.MagicMock(return_value=MXVersion(7.13)),
+    )
     def test_azure_blob_store(self):
         vcap = json.loads(self.azure_storage_vcap_example)
         os.environ["MENDIX_BLOBSTORE_TYPE"] = "azure"
-        m2ee = M2EEStub()
-        config = storage._get_azure_storage_specific_config(vcap, m2ee)
+        config = storage._get_azure_storage_specific_config(vcap)
         assert (
             config["com.mendix.storage.azure.Container"]
             == "sapcp-osaas-2d2d2d2d-cccc-4444-8888-4ed76dca688e"  # noqa

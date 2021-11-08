@@ -16,7 +16,7 @@ from lib.m2ee.version import MXVersion
 
 from . import security
 
-BASE_PATH = os.path.abspath(".")
+BASE_PATH = os.getcwd()
 
 from lib.m2ee import logger
 
@@ -48,7 +48,9 @@ def is_version_end_of_support(version):
 
 def _get_runtime_dependency_url(blobstore, build_path, prefix="mendix"):
     return util.get_blobstore_url(
-        "/runtime/{}-{}.tar.gz".format(prefix, get_version(build_path)),
+        "/runtime/{}-{}.tar.gz".format(
+            prefix, str(get_runtime_version(build_path))
+        ),
         blobstore=blobstore,
     )
 
@@ -129,7 +131,7 @@ def get_metadata_value(key, build_path=BASE_PATH):
         return None
 
 
-def get_version(build_path=BASE_PATH):
+def get_runtime_version(build_path=BASE_PATH):
     result = get_metadata_value("RuntimeVersion", build_path)
 
     if result == None:
@@ -387,10 +389,10 @@ def _set_runtime_config(m2ee, metadata, vcap_data):
         )
         app_config["DTAPMode"] = "D"
 
-    if m2ee.config.get_runtime_version() >= 7 and not util.is_cluster_leader():
+    if get_runtime_version() >= 7 and not util.is_cluster_leader():
         app_config["com.mendix.core.isClusterSlave"] = "true"
     elif (
-        m2ee.config.get_runtime_version() >= 6
+        get_runtime_version() >= 6
         and os.getenv("ENABLE_STICKY_SESSIONS", "false").lower() == "true"
     ):
         logging.info("Enabling sticky sessions")
@@ -420,7 +422,7 @@ def _set_runtime_config(m2ee, metadata, vcap_data):
     )
     util.upsert_custom_runtime_settings(
         m2ee,
-        security.get_client_certificates(m2ee.config.get_runtime_version()),
+        security.get_client_certificates(get_runtime_version()),
         overwrite=True,
         append=True,
     )
@@ -462,7 +464,7 @@ def _configure_debugger(m2ee):
 
 
 def _display_running_model_version(m2ee):
-    if m2ee.config.get_runtime_version() >= 6.0:
+    if get_runtime_version() >= 6.0:
         feedback = m2ee.client.about().get_feedback()
         if "model_version" in feedback:
             logging.info("Model version: [%s]", feedback["model_version"])

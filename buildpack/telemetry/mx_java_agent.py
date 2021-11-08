@@ -4,6 +4,7 @@ import os
 import shutil
 
 from buildpack import util
+from buildpack.core import runtime
 
 from . import datadog, telegraf
 
@@ -53,7 +54,7 @@ def stage(buildpack_dir, install_dir, cache_dir, runtime_version):
 
 
 def update_config(m2ee):
-    runtime_version = m2ee.config.get_runtime_version()
+    runtime_version = runtime.get_runtime_version()
     if not meets_version_requirements(runtime_version):
         logging.warning(
             "Not enabling Mendix Java Agent: runtime version must be 7.14 or up. "

@@ -13,6 +13,7 @@ import subprocess
 from distutils.util import strtobool
 
 from buildpack import util
+from buildpack.core import runtime
 from buildpack.infrastructure import database
 from jinja2 import Template
 
@@ -143,7 +144,7 @@ def _get_db_config():
 
 
 def update_config(m2ee, app_name):
-    runtime_version = m2ee.config.get_runtime_version()
+    runtime_version = runtime.get_runtime_version()
     if not is_enabled(runtime_version) or not _is_installed():
         return
 

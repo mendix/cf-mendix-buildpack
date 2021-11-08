@@ -1,14 +1,16 @@
 import json
 import logging
-import re
 import os
-import requests
+import re
 import time
+
+import requests
 from buildpack import util
+from buildpack.core import runtime
 from lib.m2ee.version import MXVersion
 
 
-def _get_s3_specific_config(vcap_services, m2ee):
+def _get_s3_specific_config(vcap_services):
     access_key = secret = bucket = encryption_keys = key_suffix = None
     tvm_endpoint = tvm_username = tvm_password = endpoint = amazon_s3 = None
     v2_auth = ""
@@ -94,14 +96,14 @@ def _get_s3_specific_config(vcap_services, m2ee):
         and tvm_username
         and tvm_password
         and (
-            m2ee.config.get_runtime_version() >= 9.2
+            runtime.get_runtime_version() >= 9.2
             or (
-                m2ee.config.get_runtime_version() >= MXVersion("8.18.7")
-                and m2ee.config.get_runtime_version() < 9
+                runtime.get_runtime_version() >= MXVersion("8.18.7")
+                and runtime.get_runtime_version() < 9
             )
             or (
-                m2ee.config.get_runtime_version() >= MXVersion("7.23.22")
-                and m2ee.config.get_runtime_version() < 8
+                runtime.get_runtime_version() >= MXVersion("7.23.22")
+                and runtime.get_runtime_version() < 8
             )
         )
         and not cas
@@ -122,7 +124,7 @@ def _get_s3_specific_config(vcap_services, m2ee):
             "S3 TVM config detected, fetching IAM credentials from TVM"
         )
         access_key, secret = _get_credentials_from_tvm(
-            tvm_endpoint, tvm_username, tvm_password, m2ee
+            tvm_endpoint, tvm_username, tvm_password
         )
         config = {
             "com.mendix.core.StorageService": "com.mendix.storage.s3",
@@ -135,7 +137,7 @@ def _get_s3_specific_config(vcap_services, m2ee):
 
     if dont_perform_deletes:
         logging.debug("disabling perform deletes for runtime")
-        if m2ee.config.get_runtime_version() < 7.19:
+        if runtime.get_runtime_version() < 7.19:
             # Deprecated in 7.19
             config["com.mendix.storage.s3.PerformDeleteFromStorage"] = False
         else:
@@ -146,14 +148,14 @@ def _get_s3_specific_config(vcap_services, m2ee):
         config["com.mendix.storage.s3.UseV2Auth"] = v2_auth
     if endpoint:
         config["com.mendix.storage.s3.EndPoint"] = endpoint
-    if m2ee.config.get_runtime_version() >= 6 and encryption_keys:
+    if runtime.get_runtime_version() >= 6 and encryption_keys:
         config["com.mendix.storage.s3.EncryptionKeys"] = encryption_keys
-    if m2ee.config.get_runtime_version() >= 6 and sse:
+    if runtime.get_runtime_version() >= 6 and sse:
         config["com.mendix.storage.s3.UseSSE"] = sse
     return config
 
 
-def _get_credentials_from_tvm(tvm_endpoint, tvm_username, tvm_password, m2ee):
+def _get_credentials_from_tvm(tvm_endpoint, tvm_username, tvm_password):
     retry = 3
     while True:
         response = requests.get(
@@ -161,7 +163,7 @@ def _get_credentials_from_tvm(tvm_endpoint, tvm_username, tvm_password, m2ee):
             headers={
                 "User-Agent": "Mendix Buildpack {} (for Mendix {})".format(
                     util.get_buildpack_version(),
-                    m2ee.config.get_runtime_version(),
+                    runtime.get_runtime_version(),
                 )
             },
             auth=(tvm_username, tvm_password),
@@ -200,11 +202,11 @@ def _get_credentials_from_tvm(tvm_endpoint, tvm_username, tvm_password, m2ee):
     return result["AccessKeyId"], result["SecretAccessKey"]
 
 
-def _get_swift_specific_config(vcap_services, m2ee):
+def _get_swift_specific_config(vcap_services):
     if "Object-Storage" not in vcap_services:
         return None
 
-    if m2ee.config.get_runtime_version() < 6.7:
+    if runtime.get_runtime_version() < 6.7:
         logging.warning("Can not configure Object Storage with Mendix < 6.7")
         return None
 
@@ -224,7 +226,7 @@ def _get_swift_specific_config(vcap_services, m2ee):
     }
 
 
-def _get_azure_storage_specific_config(vcap_services, m2ee):
+def _get_azure_storage_specific_config(vcap_services):
     azure_storage = None
 
     for key in vcap_services:
@@ -235,7 +237,7 @@ def _get_azure_storage_specific_config(vcap_services, m2ee):
             azure_storage = vcap_services[key][0]
 
     if azure_storage:
-        if m2ee.config.get_runtime_version() < 6.7:
+        if runtime.get_runtime_version() < 6.7:
             logging.warning(
                 "Can not configure Azure Storage with Mendix < 6.7"
             )
@@ -289,13 +291,13 @@ def _get_azure_storage_specific_config(vcap_services, m2ee):
 def get_config(m2ee):
     vcap_services = util.get_vcap_services_data()
 
-    config = _get_s3_specific_config(vcap_services, m2ee)
+    config = _get_s3_specific_config(vcap_services)
 
     if config is None:
-        config = _get_swift_specific_config(vcap_services, m2ee)
+        config = _get_swift_specific_config(vcap_services)
 
     if config is None:
-        config = _get_azure_storage_specific_config(vcap_services, m2ee)
+        config = _get_azure_storage_specific_config(vcap_services)
 
     if config is None:
         logging.warning(

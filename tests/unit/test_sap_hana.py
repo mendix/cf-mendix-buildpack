@@ -1,6 +1,7 @@
 import json
 import os
 import urllib.parse
+from unittest import TestCase
 
 from buildpack.infrastructure.database import (
     DatabaseConfigurationFactory,
@@ -12,7 +13,7 @@ from buildpack.infrastructure.database import (
 # export PYTHONPATH=<buildpack-root>/lib
 
 
-class TestCaseSapHanaDryRun:
+class TestCaseSapHanaDryRun(TestCase):
 
     sap_hana_vcap_example = """
 {

@@ -122,7 +122,7 @@ if __name__ == "__main__":
         format="%(levelname)s: %(message)s",
     )
 
-    runtime_version = runtime.get_version(BUILD_DIR)
+    runtime_version = runtime.get_runtime_version(BUILD_DIR)
 
     try:
         preflight_check(runtime_version)
