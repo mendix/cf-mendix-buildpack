@@ -204,6 +204,9 @@ class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
         self.interval = interval
         self.m2ee = m2ee
         self.db = None
+        self.micrometer_metrics_enabled = micrometer_metrics_enabled(
+            m2ee.config.get_runtime_version()
+        )
         if bypass_loggregator():
             logging.info("Metrics are logged direct to metrics server.")
             self.emitter = MetricsServerEmitter(metrics_url=get_metrics_url())
@@ -327,15 +330,23 @@ class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
             m2ee_stats = munin.augment_and_fix_stats(
                 m2ee_stats, self.m2ee.runner.get_pid(), java_version
             )
-
-            critical_logs_count = len(
-                self.m2ee.client.get_critical_log_messages()
-            )
-            m2ee_stats["critical_logs_count"] = critical_logs_count
             self._sanity_check_m2ee_stats(m2ee_stats)
             stats["mendix_runtime"] = m2ee_stats
         except Exception:
             logging.debug("Unable to get metrics from runtime")
+        finally:
+            return stats
+
+    def _inject_critical_log_stats(self, stats):
+        m2ee_stats = {}
+        try:
+            critical_logs_count = len(
+                self.m2ee.client.get_critical_log_messages()
+            )
+            m2ee_stats["critical_logs_count"] = critical_logs_count
+            stats["mendix_runtime"] = m2ee_stats
+        except Exception:
+            logging.debug("Unable to get critical log count from runtime")
         finally:
             return stats
 
@@ -556,7 +567,10 @@ class PaidAppsMetricsEmitterThread(BaseMetricsEmitterThread):
                 self._inject_storage_stats,
                 self._inject_health,
             ]
-        selected_stats.append(self._inject_m2ee_stats)
+
+        if not self.micrometer_metrics_enabled:
+            selected_stats.append(self._inject_m2ee_stats)
+        selected_stats.append(self._inject_critical_log_stats)
         return selected_stats
 
     def _gather_metrics(self):
@@ -613,7 +627,9 @@ class FreeAppsMetricsEmitterThread(BaseMetricsEmitterThread):
 
     @property
     def _select_stats_to_emit(self):
-        return [self._inject_user_session_metrics]
+        if not self.micrometer_metrics_enabled:
+            return [self._inject_user_session_metrics]
+        return []
 
     def _gather_metrics(self):
         stats = {}
