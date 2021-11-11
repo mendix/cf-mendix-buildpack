@@ -8,12 +8,10 @@
 # - Telegraf: PostgreSQL metrics, replicating the Datadog metric names
 # - Telegraf: Database diskstorage size metric
 
-import glob
 import json
 import logging
 import os
 import socket
-import stat
 import subprocess
 from collections import OrderedDict
 from distutils.util import strtobool
@@ -512,46 +510,25 @@ def update_config(
     )
 
 
-def _download(build_path, cache_dir):
-    util.download_and_unpack(
+def _download(buildpack_dir, build_path, cache_dir):
+    util.resolve_dependency(
         util.get_blobstore_url(
             "{}/{}".format(SIDECAR_URL_ROOT, SIDECAR_ARTIFACT_NAME)
         ),
         os.path.join(build_path, NAMESPACE),
+        buildpack_dir=buildpack_dir,
         cache_dir=cache_dir,
         alias="cf-datadog-sidecar",  # Removes the old sidecar if present
     )
-    util.download_and_unpack(
+    util.resolve_dependency(
         util.get_blobstore_url(
             "{}/{}".format(JAVA_AGENT_URL_ROOT, JAVA_AGENT_ARTIFACT_NAME)
         ),
         os.path.join(build_path, NAMESPACE),
+        buildpack_dir=buildpack_dir,
         cache_dir=cache_dir,
         unpack=False,
     )
-
-
-def _set_executable(glob_files):
-    files = glob.glob(glob_files)
-    for f in files:
-        if not os.access(f, os.X_OK):
-            logging.debug(
-                "Setting executable permissions for [{}]...".format(f)
-            )
-            try:
-                os.chmod(
-                    f,
-                    os.stat(f).st_mode
-                    | stat.S_IXUSR
-                    | stat.S_IXGRP
-                    | stat.S_IXOTH,
-                )
-            except PermissionError as err:
-                logging.exception(
-                    "Cannot set executable permissions for [{}]".format(f), err
-                )
-        else:
-            logging.debug("[{}] is already executable, skipping".format(f))
 
 
 def _patch_run_datadog_script(script_dir):
@@ -584,10 +561,10 @@ def stage(buildpack_path, build_path, cache_path):
         return
 
     logging.debug("Staging Datadog...")
-    _download(build_path, cache_path)
+    _download(buildpack_path, build_path, cache_path)
 
     logging.debug("Setting Datadog Agent script permissions if required...")
-    _set_executable("{}/*.sh".format(_get_agent_dir(build_path)))
+    util.set_executable("{}/*.sh".format(_get_agent_dir(build_path)))
 
     logging.debug("Patching run-datadog.sh...")
     _patch_run_datadog_script(_get_agent_dir(build_path))
@@ -605,7 +582,7 @@ def run(model_version, runtime_version):
         return
 
     logging.debug("Setting Datadog Agent script permissions if required...")
-    _set_executable("{}/*.sh".format(_get_agent_dir()))
+    util.set_executable("{}/*.sh".format(_get_agent_dir()))
 
     # Start the run script "borrowed" from the official DD buildpack
     # and include settings as environment variables

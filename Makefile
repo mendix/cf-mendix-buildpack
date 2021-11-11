@@ -10,10 +10,14 @@ PYTHON_PLATFORM := $(if $(PYTHON_PLATFORM),$(PYTHON_PLATFORM),manylinux2014_x86_
 PYTHON_VERSION := $(if $(PYTHON_VERSION),$(PYTHON_VERSION),36)
 
 .PHONY: vendor
-vendor: download_wheels
+vendor: create_build_dirs copy_vendored_dependencies download_wheels
+
+.PHONY: copy_vendored_dependencies
+copy_vendored_dependencies:
+	cp -rf vendor build/
 
 .PHONY: download_wheels
-download_wheels: requirements create_build_dirs
+download_wheels: requirements
 	rm -rf build/vendor/wheels
 	mkdir -p build/vendor/wheels
 	pip3 download -d build/vendor/wheels/ --only-binary :all: pip==${PIP_VERSION} setuptools wheel

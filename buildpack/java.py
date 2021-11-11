@@ -17,7 +17,7 @@ def stage(buildpack_path, cache_path, local_path, java_version):
     # Download Java
     util.mkdir_p(os.path.join(local_path, "bin"))
     jvm_location = ensure_and_get_jvm(
-        java_version, cache_path, local_path, package="jre"
+        java_version, buildpack_path, cache_path, local_path, package="jre"
     )
 
     # Create a symlink in .local/bin/java
@@ -36,12 +36,13 @@ def stage(buildpack_path, cache_path, local_path, java_version):
     # we still also have to deal with Oracle JREs / JDKs for now.
     # When we retire support for Mendix 6,
     # we should reconsider importing these certificates ourselves.
-    util.download_and_unpack(
+    util.resolve_dependency(
         util.get_blobstore_url(
             "/mx-buildpack/java-keyutil/{}".format(KEYUTIL_JAR)
         ),
         None,
-        cache_path,
+        buildpack_dir=buildpack_path,
+        cache_dir=cache_path,
     )
 
     _update_java_cacert(cache_path, jvm_location)
@@ -70,7 +71,7 @@ def _compose_jre_url_path(jdk):
 
 
 def ensure_and_get_jvm(
-    java_version, cache_dir, dot_local_location, package="jdk"
+    java_version, buildpack_dir, cache_dir, dot_local_location, package="jdk"
 ):
 
     jdk = determine_jdk(java_version, package)
@@ -83,10 +84,12 @@ def ensure_and_get_jvm(
                 package.upper()
             )
         )
-        util.download_and_unpack(
+        util.resolve_dependency(
             util.get_blobstore_url(_compose_jre_url_path(jdk)),
             os.path.join(dot_local_location, jdk_dir),
-            cache_dir,
+            buildpack_dir=buildpack_dir,
+            cache_dir=cache_dir,
+            unpack_strip_directories=True,
         )
         logging.debug("Java {} installed".format(package.upper()))
     else:

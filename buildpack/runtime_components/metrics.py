@@ -19,9 +19,6 @@ from buildpack.runtime_components import database
 from lib.m2ee import munin
 from lib.m2ee.version import MXVersion
 
-BUILDPACK_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-sys.path.insert(0, os.path.join(BUILDPACK_DIR, "lib"))
-
 # Runtime configuration for influx registry
 # This enables the new stream of metrics coming from micrometer instead
 # of the admin port.

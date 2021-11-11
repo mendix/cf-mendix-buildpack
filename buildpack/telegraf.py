@@ -194,13 +194,14 @@ def stage(buildpack_path, build_path, cache_dir, runtime_version):
         return
 
     logging.debug("Staging the Telegraf metrics agent...")
-    util.download_and_unpack(
+    util.resolve_dependency(
         util.get_blobstore_url(
             "/mx-buildpack/telegraf/telegraf-{}_linux_amd64.tar.gz".format(
                 VERSION
             )
         ),
         os.path.join(build_path, NAMESPACE),
+        buildpack_dir=buildpack_path,
         cache_dir=cache_dir,
     )
 

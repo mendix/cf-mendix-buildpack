@@ -6,26 +6,38 @@ import shutil
 import subprocess
 import zipfile
 
-from buildpack import java, mono, util
-from buildpack.util import NotFoundException
-
+from buildpack import java, mono, runtime, util
 
 BUILD_ERRORS_JSON = "/tmp/builderrors.json"
 
 
 def build_from_source(
-    build_path, cache_path, local_path, runtime_version, java_version
+    buildpack_path,
+    build_path,
+    cache_path,
+    local_path,
+    runtime_version,
+    java_version,
 ):
     logging.info("Building from source...")
 
-    mono_location = mono.ensure_and_get_mono(runtime_version, cache_path)
+    mono_location = mono.ensure_and_get_mono(
+        runtime_version, buildpack_path, cache_path
+    )
     mono_env = mono.get_env_with_monolib(mono_location)
 
     mxbuild_location = os.path.join(local_path, "mxbuild")
-    _ensure_mxbuild_in_directory(mxbuild_location, runtime_version, cache_path)
+    runtime.resolve_runtime_dependency(
+        buildpack_path,
+        build_path,
+        cache_path,
+        destination=mxbuild_location,
+        prefix="mxbuild",
+        forced_env_key="FORCED_MXBUILD_URL",
+    )
 
     jdk_location = java.ensure_and_get_jvm(
-        java_version, cache_path, local_path
+        java_version, buildpack_path, cache_path, local_path
     )
 
     util.lazy_remove_file(BUILD_ERRORS_JSON)
@@ -108,76 +120,3 @@ def _log_buildstatus_errors(error_file):
         logging.exception("Could not read MxBuild error file\n%s", input_str)
         builddata = json.dumps(generic_build_failure)
     logging.error("MxBuild returned errors: %s", builddata)
-
-
-def _checkout_from_git_rootfs(directory, mx_version):
-    mendix_runtimes_path = "/usr/local/share/mendix-runtimes.git"
-    if not os.path.isdir(mendix_runtimes_path):
-        raise NotFoundException()
-
-    env = dict(os.environ)
-    env["GIT_WORK_TREE"] = directory
-
-    # checkout the runtime version
-    try:
-        subprocess.check_call(
-            ("git", "checkout", str(mx_version), "-f"),
-            cwd=mendix_runtimes_path,
-            env=env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        return
-    except Exception:
-        try:
-            subprocess.check_call(
-                (
-                    "git",
-                    "fetch",
-                    "origin",
-                    "refs/tags/{0}:refs/tags/{0}".format(str(mx_version)),
-                ),
-                cwd=mendix_runtimes_path,
-                env=env,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-            subprocess.check_call(
-                ("git", "checkout", str(mx_version), "-f"),
-                cwd=mendix_runtimes_path,
-                env=env,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-            logging.debug("Found mx version after updating runtimes.git")
-            return
-        except Exception:
-            logging.debug("Tried updating git repo, also failed")
-    raise NotFoundException(
-        "Could not download MxBuild "
-        + str(mx_version)
-        + " from updated git repo"
-    )
-
-
-def _ensure_mxbuild_in_directory(directory, mx_version, cache_dir):
-    if os.path.isdir(os.path.join(directory, "modeler")):
-        return
-    util.mkdir_p(directory)
-
-    url = os.environ.get("FORCED_MXBUILD_URL")
-    if url:
-        # don"t ever cache with a FORCED_MXBUILD_URL
-        util.download_and_unpack(url, directory, cache_dir="/tmp/downloads")
-    else:
-        try:
-            _checkout_from_git_rootfs(directory, mx_version)
-        except NotFoundException as e:
-            logging.debug(str(e))
-            util.download_and_unpack(
-                util.get_blobstore_url(
-                    "/runtime/mxbuild-%s.tar.gz" % str(mx_version)
-                ),
-                directory,
-                cache_dir=cache_dir,
-            )

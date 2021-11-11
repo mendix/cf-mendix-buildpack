@@ -27,11 +27,12 @@ def _get_destination_dir(dot_local=ROOT_DIR):
 
 def stage(buildpack_dir, install_dir, cache_dir, runtime_version):
     if is_enabled(runtime_version):
-        util.download_and_unpack(
+        util.resolve_dependency(
             util.get_blobstore_url(
                 "/mx-buildpack/{}/{}".format(NAMESPACE, ARTIFACT)
             ),
             _get_destination_dir(install_dir),
+            buildpack_dir=buildpack_dir,
             cache_dir=cache_dir,
             unpack=False,
         )

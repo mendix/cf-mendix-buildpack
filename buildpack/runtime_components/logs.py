@@ -8,6 +8,8 @@ import time
 
 from buildpack import util
 
+NAMESPACE = ARTIFACT = "mendix-logfilter"
+
 
 class LoggingHeartbeatEmitterThread(threading.Thread):
     def __init__(self, interval):
@@ -37,13 +39,11 @@ class LogFilterThread(threading.Thread):
             while True:
                 proc = subprocess.Popen(
                     [
-                        str(
-                            os.path.abspath(
-                                os.path.join(
-                                    ".local",
-                                    "mendix-logfilter",
-                                    "mendix-logfilter",
-                                )
+                        os.path.abspath(
+                            os.path.join(
+                                ".local",
+                                NAMESPACE,
+                                ARTIFACT,
                             )
                         ),
                         "-r",
@@ -54,7 +54,7 @@ class LogFilterThread(threading.Thread):
                 )
                 proc.wait()
                 logging.warning(
-                    "MENDIX LOGGING: Mendix logfilter crashed with return code "
+                    "MENDIX LOGGING: Mendix log filter crashed with return code "
                     "%s. This is nothing to worry about, we are restarting the "
                     "logfilter now.",
                     proc.returncode,
@@ -110,9 +110,15 @@ def run():
     thread.start()
 
 
-def stage(buildpack_dir, build_dir):
+def stage(buildpack_dir, build_dir, cache_dir):
     logging.debug("Staging logging runtime component...")
-    shutil.copytree(
-        os.path.join(buildpack_dir, "vendor", "mendix-logfilter"),
-        os.path.join(build_dir, ".local", "mendix-logfilter"),
+    NAMESPACE = ARTIFACT = "mendix-logfilter"
+    util.resolve_dependency(
+        util.get_blobstore_url(
+            "/mx-buildpack/{}/{}".format(NAMESPACE, ARTIFACT)
+        ),
+        os.path.join(build_dir, ".local", NAMESPACE),
+        buildpack_dir=buildpack_dir,
+        cache_dir=cache_dir,
+        unpack=False,
     )

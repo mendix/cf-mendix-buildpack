@@ -52,15 +52,14 @@ def is_version_end_of_support(version):
     return False
 
 
-def _get_runtime_url(blobstore, build_path):
+def _get_runtime_dependency_url(blobstore, build_path, prefix="mendix"):
     return util.get_blobstore_url(
-        "/runtime/mendix-{}.tar.gz".format(str(get_version(build_path))),
+        "/runtime/{}-{}.tar.gz".format(prefix, get_version(build_path)),
         blobstore=blobstore,
     )
 
 
 def stage(buildpack_dir, build_path, cache_path):
-
     logging.debug("Creating directory structure for Mendix runtime...")
     for name in ["runtimes", "log", "database", "data", "bin", ".postgresql"]:
         util.mkdir_p(os.path.join(build_path, name))
@@ -69,38 +68,40 @@ def stage(buildpack_dir, build_path, cache_path):
 
     logging.debug("Staging required components for Mendix runtime...")
     database.stage(buildpack_dir, build_path)
-    logs.stage(buildpack_dir, build_path)
+    logs.stage(buildpack_dir, build_path, cache_path)
 
     logging.debug("Staging the Mendix runtime...")
     shutil.copy(
         os.path.join(buildpack_dir, "etc", "m2ee", "m2ee.yaml"),
         os.path.join(build_path, ".local", "m2ee.yaml"),
     )
+    resolve_runtime_dependency(buildpack_dir, build_path, cache_path)
 
-    git_repo_found = os.path.isdir("/usr/local/share/mendix-runtimes.git")
 
-    if git_repo_found and not os.environ.get("FORCED_MXRUNTIME_URL"):
-        logging.debug(
-            "Root file system with built-in Mendix runtimes detected, skipping Mendix runtime download"
-        )
-        return
-
-    forced_url = os.environ.get("FORCED_MXRUNTIME_URL")
-    url = None
-    if forced_url is not None:
-        cache_dir = "/tmp/downloads"
-        if not forced_url.endswith(".tar.gz"):
+def resolve_runtime_dependency(
+    buildpack_dir,
+    build_dir,
+    cache_dir,
+    destination=None,
+    prefix="mendix",
+    forced_env_key="FORCED_MXRUNTIME_URL",
+):
+    url = os.environ.get(forced_env_key, util.get_blobstore())
+    if util.is_url(url):
+        if not url.endswith(".tar.gz"):
             # Assume that the forced URL points to a blobstore root
-            url = _get_runtime_url(forced_url, build_path)
-        else:
-            url = forced_url
+            url = _get_runtime_dependency_url(url, build_dir, prefix)
     else:
-        cache_dir = cache_path
-        url = _get_runtime_url(util.get_blobstore(), build_path)
+        raise ValueError("Invalid {} set: {}".format(forced_env_key, url))
 
-    logging.debug("Downloading Mendix runtime...")
-    util.download_and_unpack(
-        url, os.path.join(build_path, "runtimes"), cache_dir=cache_dir
+    if not destination:
+        destination = os.path.join(build_dir, "runtimes")
+    util.resolve_dependency(
+        url,
+        destination,
+        buildpack_dir=buildpack_dir,
+        cache_dir=cache_dir,
+        ignore_cache=forced_env_key in os.environ,
     )
 
 
@@ -654,79 +655,13 @@ def setup(vcap_data):
         },
     )
 
-    version = client.config.get_runtime_version()
-
-    mendix_runtimes_path = "/usr/local/share/mendix-runtimes.git"
-    mendix_runtime_version_path = os.path.join(
-        os.getcwd(), "runtimes", str(version)
-    )
-    if os.path.isdir(mendix_runtimes_path) and not os.path.isdir(
-        mendix_runtime_version_path
-    ):
-        util.mkdir_p(mendix_runtime_version_path)
-        env = dict(os.environ)
-        env["GIT_WORK_TREE"] = mendix_runtime_version_path
-
-        # checkout the runtime version
-        process = subprocess.Popen(
-            ["git", "checkout", str(version), "-f"],
-            cwd=mendix_runtimes_path,
-            env=env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        process.communicate()
-        if process.returncode != 0:
-            logging.info(
-                "Mendix [%s] is not available in the root file system", version
-            )
-            logging.info(
-                "Fallback (1): trying to fetch Mendix [%s] using git...",
-                version,
-            )
-            process = subprocess.Popen(
-                [
-                    "git",
-                    "fetch",
-                    "origin",
-                    "refs/tags/{0}:refs/tags/{0}".format(str(version)),
-                    "&&",
-                    "git",
-                    "checkout",
-                    str(version),
-                    "-f",
-                ],
-                cwd=mendix_runtimes_path,
-                env=env,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-            process.communicate()
-            if process.returncode != 0:
-                logging.info(
-                    "Unable to fetch Mendix [{}] using git".format(version)
-                )
-                url = util.get_blobstore_url(
-                    "/runtime/mendix-%s.tar.gz" % str(version)
-                )
-                logging.info(
-                    "Fallback (2): downloading Mendix [{}] from [{}]...".format(
-                        version, url
-                    )
-                )
-                util.download_and_unpack(
-                    url, os.path.join(os.getcwd(), "runtimes")
-                )
-
-        client.reload_config()
     _set_runtime_config(
         client.config._model_metadata,
         client.config._conf["mxruntime"],
         vcap_data,
         client,
     )
-
     _set_application_name(client, vcap_data["application_name"])
-
     _set_jetty_config(client)
+
     return client

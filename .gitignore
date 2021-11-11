@@ -237,8 +237,12 @@ dmypy.json
 requirements-**.txt
 
 .vscode
+*.env
 .local
 mxbuild/
 .noseids
 source.tar
 .commit
+
+vendor/
+!vendor/mendix-logfilter/mendix-logfilter

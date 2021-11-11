@@ -6,16 +6,17 @@ from buildpack import util
 APPDYNAMICS_VERSION = "21.9.0.33073"
 
 
-def stage(destination_path, cache_path):
+def stage(buildpack_dir, destination_path, cache_path):
     if appdynamics_used():
-        util.download_and_unpack(
+        util.resolve_dependency(
             util.get_blobstore_url(
                 "/mx-buildpack/appdynamics/appdynamics-agent-1.8-{}.zip".format(
                     APPDYNAMICS_VERSION
                 )
             ),
             destination_path,  # DOT_LOCAL_LOCATION,
-            cache_path,  # CACHE_DIR,
+            buildpack_dir=buildpack_dir,
+            cache_dir=cache_path,  # CACHE_DIR,
         )
 
 

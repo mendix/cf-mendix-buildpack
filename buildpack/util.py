@@ -5,7 +5,9 @@ import logging
 import os
 import re
 import shutil
+import stat
 import subprocess
+import urllib
 
 import requests
 
@@ -87,27 +89,61 @@ def _delete_other_versions(directory, file_name, alias=None):
                 os.remove(f)
 
 
-def download_and_unpack(
-    url, destination, cache_dir="/tmp/downloads", unpack=True, alias=None
+def _find_file_in_directory(file_name, directory):
+    paths = [
+        a
+        for a in [
+            os.path.abspath(p)
+            for p in glob.glob(
+                "{}/**/{}".format(directory, file_name), recursive=True
+            )
+        ]
+        if os.path.isfile(a)
+    ]
+
+    if len(paths) > 0:
+        return paths[0]
+    return None
+
+
+def resolve_dependency(
+    url,
+    destination,
+    buildpack_dir,
+    cache_dir="/tmp/downloads",
+    ignore_cache=False,
+    unpack=True,
+    unpack_strip_directories=False,
+    alias=None,
 ):
     file_name = url.split("/")[-1]
-    mkdir_p(cache_dir)
-    cached_location = os.path.join(cache_dir, file_name)
 
+    mkdir_p(cache_dir)
     _delete_other_versions(cache_dir, file_name, alias)
 
+    vendor_dir = os.path.join(buildpack_dir, "vendor")
     logging.debug(
-        "Looking for [{cached_location}] in cache...".format(
-            cached_location=cached_location
+        "Looking for [{}] in [{}] and [{}]...".format(
+            file_name, vendor_dir, cache_dir
         )
     )
 
-    if not os.path.isfile(cached_location):
-        download(url, cached_location)
+    vendored_location = _find_file_in_directory(file_name, vendor_dir)
+    cached_location = os.path.join(cache_dir, file_name)
+    if not is_path_accessible(vendored_location):
+        if ignore_cache or not is_path_accessible(cached_location):
+            download(url, cached_location)
+        else:
+            logging.debug(
+                "Found dependency in cache, not downloading [{}]".format(
+                    cached_location
+                )
+            )
     else:
+        shutil.copy(vendored_location, cached_location)
         logging.debug(
-            "Found in cache, not downloading [{cached_location}]".format(
-                cached_location=cached_location
+            "Found vendored dependency, not downloading [{}]".format(
+                vendored_location
             )
         )
     if destination:
@@ -115,8 +151,8 @@ def download_and_unpack(
         if unpack:
             # Unpack the artifact
             logging.debug(
-                "Extracting [{cached_location}] to [{dest}]...".format(
-                    cached_location=cached_location, dest=destination
+                "Extracting [{}] to [{}]...".format(
+                    cached_location, destination
                 )
             )
             if (
@@ -125,9 +161,7 @@ def download_and_unpack(
                 or file_name.endswith(".tar")
             ):
                 unpack_cmd = ["tar", "xf", cached_location, "-C", destination]
-                if file_name.startswith(
-                    ("mono-", "jdk-", "jre-", "AdoptOpenJDK-")
-                ):
+                if unpack_strip_directories:
                     unpack_cmd.extend(("--strip", "1"))
             else:
                 unpack_cmd = [
@@ -144,18 +178,13 @@ def download_and_unpack(
         else:
             # Copy the artifact, don't unpack
             logging.debug(
-                "Copying [{cached_location}] to [{dest}]...".format(
-                    cached_location=cached_location, dest=destination
-                )
+                "Copying [{}] to [{}]...".format(cached_location, destination)
             )
-            shutil.copyfile(
-                cached_location, os.path.join(destination, file_name)
-            )
+            shutil.copy(cached_location, os.path.join(destination, file_name))
 
         logging.debug(
-            "Dependency [{file_name}] is now present at [{destination}]".format(
-                file_name=file_name,
-                destination=destination,
+            "Dependency [{}] is now present at [{}]".format(
+                file_name, destination
             )
         )
 
@@ -279,3 +308,45 @@ def get_tags():
                 )
             )
     return result
+
+
+def is_url(url):
+    try:
+        result = urllib.parse.urlparse(url)
+        return all([result.scheme, result.netloc])
+    except ValueError:
+        return False
+
+
+def is_path_accessible(path, mode=os.R_OK):
+    return (
+        path
+        and os.path.exists(path)
+        and os.access(os.path.dirname(path), mode)
+    )
+
+
+def set_executable(path_or_glob):
+    if is_path_accessible(path_or_glob, mode=os.W_OK):
+        files = [path_or_glob]
+    else:
+        files = glob.glob(path_or_glob)
+    for f in files:
+        if not os.access(f, os.X_OK):
+            logging.debug(
+                "Setting executable permissions for [{}]...".format(f)
+            )
+            try:
+                os.chmod(
+                    f,
+                    os.stat(f).st_mode
+                    | stat.S_IXUSR
+                    | stat.S_IXGRP
+                    | stat.S_IXOTH,
+                )
+            except PermissionError as err:
+                logging.exception(
+                    "Cannot set executable permissions for [{}]".format(f), err
+                )
+        else:
+            logging.debug("[{}] is already executable, skipping".format(f))
