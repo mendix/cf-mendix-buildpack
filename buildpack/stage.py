@@ -21,12 +21,14 @@ from buildpack import (
 )
 from buildpack.runtime_components import database
 
-BUILDPACK_DIR = os.path.dirname(
-    os.path.dirname(os.path.join(os.path.dirname(__file__), ".."))
+BUILDPACK_DIR = os.path.abspath(
+    os.path.dirname(
+        os.path.dirname(os.path.join(os.path.dirname(__file__), ".."))
+    )
 )
-BUILD_DIR = sys.argv[1]
-CACHE_DIR = os.path.join(sys.argv[2], "bust")
-DOT_LOCAL_LOCATION = os.path.join(BUILD_DIR, ".local")
+BUILD_DIR = os.path.abspath(sys.argv[1])
+CACHE_DIR = os.path.abspath(os.path.join(sys.argv[2], "bust"))
+DOT_LOCAL_LOCATION = os.path.abspath(os.path.join(BUILD_DIR, ".local"))
 
 SUPPORTED_STACKS = [
     "cflinuxfs3",
@@ -134,6 +136,7 @@ if __name__ == "__main__":
     if is_source_push():
         try:
             mxbuild.build_from_source(
+                BUILDPACK_DIR,
                 BUILD_DIR,
                 CACHE_DIR,
                 DOT_LOCAL_LOCATION,
@@ -152,9 +155,9 @@ if __name__ == "__main__":
         DOT_LOCAL_LOCATION,
         runtime.get_java_version(runtime_version),
     )
-    appdynamics.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
-    dynatrace.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
-    newrelic.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
+    appdynamics.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)
+    dynatrace.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)
+    newrelic.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)
     mx_java_agent.stage(
         BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR, runtime_version
     )
@@ -164,6 +167,6 @@ if __name__ == "__main__":
     datadog.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)
     metering.stage(BUILDPACK_DIR, BUILD_DIR, CACHE_DIR)
     runtime.stage(BUILDPACK_DIR, BUILD_DIR, CACHE_DIR)
-    databroker.stage(DOT_LOCAL_LOCATION, CACHE_DIR)
+    databroker.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)
     nginx.stage(BUILDPACK_DIR, BUILD_DIR, CACHE_DIR)
     logging.info("Mendix Cloud Foundry Buildpack staging completed")

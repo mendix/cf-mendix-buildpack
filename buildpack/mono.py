@@ -67,7 +67,7 @@ def _compose_mono_url_path(mono_version):
     )
 
 
-def ensure_and_get_mono(mx_version, cache_dir):
+def ensure_and_get_mono(mx_version, buildpack_dir, cache_dir):
     logging.debug("Ensuring Mono for Mendix %s", mx_version)
     mono_version = _detect_mono_version(mx_version)
     fallback_location = "/tmp/opt"
@@ -76,10 +76,12 @@ def ensure_and_get_mono(mx_version, cache_dir):
         mono_version == "mono-3.10.0"
         and platform.linux_distribution()[2].lower() == "bionic"
     ):
-        util.download_and_unpack(
+        util.resolve_dependency(
             util.get_blobstore_url(_compose_mono_url_path(mono_version)),
             os.path.join(fallback_location, "store"),
-            cache_dir,
+            buildpack_dir=buildpack_dir,
+            cache_dir=cache_dir,
+            unpack_strip_directories=True,
         )
         mono_subpath = glob.glob("/tmp/opt/store/*-mono-env-3.10.0")
         mono_location = "/tmp/opt/mono-3.10.0"
@@ -102,10 +104,12 @@ def ensure_and_get_mono(mx_version, cache_dir):
             mono_location = _get_mono_path("/tmp/opt", mono_version)
         except NotFoundException:
             logging.debug("Mono not found in default locations")
-            util.download_and_unpack(
+            util.resolve_dependency(
                 util.get_blobstore_url(_compose_mono_url_path(mono_version)),
                 os.path.join(fallback_location, mono_version),
-                cache_dir,
+                buildpack_dir=buildpack_dir,
+                cache_dir=cache_dir,
+                unpack_strip_directories=True,
             )
             mono_location = _get_mono_path(fallback_location, mono_version)
         logging.debug(

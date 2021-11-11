@@ -53,7 +53,7 @@ PDR_STREAMS_JAR = os.path.join(
 )
 
 
-def _download_pkgs(install_path, cache_dir):
+def _download_pkgs(buildpack_dir, install_path, cache_dir):
     # Download producer streams artifact
     PDR_STREAMS_DOWNLOAD_URL = "{}{}-{}.{}".format(
         BASE_URL,
@@ -61,15 +61,16 @@ def _download_pkgs(install_path, cache_dir):
         get_pdr_stream_version(),
         TAR_EXT,
     )
-    util.download_and_unpack(
+    util.resolve_dependency(
         util.get_blobstore_url(PDR_STREAMS_DOWNLOAD_URL),
         os.path.join(install_path, PDR_STREAMS_DIR),
+        buildpack_dir=buildpack_dir,
         cache_dir=cache_dir,
     )
 
 
-def stage(install_path, cache_dir):
-    _download_pkgs(install_path, cache_dir)
+def stage(buildpack_dir, install_path, cache_dir):
+    _download_pkgs(buildpack_dir, install_path, cache_dir)
 
 
 def setup_configs(complete_conf):

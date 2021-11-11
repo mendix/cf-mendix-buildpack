@@ -78,3 +78,29 @@ class TestUtil(unittest.TestCase):
         ng_versions = ["1.15.10-linux-x64-cflinuxfs2-6247377a.tgz"]
 
         assert self._test_delete_old_versions(ng_prefix, ng_versions, 0, {})
+
+    def test_find_file_in_directory(self):
+        temp_dir = tempfile.TemporaryDirectory()
+
+        file_names = [
+            "dependency1.zip",
+            "a/dependency2.zip",
+            "a/b/dependency3.zip",
+            "dependency4.zip/dependency4.zip",
+        ]
+        files = [os.path.join(temp_dir.name, f) for f in file_names]
+        for f in files:
+            util.mkdir_p(os.path.dirname(f))
+            open(f, "a").close()
+
+        for f in file_names:
+            result = util._find_file_in_directory(
+                os.path.basename(f), temp_dir.name
+            )
+            assert (
+                result
+                and util.is_path_accessible(result)
+                and os.path.isfile(result)
+            )
+
+        temp_dir.cleanup()
