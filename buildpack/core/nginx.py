@@ -92,7 +92,7 @@ def stage(buildpack_path, build_path, cache_path):
         )
 
 
-def configure(m2ee):
+def update_config():
     samesite_cookie_workaround_enabled = (
         _is_samesite_cookie_workaround_enabled(runtime.get_runtime_version())
     )

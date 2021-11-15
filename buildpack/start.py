@@ -152,7 +152,7 @@ if __name__ == "__main__":
             extra_jmx_instance_config=databroker_jmx_instance_cfg,
             jmx_config_files=databroker_jmx_config_files,
         )
-        nginx.configure(m2ee)
+        nginx.update_config()
         databroker.update_config(m2ee)
         databroker.business_events.update_config(
             m2ee, util.get_vcap_services_data()
