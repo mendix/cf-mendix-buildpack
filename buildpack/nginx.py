@@ -13,7 +13,7 @@ from lib.m2ee.version import MXVersion
 
 from jinja2 import Template
 
-DEFAULT_HEADERS = {
+ALLOWED_HEADERS = {
     "X-Frame-Options": r"(?i)(^allow-from https?://([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*(:\d+)?$|^deny$|^sameorigin$)",  # noqa: E501
     "Referrer-Policy": r"(?i)(^no-referrer$|^no-referrer-when-downgrade$|^origin|origin-when-cross-origin$|^same-origin|strict-origin$|^strict-origin-when-cross-origin$|^unsafe-url$)",  # noqa: E501
     "Access-Control-Allow-Origin": r"(?i)(^\*$|^null$|^https?://([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*(:\d+)?$)",  # noqa: E501
@@ -176,7 +176,7 @@ def _get_http_headers():
 
     result = []
     for header_key, header_value in headers_from_json.items():
-        regEx = DEFAULT_HEADERS[header_key]
+        regEx = ALLOWED_HEADERS[header_key]
         if regEx and re.match(regEx, header_value):
             escaped_value = header_value.replace('"', '\\"').replace(
                 "'", "\\'"
