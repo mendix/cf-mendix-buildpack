@@ -90,6 +90,21 @@ class TestCaseCustomHeaderConfig(unittest.TestCase):
             header_config,
         )
 
+    def test_valid_header_contentSecurity_sha(self):
+        base64_src = r"default-src 'self'; style-src 'self' 'sha256-aBc/dEf='; script-src 'self' 'unsafe-eval' 'sha256-aBc+dEf=';"
+
+        os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps(
+            {"Content-Security-Policy": base64_src}
+        )
+        header_config = nginx._get_http_headers()
+        self.assertIn(
+            (
+                "Content-Security-Policy",
+                base64_src.replace("'", "\\'"),
+            ),
+            header_config,
+        )
+
     def test_invalid_header_contentSecurity(self):
         os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps(
             {
