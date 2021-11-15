@@ -528,8 +528,19 @@ class SapHanaDatabaseConfiguration(DatabaseConfiguration):
 
 
 def stage(buildpack_dir, build_dir):
-    logging.debug("Staging database runtime component...")
+    logging.debug("Staging database...")
+    util.mkdir_p(os.path.join(build_dir, ".postgresql"))
     shutil.copy(
         os.path.join(buildpack_dir, "etc", "amazon-rds-ca.pem"),
         os.path.join(build_dir, ".postgresql", "amazon-rds-ca.pem"),
     )
+
+
+def update_config(m2ee):
+    # db configuration might be None, database should then be set up with
+    # MXRUNTIME_Database... custom runtime settings.
+    runtime_db_config = get_config()
+    if runtime_db_config:
+        util.upsert_custom_runtime_settings(
+            m2ee, runtime_db_config, overwrite=True, append=True
+        )

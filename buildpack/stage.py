@@ -163,6 +163,7 @@ if __name__ == "__main__":
     )
     datadog.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)
     metering.stage(BUILDPACK_DIR, BUILD_DIR, CACHE_DIR)
+    database.stage(BUILDPACK_DIR, BUILD_DIR)
     runtime.stage(BUILDPACK_DIR, BUILD_DIR, CACHE_DIR)
     logs.stage(BUILDPACK_DIR, BUILD_DIR, CACHE_DIR)
     databroker.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)

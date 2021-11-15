@@ -9,6 +9,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from buildpack import databroker, util
 from buildpack.core import java, nginx, runtime
+from buildpack.infrastructure import database, storage
 from buildpack.telemetry import (
     appdynamics,
     datadog,
@@ -128,6 +129,8 @@ if __name__ == "__main__":
         model_version = runtime.get_model_version()
 
         # Update runtime configuration based on component configuration
+        database.update_config(m2ee)
+        storage.update_config(m2ee)
         java.update_config(m2ee, util.get_vcap_data(), java_version)
         newrelic.update_config(m2ee, util.get_vcap_data()["application_name"])
         appdynamics.update_config(
@@ -167,7 +170,7 @@ if __name__ == "__main__":
         # Wait for the runtime to be ready before starting Databroker
         if databroker.is_enabled():
             runtime.await_database_ready(m2ee)
-            databroker_processes.run(runtime.database.get_config())
+            databroker_processes.run(database.get_config())
     except RuntimeError as re:
         # Only the runtime throws RuntimeErrors (no pun intended)
         # Don't use the stack trace for these

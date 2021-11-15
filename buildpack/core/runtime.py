@@ -10,7 +10,6 @@ import time
 
 import backoff
 from buildpack import util
-from buildpack.infrastructure import database, storage
 from lib.m2ee import M2EE as m2ee_class
 from lib.m2ee.version import MXVersion
 
@@ -57,13 +56,10 @@ def _get_runtime_dependency_url(blobstore, build_path, prefix="mendix"):
 
 def stage(buildpack_dir, build_path, cache_path):
     logging.debug("Creating directory structure for Mendix runtime...")
-    for name in ["runtimes", "log", "database", "data", "bin", ".postgresql"]:
+    for name in ["runtimes", "log", "database", "data", "bin"]:
         util.mkdir_p(os.path.join(build_path, name))
     for name in ["files", "tmp", "database"]:
         util.mkdir_p(os.path.join(build_path, "data", name))
-
-    logging.debug("Staging required components for Mendix runtime...")
-    database.stage(buildpack_dir, build_path)  # TODO: move out of here
 
     logging.debug("Staging the Mendix runtime...")
     shutil.copy(
@@ -401,18 +397,6 @@ def _set_runtime_config(m2ee, metadata, vcap_data):
     util.mkdir_p(os.path.join(os.getcwd(), "model", "resources"))
     util.upsert_custom_runtime_settings(
         m2ee, app_config, overwrite=True, append=True
-    )
-
-    # db configuration might be None, database should then be set up with
-    # MXRUNTIME_Database... custom runtime settings.
-    runtime_db_config = database.get_config()
-    if runtime_db_config:
-        util.upsert_custom_runtime_settings(
-            m2ee, runtime_db_config, overwrite=True, append=True
-        )
-
-    util.upsert_custom_runtime_settings(
-        m2ee, storage.get_config(m2ee), overwrite=True, append=True
     )
     util.upsert_custom_runtime_settings(
         m2ee,

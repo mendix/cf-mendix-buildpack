@@ -308,3 +308,9 @@ def get_config(m2ee):
         return {}
     else:
         return config
+
+
+def update_config(m2ee):
+    util.upsert_custom_runtime_settings(
+        m2ee, get_config(m2ee), overwrite=True, append=True
+    )
