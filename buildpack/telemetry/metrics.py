@@ -24,7 +24,12 @@ from lib.m2ee.version import MXVersion
 # This enables the new stream of metrics coming from micrometer instead
 # of the admin port.
 # https://docs.mendix.com/refguide/metrics#registries-configuration
-METRICS_REGISTRY = [
+# NOTE: Metrics are usually dot separated. But each registry has its
+# own naming format. For instance, a metric like
+# `a.name.like.this` would appear as `a_name_like_this` in
+# influx-formatted metrics output. Hence the filter names uses the
+# dot-separated metric names.
+PAIDAPPS_METRICS_REGISTRY = [
     {
         "type": "influx",
         "settings": {
@@ -32,6 +37,36 @@ METRICS_REGISTRY = [
             "db": "mendix",
             "step": "10s",
         },
+        "filters": [
+            # Filter out irrelevant metrics to reduce
+            # the payload size passed to TSS
+            # https://docs.mendix.com/refguide/metrics#filters
+            {
+                "type": "nameStartsWith",
+                "result": "deny",
+                "values": ["commons.pool"],
+            },
+        ],
+    }
+]
+
+# For freeapps we push only the session metrics
+FREEAPPS_METRICS_REGISTRY = [
+    {
+        "type": "influx",
+        "settings": {
+            "uri": "http://localhost:8086",
+            "db": "mendix",
+            "step": "10s",
+        },
+        "filters": [
+            {
+                "type": "nameStartsWith",
+                "result": "accept",
+                "values": ["mx.runtime.stats.sessions"],
+            },
+            {"type": "nameStartsWith", "result": "deny", "values": [""]},
+        ],
     }
 ]
 
@@ -122,7 +157,10 @@ def configure_influx_registry(m2ee):
     logging.info(
         "Configuring runtime to push metrics to influx via micrometer"
     )
-    return {"Metrics.Registries": METRICS_REGISTRY}
+    if util.is_free_app():
+        return {"Metrics.Registries": FREEAPPS_METRICS_REGISTRY}
+
+    return {"Metrics.Registries": PAIDAPPS_METRICS_REGISTRY}
 
 
 def bypass_loggregator():
