@@ -67,7 +67,7 @@ class LogFilterThread(threading.Thread):
             )
 
 
-def set_up_logging_file():
+def _redirect_logs():
     util.lazy_remove_file("log/out.log")
     os.mkfifo("log/out.log")
     log_ratelimit = os.getenv("LOG_RATELIMIT", None)
@@ -86,22 +86,21 @@ def set_up_logging_file():
         log_filter_thread.start()
 
 
-def _transform_logging(nodes):
-    res = []
-    for k, v in nodes.items():
-        res.append({"name": k, "level": v})
-    return res
-
-
-def update_config(m2ee):
-    for k, v in os.environ.items():
+def get_loglevels(env=os.environ):
+    # Get log levels per node from environment
+    for k, v in env.items():
         if k.startswith("LOGGING_CONFIG"):
-            m2ee.set_log_levels(
-                "*", nodes=_transform_logging(json.loads(v)), force=True
-            )
+            res = []
+            for k, v in json.loads(v).items():
+                res.append({"name": k, "level": v})
+            return res
 
 
-def run():
+def run(m2ee):
+    # Redirect logs
+    _redirect_logs()
+
+    # Start the logging heartbeat
     logging_interval = os.getenv(
         "METRICS_LOGGING_HEARTBEAT_INTERVAL", str(3600)
     )
@@ -111,7 +110,7 @@ def run():
 
 
 def stage(buildpack_dir, build_dir, cache_dir):
-    logging.debug("Staging logging runtime component...")
+    logging.debug("Staging logging...")
     NAMESPACE = ARTIFACT = "mendix-logfilter"
     util.resolve_dependency(
         util.get_blobstore_url(

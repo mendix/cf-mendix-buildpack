@@ -12,11 +12,12 @@ import shutil
 import subprocess
 from distutils.util import strtobool
 
+from buildpack import util
+from buildpack.core import runtime
+from buildpack.infrastructure import database
 from jinja2 import Template
 
-from buildpack import datadog, mx_java_agent, util
-from buildpack.runtime_components import database, metrics
-
+from . import datadog, metrics, mx_java_agent
 
 VERSION = "1.16.3"
 NAMESPACE = "telegraf"
@@ -143,7 +144,7 @@ def _get_db_config():
 
 
 def update_config(m2ee, app_name):
-    runtime_version = m2ee.config.get_runtime_version()
+    runtime_version = runtime.get_runtime_version()
     if not is_enabled(runtime_version) or not _is_installed():
         return
 
@@ -184,8 +185,11 @@ def update_config(m2ee, app_name):
     logging.debug("Telegraf configuration file written")
 
     logging.debug("Update runtime configuration for metrics registry... ")
-    m2ee.config._conf["mxruntime"].update(
-        metrics.configure_influx_registry(m2ee)
+    util.upsert_custom_runtime_settings(
+        m2ee,
+        metrics.configure_influx_registry(m2ee),
+        overwrite=True,
+        append=True,
     )
 
 

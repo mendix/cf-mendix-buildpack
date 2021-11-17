@@ -24,25 +24,30 @@ def update_config(m2ee, app_name):
     if not appdynamics_used():
         return
     logging.info("Adding app dynamics")
-    m2ee.config._conf["m2ee"]["javaopts"].append(
-        "-javaagent:{path}".format(
-            path=os.path.abspath(
-                ".local/ver" + APPDYNAMICS_VERSION + "/javaagent.jar"
-            )
-        )
+    util.upsert_javaopts(
+        m2ee,
+        [
+            "-javaagent:{path}".format(
+                path=os.path.abspath(
+                    ".local/ver" + APPDYNAMICS_VERSION + "/javaagent.jar"
+                )
+            ),
+            "-Dappagent.install.dir={path}".format(
+                path=os.path.abspath(".local/ver" + APPDYNAMICS_VERSION)
+            ),
+        ],
     )
-    m2ee.config._conf["m2ee"]["javaopts"].append(
-        "-Dappagent.install.dir={path}".format(
-            path=os.path.abspath(".local/ver" + APPDYNAMICS_VERSION)
-        )
-    )
+
     APPDYNAMICS_AGENT_NODE_NAME = "APPDYNAMICS_AGENT_NODE_NAME"
     if os.getenv(APPDYNAMICS_AGENT_NODE_NAME):
-        m2ee.config._conf["m2ee"]["custom_environment"][
-            APPDYNAMICS_AGENT_NODE_NAME
-        ] = "%s-%s" % (
-            os.getenv(APPDYNAMICS_AGENT_NODE_NAME),
-            os.getenv("CF_INSTANCE_INDEX", "0"),
+        util.upsert_custom_environment_variable(
+            m2ee,
+            APPDYNAMICS_AGENT_NODE_NAME,
+            "%s-%s"
+            % (
+                os.getenv(APPDYNAMICS_AGENT_NODE_NAME),
+                os.getenv("CF_INSTANCE_INDEX", "0"),
+            ),
         )
 
 

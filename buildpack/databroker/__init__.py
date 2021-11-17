@@ -5,12 +5,13 @@
 #
 
 import atexit
-import backoff
-import os
-import logging
 import json
+import logging
+import os
 
-from buildpack.databroker import connect, streams
+import backoff
+from buildpack import util
+from buildpack.databroker import business_events, connect, streams
 from buildpack.databroker.config_generator.scripts.configloader import (
     configinitializer,
 )
@@ -72,6 +73,13 @@ def stage(buildpack_dir, install_path, cache_dir):
 
     connect.stage(buildpack_dir, install_path, cache_dir)
     streams.stage(buildpack_dir, install_path, cache_dir)
+
+
+def update_config(m2ee):
+    if is_enabled():
+        util.upsert_custom_runtime_setting(
+            m2ee, RUNTIME_DATABROKER_FLAG, "true", overwrite=True
+        )
 
 
 class Databroker:

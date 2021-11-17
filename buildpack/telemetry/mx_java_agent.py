@@ -3,7 +3,10 @@ import logging
 import os
 import shutil
 
-from buildpack import datadog, telegraf, util
+from buildpack import util
+from buildpack.core import runtime
+
+from . import datadog, telegraf
 
 NAMESPACE = "mx-agent"
 ARTIFACT = "mx-agent-v0.12.0.jar"
@@ -51,7 +54,7 @@ def stage(buildpack_dir, install_dir, cache_dir, runtime_version):
 
 
 def update_config(m2ee):
-    runtime_version = m2ee.config.get_runtime_version()
+    runtime_version = runtime.get_runtime_version()
     if not meets_version_requirements(runtime_version):
         logging.warning(
             "Not enabling Mendix Java Agent: runtime version must be 7.14 or up. "
@@ -66,8 +69,7 @@ def _enable_mx_java_agent(m2ee):
 
     logging.debug("Checking if Mendix Java Agent is enabled...")
     if 0 in [
-        v.find("-javaagent:{}".format(jar))
-        for v in m2ee.config._conf["m2ee"]["javaopts"]
+        v.find("-javaagent:{}".format(jar)) for v in util.get_javaopts(m2ee)
     ]:
         logging.debug("Mendix Java Agent is already enabled")
         return
@@ -86,7 +88,7 @@ def _enable_mx_java_agent(m2ee):
                 ),
             )
         )
-    elif "MetricsAgentConfig" in m2ee.config._conf["mxruntime"]:
+    elif "MetricsAgentConfig" in util.get_custom_runtime_settings(m2ee):
         logging.warning(
             "Passing MetricsAgentConfig with custom runtime "
             "settings is deprecated. "
@@ -97,7 +99,9 @@ def _enable_mx_java_agent(m2ee):
                 "config",
                 _to_file(
                     "METRICS_AGENT_CONFIG",
-                    m2ee.config._conf["mxruntime"]["MetricsAgentConfig"],
+                    util.get_custom_runtime_setting(
+                        m2ee, "MetricsAgentConfig"
+                    ),
                 ),
             )
         )
@@ -120,14 +124,19 @@ def _enable_mx_java_agent(m2ee):
     mx_agent_args = list(filter(lambda x: x, mx_agent_args))
     mx_agent_args_str = f'={",".join(mx_agent_args)}' if mx_agent_args else ""
 
-    m2ee.config._conf["m2ee"]["javaopts"].extend(
-        ["-javaagent:{}{}".format(jar, mx_agent_args_str)]
+    util.upsert_javaopts(
+        m2ee, "-javaagent:{}{}".format(jar, mx_agent_args_str)
     )
 
     # If not explicitly set, default to StatsD
-    m2ee.config._conf["mxruntime"].setdefault(
-        "com.mendix.metrics.Type", "statsd"
-    )
+    try:
+        util.upsert_custom_runtime_setting(
+            m2ee, "com.mendix.metrics.Type", "statsd"
+        )
+    except ValueError:
+        logging.debug(
+            "com.mendix.metrics.Type custom runtime setting exists, not setting"
+        )
 
 
 def _to_file(name, json_content):

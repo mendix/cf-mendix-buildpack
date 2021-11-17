@@ -1,3 +1,4 @@
+import collections
 import errno
 import glob
 import json
@@ -350,3 +351,186 @@ def set_executable(path_or_glob):
                 )
         else:
             logging.debug("[{}] is already executable, skipping".format(f))
+
+
+# m2ee-tools utility functions for manipulating m2ee-tools and runtime configuration
+
+M2EE_TOOLS_CUSTOM_RUNTIME_SETTINGS_SECTION = "mxruntime"
+M2EE_MICROFLOW_CONSTANTS_KEY = "MicroflowConstants"
+M2EE_TOOLS_SETTINGS_SECTION = "m2ee"
+M2EE_TOOLS_JAVAOPTS_KEY = "javaopts"
+M2EE_TOOLS_CUSTOM_ENV_KEY = "custom_environment"
+
+
+# Returns if a value is a sequence or mapping
+def _is_sequence_or_mapping(value):
+    if isinstance(value, str):
+        return False
+    return isinstance(value, collections.Sequence) or isinstance(
+        value, collections.Mapping
+    )
+
+
+# Upserts a key-value pair into a configuration
+# A number of variations of "append" and "overwrite" can be set
+# Depending on the value type, this has different outcomes
+def _upsert_config(config, key, value, overwrite=False, append=False):
+    if key in config:
+        if not append and overwrite:
+            config[key] = value
+        else:
+            if append and type(config[key]) == type(value):
+                if isinstance(value, list):
+                    config[key].extend(value)
+                elif isinstance(value, set) or isinstance(value, dict):
+                    if overwrite:
+                        # New config value = old config value + value
+                        config[key].update(value)
+                    else:
+                        # New config value = value + old config value
+                        value.update(config[key])
+                        config[key] = value
+                else:
+                    config[key] += value
+            else:
+                raise ValueError("Cannot overwrite or append configuration")
+    else:
+        config[key] = value
+
+
+# Upserts a key-value pair into a section of the m2ee-tools config
+# Operation: config[section][key] (+)= value
+def _upsert_m2ee_config_setting(
+    m2ee, section, key, value, overwrite=False, append=False
+):
+    _upsert_config(
+        m2ee.config._conf[section],
+        key,
+        value,
+        append=append,
+        overwrite=overwrite,
+    )
+
+
+# Upserts a complete section into the m2ee-tools config
+# Operation: config[section] (+)= settings
+def _upsert_m2ee_config_section(
+    m2ee, section, settings, overwrite=False, append=False
+):
+    _upsert_config(
+        m2ee.config._conf,
+        section,
+        settings,
+        append=append,
+        overwrite=overwrite,
+    )
+
+
+# Upserts a custom runtime setting
+# Operation: config["mxruntime"][key] (+)= value
+def upsert_custom_runtime_setting(
+    m2ee, key, value, overwrite=False, append=False
+):
+    _upsert_m2ee_config_setting(
+        m2ee,
+        M2EE_TOOLS_CUSTOM_RUNTIME_SETTINGS_SECTION,
+        key,
+        value,
+        overwrite,
+        append,
+    )
+
+
+# Upserts multiple custom runtime settings
+# Operation: config["mxruntime"] (+)= settings
+def upsert_custom_runtime_settings(
+    m2ee, settings, overwrite=False, append=False
+):
+    _upsert_m2ee_config_section(
+        m2ee,
+        M2EE_TOOLS_CUSTOM_RUNTIME_SETTINGS_SECTION,
+        settings,
+        overwrite,
+        append,
+    )
+
+
+# Returns all custom runtime settings
+def get_custom_runtime_settings(m2ee):
+    return m2ee.config._conf[M2EE_TOOLS_CUSTOM_RUNTIME_SETTINGS_SECTION]
+
+
+# Returns a single custom runtime setting
+def get_custom_runtime_setting(m2ee, key):
+    return get_custom_runtime_settings(m2ee)[key]
+
+
+# Upserts multiple microflow constants
+# Operation: config["mxruntime"]["MicroflowConstants"] += value
+def upsert_microflow_constants(m2ee, value):
+    if not isinstance(value, dict):
+        raise ValueError("Value must be a dictionary")
+    upsert_custom_runtime_setting(
+        m2ee, M2EE_MICROFLOW_CONSTANTS_KEY, value, overwrite=True, append=True
+    )
+
+
+# Returns all microflow constants
+def get_microflow_constants(m2ee):
+    return get_custom_runtime_setting(m2ee, M2EE_MICROFLOW_CONSTANTS_KEY)
+
+
+# Upserts an m2ee-tools setting
+# Operation: config["m2ee"][key] += value
+def upsert_m2ee_tools_setting(m2ee, key, value, overwrite=False, append=False):
+    _upsert_m2ee_config_setting(
+        m2ee, M2EE_TOOLS_SETTINGS_SECTION, key, value, overwrite, append
+    )
+
+
+# Gets an m2ee-tools setting
+# Operation: config["m2ee"][key] += value
+def get_m2ee_tools_setting(m2ee, key):
+    return m2ee.config._conf[M2EE_TOOLS_SETTINGS_SECTION][key]
+
+
+# Upserts an m2ee-tools javaopts value
+# Operation: config["m2ee"]["javaopts"] += [ value ]
+def upsert_javaopts(m2ee, value):
+    if not _is_sequence_or_mapping(value):
+        value = [value]
+    upsert_m2ee_tools_setting(
+        m2ee, M2EE_TOOLS_JAVAOPTS_KEY, value, overwrite=False, append=True
+    )
+
+
+# Returns all m2ee-tools javaopts values
+def get_javaopts(m2ee):
+    return get_m2ee_tools_setting(m2ee, M2EE_TOOLS_JAVAOPTS_KEY)
+
+
+# Upserts an m2ee-tools custom environment variable
+# Operation: config["m2ee"]["custom_environment"][key] = value
+def upsert_custom_environment_variable(m2ee, key, value):
+    _upsert_config(
+        get_custom_environment_variables(m2ee),
+        key,
+        value,
+        overwrite=True,
+        append=False,
+    )
+
+
+# Returns all m2ee-tools custom environment variables
+def get_custom_environment_variables(m2ee):
+    return get_m2ee_tools_setting(m2ee, M2EE_TOOLS_CUSTOM_ENV_KEY)
+
+
+# Upserts m2ee-tools logging configuration
+# Operation: config["logging"] += [ value ]
+def upsert_logging_config(m2ee, value):
+    if not isinstance(value, dict):
+        raise ValueError("Value must be a dictionary")
+    _upsert_m2ee_config_section(
+        m2ee, "logging", [value], overwrite=False, append=True
+    )

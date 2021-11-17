@@ -7,8 +7,8 @@ import re
 import shutil
 import subprocess
 
-from buildpack import runtime, util
-from buildpack.runtime_components import security
+from buildpack import util
+from buildpack.core import runtime, security
 from lib.m2ee.version import MXVersion
 
 from jinja2 import Template
@@ -92,11 +92,9 @@ def stage(buildpack_path, build_path, cache_path):
         )
 
 
-def configure(m2ee):
+def update_config():
     samesite_cookie_workaround_enabled = (
-        _is_samesite_cookie_workaround_enabled(
-            MXVersion(str(m2ee.config.get_runtime_version()))
-        )
+        _is_samesite_cookie_workaround_enabled(runtime.get_runtime_version())
     )
     if samesite_cookie_workaround_enabled:
         logging.info("SameSite cookie workaround is enabled")

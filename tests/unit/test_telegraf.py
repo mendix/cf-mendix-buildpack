@@ -1,13 +1,13 @@
 import os
 
-from buildpack import telegraf
+from buildpack.telemetry import telegraf
 
 from unittest import TestCase
 from unittest.mock import patch
 
 
-@patch("buildpack.runtime_components.metrics.micrometer_metrics_enabled")
-@patch("buildpack.datadog.is_enabled")
+@patch("buildpack.telemetry.metrics.micrometer_metrics_enabled")
+@patch("buildpack.telemetry.datadog.is_enabled")
 class TestTelegrafIsEnabled(TestCase):
     def test_when_only_appmetrics_target_is_given(
         self, mock_datadog_is_enabled, mock_micrometer_metrics_enabled

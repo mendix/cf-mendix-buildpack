@@ -1,7 +1,7 @@
 import json
 import unittest
 
-from buildpack import nginx, runtime
+from buildpack.core import nginx, runtime
 
 
 class TestCaseLocationUtilFunctions(unittest.TestCase):
