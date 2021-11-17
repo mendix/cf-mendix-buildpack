@@ -358,6 +358,18 @@ class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
                     "Please contact support!"
                 )
 
+    def _inject_smap_stats(self, stats):
+        smap_stats = {}
+        try:
+            smap_stats = munin.get_stats_from_smaps(self.m2ee.runner.get_pid())
+        except Exception:
+            logging.warning("Unable to get stats from smaps file")
+        finally:
+            if "mendix_runtime" not in stats:
+                stats["mendix_runtime"] = {}
+            stats["mendix_runtime"]["memory"] = smap_stats
+        return stats
+
     def _inject_m2ee_stats(self, stats):
         try:
             m2ee_stats, java_version = munin.get_stats_from_runtime(
@@ -376,17 +388,22 @@ class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
             return stats
 
     def _inject_critical_log_stats(self, stats):
-        m2ee_stats = {}
+        critical_logs_count = 0
         try:
             critical_logs_count = len(
                 self.m2ee.client.get_critical_log_messages()
             )
-            m2ee_stats["critical_logs_count"] = critical_logs_count
-            stats["mendix_runtime"] = m2ee_stats
         except Exception:
-            logging.debug("Unable to get critical log count from runtime")
+            logging.warning("Unable to get critical logs count from runtime")
         finally:
-            return stats
+            # Critical logs count has been part of runtime stats from admin
+            # port and we continue to fetch that even after the micrometer metrics
+            if "mendix_runtime" not in stats:
+                stats["mendix_runtime"] = {}
+            stats["mendix_runtime"][
+                "critical_logs_count"
+            ] = critical_logs_count
+        return stats
 
     def _inject_storage_stats(self, stats):
         storage_stats = {}
@@ -608,7 +625,10 @@ class PaidAppsMetricsEmitterThread(BaseMetricsEmitterThread):
 
         if not self.micrometer_metrics_enabled:
             selected_stats.append(self._inject_m2ee_stats)
+        else:
+            selected_stats.append(self._inject_smap_stats)
         selected_stats.append(self._inject_critical_log_stats)
+
         return selected_stats
 
     def _gather_metrics(self):
