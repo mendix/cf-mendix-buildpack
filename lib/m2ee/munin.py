@@ -821,6 +821,40 @@ def print_jvm_process_memory_values(name, stats, pid, client, java_version):
     print("")
 
 
+def get_stats_from_smaps(pid):
+    """Fetch stats from the smaps file.
+
+    The method duplicates `augment_and_fix_stats`.
+    This is to ensure backwards compatibility when we switch to
+    metrics via micrometer. Mainly to preserver the stats
+    we fetch from the smaps file for the pid. Rest of the stats
+    will be populated from the micrometer end.
+
+    For admin-port trends stream, the smaps related stats
+    are populated in `augment_and_fix_stats()`
+    """
+    if pid is None:
+        return
+    totals = smaps.get_smaps_rss_by_category(pid)
+    if totals is None:
+        return
+
+    # As this method is called when micrometer is enabled,
+    # we could ignore java version 8 and below specific hacks and fixes.
+    # This method is invoked only for  runtime>=9.7 (i.e java version >= 11)
+    smap_stats = {}
+    smap_stats["nativecode"] = totals[smaps.CATEGORY_CODE] * 1024
+    smap_stats["jar"] = totals[smaps.CATEGORY_JAR] * 1024
+
+    nativemem = totals[smaps.CATEGORY_NATIVE_HEAP_ARENA] * 1024
+    othermem = totals[smaps.CATEGORY_OTHER] * 1024
+    smap_stats["nativemem"] = nativemem + othermem
+    smap_stats["other"] = 0
+    smap_stats["stacks"] = totals[smaps.CATEGORY_THREAD_STACK] * 1024
+
+    return smap_stats
+
+
 def augment_and_fix_stats(stats, pid, java_version):
     if pid is None:
         return
