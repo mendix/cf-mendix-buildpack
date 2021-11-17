@@ -4,22 +4,19 @@ import os
 import shutil
 import sys
 
-from buildpack import (
+from buildpack import databroker, util
+from buildpack.core import java, mxbuild, nginx, runtime
+from buildpack.infrastructure import database
+from buildpack.telemetry import (
     appdynamics,
-    dynatrace,
-    databroker,
     datadog,
-    java,
+    dynatrace,
+    logs,
     metering,
     mx_java_agent,
-    mxbuild,
     newrelic,
-    nginx,
-    runtime,
     telegraf,
-    util,
 )
-from buildpack.runtime_components import database
 
 BUILDPACK_DIR = os.path.abspath(
     os.path.dirname(
@@ -125,7 +122,7 @@ if __name__ == "__main__":
         format="%(levelname)s: %(message)s",
     )
 
-    runtime_version = runtime.get_version(BUILD_DIR)
+    runtime_version = runtime.get_runtime_version(BUILD_DIR)
 
     try:
         preflight_check(runtime_version)
@@ -166,7 +163,9 @@ if __name__ == "__main__":
     )
     datadog.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)
     metering.stage(BUILDPACK_DIR, BUILD_DIR, CACHE_DIR)
+    database.stage(BUILDPACK_DIR, BUILD_DIR)
     runtime.stage(BUILDPACK_DIR, BUILD_DIR, CACHE_DIR)
+    logs.stage(BUILDPACK_DIR, BUILD_DIR, CACHE_DIR)
     databroker.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)
     nginx.stage(BUILDPACK_DIR, BUILD_DIR, CACHE_DIR)
     logging.info("Mendix Cloud Foundry Buildpack staging completed")

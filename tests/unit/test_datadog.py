@@ -2,7 +2,7 @@ import os
 import json
 import unittest
 
-from buildpack import datadog
+from buildpack.telemetry import datadog
 
 
 class TestCaseDatadogUtilFunctions(unittest.TestCase):

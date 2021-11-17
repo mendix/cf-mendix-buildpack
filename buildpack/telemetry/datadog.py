@@ -18,10 +18,10 @@ from distutils.util import strtobool
 
 import backoff
 import yaml
-from lib.m2ee.version import MXVersion
-
 from buildpack import util
-from buildpack.runtime_components import database
+from buildpack.core import runtime
+from buildpack.infrastructure import database
+from lib.m2ee.version import MXVersion
 
 NAMESPACE = "datadog"
 
@@ -200,78 +200,72 @@ def _set_up_dd_java_agent(
 
     # Check if already configured
     if 0 in [
-        v.find("-javaagent:{}".format(jar))
-        for v in m2ee.config._conf["m2ee"]["javaopts"]
+        v.find("-javaagent:{}".format(jar)) for v in util.get_javaopts(m2ee)
     ]:
         return
 
     # Inject Datadog Java agent
     # Add tags and explicit reserved tags
-    m2ee.config._conf["m2ee"]["javaopts"].extend(
+    util.upsert_javaopts(
+        m2ee,
         [
             "-javaagent:{}".format(jar),
             "-D{}={}".format("dd.tags", _get_datadog_tags(model_version)),
             "-D{}={}".format("dd.env", get_env_tag()),
             "-D{}={}".format("dd.service", get_service_tag()),
             "-D{}={}".format("dd.version", get_version_tag(model_version)),
-        ]
+        ],
     )
 
     # Expllicitly set tracing flag
-    m2ee.config._conf["m2ee"]["javaopts"].extend(
-        [
-            "-D{}={}".format(
-                "dd.trace.enabled", str(bool(_is_tracing_enabled())).lower()
-            ),
-        ]
+    util.upsert_javaopts(
+        m2ee,
+        "-D{}={}".format(
+            "dd.trace.enabled", str(bool(_is_tracing_enabled())).lower()
+        ),
     )
 
     # Explicitly set profiling flag
-    m2ee.config._conf["m2ee"]["javaopts"].extend(
-        [
-            "-D{}={}".format(
-                "dd.profiling.enabled",
-                str(bool(_is_profiling_enabled(runtime_version))).lower(),
-            ),
-        ]
+    util.upsert_javaopts(
+        m2ee,
+        "-D{}={}".format(
+            "dd.profiling.enabled",
+            str(bool(_is_profiling_enabled(runtime_version))).lower(),
+        ),
     )
 
     # Extend with tracing options
     if _is_tracing_enabled():
-        m2ee.config._conf["m2ee"]["javaopts"].extend(
-            [
-                "-D{}={}".format("dd.logs.injection", "true"),
-            ]
+        util.upsert_javaopts(
+            m2ee,
+            "-D{}={}".format("dd.logs.injection", "true"),
         )
 
         # Extend with database service mapping
         dbconfig = database.get_config()
         if dbconfig and "postgres" in dbconfig["DatabaseType"].lower():
-            m2ee.config._conf["m2ee"]["javaopts"].extend(
-                [
-                    "-D{}={}".format(
-                        "dd.service.mapping",
-                        "{}:{}.db".format("postgresql", get_service_tag()),
-                    ),
-                ]
+            util.upsert_javaopts(
+                m2ee,
+                "-D{}={}".format(
+                    "dd.service.mapping",
+                    "{}:{}.db".format("postgresql", get_service_tag()),
+                ),
             )
 
     # Extend with JMX options
-    m2ee.config._conf["m2ee"]["javaopts"].extend(
+    util.upsert_javaopts(
+        m2ee,
         [
             "-D{}={}".format("dd.jmxfetch.enabled", "true"),
             "-D{}={}".format("dd.jmxfetch.statsd.port", get_statsd_port()),
-        ]
+        ],
     )
 
     if jmx_config_files:
         # Set up Java Agent JMX configuration
-        m2ee.config._conf["m2ee"]["javaopts"].extend(
-            [
-                "-D{}={}".format(
-                    "dd.jmxfetch.config", ",".join(jmx_config_files)
-                ),
-            ]
+        util.upsert_javaopts(
+            m2ee,
+            "-D{}={}".format("dd.jmxfetch.config", ",".join(jmx_config_files)),
         )
 
 
@@ -477,8 +471,9 @@ def update_config(
         return
 
     # Set up runtime logging
-    if m2ee.config.get_runtime_version() >= 7.15:
-        m2ee.config._conf["logging"].append(
+    if runtime.get_runtime_version() >= 7.15:
+        util.upsert_logging_config(
+            m2ee,
             {
                 "type": "tcpjsonlines",
                 "name": "DatadogSubscriber",
@@ -487,7 +482,7 @@ def update_config(
                 # For MX8 integer is supported again, this change needs to be
                 # made when MX8 is GA
                 "port": str(LOGS_PORT),
-            }
+            },
         )
 
     # Set up runtime JMX configuration

@@ -1,7 +1,7 @@
 import json
 import os
 
-from buildpack import datadog
+from buildpack.telemetry import datadog
 from tests.integration import basetest
 
 

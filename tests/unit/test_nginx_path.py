@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from buildpack import nginx
+from buildpack.core import nginx
 
 
 class TestCaseNginxBinPath(unittest.TestCase):

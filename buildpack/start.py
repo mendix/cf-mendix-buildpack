@@ -7,19 +7,19 @@ import sys
 import traceback
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-from buildpack import (
+from buildpack import databroker, util
+from buildpack.core import java, nginx, runtime
+from buildpack.infrastructure import database, storage
+from buildpack.telemetry import (
     appdynamics,
-    databroker,
     datadog,
     dynatrace,
-    java,
+    logs,
     metering,
+    metrics,
     mx_java_agent,
     newrelic,
-    nginx,
-    runtime,
     telegraf,
-    util,
 )
 
 
@@ -120,24 +120,18 @@ if __name__ == "__main__":
                 "CF_INSTANCE_INDEX environment variable not found, assuming cluster leader responsibility..."
             )
 
-        # Set environment variables that the runtime needs for initial setup
-        if databroker.is_enabled():
-            os.environ[
-                "MXRUNTIME_{}".format(databroker.RUNTIME_DATABROKER_FLAG)
-            ] = "true"
-
         # Initialize the runtime
         m2ee = runtime.setup(util.get_vcap_data())
 
         # Get versions
-        runtime_version = runtime.get_version()
+        runtime_version = runtime.get_runtime_version()
         java_version = runtime.get_java_version(runtime_version)["version"]
         model_version = runtime.get_model_version()
 
         # Update runtime configuration based on component configuration
-        java.update_config(
-            m2ee.config._conf["m2ee"], util.get_vcap_data(), java_version
-        )
+        database.update_config(m2ee)
+        storage.update_config(m2ee)
+        java.update_config(m2ee, util.get_vcap_data(), java_version)
         newrelic.update_config(m2ee, util.get_vcap_data()["application_name"])
         appdynamics.update_config(
             m2ee, util.get_vcap_data()["application_name"]
@@ -158,19 +152,25 @@ if __name__ == "__main__":
             extra_jmx_instance_config=databroker_jmx_instance_cfg,
             jmx_config_files=databroker_jmx_config_files,
         )
-        nginx.configure(m2ee)
+        nginx.update_config()
+        databroker.update_config(m2ee)
+        databroker.business_events.update_config(
+            m2ee, util.get_vcap_services_data()
+        )
 
         # Start components and runtime
         telegraf.run(runtime_version)
         datadog.run(model_version, runtime_version)
         metering.run()
-        runtime.run(m2ee)
+        logs.run(m2ee)
+        runtime.run(m2ee, logs.get_loglevels())
+        metrics.run(m2ee)
         nginx.run()
 
         # Wait for the runtime to be ready before starting Databroker
         if databroker.is_enabled():
             runtime.await_database_ready(m2ee)
-            databroker_processes.run(runtime.database.get_config())
+            databroker_processes.run(database.get_config())
     except RuntimeError as re:
         # Only the runtime throws RuntimeErrors (no pun intended)
         # Don't use the stack trace for these

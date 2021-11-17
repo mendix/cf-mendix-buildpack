@@ -4,7 +4,7 @@ import json
 import subprocess
 
 from buildpack import util
-from buildpack.runtime_components import database
+from buildpack.infrastructure import database
 
 NAMESPACE = "metering"
 SIDECAR_VERSION = "v2.0.0"

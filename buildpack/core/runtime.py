@@ -1,30 +1,23 @@
 import atexit
 import json
 import logging
-import re
 import os
+import re
 import shutil
 import sqlite3
 import subprocess
 import time
 
 import backoff
+from buildpack import util
 from lib.m2ee import M2EE as m2ee_class
-from lib.m2ee import logger
 from lib.m2ee.version import MXVersion
 
-from buildpack import util
-from buildpack.runtime_components import (
-    database,
-    logs,
-    metrics,
-    security,
-    storage,
-)
+from . import security
 
-from buildpack.databroker import business_events
+BASE_PATH = os.getcwd()
 
-BASE_PATH = os.path.abspath(".")
+from lib.m2ee import logger
 
 logger.setLevel(util.get_buildpack_loglevel())
 
@@ -54,21 +47,19 @@ def is_version_end_of_support(version):
 
 def _get_runtime_dependency_url(blobstore, build_path, prefix="mendix"):
     return util.get_blobstore_url(
-        "/runtime/{}-{}.tar.gz".format(prefix, get_version(build_path)),
+        "/runtime/{}-{}.tar.gz".format(
+            prefix, str(get_runtime_version(build_path))
+        ),
         blobstore=blobstore,
     )
 
 
 def stage(buildpack_dir, build_path, cache_path):
     logging.debug("Creating directory structure for Mendix runtime...")
-    for name in ["runtimes", "log", "database", "data", "bin", ".postgresql"]:
+    for name in ["runtimes", "log", "database", "data", "bin"]:
         util.mkdir_p(os.path.join(build_path, name))
     for name in ["files", "tmp", "database"]:
         util.mkdir_p(os.path.join(build_path, "data", name))
-
-    logging.debug("Staging required components for Mendix runtime...")
-    database.stage(buildpack_dir, build_path)
-    logs.stage(buildpack_dir, build_path, cache_path)
 
     logging.debug("Staging the Mendix runtime...")
     shutil.copy(
@@ -136,7 +127,7 @@ def get_metadata_value(key, build_path=BASE_PATH):
         return None
 
 
-def get_version(build_path=BASE_PATH):
+def get_runtime_version(build_path=BASE_PATH):
     result = get_metadata_value("RuntimeVersion", build_path)
 
     if result == None:
@@ -296,21 +287,24 @@ def _set_jetty_config(m2ee):
         return None
     try:
         jetty_config = json.loads(jetty_config_json)
-        jetty = m2ee.config._conf["m2ee"]["jetty"]
-        jetty.update(jetty_config)
-        logging.debug("Jetty configured: [%s]", json.dumps(jetty))
+        util.upsert_m2ee_tools_setting(
+            m2ee, "jetty", jetty_config, overwrite=True, append=True
+        )
+        logging.debug(
+            "Jetty configured: [%s]",
+            json.dumps(util.get_m2ee_tools_setting(m2ee, "jetty")),
+        )
     except Exception:
         logging.warning("Failed to configure Jetty", exc_info=True)
 
 
-def _get_custom_settings(metadata, existing_config):
+def _get_custom_settings(metadata):
     if os.getenv("USE_DATA_SNAPSHOT", "false").lower() == "true":
         custom_settings_key = "Configuration"
         if custom_settings_key in metadata:
             config = {}
             for k, v in metadata[custom_settings_key].items():
-                if k not in existing_config:
-                    config[k] = v
+                config[k] = v
             return config
     return {}
 
@@ -371,7 +365,7 @@ def _get_application_root_url(vcap_data):
         return ""
 
 
-def _set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
+def _set_runtime_config(m2ee, metadata, vcap_data):
     scheduled_event_execution, my_scheduled_events = _get_scheduled_events(
         metadata
     )
@@ -382,13 +376,6 @@ def _set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
         "ScheduledEventExecution": scheduled_event_execution,
     }
 
-    business_events_cfg = business_events.get_config(
-        util.get_vcap_services_data()
-    )
-    # append Business Events config to MicroflowConstants dict
-    app_config["MicroflowConstants"].update(business_events_cfg)
-    logging.debug("Business Events config added to MicroflowConstants")
-
     if my_scheduled_events is not None:
         app_config["MyScheduledEvents"] = my_scheduled_events
 
@@ -398,37 +385,45 @@ def _set_runtime_config(metadata, mxruntime_config, vcap_data, m2ee):
         )
         app_config["DTAPMode"] = "D"
 
-    if m2ee.config.get_runtime_version() >= 7 and not util.is_cluster_leader():
+    if get_runtime_version() >= 7 and not util.is_cluster_leader():
         app_config["com.mendix.core.isClusterSlave"] = "true"
     elif (
-        m2ee.config.get_runtime_version() >= 6
+        get_runtime_version() >= 6
         and os.getenv("ENABLE_STICKY_SESSIONS", "false").lower() == "true"
     ):
         logging.info("Enabling sticky sessions")
         app_config["com.mendix.core.SessionIdCookieName"] = "JSESSIONID"
 
     util.mkdir_p(os.path.join(os.getcwd(), "model", "resources"))
-    mxruntime_config.update(app_config)
-
-    # db configuration might be None, database should then be set up with
-    # MXRUNTIME_Database... custom runtime settings.
-    runtime_db_config = database.get_config()
-    if runtime_db_config:
-        mxruntime_config.update(runtime_db_config)
-
-    mxruntime_config.update(storage.get_config(m2ee))
-    mxruntime_config.update(security.get_certificate_authorities())
-    mxruntime_config.update(
-        security.get_client_certificates(m2ee.config.get_runtime_version())
+    util.upsert_custom_runtime_settings(
+        m2ee, app_config, overwrite=True, append=True
     )
-    mxruntime_config.update(_get_custom_settings(metadata, mxruntime_config))
-    mxruntime_config.update(_get_license_subscription())
-    mxruntime_config.update(_get_custom_runtime_settings())
+    util.upsert_custom_runtime_settings(
+        m2ee,
+        security.get_certificate_authorities(),
+        overwrite=True,
+        append=True,
+    )
+    util.upsert_custom_runtime_settings(
+        m2ee,
+        security.get_client_certificates(get_runtime_version()),
+        overwrite=True,
+        append=True,
+    )
+    util.upsert_custom_runtime_settings(
+        m2ee, _get_custom_settings(metadata), overwrite=False, append=True
+    )
+    util.upsert_custom_runtime_settings(
+        m2ee, _get_license_subscription(), overwrite=True, append=True
+    )
+    util.upsert_custom_runtime_settings(
+        m2ee, _get_custom_runtime_settings(), overwrite=True, append=True
+    )
 
 
 def _set_application_name(m2ee, name):
     logging.debug("Application name is %s" % name)
-    m2ee.config._conf["m2ee"]["app_name"] = name
+    util.upsert_m2ee_tools_setting(m2ee, "app_name", name, overwrite=True)
 
 
 def _configure_debugger(m2ee):
@@ -453,7 +448,7 @@ def _configure_debugger(m2ee):
 
 
 def _display_running_model_version(m2ee):
-    if m2ee.config.get_runtime_version() >= 6.0:
+    if get_runtime_version() >= 6.0:
         feedback = m2ee.client.about().get_feedback()
         if "model_version" in feedback:
             logging.info("Model version: [%s]", feedback["model_version"])
@@ -600,7 +595,11 @@ def _display_java_version():
         logging.info(line)
 
 
-def run(m2ee):
+def _set_loglevels(m2ee, loglevels):
+    m2ee.set_log_levels("*", nodes=loglevels, force=True)
+
+
+def run(m2ee, loglevels):
     # Shutdown handler; called on exit(0) or exit(1)
     def _terminate():
         if m2ee:
@@ -610,15 +609,11 @@ def run(m2ee):
 
     _display_java_version()
     util.mkdir_p("model/lib/userlib")
-    logs.set_up_logging_file()
     _start_app(m2ee)
     security.create_admin_user(m2ee, util.is_development_mode())
-    logs.update_config(m2ee)
     _display_running_model_version(m2ee)
     _configure_debugger(m2ee)
-
-    metrics.run(m2ee)
-    logs.run()
+    _set_loglevels(m2ee, loglevels)
 
 
 def _pre_process_m2ee_yaml():
@@ -656,10 +651,9 @@ def setup(vcap_data):
     )
 
     _set_runtime_config(
-        client.config._model_metadata,
-        client.config._conf["mxruntime"],
-        vcap_data,
         client,
+        client.config._model_metadata,
+        vcap_data,
     )
     _set_application_name(client, vcap_data["application_name"])
     _set_jetty_config(client)

@@ -15,7 +15,8 @@ from timeit import default_timer as timer
 import psycopg2
 import requests
 from buildpack import util
-from buildpack.runtime_components import database
+from buildpack.core import runtime
+from buildpack.infrastructure import database
 from lib.m2ee import munin
 from lib.m2ee.version import MXVersion
 
@@ -115,7 +116,7 @@ def configure_influx_registry(m2ee):
 
     This ensures runtime micrometer sends metrics to telegraf.
     """
-    if not micrometer_metrics_enabled(m2ee.config.get_runtime_version()):
+    if not micrometer_metrics_enabled(runtime.get_runtime_version()):
         return {}
 
     logging.info(

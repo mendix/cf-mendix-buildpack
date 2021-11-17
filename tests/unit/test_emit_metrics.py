@@ -2,7 +2,7 @@ import copy
 from unittest import TestCase
 from unittest.mock import Mock
 
-from buildpack.runtime_components.metrics import (
+from buildpack.telemetry.metrics import (
     FreeAppsMetricsEmitterThread,
     PaidAppsMetricsEmitterThread,
 )

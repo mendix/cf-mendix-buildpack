@@ -1,6 +1,6 @@
 import os
 
-from buildpack import telegraf
+from buildpack.telemetry import telegraf
 from tests.integration import basetest
 
 
