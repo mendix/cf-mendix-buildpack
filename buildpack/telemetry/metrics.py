@@ -243,7 +243,7 @@ class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
         self.m2ee = m2ee
         self.db = None
         self.micrometer_metrics_enabled = micrometer_metrics_enabled(
-            m2ee.config.get_runtime_version()
+            runtime.get_runtime_version()
         )
         if bypass_loggregator():
             logging.info("Metrics are logged direct to metrics server.")
