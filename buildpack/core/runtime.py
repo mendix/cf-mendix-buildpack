@@ -41,6 +41,8 @@ def is_version_end_of_support(version):
         return True
     if version >= MXVersion("8.0.0") and version < MXVersion("8.18"):
         return True
+    if version >= MXVersion("9.0.0") and version < MXVersion("9.6.0"):
+        return True
 
     return False
 
