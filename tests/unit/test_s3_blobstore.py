@@ -6,10 +6,7 @@ from unittest import mock
 from buildpack.infrastructure import storage
 from lib.m2ee.version import MXVersion
 
-
-class TestCaseS3BlobStoreDryRun(TestCase):
-
-    s3_storage_vcap_example = """
+S3_STORAGE_VCAP_EXAMPLE = """
 {
   "amazon-s3": [
    {
@@ -40,7 +37,7 @@ class TestCaseS3BlobStoreDryRun(TestCase):
 }
     """  # noqa
 
-    s3_tvm_storage_vcap_example = """
+S3_TVM_STORAGE_VCAP_EXAMPLE = """
 {
   "amazon-s3": [
    {
@@ -69,12 +66,14 @@ class TestCaseS3BlobStoreDryRun(TestCase):
 }
     """  # noqa
 
+
+class TestCaseS3BlobStoreDryRun(TestCase):
     @mock.patch(
         "buildpack.core.runtime.get_runtime_version",
         mock.MagicMock(return_value=MXVersion(7.23)),
     )
     def test_s3_blobstore(self):
-        vcap = json.loads(self.s3_storage_vcap_example)
+        vcap = json.loads(S3_STORAGE_VCAP_EXAMPLE)
         config = storage._get_s3_specific_config(vcap)
         assert (
             config["com.mendix.core.StorageService"] == "com.mendix.storage.s3"
@@ -107,7 +106,7 @@ class TestCaseS3BlobStoreDryRun(TestCase):
         ),
     )
     def test_s3_blobstore_tvm_runtime_without_sts(self):
-        vcap = json.loads(self.s3_tvm_storage_vcap_example)
+        vcap = json.loads(S3_TVM_STORAGE_VCAP_EXAMPLE)
         config = storage._get_s3_specific_config(vcap)
         assert (
             config["com.mendix.core.StorageService"] == "com.mendix.storage.s3"
@@ -130,8 +129,14 @@ class TestCaseS3BlobStoreDryRun(TestCase):
         "buildpack.core.runtime.get_runtime_version",
         mock.MagicMock(return_value=MXVersion(9.2)),
     )
+    @mock.patch(
+        "buildpack.infrastructure.storage._get_credentials_from_tvm",
+        mock.MagicMock(
+            return_value=("fake-access-key", "fake-secret-access-key")
+        ),
+    )
     def test_s3_blobstore_tvm_runtime_with_sts(self):
-        vcap = json.loads(self.s3_tvm_storage_vcap_example)
+        vcap = json.loads(S3_TVM_STORAGE_VCAP_EXAMPLE)
         config = storage._get_s3_specific_config(vcap)
         assert (
             config["com.mendix.core.StorageService"] == "com.mendix.storage.s3"
@@ -181,7 +186,7 @@ class TestCaseS3BlobStoreDryRun(TestCase):
         ),
     )
     def test_s3_blobstore_tvm_runtime_with_sts_and_cas(self):
-        vcap = json.loads(self.s3_tvm_storage_vcap_example)
+        vcap = json.loads(S3_TVM_STORAGE_VCAP_EXAMPLE)
         os.environ["CERTIFICATE_AUTHORITIES"] = "fake-certificate-authority"
         config = storage._get_s3_specific_config(vcap)
         assert (
