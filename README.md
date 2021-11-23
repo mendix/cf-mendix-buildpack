@@ -4,11 +4,12 @@
 
 This document contains general information on the Mendix Cloud Foundry Buildpack.
 
-The latest [release](https://github.com/mendix/cf-mendix-buildpack/releases/latest) supports Mendix versions 7 (LTS), 8 (LTS) and 9. See the table which buildpack release introduced support for a Mendix version, and in which release versions [are end-of-support](https://docs.mendix.com/releasenotes/studio-pro/lts-mts). [This section](#buildpack-releases-and-version-pinning) describes how to use a specific release.
+The latest [release](https://github.com/mendix/cf-mendix-buildpack/releases/latest) supports Mendix versions 7 (LTS), 8 (LTS) and 9 (MTS). See the table which buildpack release introduced support for a Mendix version, and in which release versions [are end-of-support](https://docs.mendix.com/releasenotes/studio-pro/lts-mts). [This section](#buildpack-releases-and-version-pinning) describes how to use a specific release.
 
 | Mendix Version | Supported | End-of-Support |
 | ---- | ---- | ---- |
-| `9.x` | `v4.16.0` | - |
+| `9.6.x` ([MTS](https://docs.mendix.com/releasenotes/studio-pro/lts-mts)), `9 > 9.6` ([monthly](https://docs.mendix.com/releasenotes/studio-pro/lts-mts)) | `v4.24.0` | - |
+| `9 < 9.6.x` | `v4.16.0` | `v4.24.0` |
 | `8.18.x` ([LTS](https://docs.mendix.com/releasenotes/studio-pro/lts-mts)) | `v3.4.0` | - |
 | `8 < 8.x` | `v3.4.0` | `v4.16.0` |
 | `7.23.x` ([LTS](https://docs.mendix.com/releasenotes/studio-pro/lts-mts)) | `v3.1.0` | - |
@@ -46,13 +47,13 @@ We push an MDA (Mendix Deployment Archive) that was built by Mendix Studio Pro t
 
 *Note: please replace `<LINK-TO-BUILDPACK>` in the commands below with a link to the version of the buildpack you are trying to deploy. Please check [this section](#buildpack-releases-and-version-pinning) for details on how to pick a release.*
 
-``` shell
+```shell
 cf push <YOUR_APP> -b <LINK-TO-BUILDPACK> -p <YOUR_MDA>.mda -t 180
 ```
 
 We can also push a project directory. This will move the build process (using MxBuild, a component of Studio Pro) to Cloud Foundry:
 
-``` shell
+```shell
 cd <PROJECT DIR>; cf push -b <LINK-TO-BUILDPACK> -t 180
 ```
 
@@ -64,7 +65,7 @@ Also note that building the project in Cloud Foundry takes more time and require
 
 The first push generates a new app. In order to login to your application as admin you can set the password using the `ADMIN_PASSWORD` environment variable. Keep in mind that the admin password should comply with the policy you have set in the Mendix Modeler. For security reasons it is recommended to set this environment variable once to create the admin user, then remove the environment variable and restart the app. Finally log in to the app and change the password via the web interface. Similarly, the setting can be used to reset the password of an administrator.
 
-``` shell
+```shell
 cf set-env <YOUR_APP> ADMIN_PASSWORD "<YOURSECRETPASSWORD>"
 ```
 
@@ -72,7 +73,7 @@ cf set-env <YOUR_APP> ADMIN_PASSWORD "<YOURSECRETPASSWORD>"
 
 You also need to connect a PostgreSQL, MySQL or any other Mendix supported database instance which allows at least 5 connections to the database. Find out which services are available in your Cloud Foundry foundation with the `marketplace` command.
 
-``` shell
+```shell
 cf marketplace
 ```
 
@@ -83,7 +84,7 @@ cf bind-service <YOUR_APP> <SERVICE_NAME>
 
 Note that not all databases are automatically picked up by the buildpack. If `cf push` returns an error like `Could not parse database credentials` , you need to set the `DATABASE_URL` variable manually or set database [Mendix custom runtime variables](https://docs.mendix.com/refguide/custom-settings) to configure a database. Note these variables need to be prefixed with `MXRUNTIME_` , as per example:
 
-``` shell
+```shell
 cf set-env <YOUR_APP> MXRUNTIME_DatabaseType PostgreSQL
 cf set-env <YOUR_APP> MXRUNTIME_DatabaseJdbcUrl jdbc:postgresql://host/databasename
 cf set-env <YOUR_APP> MXRUNTIME_DatabaseName databasename
@@ -93,7 +94,7 @@ cf set-env <YOUR_APP> MXRUNTIME_DatabasePassword password
 
 Now we need to push the application once more.
 
-``` shell
+```shell
 cf push <YOUR_APP> -b <LINK-TO-BUILDPACK> -p <YOUR_MDA>.mda
 ```
 
@@ -101,7 +102,7 @@ You can now log in to your application with the configured admin password.
 
 For PostgreSQL we support setting additional parameters in the connection uri retrieved from the VCAP. To set additional JDBC parameters set the `DATABASE_CONNECTION_PARAMS` environment variable as JSON key-value string.
 
-``` shell
+```shell
 cf set-env <YOUR_APP> DATABASE_CONNECTION_PARAMS '{"tcpKeepAlive": "true", "connectionTimeout": 30, "loginTimeout": 15}'
 ```
 
@@ -111,13 +112,13 @@ Note: if you set `DATABASE_URL` provide it as JDBC connection string (prefixed w
 
 The default values for constants will be used as defined in your project. However, you can override them with environment variables. You need to replace the dot with an underscore and prefix it with `MX_` . So a constant like `Module.Constant` with value `ABC123` could be set like this:
 
-``` shell
+```shell
 cf set-env <YOUR_APP> MX_Module_Constant "ABC123"
 ```
 
 After changing environment variables you need to restart your app. A full push is not necessary.
 
-``` shell
+```shell
 cf restart <YOUR_APP>
 ````
 
@@ -125,7 +126,7 @@ cf restart <YOUR_APP>
 
 The scheduled events can be configured using environment variable `SCHEDULED_EVENTS` .
 
-Possible values are `ALL` , `NONE` or a comma separated list of the scheduled events that you would like to enable. For example: `ModuleA.ScheduledEvent,ModuleB.OtherScheduledEvent`
+Possible values are `ALL` , `NONE` or a comma separated list of the scheduled events that you would like to enable. For example: `ModuleA. ScheduledEvent, ModuleB. OtherScheduledEvent`
 
 When scaling to multiple instances, the scheduled events that are enabled via the settings above will only be executed on instance `0` . The other instances will not execute scheduled events at all.
 
@@ -146,6 +147,7 @@ When deploying Mendix 6.7 or higher to CF on Azure with the Azure Service Broker
 Mendix can use external file stores with an S3 compatible api. There are two ways to enable this.
 
 ##### Use IAM Credentials
+
 Create an IAM user and provide IAM user credential using following environment variables.
 
 * `S3_ACCESS_KEY_ID` : credentials access key
@@ -153,6 +155,7 @@ Create an IAM user and provide IAM user credential using following environment v
 * `S3_BUCKET_NAME` : bucket name
 
 ##### Implement TVM (Token Vending Machine)
+
 Create a TVM (Token Vending Machine) and provide TVM credential using following environment variable.
 
 * `S3_TVM_ENDPOINT` : tvm_endpoint
@@ -173,7 +176,7 @@ The following environment variables are optional:
 
 The Java heap size is configured automatically based on best practices. You can tweak this to your needs by using another environment variable in which case it is used directly.
 
-``` shell
+```shell
 cf set-env <YOUR_APP> HEAP_SIZE 512M
 ```
 
@@ -185,13 +188,13 @@ The buildpack will automatically determine the Java version to use based on the 
 
 If you want to force Java 7 or 8, you can set the environment variable `JAVA_VERSION` to `7` or `8` :
 
-``` shell
+```shell
 cf set-env <YOUR_APP> JAVA_VERSION 8
 ```
 
 Or to switch patch version for Java 11:
 
-``` shell
+```shell
 cf set-env <YOUR_APP> JAVA_VERSION 11.0.3
 ```
 
@@ -201,7 +204,7 @@ You can configure the Java properties by providing the `JAVA_OPTS` enviroment va
 
 Configure the `JAVA_OPTS` environment variable by using the `cf set-env` command.
 
-``` shell
+```shell
 cf set-env <YOUR_APP> JAVA_OPTS '["-Djava.rmi.server.hostname=127.0.0.1", "-Dcom.sun.management.jmxremote.authenticate=false", "-Dcom.sun.management.jmxremote.ssl=false", "-Dcom.sun.management.jmxremote.port=5000", "-Dcom.sun.management.jmxremote.rmi.port=5000"]'
 ```
 
@@ -211,13 +214,13 @@ To configure any of the advanced [Custom Runtime Settings](https://docs.mendix.c
 
 For example, to configure the `ConnectionPoolingMinIdle` setting to value `10` , you can set the following environment variable:
 
-``` shell
+```shell
 cf set-env <YOUR_APP> MXRUNTIME_ConnectionPoolingMinIdle 10
 ```
 
 If the setting contains a dot `.` you can use an underscore `_` in the environment variable. So to set `com.mendix.storage.s3.EndPoint` to `foo` you can use:
 
-``` shell
+```shell
 cf set-env <YOUR_APP> MXRUNTIME_com_mendix_storage_s3_EndPoint foo
 ```
 
@@ -227,13 +230,13 @@ HTTP headers allow the client and the server to pass additional information with
 
 For example, to configure `X-Frame-Options` , you can set `HTTP_RESPONSE_HEADERS` environment variable like below:
 
-``` shell
+```shell
 cf set-env <YOUR_APP> HTTP_RESPONSE_HEADERS '{"X-Frame-Options": "allow-from https://mendix.com"}'
 ```
 
 to configure multiple supported headers, you can set it like below:
 
-``` shell
+```shell
 cf set-env <YOUR_APP> HTTP_RESPONSE_HEADERS '{"Referrer-Policy": "no-referrer-when-downgrade", "X-Content-Type-Options": "nosniff"}'
 ```
 
@@ -300,7 +303,7 @@ To import Certificate Authorities (CAs) into the Java truststore, use the `CERTI
 
 The contents of this variable should be a concatenated string containing a the additional CAs in PEM format that are trusted. Example:
 
-``` plaintext
+```plaintext
 -----BEGIN CERTIFICATE-----
 MIIGejCCBGKgAwIBAgIJANuKwREDEb4sMA0GCSqGSIb3DQEBCwUAMIGEMQswCQYD
 VQQGEwJOTDEVMBMGA1UECBMMWnVpZC1Ib2xsYW5kMRIwEAYDVQQHEwlSb3R0ZXJk
@@ -378,7 +381,7 @@ To enable New Relic, simply bind a New Relic service to this app and settings wi
 
 To enable AppDynamics, configure the following environment variables:
 
-``` plaintext
+```plaintext
 APPDYNAMICS_CONTROLLER_PORT
 APPDYNAMICS_CONTROLLER_SSL_ENABLED
 APPDYNAMICS_CONTROLLER_HOST_NAME
@@ -481,7 +484,7 @@ If you want to enable initializing your database and files from an existing data
 
 To activate a license on your application you need license credentials. These credentials can be obtained by contacting Mendix Support.
 
-``` shell
+```shell
 cf set-env <YOUR_APP> LICENSE_ID <UUID>
 cf set-env <YOUR_APP> LICENSE_KEY <LicenseKey>
 ```
@@ -496,7 +499,7 @@ To debug the code of the buildpack itself, set the `BUILDPACK_XTRACE` environmen
 
 From Mendix 6 onwards it is possible to configure log levels using environment variables. This allows getting a better insight in the behavior of your Mendix app. Configuring environment variables happens by adding one or more environment variables starting with the name `LOGGING_CONFIG` (the part of the name after that is not relevant and only used to distinguish between multiple entries if necessary). Its value should be valid JSON, in the format:
 
-``` json
+```json
 {
     "LOGNODE": "LEVEL"
 }
@@ -513,7 +516,7 @@ You can see the available Log Nodes in your application in the Mendix Modeler. T
 
 Example:
 
-``` shell
+```shell
 cf set-env <YOUR_APP> LOGGING_CONFIG '{ "<LOG NODE VALUE>": "DEBUG"}'
 ```
 
@@ -523,7 +526,7 @@ The buildpack has the ability to rate-limit the amount of log lines from the Men
 
 Example (1000 loglines/second):
 
-``` shell
+```shell
 cf set-env <YOUR_APP> LOG_RATELIMIT '1000'
 ```
 
@@ -537,7 +540,7 @@ We recommend "pinning to" - using a specific [release](https://github.com/mendix
 
 To push with a specific release of the buildpack, replace `<RELEASE>` in the buildpack URL below in your `cf push` command with the release you want to pin to, e.g. `v4.11.0` :
 
-``` shell
+```shell
 cf push <YOUR_APP> -b https://github.com/mendix/cf-mendix-buildpack/releases/download/<RELEASE>/cf-mendix-buildpack.zip -p <YOUR_MDA>.mda -t 180
 ```
 
@@ -549,14 +552,14 @@ You can find the list of available releases [here](https://github.com/mendix/cf-
 
 Sometimes the app won't run because it exits with status code 143. Or, for any reason, the app is unable to start, leaving you unable to debug the issue from within the container. For these cases we have introduced a `DEBUG_CONTAINER` mode. To enable it:
 
-``` shell
+```shell
 cf set-env <YOUR_APP> DEBUG_CONTAINER true
 cf restart <YOUR_APP>
 ```
 
 Now your app will start in CloudFoundry (i.e. the Mendix Runtime will not start yet) and you can troubleshoot the problem with:
 
-``` shell
+```shell
 cf ssh <YOUR_APP>
 export HOME=$HOME/app # this should not be needed but for now it is
 export DEBUG_CONTAINER=false # while we are in the container turn it off, we could try to make this optional by detecting other environment variables that are present over ssh but not regular start
@@ -567,7 +570,7 @@ PYTHONPATH=:buildpack:lib python3 buildpack/start.py
 
 After you are done, you can disable debug mode with:
 
-``` shell
+```shell
 cf unset-env <YOUR_APP> DEBUG_CONTAINER
 cf restart <YOUR_APP>
 ```
@@ -575,7 +578,7 @@ cf restart <YOUR_APP>
 Similarly, if you need to use `m2ee-tools` inside the container for debugging
 purposes, you can do the following:
 
-``` shell
+```shell
 cf ssh <YOUR_APP>
 export PYTHONPATH=/home/vcap/app/.local/lib/python3.6/site-packages/:/home/vcap/app/lib/
 python3
@@ -583,7 +586,7 @@ python3
 
 and in the interactive Python console:
 
-``` python
+```python
 import os
 from m2ee.client import M2EEClient
 client = M2EEClient('http://localhost:8082', os.environ['M2EE_PASSWORD'])
