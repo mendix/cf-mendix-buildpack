@@ -128,7 +128,7 @@ def _micrometer_runtime_requirement(runtime_version):
     # collection via micrometer till we are ready to do the switchover
     # from admin port metrics to micrometer based metrics
     disable_micrometer = strtobool(
-        os.getenv("DISABLE_MICROMETER_METRICS", "true")
+        os.getenv("DISABLE_MICROMETER_METRICS", "false")
     )
 
     runtime_version_supported = runtime_version >= MXVersion("9.7.0")

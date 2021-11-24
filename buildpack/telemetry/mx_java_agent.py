@@ -6,7 +6,7 @@ import shutil
 from buildpack import util
 from buildpack.core import runtime
 
-from . import datadog, telegraf
+from . import datadog, telegraf, metrics
 
 NAMESPACE = "mx-agent"
 ARTIFACT = "mx-agent-v0.12.0.jar"
@@ -128,10 +128,19 @@ def _enable_mx_java_agent(m2ee):
         m2ee, "-javaagent:{}{}".format(jar, mx_agent_args_str)
     )
 
-    # If not explicitly set, default to StatsD
+    # If not explicitly set,
+    # - default to StatsD (MxVersion < 9.7)
+    # - default to micrometer (MxVersion >= 9.7)
+    # NOTE : Runtime is moving away from statsd type metrics. If we
+    # have customers preferring statsd format, they would need to configure
+    # StatsD registry for micrometer.
+    # https://docs.mendix.com/refguide/metrics
+    metrics_type = "statsd"
+    if metrics.micrometer_metrics_enabled(runtime.get_runtime_version()):
+        metrics_type = "micrometer"
     try:
         util.upsert_custom_runtime_setting(
-            m2ee, "com.mendix.metrics.Type", "statsd"
+            m2ee, "com.mendix.metrics.Type", metrics_type
         )
     except ValueError:
         logging.debug(
