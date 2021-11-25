@@ -297,79 +297,83 @@ And for [Mendix \< 6.6](https://docs.mendix.com/releasenotes/desktop-modeler/6.6
 * `BLOBSTORE/mx-buildpack/jre-8u51-linux-x64.tar.gz`
 * `BLOBSTORE/mx-buildpack/jdk-8u51-linux-x64.tar.gz`
 
-### Certificate Management
+### Managing Certificate Authorities
 
 To import Certificate Authorities (CAs) into the Java truststore, use the `CERTIFICATE_AUTHORITIES` environment variable.
 
-The contents of this variable should be a concatenated string containing a the additional CAs in PEM format that are trusted. Example:
+The contents of this variable should be a concatenated string containing a the additional CAs in [PEM format](https://en.wikipedia.org/wiki/Privacy-Enhanced_Mail) that are trusted.
+
+Example:
 
 ```plaintext
 -----BEGIN CERTIFICATE-----
-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
+AaBbCc==
 -----END CERTIFICATE-----
 -----BEGIN CERTIFICATE-----
-MIIEcTCCA1mgAwIBAgIJANUE5069bkdvMA0GCSqGSIb3DQEBBAUAMIGBMQswCQYD
-VQQGEwJOTDEVMBMGA1UECBMMWnVpZC1Ib2xsYW5kMRIwEAYDVQQHEwlSb3R0ZXJk
-YW0xEjAQBgNVBAoTCU1lbmRpeCBCVjESMBAGA1UEAxMJTWVuZGl4IENBMR8wHQYJ
-KoZIhvcNAQkBFhBiZWhlZXJAbWVuZGl4Lm5sMB4XDTA1MTEzMDA5MjY1NFoXDTE1
-MTEyODA5MjY1NFowgYExCzAJBgNVBAYTAk5MMRUwEwYDVQQIEwxadWlkLUhvbGxh
-bmQxEjAQBgNVBAcTCVJvdHRlcmRhbTESMBAGA1UEChMJTWVuZGl4IEJWMRIwEAYD
-VQQDEwlNZW5kaXggQ0ExHzAdBgkqhkiG9w0BCQEWEGJlaGVlckBtZW5kaXgubmww
-ggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCizJkE35dyDUpz2GgZzVdZ
-Rlf/eA9Xe48hx3WFe2sLGO42ngb71qSQutDxfYStCjT17/25JH5URLfTX/9L4WFe
-INj6uX+Lt8W1ODtgVJ+HvgoJH76etpcXggOLsX8GFXhAdZWiwZ7S3rlVJiaVJWSc
-VrZZkzXwK9Y/la4HjGHGVyd52doYBXb3uMJt9Fl1daT7cz11WTTlUiQEHfkRfROZ
-KXN0o7JtBZqwrHsKaloYPfoW/9SlmrlAe4WJV1+WsdPpxzjfI730lpBgaY6XsLHT
-3I+l/BYHJZx+8jBUFhi+0Aj9TX2Xx3Ran7dmB5dezCyLzcgpM31WE3gid+ELzdFd
-AgMBAAGjgekwgeYwHQYDVR0OBBYEFMZSioCtznEB4WO1S/c7x+4VI2YWMIG2BgNV
-HSMEga4wgauAFMZSioCtznEB4WO1S/c7x+4VI2YWoYGHpIGEMIGBMQswCQYDVQQG
-EwJOTDEVMBMGA1UECBMMWnVpZC1Ib2xsYW5kMRIwEAYDVQQHEwlSb3R0ZXJkYW0x
-EjAQBgNVBAoTCU1lbmRpeCBCVjESMBAGA1UEAxMJTWVuZGl4IENBMR8wHQYJKoZI
-hvcNAQkBFhBiZWhlZXJAbWVuZGl4Lm5sggkA1QTnTr1uR28wDAYDVR0TBAUwAwEB
-/zANBgkqhkiG9w0BAQQFAAOCAQEAKdXKdTLlCPfn4vkJzTg+ukD2CSQysTx+24+P
-4BSUKZ+lOHBmhsKia1Zs+upvbHZ7605x2cdpppEiKC+aVQJJZ2X3BrZZq25oYdDg
-Z1LiFonMl7o4oOjVXhVix4T/WbxuGZTLxpdPHJA+SGw7yaA5Fh0uT70bjTeIfVS6
-cTYdfWO9rsrhiSYt4YeCarDCnjO93vxInvog3ydjJB69luTUXXoniaEnFEXPSqqN
-EVSQHw0FN1bNvaA6/zXvdb7E2oFKIYiPylsdeQ6DPgBxht/YMZRlI8p3F2SiEbbe
-yW7wMeYCUfgTNWaSaJd6uYUjj+IP/9+YOkp5pLW5eEAq6YscYA==
+DdEeFf==
 -----END CERTIFICATE-----
 ```
 
-*Please note that these are two internal Mendix CAs which you should not actually add to your trust store.*
+Note that if a certificate is signed by an intermediary, the complete certificate chain has to be added.
+
+### Managing Client Certificates
+
+To add client certificates to the Mendix runtime configuration, use the `CLIENT_CERTIFICATES` environment variable.
+
+Example:
+
+```json
+[
+    {"pfx": "AaBbCc==", "password": "password1", "pin_to": ["Module.WS1", "/bla/bla"]},
+    {"pfx": "DdEeFf==", "password": ""}
+]
+```
+
+The buildpack ensures that the environment variable is converted into custom runtime settings, and client certificate support is dependent on runtime support. Please consult the [runtime documentation](https://docs.mendix.com/howto/integration/use-a-client-certificate) on client certificates for the runtime version of your application for further support.
+
+#### Client Certificate Format
+
+The environment variable is in JSON format and is a list ( `[]` ) of **client certificate objects**. Each object contains the following fields:
+
+| Field | Type | Required | Example | Description |
+|-|-|-|-|-|
+| `pfx` | `string(base64)` | Yes | `"AaBbCc=="` | Certificate in [PKCS#12 format](https://en.wikipedia.org/wiki/PKCS_12), encoded in `base64` |
+| `password` | `string` | Yes | `"password1"` | Certificate password. Can be blank. |
+| `pin_to` | `[string]` | No | `["Module.WS1", "/bla/bla"]` | JSON list of Mendix modules or relative paths to pin the client certificate to |
+
+### Managing Access Restrictions
+
+The buildpack proxy has the possibility to set access restrictions for certain application paths. To do so, use the `ACCESS_RESTRICTIONS` environment variable.
+
+Example:
+
+```json
+{
+    "/": {"ipfilter": ["10.0.0.0/8"], "client_cert": true, "satisfy": "any"},
+    "/ws/MyWebService/": {"ipfilter": ["10.0.0.0/8"], "client_cert": true, "satisfy": "all"},
+    "/CustomRequestHandler/": {"ipfilter": ["10.0.0.0/8"]},
+    "/CustomRequestHandler2/": {"basic_auth": {"user1": "password", "user2": "password2"}},
+}
+```
+
+#### Access Restrictions Format
+
+The environment variable is in JSON format and is a collection ( `{}` ) of **path restriction objects**. Each object is defined by a `path` (relative to the application root URL). A restriction object applies to that path and all sub-paths. Inheritance can be overridden by adding a restriction object for a sub-path. These settings will then override the parent object.
+
+Note that:
+
+* Access restrictions are not supported for reserved system paths
+* A path restriction object must at least contain one restriction object
+
+A path restriction object is composed of the following fields:
+
+| Field | Type | Example | Description |
+|-|-|-|-|
+| `ipfilter` | `[string]` | `["10.0.0.0/8"]` | List of IPs to allow in [CIDR format](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing). An empty list will allow access from all IPs. |
+| `client_cert` | `boolean` | `false` | Enables checking client certificates. The certificate for the exact path the restriction applies to must be correctly provided with the [ `CLIENT_CERTIFICATES` environment variable](#managing-client-certificates). |
+| `basic_auth` | `{string: string, string: string, ...}` | `{"user1": "password", "user2": "password2"}` | Adds a [HTTP Basic Authentication](https://en.wikipedia.org/wiki/Basic_access_authentication) restriction. Multiple user / password combinations can be supplied in one JSON object. |
+| `satisfy` | `any|all` | `"any"` | Defines how restrictions are evaluated. `any` is equivalent to logical `OR` , `all` to `AND` . |
+| `issuer_dn` | `string` | `"CN=example.com,O=example Inc."` | Adds certificate pinning through the `"Ssl-Client-Issuer-Dn"` header. This header must be supplied through an upstream proxy. |
 
 ## Monitoring Tools
 
@@ -517,7 +521,7 @@ You can see the available Log Nodes in your application in the Mendix Modeler. T
 Example:
 
 ```shell
-cf set-env <YOUR_APP> LOGGING_CONFIG '{ "<LOG NODE VALUE>": "DEBUG"}'
+cf set-env <YOUR_APP> LOGGING_CONFIG '{"<LOG NODE VALUE>": "DEBUG"}'
 ```
 
 ## Rate-limiting of Log Output
