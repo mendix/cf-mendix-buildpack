@@ -12,9 +12,11 @@ from OpenSSL import crypto
 
 class M2EEMock:
     class ConfigMock:
-        _conf = {}
+        def __init__(self):
+            self._conf = {}
 
-    config = ConfigMock()
+    def __init__(self):
+        self.config = self.ConfigMock()
 
 
 class TestJettyConfiguration(TestCase):
