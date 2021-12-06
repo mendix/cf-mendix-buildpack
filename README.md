@@ -372,7 +372,7 @@ A path restriction object is composed of the following fields:
 | `ipfilter` | `[string]` | `["10.0.0.0/8"]` | List of IPs to allow in [CIDR format](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing). An empty list will allow access from all IPs. |
 | `client_cert` | `boolean` | `false` | Enables checking client certificates. The certificate for the exact path the restriction applies to must be correctly provided with the [ `CLIENT_CERTIFICATES` environment variable](#managing-client-certificates). |
 | `basic_auth` | `{string: string, string: string, ...}` | `{"user1": "password", "user2": "password2"}` | Adds a [HTTP Basic Authentication](https://en.wikipedia.org/wiki/Basic_access_authentication) restriction. Multiple user / password combinations can be supplied in one JSON object. |
-| `satisfy` | `any|all` | `"any"` | Defines how restrictions are evaluated. `any` is equivalent to logical `OR` , `all` to `AND` . |
+| `satisfy` | `string(any\|all)` | `"any"` | Defines how restrictions are evaluated. `any` is equivalent to logical `OR` , `all` to `AND` . |
 | `issuer_dn` | `string` | `"CN=example.com,O=example Inc."` | Adds certificate pinning through the `"Ssl-Client-Issuer-Dn"` header. This header must be supplied through an upstream proxy. |
 
 ## Monitoring Tools
