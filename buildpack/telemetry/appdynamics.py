@@ -3,7 +3,7 @@ import os
 
 from buildpack import util
 
-APPDYNAMICS_VERSION = "21.9.0.33073"
+APPDYNAMICS_VERSION = "21.11.1.33280"
 
 
 def stage(buildpack_dir, destination_path, cache_path):
