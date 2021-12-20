@@ -25,7 +25,7 @@ from lib.m2ee.version import MXVersion
 
 NAMESPACE = "datadog"
 
-SIDECAR_VERSION = "4.27.0"
+SIDECAR_VERSION = "4.28.0"
 SIDECAR_ARTIFACT_NAME = "datadog-cloudfoundry-buildpack-{}.zip".format(
     SIDECAR_VERSION
 )
