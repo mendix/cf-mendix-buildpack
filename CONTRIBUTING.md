@@ -60,4 +60,4 @@ After a release or hotfix PR is merged to `master`, a draft release is created a
 
 * **"Undraft"** the release to release it.
 * **Delete** your release or hotfix branch.
-* If the automatic merge fails, **merge** `master` (fast-forward) into `develop`, and **push** it to ensure that the version bump commit is in `develop`.
+* **Rebase** `master` on `develop`, and **force push** it to ensure that the version bump commit is in `develop`.
