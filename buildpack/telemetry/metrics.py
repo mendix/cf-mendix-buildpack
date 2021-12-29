@@ -341,6 +341,7 @@ class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
 
     def _inject_storage_stats(self, stats):
         storage_stats = {}
+        runtime_version = runtime.get_runtime_version()
         try:
             storage_stats["get_number_of_files"] = self._get_number_of_files()
         except Exception as e:
@@ -348,6 +349,14 @@ class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
                 "Metrics: Failed to retrieve number of files, " + str(e)
             )
             raise
+        if runtime_version >= MXVersion("7.4.0"):
+            try:
+                storage_stats["get_size_of_files"] = self._get_size_of_files()
+            except Exception as e:
+                logging.warn(
+                    "Metrics: Failed to retrieve size of files, " + str(e)
+                )
+                raise
         stats["storage"] = storage_stats
         return stats
 
@@ -484,21 +493,13 @@ WHERE t.schemaname='public';
     def _get_size_of_files(self):
         conn = self._get_db_conn()
         with conn.cursor() as cursor:
-            try:
-                cursor.execute(
-                    "SELECT sum(size) from system$filedocument WHERE hascontents=true;"  # noqa:E501
-                )
-                rows = cursor.fetchall()
-                if len(rows) == 0:
-                    return 0
-                return int_or_default(rows[0][0])
-            except Exception:
-                # We ignore errors here, as the information is
-                # not available for older mendix versions
-                logging.debug(
-                    "METRICS: Error retrieving file sizes", exc_info=True
-                )
-                return 0
+            cursor.execute(
+                "SELECT SUM(size) from system$filedocument WHERE hascontents=true;"  # noqa:E501
+            )
+            rows = cursor.fetchall()
+            if len(rows) == 0:
+                raise Exception("Unexpected result from database query")
+            return int_or_default(rows[0][0])
 
     def _get_db_conn(self):
         if self.db and self.db.closed != 0:
