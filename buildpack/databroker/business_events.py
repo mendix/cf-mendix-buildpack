@@ -19,9 +19,27 @@ def update_config(m2ee, vcap_services_data):
 
 def _get_config(vcap_services):
     be_config = {}
-    for service_name, service_creds in vcap_services.items():
-        if "kafka" in service_name:
-            kafka_creds = service_creds[0]["credentials"]
-            for key, value in kafka_creds.items():
-                be_config[f"{CONSTANTS_PREFIX}.{key}"] = value
+    try:
+        for service_name, service_creds in vcap_services.items():
+            if "kafka" in service_name:
+                if len(service_creds) > 1:
+                    logging.warning(
+                        "Business Events: multiple configurations found for kafka."
+                        + "Using the first config from list"
+                    )
+                if (
+                    "credentials" in service_creds[0]
+                    and service_creds[0]["credentials"]
+                ):
+                    kafka_creds = service_creds[0]["credentials"]
+                    for key, value in kafka_creds.items():
+                        be_config[f"{CONSTANTS_PREFIX}.{key}"] = value
+                else:
+                    logging.error("Business Events: configuration is empty")
+    except Exception as ex:
+        logging.error(
+            "Business Events: error reading deployment configuration "
+            + str(ex)
+        )
+
     return be_config
