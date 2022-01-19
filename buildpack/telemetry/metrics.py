@@ -70,6 +70,10 @@ FREEAPPS_METRICS_REGISTRY = [
     }
 ]
 
+# From this MxRuntime version onwards we gather (available) runtime statistics
+# from the micrometer library via the telegraf agent
+MXVERSION_MICROMETER = MXVersion("9.7.0")
+
 # Handler for exit(0) and exit(1)
 def _stop():
     _emit(jvm={"crash": 1.0})
@@ -131,7 +135,7 @@ def _micrometer_runtime_requirement(runtime_version):
         os.getenv("DISABLE_MICROMETER_METRICS", "false")
     )
 
-    runtime_version_supported = runtime_version >= MXVersion("9.7.0")
+    runtime_version_supported = runtime_version >= MXVERSION_MICROMETER
 
     if not disable_micrometer and runtime_version_supported:
         return True

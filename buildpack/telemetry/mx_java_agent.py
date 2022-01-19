@@ -129,8 +129,8 @@ def _enable_mx_java_agent(m2ee):
     )
 
     # If not explicitly set,
-    # - default to StatsD (MxVersion < 9.7)
-    # - default to micrometer (MxVersion >= 9.7)
+    # - default to StatsD (MxVersion < metrics.MXVERSION_MICROMETER)
+    # - default to micrometer (MxVersion >= metrics.MXVERSION_MICROMETER)
     # NOTE : Runtime is moving away from statsd type metrics. If we
     # have customers preferring statsd format, they would need to configure
     # StatsD registry for micrometer.
