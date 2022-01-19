@@ -5,6 +5,7 @@ from unittest.mock import Mock, patch, MagicMock
 from buildpack.telemetry.metrics import (
     FreeAppsMetricsEmitterThread,
     PaidAppsMetricsEmitterThread,
+    MXVERSION_MICROMETER,
 )
 from lib.m2ee.version import MXVersion
 
@@ -74,7 +75,7 @@ class TestFreeAppsMetricsEmitter(TestCase):
         self.addCleanup(patch.stopall)
         patch(
             "buildpack.core.runtime.get_runtime_version",
-            return_value=MXVersion(9.7),
+            return_value=MXVERSION_MICROMETER,
         ).start()
 
         self.mock_user_session_metrics = {

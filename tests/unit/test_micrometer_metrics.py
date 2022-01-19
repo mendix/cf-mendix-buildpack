@@ -41,7 +41,7 @@ class TestMicrometerMetricRegistry(TestCase):
         self.addCleanup(patch.stopall)
         patch(
             "buildpack.core.runtime.get_runtime_version",
-            return_value=MXVersion(9.7),
+            return_value=metrics.MXVERSION_MICROMETER,
         ).start()
         patch(
             "buildpack.telemetry.metrics.micrometer_metrics_enabled",
