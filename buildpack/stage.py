@@ -64,18 +64,25 @@ def preflight_check(version):
         raise NotImplementedError(
             "Stack [{}] is not supported by this buildpack".format(stack)
         )
-    if not runtime.is_version_supported(version):
+    if not runtime.is_version_implemented(version):
         raise NotImplementedError(
-            "Mendix version [{}] is not supported by this buildpack".format(
-                version
+            "Mendix [{}] is not supported by this buildpack".format(
+                version.major
             )
         )
-    if runtime.is_version_end_of_support(version):
+    if not runtime.is_version_supported(version):
         logging.warning(
-            "Mendix version [{}] is end-of-support. Please upgrade to a supported Mendix version (https://docs.mendix.com/releasenotes/studio-pro/lts-mts).".format(
-                version
+            "Mendix [{}] is end-of-support. Please use a supported Mendix version (https://docs.mendix.com/releasenotes/studio-pro/lts-mts).".format(
+                version.major
             )
         )
+    elif not runtime.is_version_maintained(version):
+        logging.info(
+            "Mendix [{}.{}] is not maintained. Please use a medium- or long-term supported Mendix version to easily receive fixes (https://docs.mendix.com/releasenotes/studio-pro/lts-mts).".format(
+                version.major, version.minor
+            )
+        )
+
     logging.info("Preflight check completed")
 
 
