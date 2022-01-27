@@ -28,20 +28,28 @@ if len(handlers) > 2:
 logging.getLogger("m2ee").propagate = False
 
 
+def is_version_implemented(version):
+    if version.major >= 6:
+        return True
+
+    return False
+
+
 def is_version_supported(version):
-    if version < MXVersion("6.0.0"):
-        return False
-
-    return True
-
-
-def is_version_end_of_support(version):
-    # LTS versions: https://docs.mendix.com/releasenotes/studio-pro/lts-mts
-    if version >= MXVersion("6.0.0") and version < MXVersion("7.23"):
+    # Support for the latest three major versions: https://docs.mendix.com/releasenotes/studio-pro/lts-mts
+    if version.major >= 7:
         return True
-    if version >= MXVersion("8.0.0") and version < MXVersion("8.18"):
+
+    return False
+
+
+def is_version_maintained(version):
+    # LTS / MTS versions: https://docs.mendix.com/releasenotes/studio-pro/lts-mts
+    if version.major == 7 and version.minor == 23:
         return True
-    if version >= MXVersion("9.0.0") and version < MXVersion("9.6.0"):
+    if version.major == 8 and version.minor == 18:
+        return True
+    if version.major == 9 and version.minor >= 6:
         return True
 
     return False
