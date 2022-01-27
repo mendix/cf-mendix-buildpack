@@ -4,16 +4,18 @@
 
 This document contains general information on the Mendix Cloud Foundry Buildpack.
 
-The latest [release](https://github.com/mendix/cf-mendix-buildpack/releases/latest) supports Mendix versions 7 (LTS), 8 (LTS) and 9 (MTS). See the table which buildpack release introduced support for a Mendix version, and in which release versions [are end-of-support](https://docs.mendix.com/releasenotes/studio-pro/lts-mts). [This section](#buildpack-releases-and-version-pinning) describes how to use a specific release.
+The latest [buildpack release](https://github.com/mendix/cf-mendix-buildpack/releases/latest) supports all [officially-supported](https://docs.mendix.com/releasenotes/studio-pro/lts-mts) Mendix versions (7, 8 and 9).
 
-| Mendix Version | Supported | End-of-Support |
+The following table shows which specific buildpack release introduced or removed support for specific Mendix versions.
+
+| Mendix Major Version | Supported | End-of-Support |
 | ---- | ---- | ---- |
-| `9.6.x` ([MTS](https://docs.mendix.com/releasenotes/studio-pro/lts-mts)), `9 > 9.6` ([monthly](https://docs.mendix.com/releasenotes/studio-pro/lts-mts)) | `v4.24.0` | - |
-| `9 < 9.6.x` | `v4.16.0` | `v4.24.0` |
-| `8.18.x` ([LTS](https://docs.mendix.com/releasenotes/studio-pro/lts-mts)) | `v3.4.0` | - |
-| `8 < 8.x` | `v3.4.0` | `v4.16.0` |
-| `7.23.x` ([LTS](https://docs.mendix.com/releasenotes/studio-pro/lts-mts)) | `v3.1.0` | - |
-| `6.x` , `7 < 7.23.x` | `v1.0` | `v4.16.0` |
+| `9` | `v4.24.0` | - |
+| `8` | `v3.4.0` | - |
+| `7` | `v3.1.0` | - |
+| `6` | `v1.0` | `v4.16.0` |
+
+We recommend using a [maintained (LTS / MTS)](https://docs.mendix.com/releasenotes/studio-pro/lts-mts) Mendix version. Additionally, we recommend to always [use / "pin to" a specific buildpack release](#buildpack-releases-and-version-pinning).
 
 The buildpack is heavily tied to the Mendix Public Cloud, but can be used independently.
 Release notes are available for the [buildpack](https://github.com/mendix/cf-mendix-buildpack/releases/), [Mendix itself](https://docs.mendix.com/releasenotes/studio-pro/) and the [Mendix Public Cloud](https://docs.mendix.com/releasenotes/developer-portal/deployment).
