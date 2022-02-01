@@ -20,6 +20,8 @@ from buildpack.infrastructure import database
 from lib.m2ee import munin
 from lib.m2ee.version import MXVersion
 
+from . import datadog
+
 # Runtime configuration for influx registry
 # This enables the new stream of metrics coming from micrometer instead
 # of the admin port.
@@ -29,26 +31,29 @@ from lib.m2ee.version import MXVersion
 # `a.name.like.this` would appear as `a_name_like_this` in
 # influx-formatted metrics output. Hence the filter names uses the
 # dot-separated metric names.
-PAIDAPPS_METRICS_REGISTRY = [
-    {
-        "type": "influx",
-        "settings": {
-            "uri": "http://localhost:8086",
-            "db": "mendix",
-            "step": "10s",
+INFLUX_REGISTRY = {
+    "type": "influx",
+    "settings": {
+        "uri": "http://localhost:8086",
+        "db": "mendix",
+        "step": "10s",
+    },
+    "filters": [
+        # Filter out irrelevant metrics to reduce
+        # the payload size passed to TSS
+        # https://docs.mendix.com/refguide/metrics#filters
+        {
+            "type": "nameStartsWith",
+            "result": "deny",
+            "values": ["commons.pool"],
         },
-        "filters": [
-            # Filter out irrelevant metrics to reduce
-            # the payload size passed to TSS
-            # https://docs.mendix.com/refguide/metrics#filters
-            {
-                "type": "nameStartsWith",
-                "result": "deny",
-                "values": ["commons.pool"],
-            },
-        ],
-    }
-]
+    ],
+}
+
+STATSD_REGISTRY = {
+    "type": "statsd",
+    "settings": {"port": datadog.get_statsd_port()},
+}
 
 # For freeapps we push only the session metrics
 FREEAPPS_METRICS_REGISTRY = [
@@ -122,6 +127,10 @@ def run(m2ee):
         logging.info("MENDIX-INTERNAL: Metrics are disabled.")
 
 
+def get_appmetrics_target():
+    return os.getenv("APPMETRICS_TARGET")
+
+
 def get_metrics_url():
     return os.getenv("TRENDS_STORAGE_URL")
 
@@ -150,7 +159,7 @@ def micrometer_metrics_enabled(runtime_version):
     )
 
 
-def configure_influx_registry(m2ee):
+def configure_metrics_registry(m2ee):
     """Add custom environment variables to runtime.
 
     This ensures runtime micrometer sends metrics to telegraf.
@@ -164,7 +173,12 @@ def configure_influx_registry(m2ee):
     if util.is_free_app():
         return {"Metrics.Registries": FREEAPPS_METRICS_REGISTRY}
 
-    return {"Metrics.Registries": PAIDAPPS_METRICS_REGISTRY}
+    paidapps_registries = {"Metrics.Registries": [INFLUX_REGISTRY]}
+
+    if datadog.is_enabled() or get_appmetrics_target():
+        paidapps_registries["Metrics.Registries"].append(STATSD_REGISTRY)
+
+    return paidapps_registries
 
 
 def bypass_loggregator():

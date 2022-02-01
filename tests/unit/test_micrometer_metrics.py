@@ -1,4 +1,5 @@
 import os
+from operator import itemgetter
 
 from buildpack.telemetry import metrics
 from lib.m2ee.version import MXVersion
@@ -48,17 +49,35 @@ class TestMicrometerMetricRegistry(TestCase):
             return_value=True,
         ).start()
 
-    def test_paidapps_metrics_registry(self):
+    @patch("buildpack.telemetry.datadog.is_enabled", return_value=False)
+    def test_paidapps_metrics_registry(self, is_enabled):
         with patch.dict(os.environ, {"PROFILE": "some-random-mx-profile"}):
-            result = metrics.configure_influx_registry(Mock())
+            result = metrics.configure_metrics_registry(Mock())
+            metrics_registries = result.get("Metrics.Registries")
             self.assertEqual(
-                result.get("Metrics.Registries"),
-                metrics.PAIDAPPS_METRICS_REGISTRY,
+                metrics_registries[0]["type"],
+                "influx",
+            )
+
+    @patch("buildpack.telemetry.datadog.is_enabled", return_value=True)
+    def test_paidapps_metrics_registry_statsd(self, is_enabled):
+        with patch.dict(os.environ, {"PROFILE": "some-random-mx-profile"}):
+            result = metrics.configure_metrics_registry(Mock())
+            metrics_registries = sorted(
+                result.get("Metrics.Registries"), key=itemgetter("type")
+            )
+            self.assertEqual(
+                metrics_registries[0]["type"],
+                "influx",
+            )
+            self.assertEqual(
+                metrics_registries[1]["type"],
+                "statsd",
             )
 
     def test_freeapps_metrics_registry(self):
         with patch.dict(os.environ, {"PROFILE": "free"}):
-            result = metrics.configure_influx_registry(Mock())
+            result = metrics.configure_metrics_registry(Mock())
             self.assertEqual(
                 result.get("Metrics.Registries"),
                 metrics.FREEAPPS_METRICS_REGISTRY,

@@ -54,8 +54,6 @@ STATSD_PORT_ALT = 18125
 #   "password": "secret",
 #   "kpionly": true
 # }]
-def _get_appmetrics_target():
-    return os.getenv("APPMETRICS_TARGET")
 
 
 def include_db_metrics():
@@ -64,7 +62,7 @@ def include_db_metrics():
         return False
 
     result = False
-    if _get_appmetrics_target() is not None or datadog.is_enabled():
+    if metrics.get_appmetrics_target() is not None or datadog.is_enabled():
         # For customers who have Datadog or APPMETRICS_TARGET enabled,
         # we always include the database metrics. They can opt out
         # using the APPMETRICS_INCLUDE_DB flag
@@ -79,7 +77,7 @@ def _get_app_index():
 
 def is_enabled(runtime_version):
     return (
-        _get_appmetrics_target() is not None
+        metrics.get_appmetrics_target() is not None
         or datadog.is_enabled()
         or metrics.micrometer_metrics_enabled(runtime_version)
     )
@@ -103,9 +101,9 @@ class HttpOutput:
 def _get_http_outputs():
     http_configs = []
     result = []
-    if _get_appmetrics_target():
+    if metrics.get_appmetrics_target():
         try:
-            http_configs = json.loads(_get_appmetrics_target())
+            http_configs = json.loads(metrics.get_appmetrics_target())
         except ValueError:
             logging.error(
                 "Invalid APPMETRICS_TARGET set. Please check if it contains valid JSON. Telegraf will not forward metrics to InfluxDB."
@@ -198,7 +196,7 @@ def update_config(m2ee, app_name):
     logging.debug("Update runtime configuration for metrics registry... ")
     util.upsert_custom_runtime_settings(
         m2ee,
-        metrics.configure_influx_registry(m2ee),
+        metrics.configure_metrics_registry(m2ee),
         overwrite=True,
         append=True,
     )
