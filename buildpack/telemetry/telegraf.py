@@ -59,7 +59,18 @@ def _get_appmetrics_target():
 
 
 def include_db_metrics():
-    return strtobool(os.getenv("APPMETRICS_INCLUDE_DB", "true"))
+    if util.is_free_app():
+        # For free apps we are not interested in database metrics
+        return False
+
+    result = False
+    if _get_appmetrics_target() is not None or datadog.is_enabled():
+        # For customers who have Datadog or APPMETRICS_TARGET enabled,
+        # we always include the database metrics. They can opt out
+        # using the APPMETRICS_INCLUDE_DB flag
+        result = strtobool(os.getenv("APPMETRICS_INCLUDE_DB", "true"))
+
+    return result
 
 
 def _get_app_index():
