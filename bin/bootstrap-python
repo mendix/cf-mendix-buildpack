@@ -49,7 +49,7 @@ then
         python3 ${PIP_WHL_PATH}/pip install $PIP_VERBOSITY_FLAGS --user --no-warn-script-location --no-index --find-links=$PIP_WHEELDIR pip setuptools wheel
     else
         # Bootstrap wheels are not bundled in the buildpack
-        curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+        curl https://bootstrap.pypa.io/pip/3.6/get-pip.py -o get-pip.py
         python3 get-pip.py install $PIP_VERBOSITY_FLAGS --user --no-warn-script-location
     fi
     PIP_CMD="/home/vcap/.local/bin/pip"
