@@ -11,7 +11,7 @@ def stage(buildpack_dir, destination_path, cache_path):
         util.resolve_dependency(
             util.get_blobstore_url(
                 "/mx-buildpack/appdynamics/appdynamics-agent-1.8-{}.zip".format(
-                    APPDYNAMICS_VERSION + "-mendix"
+                    APPDYNAMICS_VERSION
                 )
             ),
             destination_path,  # DOT_LOCAL_LOCATION,
