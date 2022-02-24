@@ -35,6 +35,9 @@ class TestCaseDeployWithAppdynamics(basetest.BaseTest):
             "Started AppDynamics Java Agent Successfully"
         )
 
+    def test_appdynamics_mx9(self):
+        self._test_appdynamics("BuildpackTestApp-mx9-7.mda")
+
     def test_appdynamics_mx8(self):
         self._test_appdynamics("Mendix8.1.1.58432_StarterApp.mda")
 
