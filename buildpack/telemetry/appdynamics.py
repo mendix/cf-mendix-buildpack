@@ -3,7 +3,7 @@ import os
 
 from buildpack import util
 
-APPDYNAMICS_VERSION = "21.11.1.33280"
+APPDYNAMICS_VERSION = "22.1.0.33445"
 
 
 def stage(buildpack_dir, destination_path, cache_path):
@@ -11,7 +11,7 @@ def stage(buildpack_dir, destination_path, cache_path):
         util.resolve_dependency(
             util.get_blobstore_url(
                 "/mx-buildpack/appdynamics/appdynamics-agent-1.8-{}.zip".format(
-                    APPDYNAMICS_VERSION + "-mendix"
+                    APPDYNAMICS_VERSION
                 )
             ),
             destination_path,  # DOT_LOCAL_LOCATION,
