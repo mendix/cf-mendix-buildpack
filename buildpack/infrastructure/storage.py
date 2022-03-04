@@ -88,7 +88,6 @@ def _get_s3_specific_config(vcap_services):
 
     core_config_value = STORAGE_CUSTOM_RUNTIME_SETTINGS_PREFIX + "s3"
     config_prefix = core_config_value + "."
-    cas = os.getenv("CERTIFICATE_AUTHORITIES", None)
     if access_key and secret:
         logging.info("S3 config detected, activating external file store")
         config = {
@@ -101,18 +100,7 @@ def _get_s3_specific_config(vcap_services):
         tvm_endpoint
         and tvm_username
         and tvm_password
-        and (
-            runtime.get_runtime_version() >= 9.2
-            or (
-                runtime.get_runtime_version() >= MXVersion("8.18.7")
-                and runtime.get_runtime_version() < 9
-            )
-            or (
-                runtime.get_runtime_version() >= MXVersion("7.23.22")
-                and runtime.get_runtime_version() < 8
-            )
-        )
-        and not cas
+        and _runtime_sts_support(runtime.get_runtime_version())
     ):
         logging.info("S3 TVM config detected")
         config = {
@@ -162,6 +150,23 @@ def _get_s3_specific_config(vcap_services):
     if runtime.get_runtime_version() >= 6 and sse:
         config[config_prefix + "UseSSE"] = sse
     return config
+
+
+def _runtime_sts_support(version):
+    if version >= 9.6 or (
+        version.major == 8 and version >= MXVersion("8.18.11")
+    ):
+        return True
+    # Only enable STS support for these versions when CERTIFICATE_AUTHORITIES
+    # is not set or STS will break.
+    elif (
+        version >= 9.2
+        or (version.major == 8 and version >= MXVersion("8.18.7"))
+        or (version.major == 7 and version >= MXVersion("7.23.22"))
+    ) and not os.getenv("CERTIFICATE_AUTHORITIES", None):
+        return True
+    else:
+        return False
 
 
 def _get_credentials_from_tvm(tvm_endpoint, tvm_username, tvm_password):
