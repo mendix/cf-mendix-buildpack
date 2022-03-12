@@ -11,7 +11,7 @@ class TestDataBrokerBusinessEvents(unittest.TestCase):
     password = "abc23e4ftas78"
     channel_name = "e3c890204da74768"
     username = "ZaUx5uboxqsCRrA"
-    kafka_vcap = f"""
+    kafka_shared_vcap = f"""
         {{
             "kafka-testfree": [
                 {{
@@ -42,7 +42,7 @@ class TestDataBrokerBusinessEvents(unittest.TestCase):
         }}
     """
 
-    kafka_vcap_with_null_creds = f"""
+    kafka_shared_vcap_with_null_creds = f"""
         {{
             "kafka-testfree": [
                 {{
@@ -83,11 +83,11 @@ class TestDataBrokerBusinessEvents(unittest.TestCase):
         assert business_events_cfg[f"{prefix}.Username"] == self.username
 
     def test_business_events_config_happy_flow(self):
-        os.environ["VCAP_SERVICES"] = self.kafka_vcap
+        os.environ["VCAP_SERVICES"] = self.kafka_shared_vcap
         self._verify_vcap_info()
 
     def test_business_events_config_with_empty_creds(self):
-        os.environ["VCAP_SERVICES"] = self.kafka_vcap_with_null_creds
+        os.environ["VCAP_SERVICES"] = self.kafka_shared_vcap_with_null_creds
         # make sure any exceptions in the business events does not cause any errors
         business_events_cfg = business_events._get_config(
             util.get_vcap_services_data()
