@@ -214,7 +214,7 @@ class TestCaseS3BlobStoreDryRun(TestCase):
 
     @mock.patch(
         "buildpack.core.runtime.get_runtime_version",
-        mock.MagicMock(return_value=MXVersion(9.6)),
+        mock.MagicMock(return_value=MXVersion("9.6.1")),
     )
     @mock.patch(
         "buildpack.infrastructure.storage._get_credentials_from_tvm",
