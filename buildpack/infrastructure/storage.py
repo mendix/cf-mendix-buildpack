@@ -153,7 +153,7 @@ def _get_s3_specific_config(vcap_services):
 
 
 def _runtime_sts_support(version):
-    if version >= 9.6 or (
+    if version >= MXVersion("9.6.1") or (
         version.major == 8 and version >= MXVersion("8.18.11")
     ):
         return True
