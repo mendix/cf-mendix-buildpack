@@ -83,9 +83,22 @@ def _sigterm_handler(_signo, _stack_frame):
     sys.exit()
 
 
+# Handler for user signals (e.g. SIGUSR1 and SIGUSR2)
+# These are specified as Java options in etc/m2ee/m2ee.yaml and handle e.g. OOM errors
+# This handler is extensible and can incorporate handle_sigusr() calls in buildpack components
+def _sigusr_handler(_signo, _stack_frame):
+    # pylint: disable=no-member
+    logging.debug("%s received", signal.Signals(_signo).name)
+    metrics.handle_sigusr(_signo, _stack_frame)
+    # Call sys.exit(1) so that all atexit handlers are explicitly called
+    sys.exit(1)
+
+
 def _register_signal_handlers():
     signal.signal(signal.SIGCHLD, _sigchild_handler)
     signal.signal(signal.SIGTERM, _sigterm_handler)
+    signal.signal(signal.SIGUSR1, _sigusr_handler)
+    signal.signal(signal.SIGUSR2, _sigusr_handler)
 
 
 if os.environ.get("DEBUG_CONTAINER", "false").lower() == "true":

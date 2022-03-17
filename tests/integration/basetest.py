@@ -114,6 +114,18 @@ class BaseTest(unittest.TestCase):
     def assert_running(self, *args, **kwargs):
         assert self._runner.is_process_running(*args, **kwargs)
 
+    def assert_shutdown(self, exitcode=0):
+        assert self.await_container_health("unhealthy", 60)
+        assert self.get_container_exitcode() == exitcode
+        self.assert_string_in_recent_logs("Mendix Runtime is shutting down")
+        self.assert_string_in_recent_logs("Mendix Runtime is now shut down")
+        if exitcode == 0:
+            # sys.exit(1) only occurs before the await termination loop
+            self.assert_string_in_recent_logs(
+                "Runtime process has been terminated"
+            )
+        self.assert_string_in_recent_logs("Terminating process group")
+
     def query_mxadmin(self, *args, **kwargs):
         return self._runner.mxadmin(*args, **kwargs)
 

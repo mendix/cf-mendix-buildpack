@@ -5,7 +5,6 @@ import logging
 import os
 import signal
 import socket
-import sys
 import threading
 import time
 from abc import ABCMeta, abstractmethod
@@ -85,15 +84,14 @@ def _stop():
 
 
 # Handler for user signals
-def _sigusr_handler(_signo, _stack_frame):
-    logging.debug("Handling SIGUSR...")
-    if _signo == signal.SIGUSR1:
-        _emit(jvm={"errors": 1.0})
-    elif _signo == signal.SIGUSR2:
-        _emit(jvm={"ooms": 1.0})
-    else:
-        pass
-    sys.exit(1)
+# Initialized from within the start procedure in start.py
+def handle_sigusr(_signo, _stack_frame):
+    if os.getenv("METRICS_INTERVAL"):  # Only enable if metrics are active
+        logging.debug("Handling user signal for metrics...")
+        if _signo == signal.SIGUSR1:
+            _emit(jvm={"errors": 1.0})
+        elif _signo == signal.SIGUSR2:
+            _emit(jvm={"ooms": 1.0})
 
 
 def _emit(**stats):
@@ -114,9 +112,6 @@ def run(m2ee):
     metrics_interval = os.getenv("METRICS_INTERVAL")
     if metrics_interval:
         atexit.register(_stop)
-        signal.signal(signal.SIGUSR1, _sigusr_handler)
-        signal.signal(signal.SIGUSR2, _sigusr_handler)
-
         if util.is_free_app():
             thread = FreeAppsMetricsEmitterThread(int(metrics_interval), m2ee)
         else:

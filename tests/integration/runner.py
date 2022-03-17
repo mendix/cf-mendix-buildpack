@@ -193,7 +193,7 @@ class CfLocalRunner(metaclass=abc.ABCMeta):
             )
 
     def stop(self, signal="SIGTERM"):
-        if self._container_process:
+        if signal == "SIGTERM" and self._container_process:
             self._container_process.terminate()
         if self._container_id:
             return self._cmd(
