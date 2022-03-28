@@ -454,7 +454,7 @@ Additionally, we configure the following Datadog environment variables for you:
 | `DD_JMXFETCH_ENABLED` | `true` | No | Enables Datadog Java Trace Agent JMX metrics fetching |
 | `DD_SERVICE_MAPPING` | `<database>:<app>.db` | No | Links your database to your app in Datadog APM |
 | `DD_LOGS_ENABLED` | `true` | No | Enables sending your application logs directly to Datadog |
-| `DD_CHECKS_ENABLED` | `false` | Yes | Enables system metrics. These are disabled by default, as the metrics might be host metrics instead of container metrics. |
+| `DD_ENABLE_CHECKS` | `false` | Yes | Enables system metrics. These are disabled by default, as the metrics might be host metrics instead of container metrics. |
 
 Other environment variables can be set as per the [Datadog Agent documentation](https://docs.datadoghq.com/agent/).
 
