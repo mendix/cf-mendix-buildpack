@@ -49,7 +49,9 @@ def is_version_maintained(version):
         return True
     if version.major == 8 and version.minor == 18:
         return True
-    if version.major == 9 and version.minor >= 6:
+    if version.major == 9 and version.minor == 6:
+        return True
+    if version.major == 9 and version.minor >= 12:
         return True
 
     return False

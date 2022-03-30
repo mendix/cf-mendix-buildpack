@@ -15,6 +15,7 @@ STORAGE_CUSTOM_RUNTIME_SETTINGS_PREFIX = "com.mendix.storage."
 
 
 def _get_s3_specific_config(vcap_services):
+    version = runtime.get_runtime_version()
     access_key = secret = bucket = encryption_keys = key_suffix = None
     tvm_endpoint = tvm_username = tvm_password = endpoint = amazon_s3 = None
     v2_auth = ""
@@ -100,7 +101,7 @@ def _get_s3_specific_config(vcap_services):
         tvm_endpoint
         and tvm_username
         and tvm_password
-        and _runtime_sts_support(runtime.get_runtime_version())
+        and _runtime_sts_support(version)
     ):
         logging.info("S3 TVM config detected")
         config = {
@@ -131,9 +132,16 @@ def _get_s3_specific_config(vcap_services):
 
     if dont_perform_deletes:
         logging.debug("disabling perform deletes for runtime")
-        if runtime.get_runtime_version() < 7.19:
+        if version < 7.19:
             # Deprecated in 7.19
             config[config_prefix + "PerformDeleteFromStorage"] = False
+        elif version >= 9.12 or (
+            version.major == 9 and version.minor == 6 and version.patch >= 11
+        ):
+            config[
+                STORAGE_CUSTOM_RUNTIME_SETTINGS_PREFIX
+                + "PerformDeleteFromStorage"
+            ] = "NoFiles"
         else:
             config[
                 STORAGE_CUSTOM_RUNTIME_SETTINGS_PREFIX
@@ -145,9 +153,9 @@ def _get_s3_specific_config(vcap_services):
         config[config_prefix + "UseV2Auth"] = v2_auth
     if endpoint:
         config[config_prefix + "EndPoint"] = endpoint
-    if runtime.get_runtime_version() >= 6 and encryption_keys:
+    if version >= 6 and encryption_keys:
         config[config_prefix + "EncryptionKeys"] = encryption_keys
-    if runtime.get_runtime_version() >= 6 and sse:
+    if version >= 6 and sse:
         config[config_prefix + "UseSSE"] = sse
     return config
 
