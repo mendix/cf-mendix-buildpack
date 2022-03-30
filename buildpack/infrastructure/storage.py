@@ -134,6 +134,13 @@ def _get_s3_specific_config(vcap_services):
         if runtime.get_runtime_version() < 7.19:
             # Deprecated in 7.19
             config[config_prefix + "PerformDeleteFromStorage"] = False
+        elif runtime.get_runtime_version() >= (
+            MXVersion("9.6.11") or MXVersion("9.12")
+        ):
+            config[
+                STORAGE_CUSTOM_RUNTIME_SETTINGS_PREFIX
+                + "PerformDeleteFromStorage"
+            ] = "NoFiles"
         else:
             config[
                 STORAGE_CUSTOM_RUNTIME_SETTINGS_PREFIX
