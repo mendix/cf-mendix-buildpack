@@ -6,6 +6,7 @@ BUILDPACK_PATH=$(dirname "$0")/..
 BUILD_PATH=$1
 CACHE_PATH=$2
 DEPS_PATH=$3/$4
+PROFILE_DIR=${5:-}
 
 VERSION=$(cat $BUILDPACK_PATH/VERSION | tr -d '[:space:]')
 COMMIT_PATH="${BUILDPACK_PATH}/.commit"
