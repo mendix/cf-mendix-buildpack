@@ -26,6 +26,13 @@ BUILDPACK_DIR = os.path.abspath(
 BUILD_DIR = os.path.abspath(sys.argv[1])
 CACHE_DIR = os.path.abspath(os.path.join(sys.argv[2], "bust"))
 DOT_LOCAL_LOCATION = os.path.abspath(os.path.join(BUILD_DIR, ".local"))
+if len(sys.argv) >= 5:
+    DEPS_DIR = os.path.abspath(sys.argv[3])
+    DEPS_IDX = os.path.abspath(sys.argv[4])
+if len(sys.argv) >= 6 and sys.argv[5] != "":
+    PROFILE_DIR = os.path.abspath(sys.argv[5])
+else:
+    PROFILE_DIR = os.path.abspath(os.path.join(BUILD_DIR, ".profile.d"))
 
 SUPPORTED_STACKS = [
     "cflinuxfs3",
@@ -91,6 +98,12 @@ def set_up_directory_structure():
     util.mkdir_p(DOT_LOCAL_LOCATION)
 
 
+def set_up_launch_environment():
+    logging.debug("Creating buildpack launch environment...")
+    util.mkdir_p(PROFILE_DIR)
+    util.set_up_launch_environment(DEPS_DIR, PROFILE_DIR)
+
+
 def copy_buildpack_resources():
     shutil.copytree(
         os.path.join(BUILDPACK_DIR, "buildpack"),
@@ -153,6 +166,7 @@ if __name__ == "__main__":
 
     set_up_directory_structure()
     copy_buildpack_resources()
+    set_up_launch_environment()
     java.stage(
         BUILDPACK_DIR,
         CACHE_DIR,
