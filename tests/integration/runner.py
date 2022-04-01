@@ -662,7 +662,9 @@ def run(ctx, name, password, package, env, use_snapshot, with_db, debug, host):
 
     try:
         if verbose:
-            click.echo("Starting application {}...".format(runner.get_app_name()))
+            click.echo(
+                "Starting application {}...".format(runner.get_app_name())
+            )
         runner.start()
     except Exception as ex:
         runner.destroy()
