@@ -1,4 +1,4 @@
-# !/usr/bin/env python
+#! /usr/bin/env python
 import abc
 import io
 import json
@@ -68,6 +68,7 @@ class CfLocalRunner(metaclass=abc.ABCMeta):
         password=None,
         debug=True,
     ):
+
         self._check_for_cflocal()
 
         if not buildpack:
@@ -634,6 +635,7 @@ def run(ctx, name, password, package, env, use_snapshot, with_db, debug, host):
             )
         )
     try:
+        env_vars = None
         if verbose:
             click.echo("Staging application...")
             env_vars = _parse_env_options(env)
@@ -659,7 +661,10 @@ def run(ctx, name, password, package, env, use_snapshot, with_db, debug, host):
         click.echo(stage[0])
 
     try:
-        click.echo("Starting application {}...".format(runner.get_app_name()))
+        if verbose:
+            click.echo(
+                "Starting application {}...".format(runner.get_app_name())
+            )
         runner.start()
     except Exception as ex:
         runner.destroy()
