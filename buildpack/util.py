@@ -237,6 +237,43 @@ def get_mpr_file_from_dir(directory):
         return None
 
 
+def set_up_launch_environment(deps_dir, profile_dir):
+    profile_dirs = get_existing_deps_dirs(deps_dir, "profile.d", deps_dir)
+    for dir in profile_dirs:
+        sections = dir.split(os.sep)
+        if len(sections) < 2:
+            raise Exception("Invalid dependencies directory")
+
+        deps_idx = sections[len(sections) - 2]
+
+        files = [
+            f for f in os.listdir(dir) if os.path.isfile(os.path.join(dir, f))
+        ]
+
+        for file in files:
+            src = os.path.join(dir, file)
+            dest = os.path.join(profile_dir, deps_idx + "_" + file)
+            shutil.copyfile(src, dest)
+
+
+def get_existing_deps_dirs(deps_dir, sub_dir, prefix):
+    files = [
+        f
+        for f in os.listdir(deps_dir)
+        if os.path.isdir(os.path.join(deps_dir, f))
+    ]
+    existing_dirs = []
+
+    for file in files:
+        filesystem_dir = os.path.join(deps_dir, file, sub_dir)
+        dir_to_join = os.path.join(prefix, file, sub_dir)
+
+        if os.path.exists(filesystem_dir):
+            existing_dirs.append(dir_to_join)
+
+    return existing_dirs
+
+
 def lazy_remove_file(filename):
     try:
         os.remove(filename)
