@@ -170,10 +170,9 @@ def _fix_metrics_registries_config(m2ee):
     # Metrics.Registries is a nested JSON entry. As a result, when we read
     # from the environment, it is not a list of registries but a string.
     # We fix it here so that it is a list.
-    metrics_registries_key = "Metrics.Registries"
     try:
         metrics_registries_value = util.get_custom_runtime_setting(
-            m2ee, metrics_registries_key
+            m2ee, metrics.METRICS_REGISTRIES_KEY
         )
     except KeyError:
         # Move on if we do not have the key set
@@ -188,7 +187,10 @@ def _fix_metrics_registries_config(m2ee):
 
     # Update the registries with the fixed set of entries
     util.upsert_custom_runtime_setting(
-        m2ee, metrics_registries_key, current_registries, overwrite=True
+        m2ee,
+        metrics.METRICS_REGISTRIES_KEY,
+        current_registries,
+        overwrite=True,
     )
 
 
@@ -240,7 +242,7 @@ def update_config(m2ee, app_name):
     _fix_metrics_registries_config(m2ee)
     util.upsert_custom_runtime_setting(
         m2ee,
-        'Metrics.Registries',
+        metrics.METRICS_REGISTRIES_KEY,
         metrics.configure_metrics_registry(m2ee),
         overwrite=True,
         append=True,

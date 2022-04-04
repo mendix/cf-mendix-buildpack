@@ -74,6 +74,8 @@ FREEAPPS_METRICS_REGISTRY = [
     }
 ]
 
+METRICS_REGISTRIES_KEY = "Metrics.Registries"
+
 # From this MxRuntime version onwards we gather (available) runtime statistics
 # from the micrometer library via the telegraf agent
 MXVERSION_MICROMETER = MXVersion("9.7.0")
