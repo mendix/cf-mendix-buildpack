@@ -166,6 +166,32 @@ def _get_db_config():
     return None
 
 
+def _fix_metrics_registries_config(m2ee):
+    # Metrics.Registries is a nested JSON entry. As a result, when we read
+    # from the environment, it is not a list of registries but a string.
+    # We fix it here so that it is a list.
+    metrics_registries_key = "Metrics.Registries"
+    try:
+        metrics_registries_value = util.get_custom_runtime_setting(
+            m2ee, metrics_registries_key
+        )
+    except KeyError:
+        # Move on if we do not have the key set
+        return
+
+    try:
+        current_registries = json.loads(metrics_registries_value)
+    except TypeError:
+        # Type error indicates the value is not a string and we can
+        # then ignore it and continue
+        current_registries = metrics_registries_value
+
+    # Update the registries with the fixed set of entries
+    util.upsert_custom_runtime_setting(
+        m2ee, metrics_registries_key, current_registries, overwrite=True
+    )
+
+
 def update_config(m2ee, app_name):
     runtime_version = runtime.get_runtime_version()
     if not is_enabled(runtime_version) or not _is_installed():
@@ -211,8 +237,10 @@ def update_config(m2ee, app_name):
     logging.debug("Telegraf configuration file written")
 
     logging.debug("Update runtime configuration for metrics registry... ")
-    util.upsert_custom_runtime_settings(
+    _fix_metrics_registries_config(m2ee)
+    util.upsert_custom_runtime_setting(
         m2ee,
+        'Metrics.Registries',
         metrics.configure_metrics_registry(m2ee),
         overwrite=True,
         append=True,
