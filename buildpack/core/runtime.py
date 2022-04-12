@@ -254,8 +254,8 @@ def _get_scheduled_events(metadata):
                     scheduled_event,
                 )
             else:
-                result.append(scheduled_events)
-        logging.debug("Enabling scheduled events [%s]...", ",".join(result))
+                result.append(scheduled_event)
+        logging.info("Enabling scheduled events [%s]...", ",".join(result))
         return ("SPECIFIED", result)
 
 
@@ -430,6 +430,10 @@ def _set_runtime_config(m2ee, metadata, vcap_data):
     )
     util.upsert_custom_runtime_settings(
         m2ee, _get_custom_runtime_settings(), overwrite=True, append=True
+    )    
+    logging.info(
+        "app_config: [%s]",
+        json.dumps(app_config),
     )
 
 
