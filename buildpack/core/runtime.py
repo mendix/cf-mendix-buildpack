@@ -254,7 +254,7 @@ def _get_scheduled_events(metadata):
                     scheduled_event,
                 )
             else:
-                result.append(scheduled_events)
+                result.append(scheduled_event)
         logging.debug("Enabling scheduled events [%s]...", ",".join(result))
         return ("SPECIFIED", result)
 
