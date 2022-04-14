@@ -229,7 +229,11 @@ def _activate_license():
 
 def _get_scheduled_events(metadata):
     scheduled_events = os.getenv("SCHEDULED_EVENTS", None)
-    if not util.is_cluster_leader():
+    # Scheduled events need to be enabled on every instance >= 9.12
+    if (
+        get_runtime_version() < MXVersion(9.12)
+        and not util.is_cluster_leader()
+    ):
         logging.debug(
             "This instance is not a cluster leader, disabling scheduled events..."
         )
