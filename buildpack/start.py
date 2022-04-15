@@ -146,9 +146,7 @@ if __name__ == "__main__":
         storage.update_config(m2ee)
         java.update_config(m2ee, util.get_vcap_data(), java_version)
         newrelic.update_config(m2ee, util.get_vcap_data()["application_name"])
-        appdynamics.update_config(
-            m2ee, util.get_vcap_data()["application_name"]
-        )
+        appdynamics.update_config(m2ee)
         dynatrace.update_config(m2ee, util.get_vcap_data()["application_name"])
         mx_java_agent.update_config(m2ee)
         telegraf.update_config(m2ee, util.get_vcap_data()["application_name"])
@@ -178,6 +176,7 @@ if __name__ == "__main__":
         logs.run(m2ee)
         runtime.run(m2ee, logs.get_loglevels())
         metrics.run(m2ee)
+        appdynamics.run()
         nginx.run()
 
         # Wait for the runtime to be ready before starting Databroker
