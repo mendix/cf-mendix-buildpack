@@ -385,24 +385,60 @@ To enable New Relic, simply bind a New Relic service to this app and settings wi
 
 ### AppDynamics
 
-To enable AppDynamics, configure the following environment variables:
+All the information collected with AppDynamics Java Agent and Machine Agent is pushed to Controller and displayed 
+on the [Controller UI](https://docs.appdynamics.com/21.1/en/appdynamics-essentials/getting-started/controller-ui-overview).
 
-```plaintext
-APPDYNAMICS_CONTROLLER_PORT
-APPDYNAMICS_CONTROLLER_SSL_ENABLED
-APPDYNAMICS_CONTROLLER_HOST_NAME
-APPDYNAMICS_AGENT_APPLICATION_NAME
-APPDYNAMICS_AGENT_ACCOUNT_NAME
-APPDYNAMICS_AGENT_ACCOUNT_ACCESS_KEY
-APPDYNAMICS_AGENT_NODE_NAME *
-APPDYNAMICS_AGENT_TIER_NAME
-```
+#### Basic functionality
 
-\* The `APPDYNAMICS_AGENT_NODE_NAME` environment variable will be appended with the value of the `CF_INSTANCE_ID` variable. If you use `my-app` for `APPDYNAMICS_AGENT_NODE_NAME` , the AppDynamics agent will be configured as `my-app-0` for instance `0` and `my-app-1` for instance `1` , etc.
-
-If you have any environment variable that starts with `APPDYNAMICS_` , the AppDynamics Java Agent will be configured for your application. At the moment only agent version `21.11.1.33280` is available. After configuring these environment variables, restage your app for the agent to be enabled.
+To enable AppDynamics, configure the following environment variables. 
+These settings enable basic (Java Agent related) AppDynamics features.
+More information here: [Environment variables](https://docs.appdynamics.com/22.2/en/application-monitoring/install-app-server-agents/java-agent/install-the-java-agent/use-environment-variables-for-java-agent-settings#UseEnvironmentVariablesforJavaAgentSettings-EnvironmentVariables).
 
 Please note that AppDynamics requires Mendix 6.2 or higher.
+
+| Environment Variable | Value Example | Description |
+|-|-|-|
+| `APPDYNAMICS_CONTROLLER_PORT` | 443 | Port of AppDynamics controller |
+| `APPDYNAMICS_CONTROLLER_SSL_ENABLED` | true | Set if SSL is required |
+| `APPDYNAMICS_CONTROLLER_HOST_NAME` | account-name.saas.appdynamics.com | Name of AppDynamics host without 'http://' |
+| `APPDYNAMICS_AGENT_APPLICATION_NAME` | myapp | Name of the app to be displayed on Controller UI |
+| `APPDYNAMICS_AGENT_ACCOUNT_NAME` | account-name | See 'License/Account' on the Controller UI |
+| `APPDYNAMICS_AGENT_ACCOUNT_ACCESS_KEY` | secret_key | See 'License/Account' on the Controller UI |
+| `APPDYNAMICS_AGENT_NODE_NAME` * | mynode | How a node is displayed on the Controller UI |
+| `APPDYNAMICS_AGENT_TIER_NAME` | mytier | How a tier is displayed on the Controller UI |
+
+
+\* The `APPDYNAMICS_AGENT_NODE_NAME` environment variable will be appended with the value of the `CF_INSTANCE_ID` variable. If you use `mynode` for `APPDYNAMICS_AGENT_NODE_NAME` , the AppDynamics agent will be configured as `mynode-0` for instance `0` and `mynode-1` for instance `1` , etc.
+
+For more details about nodes and tiers: [Tiers and Nodes](https://docs.appdynamics.com/22.1/en/application-monitoring/tiers-and-nodes).
+
+If you have all the environment variables specified above, the AppDynamics Java Agent will be configured for your application. 
+After configuring these environment variables, restart your app for the agent to be enabled.
+If the agent has not been installed it is necessary to redeploy the app.
+
+#### Extended functionality
+
+:warning: **This functionality is fully supported in Mendix version 9.7 and later. 
+For older versions, limited amount of metrics is available:**
+
+* 'postgres.' metrics,
+* 'mx.client.' metrics.
+
+The Mendix App metrics collected by the Telegraf Agent also can be pushed to AppDynamics Controller.
+These metrics are pushed to [Machine Agent HTTP Listener](https://docs.appdynamics.com/22.1/en/infrastructure-visibility/machine-agent/extensions-and-custom-metrics/machine-agent-http-listener).
+
+To activate the Machine Agent provide following environment variable:
+
+`APPDYNAMICS_MACHINE_AGENT_ENABLED: true`
+
+After the variable is set up the application should be restarted.
+If the Machine Agent has not been installed it is necessary to redeploy the app.
+
+Please note, that this variable is custom feature flag for the buildpack. It cannot be found in AppDynamics documentation.
+From the perspective of AppDynamics the Mendix App metrics are considered as a 'Custom Metrics'. So to observe 
+these metrics you should open `Metric Browser` and navigate to:
+
+`Application Infrastructure Performance -> <tier_name> -> Custom Metrics -> Mx Runtime Statistics`.
 
 ### Datadog
 
