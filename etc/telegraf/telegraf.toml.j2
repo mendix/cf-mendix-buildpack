@@ -39,7 +39,7 @@
 {% endif %}
 
 {% if db_config %}
-{% if not datadog_api_key %}
+{% if not (datadog_api_key or appdynamics_enabled) %}
 # PostgreSQL input (standard)
 [[inputs.postgresql]]
     address = "postgres://{{ db_config['DatabaseUserName'] }}:{{ db_config['DatabasePassword'] }}@{{ db_config['DatabaseHost'] }}/{{ db_config['DatabaseName'] }}"
@@ -280,6 +280,19 @@
         micrometer_metrics = ["true"]
     {% endif %}
 {% endfor %}
+{% endif %}
+
+{% if appdynamics_enabled %}
+# if AppDynamics is enabled this 'exec' output is activated.
+# The command (python script) reads the metrics from STDIN and transform it
+# to the appropriate form for the AppDynamics Machine Agent HTTP Listener payload.
+[[outputs.exec]]
+    command = ["python3", "{{ appdynamics_output_script_path }}"]
+    timeout = "10s"
+    data_format = "json"
+    # Ignore any micrometer_metrics
+    [outputs.exec.tagdrop]
+        micrometer_metrics = ["true"]
 {% endif %}
 
 {% if micrometer_metrics %}
