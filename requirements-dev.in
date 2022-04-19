@@ -5,3 +5,4 @@ nose-timer==1.0.1
 pylint==2.9.6
 pyopenssl==20.0.1
 randomname==0.1.5
+requests-mock==1.9.3

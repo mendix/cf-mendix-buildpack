@@ -19,7 +19,7 @@ from buildpack.infrastructure import database
 from lib.m2ee import munin
 from lib.m2ee.version import MXVersion
 
-from . import datadog
+from . import datadog, appdynamics
 
 # Runtime configuration for influx registry
 # This enables the new stream of metrics coming from micrometer instead
@@ -170,7 +170,11 @@ def configure_metrics_registry(m2ee):
 
     paidapps_registries = {"Metrics.Registries": [INFLUX_REGISTRY]}
 
-    if datadog.is_enabled() or get_appmetrics_target():
+    if (
+        datadog.is_enabled()
+        or get_appmetrics_target()
+        or appdynamics.machine_agent_enabled()
+    ):
         paidapps_registries["Metrics.Registries"].append(STATSD_REGISTRY)
 
     return paidapps_registries

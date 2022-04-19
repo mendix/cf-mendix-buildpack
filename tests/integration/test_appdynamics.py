@@ -1,9 +1,8 @@
-from buildpack.telemetry.appdynamics import APPDYNAMICS_VERSION
 from tests.integration import basetest
 
 
 class TestCaseDeployWithAppdynamics(basetest.BaseTest):
-    def _deploy_app(self, mda_file):
+    def _deploy_app(self, mda_file, appdynamics_machine_agent_enabled="true"):
         super().setUp()
         self.stage_container(
             mda_file,
@@ -16,6 +15,7 @@ class TestCaseDeployWithAppdynamics(basetest.BaseTest):
                 "APPDYNAMICS_CONTROLLER_HOST_NAME": "test.mendix.com",
                 "APPDYNAMICS_CONTROLLER_PORT": 443,
                 "APPDYNAMICS_CONTROLLER_SSL_ENABLED": "true",
+                "APPDYNAMICS_MACHINE_AGENT_ENABLED": appdynamics_machine_agent_enabled,
             },
         )
         self.start_container()
@@ -27,7 +27,12 @@ class TestCaseDeployWithAppdynamics(basetest.BaseTest):
         # check if appdynamics agent is running
         output = self.run_on_container("ps -ef| grep javaagent")
         assert output is not None
-        assert str(output).find(APPDYNAMICS_VERSION) >= 0
+        assert str(output).find("appdynamics") >= 0
+
+        # check if machine agent is running
+        output = self.run_on_container("ps -ef | grep machineagent")
+        assert output is not None
+        assert str(output).find("Dmetric.http.listener=true") >= 0
 
     def _test_appdynamics(self, mda_file):
         self._test_appdynamics_running(mda_file)
@@ -46,3 +51,16 @@ class TestCaseDeployWithAppdynamics(basetest.BaseTest):
 
     def test_appdynamics_mx6(self):
         self._test_appdynamics("sample-6.2.0.mda")
+
+    def test_machine_agent_not_started(self):
+
+        self._deploy_app(
+            "BuildpackTestApp-mx9-7.mda",
+            appdynamics_machine_agent_enabled="false",
+        )
+        self.assert_app_running()
+
+        # Check that AppDynamics Machine Agent is not run
+
+        output = self.run_on_container("ps -ef | grep machineagent")
+        assert str(output).find("Dmetric.http.listener=true") == -1
