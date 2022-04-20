@@ -274,11 +274,12 @@
     {% if http_output.kpionly %}
     [outputs.http.tagpass]
         KPI = ["true"]
-    {% else %}
-    # Ignore any micrometer_metrics
+    {% endif %}
+    # Ignore any micrometer_metrics originating
+    # from influxdb_listener plugin
     [outputs.http.tagdrop]
         micrometer_metrics = ["true"]
-    {% endif %}
+
 {% endfor %}
 {% endif %}
 
