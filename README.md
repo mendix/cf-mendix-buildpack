@@ -184,20 +184,22 @@ cf set-env <YOUR_APP> HEAP_SIZE 512M
 
 ### Configuring the Java Version
 
-The buildpack will automatically determine the Java version to use based on the runtime version of the app being deployed. The default Java version is 8 for Mendix 5.18 and higher. For Mendix 8 and above the default Java version is 11. In most cases it is not needed to change the Java version determined by the buildpack.
+This buildpack provides the [Adoptium](https://adoptium.net/) JDK and JRE.
 
-*Note*: Starting from Mendix 7.23.1, we changed to use AdoptOpenJDK. The buildpack will automatically determine the vendor based on the Mendix version. The `JAVA_VERSION` variable can be used to select a version number only, not the vendor.
+The buildpack will automatically determine the Java version to use based on the runtime version of the app being deployed. The default Java version is 8. For Mendix 8 and above the default Java version is 11. In most cases it is not needed to change the Java version determined by the buildpack.
 
-If you want to force Java 7 or 8, you can set the environment variable `JAVA_VERSION` to `7` or `8` :
+*Note*: The buildpack will automatically determine the vendor based on the Mendix version. The `JAVA_VERSION` variable can be used to override the version number. The JDK or JRE with this version number must either be present on the Mendix CDN or in the `vendor` directory (see [ `DEVELOPING.md` ](DEVELOPING.md)).
+
+Examples:
 
 ```shell
-cf set-env <YOUR_APP> JAVA_VERSION 8
+cf set-env <YOUR_APP> JAVA_VERSION 11
 ```
 
-Or to switch patch version for Java 11:
+Or to switch to a specific patch version for Java 11:
 
 ```shell
-cf set-env <YOUR_APP> JAVA_VERSION 11.0.3
+cf set-env <YOUR_APP> JAVA_VERSION 11.0.15
 ```
 
 ### Customizing the Java Virtual Machine (JVM) Settings

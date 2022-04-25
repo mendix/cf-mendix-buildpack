@@ -111,18 +111,13 @@ def resolve_runtime_dependency(
 def get_java_version(mx_version):
     if mx_version >= MXVersion("8.0.0"):
         java_version = {
-            "version": os.getenv("JAVA_VERSION", "11.0.10"),
-            "vendor": "AdoptOpenJDK",
-        }
-    elif mx_version >= MXVersion("7.23.1"):
-        java_version = {
-            "version": os.getenv("JAVA_VERSION", "8u282"),
-            "vendor": "AdoptOpenJDK",
+            "version": os.getenv("JAVA_VERSION", "11.0.15"),
+            "vendor": "Adoptium",
         }
     else:
         java_version = {
-            "version": os.getenv("JAVA_VERSION", "8u261"),
-            "vendor": "oracle",
+            "version": os.getenv("JAVA_VERSION", "8u322"),
+            "vendor": "Adoptium",
         }
 
     return java_version
