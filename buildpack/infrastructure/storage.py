@@ -161,8 +161,10 @@ def _get_s3_specific_config(vcap_services):
 
 
 def _runtime_sts_support(version):
-    if version >= MXVersion("9.6.1") or (
-        version.major == 8 and version >= MXVersion("8.18.11")
+    if (
+        version >= MXVersion("9.6.1")
+        or (version.major == 8 and version >= MXVersion("8.18.11"))
+        or (version.major == 7 and version >= MXVersion("7.23.30"))
     ):
         return True
     # Only enable STS support for these versions when CERTIFICATE_AUTHORITIES
