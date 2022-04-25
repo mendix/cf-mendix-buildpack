@@ -32,9 +32,7 @@ def stage(buildpack_path, cache_path, local_path, java_version):
     # This is done by a third-party tool (keyutil),
     # using the Python certifi certificate bundle
     #
-    # While recent versions of AdoptOpenJDK have these on board,
-    # we still also have to deal with Oracle JREs / JDKs for now.
-    # When we retire support for Mendix 6,
+    # Recent versions of Adoptium have these on board,
     # we should reconsider importing these certificates ourselves.
     util.resolve_dependency(
         util.get_blobstore_url(
@@ -50,8 +48,8 @@ def stage(buildpack_path, cache_path, local_path, java_version):
 
 
 def determine_jdk(java_version, package="jdk"):
-    if java_version["vendor"] == "AdoptOpenJDK":
-        java_version.update({"type": "AdoptOpenJDK-{}".format(package)})
+    if java_version["vendor"] == "Adoptium":
+        java_version.update({"type": "Adoptium-{}".format(package)})
     else:
         java_version.update({"type": package})
 

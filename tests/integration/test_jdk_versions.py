@@ -28,28 +28,20 @@ class TestJDKVersions(basetest.BaseTest):
         self.start_container()
         self.assert_certificate_in_cacert(CERT_TO_CHECK)
 
-    def test_oracle_jdk_8(self):
-        self._test_jdk(
-            "BuildpackTestApp-mx-7-16.mda",
-            "7.16.0",
-            "8u261",
-            "usr/lib/jvm/jre-8u261-oracle-x64",
-        )
-
-    def test_adopt_jdk_8(self):
+    def test_adoptium_8(self):
         self._test_jdk(
             "AdoptOpenJDKTest_7.23.1.mda",
             "7.23.1",
-            "8u282",
-            "usr/lib/jvm/AdoptOpenJDK-jre-8u282-AdoptOpenJDK-x64",
+            "8u322",
+            "usr/lib/jvm/Adoptium-jre-8u322-Adoptium-x64",
         )
 
-    def test_adopt_jdk_11(self):
+    def test_adoptium_11(self):
         self._test_jdk(
             "AdoptOpenJDKTest_8beta3.mda",
             "8.0.0",
-            "11.0.10",
-            "usr/lib/jvm/AdoptOpenJDK-jre-11.0.10-AdoptOpenJDK-x64",
+            "11.0.15",
+            "usr/lib/jvm/Adoptium-jre-11.0.15-Adoptium-x64",
         )
 
     def assert_certificate_in_cacert(self, cert_alias):
