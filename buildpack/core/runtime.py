@@ -116,7 +116,7 @@ def get_java_version(mx_version):
         }
     else:
         java_version = {
-            "version": os.getenv("JAVA_VERSION", "8u322"),
+            "version": os.getenv("JAVA_VERSION", "8u332"),
             "vendor": "Adoptium",
         }
 
