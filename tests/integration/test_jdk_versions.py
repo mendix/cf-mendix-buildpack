@@ -32,8 +32,8 @@ class TestJDKVersions(basetest.BaseTest):
         self._test_jdk(
             "AdoptOpenJDKTest_7.23.1.mda",
             "7.23.1",
-            "8u322",
-            "usr/lib/jvm/Adoptium-jre-8u322-Adoptium-x64",
+            "8u332",
+            "usr/lib/jvm/Adoptium-jre-8u332-Adoptium-x64",
         )
 
     def test_adoptium_11(self):
