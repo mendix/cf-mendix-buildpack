@@ -212,6 +212,14 @@ Configure the `JAVA_OPTS` environment variable by using the `cf set-env` command
 cf set-env <YOUR_APP> JAVA_OPTS '["-Djava.rmi.server.hostname=127.0.0.1", "-Dcom.sun.management.jmxremote.authenticate=false", "-Dcom.sun.management.jmxremote.ssl=false", "-Dcom.sun.management.jmxremote.port=5000", "-Dcom.sun.management.jmxremote.rmi.port=5000"]'
 ```
 
+### Enabling TLSv1.0 and TLSv1.1 for Outgoing Connections
+
+OpenJDK switched off the insecure / End-of-Life TLSv1.0 and TLSv1.1 protocols for outgoing connections by default in April 2021. Since the buildpack uses an OpenJDK distribution, these protocols are also disabled by default for the buildpack.
+
+To re-enable TLSv1.0 and TLSv1.1 for outgoing connections, set the `ENABLE_OUTGOING_TLS_10_11` environment variable to `true`, and **restage** your application.
+
+**Enabling TLSv1.0 and TLSv1.1 for outgoing connections is at your own risk, and this functionality may disappear at any time.**
+
 ### Configuring Custom Runtime Settings
 
 To configure any of the advanced [Custom Runtime Settings](https://docs.mendix.com/refguide/custom-settings) you can use setting name prefixed with `MXRUNTIME_` as an environment variable.
