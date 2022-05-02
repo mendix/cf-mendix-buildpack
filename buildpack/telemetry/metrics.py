@@ -74,6 +74,8 @@ FREEAPPS_METRICS_REGISTRY = [
     }
 ]
 
+METRICS_REGISTRIES_KEY = "Metrics.Registries"
+
 # From this MxRuntime version onwards we gather (available) runtime statistics
 # from the micrometer library via the telegraf agent
 MXVERSION_MICROMETER = MXVersion("9.7.0")
@@ -166,16 +168,16 @@ def configure_metrics_registry(m2ee):
         "Configuring runtime to push metrics to influx via micrometer"
     )
     if util.is_free_app():
-        return {"Metrics.Registries": FREEAPPS_METRICS_REGISTRY}
+        return FREEAPPS_METRICS_REGISTRY
 
-    paidapps_registries = {"Metrics.Registries": [INFLUX_REGISTRY]}
+    paidapps_registries = [INFLUX_REGISTRY]
 
     if (
         datadog.is_enabled()
         or get_appmetrics_target()
         or appdynamics.machine_agent_enabled()
     ):
-        paidapps_registries["Metrics.Registries"].append(STATSD_REGISTRY)
+        paidapps_registries.append(STATSD_REGISTRY)
 
     return paidapps_registries
 
