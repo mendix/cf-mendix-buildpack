@@ -53,9 +53,8 @@ class TestMicrometerMetricRegistry(TestCase):
     def test_paidapps_metrics_registry(self, is_enabled):
         with patch.dict(os.environ, {"PROFILE": "some-random-mx-profile"}):
             result = metrics.configure_metrics_registry(Mock())
-            metrics_registries = result.get("Metrics.Registries")
             self.assertEqual(
-                metrics_registries[0]["type"],
+                result[0]["type"],
                 "influx",
             )
 
@@ -63,9 +62,7 @@ class TestMicrometerMetricRegistry(TestCase):
     def test_paidapps_metrics_registry_statsd(self, is_enabled):
         with patch.dict(os.environ, {"PROFILE": "some-random-mx-profile"}):
             result = metrics.configure_metrics_registry(Mock())
-            metrics_registries = sorted(
-                result.get("Metrics.Registries"), key=itemgetter("type")
-            )
+            metrics_registries = sorted(result, key=itemgetter("type"))
             self.assertEqual(
                 metrics_registries[0]["type"],
                 "influx",
@@ -79,6 +76,6 @@ class TestMicrometerMetricRegistry(TestCase):
         with patch.dict(os.environ, {"PROFILE": "free"}):
             result = metrics.configure_metrics_registry(Mock())
             self.assertEqual(
-                result.get("Metrics.Registries"),
+                result,
                 metrics.FREEAPPS_METRICS_REGISTRY,
             )
