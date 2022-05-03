@@ -3,12 +3,102 @@ import logging
 import os
 import re
 import subprocess
+from distutils.util import strtobool
 
 import certifi
-
 from buildpack import util
 
 KEYUTIL_JAR = "keyutil-0.4.0.jar"
+
+
+def _get_major_version(java_version):
+    version = java_version["version"]
+    # Java 8
+    if version.startswith("8u") or version.startswith("1.8"):
+        return 8
+    # Java >= 11
+    major_version = int(version.split(".")[0])
+    if major_version >= 8:
+        return major_version
+    # Java < 8 is not supported
+    raise ValueError("Cannot determine major version for Java [%s]" % version)
+
+
+def _get_security_properties_file(jvm_location, java_version):
+    major_version = _get_major_version(java_version)
+    conf_dir = ""
+    if major_version == 8:
+        conf_dir = "lib"
+    elif major_version >= 11:
+        conf_dir = "conf"
+    else:
+        raise ValueError(
+            "Cannot determine security subdirectory for Java [%s]"
+            % major_version
+        )
+    return os.path.join(
+        os.path.abspath(jvm_location), conf_dir, "security", "java.security"
+    )
+
+
+ENABLE_OUTGOING_TLS_10_11_KEY = "ENABLE_OUTGOING_TLS_10_11"
+
+
+def _is_outgoing_tls_10_11_enabled():
+    return bool(strtobool(os.getenv(ENABLE_OUTGOING_TLS_10_11_KEY, "false")))
+
+
+# Configures TLSv1.0 and TLSv1.1 for outgoing connections
+# These two protocols are considered insecure and have been disabled in OpenJDK after March 2021
+# Re-enabling them is at your own risk!
+def _configure_outgoing_tls_10_11(jvm_location, java_version):
+    if _is_outgoing_tls_10_11_enabled():
+        security_properties_file = ""
+        try:
+            security_properties_file = _get_security_properties_file(
+                jvm_location, java_version
+            )
+        except ValueError as e:
+            logging.error(
+                "Not enabling TLSv1.0 and TLSv1.1 for outgoing connections: "
+                % e
+            )
+            return
+        if not (
+            os.path.exists(security_properties_file)
+            and os.access(security_properties_file, os.W_OK)
+        ):
+            logging.error(
+                "Java security properties file does not exist at expected location or is not writeable, not enabling TLSv1.0 and TLSv1.1 for outgoing connections"
+            )
+            return
+        logging.warning(
+            "Enabling TLSv1.0 and TLSv1.1 for outgoing connections. These protocols are considered insecure and End-Of-Life."
+        )
+        with open(security_properties_file, "r+") as f:
+            lines = f.readlines()
+            f.seek(0)
+            in_property = False
+            for line in lines:
+                if line.startswith("jdk.tls.disabledAlgorithms"):
+                    in_property = True
+                if in_property:
+                    line = re.sub(r"TLSv1(\.1)?(\s*\,)?\s*", "", line)
+                    # Remove trailing comma
+                    if line.rstrip().endswith(r","):
+                        line = line.rstrip()[:-1]
+                    f.write(line)
+                    if not line.endswith("\\\n"):
+                        # Disable line modification after property has been parsed
+                        # This is required for multi-line properties with one or more line separators (backslash)
+                        in_property = False
+                else:
+                    f.write(line)
+            f.truncate()
+    else:
+        logging.debug(
+            "Not enabling TLSv1.0 and TLSv1.1 for outgoing connections"
+        )
 
 
 def stage(buildpack_path, cache_path, local_path, java_version):
@@ -42,8 +132,11 @@ def stage(buildpack_path, cache_path, local_path, java_version):
         buildpack_dir=buildpack_path,
         cache_dir=cache_path,
     )
-
     _update_java_cacert(cache_path, jvm_location)
+
+    # Configure if TLSv1.0 and TLSv1.1 are allowed for outgoing connections
+    _configure_outgoing_tls_10_11(jvm_location, java_version)
+
     logging.debug("Staging Java finished")
 
 
