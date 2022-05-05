@@ -22,24 +22,13 @@ from buildpack.databroker.config_generator.scripts.generators import (
 from buildpack.databroker.config_generator.scripts.utils import write_file
 
 # Compile constants
-BASE_URL = "/mx-buildpack/experimental/databroker/"
-KAFKA_CONNECT_FILENAME = "kafka-connect"
-KAFKA_CONNECT_VERSION = "2.13-2.5.1-v2"
-DBZ_FILENAME = "debezium"
-PKG_FILE_EXT = "tar.gz"
-BASE_DIR = "databroker"
+NAMESPACE = BASE_DIR = "databroker"
 DBZ_DIR = "debezium"
 PROCESS_NAME = "kafka-connect"
 KAFKA_CONNECT_DIR = PROCESS_NAME
 DBZ_CFG_NAME = "debezium-connector.json"
 KAFKA_CONNECT_CFG_NAME = "connect.properties"
 LOG4J_DEBEZIUM_CFG_NAME = "debezium-log4j.properties"
-
-DEFAULT_DBZ_VERSION = "1.2.0"
-DBZ_VERSION = os.getenv("DATABROKER_DBZ_VERSION")
-if not DBZ_VERSION:
-    DBZ_VERSION = DEFAULT_DBZ_VERSION
-
 
 # Run constants
 LOCAL = ".local"
@@ -62,27 +51,22 @@ KAFKA_CONNECT_JMX_PORT = "11003"
 
 def _download_pkgs(buildpack_dir, install_path, cache_dir):
     # Download kafka connect and debezium
-    KAFKA_CONNECT_DOWNLOAD_URL = "{}{}-{}.{}".format(
-        BASE_URL,
-        KAFKA_CONNECT_FILENAME,
-        KAFKA_CONNECT_VERSION,
-        PKG_FILE_EXT,
-    )
     util.resolve_dependency(
-        util.get_blobstore_url(KAFKA_CONNECT_DOWNLOAD_URL),
+        "%s.kafka-connect" % NAMESPACE,
         os.path.join(install_path, BASE_DIR, KAFKA_CONNECT_DIR),
         buildpack_dir=buildpack_dir,
         cache_dir=cache_dir,
     )
-
-    DBZ_DOWNLOAD_URL = "{}{}-{}.{}".format(
-        BASE_URL, DBZ_FILENAME, DBZ_VERSION, PKG_FILE_EXT
-    )
+    overrides = {}
+    version = os.getenv("DATABROKER_DBZ_VERSION")
+    if version:
+        overrides = {"version": version}
     util.resolve_dependency(
-        util.get_blobstore_url(DBZ_DOWNLOAD_URL),
+        "%s.debezium" % NAMESPACE,
         os.path.join(install_path, BASE_DIR, DBZ_DIR),
         buildpack_dir=buildpack_dir,
         cache_dir=cache_dir,
+        overrides=overrides,
     )
 
 

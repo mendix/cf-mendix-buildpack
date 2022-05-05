@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-import shutil
 import subprocess
 import threading
 import time
@@ -113,9 +112,7 @@ def stage(buildpack_dir, build_dir, cache_dir):
     logging.debug("Staging logging...")
     NAMESPACE = ARTIFACT = "mendix-logfilter"
     util.resolve_dependency(
-        util.get_blobstore_url(
-            "/mx-buildpack/{}/{}".format(NAMESPACE, ARTIFACT)
-        ),
+        "logs.%s" % NAMESPACE,
         os.path.join(build_dir, ".local", NAMESPACE),
         buildpack_dir=buildpack_dir,
         cache_dir=cache_dir,

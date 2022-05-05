@@ -7,11 +7,11 @@ from buildpack.databroker import connect, streams
 from buildpack.databroker.config_generator.scripts.configloader import (
     configinitializer,
 )
-from buildpack.databroker.config_generator.scripts.utils import write_file
-
 from buildpack.databroker.config_generator.scripts.generators import (
     debezium as debezium_generator,
 )
+from buildpack.databroker.config_generator.scripts.utils import write_file
+from buildpack.util import get_dependency
 
 # Constants
 TEST_METADATA_FILE_PATH = "/tmp/metadata.json"
@@ -206,7 +206,10 @@ class TestDataBrokerConfigs(unittest.TestCase):
 
         self._check_folder_exist(STREAM_SIDECAR_DIR)
 
-        streams.setup_configs(self.complete_producer_conf)
+        streams.setup_configs(
+            self.complete_producer_conf,
+            get_dependency(streams.DEPENDENCY)["version"],
+        )
 
         # verify topology config
         assert os.path.isfile(STREAM_TOPOLOGY_CFG_PATH)

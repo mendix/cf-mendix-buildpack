@@ -124,6 +124,13 @@ def copy_buildpack_resources():
     )
 
 
+def copy_dependency_file():
+    shutil.copy(
+        os.path.join(BUILDPACK_DIR, util.DEPENDENCY_FILE),
+        os.path.join(BUILD_DIR, util.DEPENDENCY_FILE),
+    )
+
+
 def get_mpr_file():
     return util.get_mpr_file_from_dir(BUILD_DIR)
 
@@ -143,12 +150,15 @@ if __name__ == "__main__":
     )
 
     runtime_version = runtime.get_runtime_version(BUILD_DIR)
+    java_version = java.get_java_major_version(runtime_version)
 
     try:
         preflight_check(runtime_version)
     except (ValueError, NotImplementedError) as error:
         logging.error(error)
         exit(1)
+
+    copy_dependency_file()
 
     if is_source_push():
         try:
@@ -158,7 +168,7 @@ if __name__ == "__main__":
                 CACHE_DIR,
                 DOT_LOCAL_LOCATION,
                 runtime_version,
-                runtime.get_java_version(runtime_version),
+                java_version,
             )
         except RuntimeError as error:
             logging.error(error)
@@ -167,11 +177,12 @@ if __name__ == "__main__":
     set_up_directory_structure()
     copy_buildpack_resources()
     set_up_launch_environment()
+
     java.stage(
         BUILDPACK_DIR,
         CACHE_DIR,
         DOT_LOCAL_LOCATION,
-        runtime.get_java_version(runtime_version),
+        java_version,
     )
     appdynamics.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)
     dynatrace.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)

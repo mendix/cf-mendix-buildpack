@@ -35,7 +35,6 @@ def build_from_source(
         cache_path,
         destination=mxbuild_location,
         prefix="mxbuild",
-        forced_env_key="FORCED_MXBUILD_URL",
     )
 
     jdk_location = java.ensure_and_get_jvm(

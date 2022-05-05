@@ -136,20 +136,20 @@ if __name__ == "__main__":
         # Initialize the runtime
         m2ee = runtime.setup(util.get_vcap_data())
 
-        # Get versions
+        # Get versions and names
         runtime_version = runtime.get_runtime_version()
-        java_version = runtime.get_java_version(runtime_version)["version"]
         model_version = runtime.get_model_version()
+        application_name = util.get_vcap_data()["application_name"]
 
         # Update runtime configuration based on component configuration
         database.update_config(m2ee)
         storage.update_config(m2ee)
-        java.update_config(m2ee, util.get_vcap_data(), java_version)
-        newrelic.update_config(m2ee, util.get_vcap_data()["application_name"])
+        java.update_config(m2ee, util.get_vcap_data(), runtime_version)
+        newrelic.update_config(m2ee, application_name)
         appdynamics.update_config(m2ee)
-        dynatrace.update_config(m2ee, util.get_vcap_data()["application_name"])
+        dynatrace.update_config(m2ee, application_name)
         mx_java_agent.update_config(m2ee)
-        telegraf.update_config(m2ee, util.get_vcap_data()["application_name"])
+        telegraf.update_config(m2ee, application_name)
         (
             databroker_jmx_instance_cfg,
             databroker_jmx_config_files,

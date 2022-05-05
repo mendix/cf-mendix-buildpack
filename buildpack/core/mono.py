@@ -4,7 +4,7 @@ import os
 import platform
 
 from buildpack import util
-from buildpack.util import NotFoundException
+from buildpack.util import NotFoundException, get_dependency
 
 
 def get_env_with_monolib(mono_dir):
@@ -25,13 +25,12 @@ def _detect_mono_version(mx_version):
     logging.debug(
         "Detecting Mono Runtime using Mendix version: %s", mx_version
     )
-
     if mx_version >= 8:
-        target = "mono-5.20.1.27"
+        target = "5"
     elif mx_version >= 7:
-        target = "mono-4.6.2.16"
+        target = "4"
     else:
-        target = "mono-3.10.0"
+        target = "3"
     logging.info("Selecting Mono Runtime: %s", target)
     return target
 
@@ -39,15 +38,15 @@ def _detect_mono_version(mx_version):
 def _get_mono_path(directory, mono_version):
     return util.get_existing_directory_or_raise(
         [
-            os.path.join(directory, mono_version),
-            "/opt/" + mono_version,
-            "/tmp/" + mono_version,
+            os.path.join(directory, "mono-%s" % mono_version),
+            "/opt/mono-%s" % mono_version,
+            "/tmp/mono-%s" % mono_version,
         ],
         "Mono not found",
     )
 
 
-def _compose_mono_url_path(mono_version):
+def _compose_mono_dependency_name(mono_version):
     distrib_id = platform.linux_distribution()[0].lower()
     if distrib_id != "ubuntu":
         raise Exception(
@@ -62,29 +61,29 @@ def _compose_mono_url_path(mono_version):
                 distrib_codename
             )
         )
-    return "/mx-buildpack/mono/{}-mx-{}-{}.tar.gz".format(
-        mono_version, distrib_id, distrib_codename
-    )
+    return "mono.{}-{}".format(mono_version, distrib_codename)
 
 
 def ensure_and_get_mono(mx_version, buildpack_dir, cache_dir):
     logging.debug("Ensuring Mono for Mendix %s", mx_version)
-    mono_version = _detect_mono_version(mx_version)
+    major_version = _detect_mono_version(mx_version)
+    dependency_name = _compose_mono_dependency_name(major_version)
     fallback_location = "/tmp/opt"
 
     if (
-        mono_version == "mono-3.10.0"
+        major_version == "3"
         and platform.linux_distribution()[2].lower() == "bionic"
     ):
-        util.resolve_dependency(
-            util.get_blobstore_url(_compose_mono_url_path(mono_version)),
+        dependency = util.resolve_dependency(
+            dependency_name,
             os.path.join(fallback_location, "store"),
             buildpack_dir=buildpack_dir,
             cache_dir=cache_dir,
             unpack_strip_directories=True,
         )
-        mono_subpath = glob.glob("/tmp/opt/store/*-mono-env-3.10.0")
-        mono_location = "/tmp/opt/mono-3.10.0"
+        version = dependency["version"]
+        mono_subpath = glob.glob("/tmp/opt/store/*-mono-env-%s" % version)
+        mono_location = "/tmp/opt/mono-%s" % version
         os.symlink(mono_subpath[0], mono_location)
         logging.debug(
             "Mono available: {mono_location}".format(
@@ -100,18 +99,19 @@ def ensure_and_get_mono(mx_version, buildpack_dir, cache_dir):
         )
         return mono_location
     else:
+        version = get_dependency(dependency_name, buildpack_dir)["version"]
         try:
-            mono_location = _get_mono_path("/tmp/opt", mono_version)
+            mono_location = _get_mono_path("/tmp/opt", version)
         except NotFoundException:
             logging.debug("Mono not found in default locations")
             util.resolve_dependency(
-                util.get_blobstore_url(_compose_mono_url_path(mono_version)),
-                os.path.join(fallback_location, mono_version),
+                dependency_name,
+                os.path.join(fallback_location, "mono-%s" % version),
                 buildpack_dir=buildpack_dir,
                 cache_dir=cache_dir,
                 unpack_strip_directories=True,
             )
-            mono_location = _get_mono_path(fallback_location, mono_version)
+            mono_location = _get_mono_path(fallback_location, version)
         logging.debug(
             "Mono available: {mono_location}".format(
                 mono_location=mono_location
