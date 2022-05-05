@@ -49,9 +49,6 @@ class TestCaseDeployWithAppdynamics(basetest.BaseTest):
     def test_appdynamics_mx7(self):
         self._test_appdynamics("BuildpackTestApp-mx-7-16.mda")
 
-    def test_appdynamics_mx6(self):
-        self._test_appdynamics("sample-6.2.0.mda")
-
     def test_machine_agent_not_started(self):
 
         self._deploy_app(

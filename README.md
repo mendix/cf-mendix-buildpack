@@ -404,25 +404,28 @@ To enable AppDynamics, configure the following environment variables.
 These settings enable basic (Java Agent related) AppDynamics features.
 More information here: [Environment variables](https://docs.appdynamics.com/22.2/en/application-monitoring/install-app-server-agents/java-agent/install-the-java-agent/use-environment-variables-for-java-agent-settings#UseEnvironmentVariablesforJavaAgentSettings-EnvironmentVariables).
 
-Please note that AppDynamics requires Mendix 6.2 or higher.
+Please note that AppDynamics requires Mendix 7.15 or higher.
 
-| Environment Variable | Value Example | Description |
-|-|-|-|
-| `APPDYNAMICS_CONTROLLER_PORT` | 443 | Port of AppDynamics controller |
-| `APPDYNAMICS_CONTROLLER_SSL_ENABLED` | true | Set if SSL is required |
-| `APPDYNAMICS_CONTROLLER_HOST_NAME` | account-name.saas.appdynamics.com | Name of AppDynamics host without 'http://' |
-| `APPDYNAMICS_AGENT_APPLICATION_NAME` | myapp | Name of the app to be displayed on Controller UI |
-| `APPDYNAMICS_AGENT_ACCOUNT_NAME` | account-name | See 'License/Account' on the Controller UI |
-| `APPDYNAMICS_AGENT_ACCOUNT_ACCESS_KEY` | secret_key | See 'License/Account' on the Controller UI |
-| `APPDYNAMICS_AGENT_NODE_NAME` * | mynode | How a node is displayed on the Controller UI |
-| `APPDYNAMICS_AGENT_TIER_NAME` | mytier | How a tier is displayed on the Controller UI |
+| Environment Variable | Value example | Default | Description |
+|-|-|-|-|
+| `APPDYNAMICS_CONTROLLER_PORT` | `443` | `443` | Port of AppDynamics controller |
+| `APPDYNAMICS_CONTROLLER_SSL_ENABLED` | `true` | `true` | Set if SSL is required |
+| `APPDYNAMICS_CONTROLLER_HOST_NAME` | `<acc_name>.test.com` | - | Name of AppDynamics host without 'http://' |
+| `APPDYNAMICS_AGENT_APPLICATION_NAME` | `<test-accp>` | App name as on Dev. Portal | Name of the app to be displayed on Controller UI |
+| `APPDYNAMICS_AGENT_ACCOUNT_NAME` | `<acc_name>` | - | See 'License/Account' on the Controller UI |
+| `APPDYNAMICS_AGENT_ACCOUNT_ACCESS_KEY` | `<secret>` | - | See 'License/Account' on the Controller UI |
+| `APPDYNAMICS_AGENT_NODE_NAME` * | `<node>` (finally `<node>_<num>`, `<num>` is being added automatically) | node | How a node is displayed on the Controller UI |
+| `APPDYNAMICS_AGENT_TIER_NAME` | `<env_id>` | App Environment UUID | How a tier is displayed on the Controller UI |
 
 
-\* The `APPDYNAMICS_AGENT_NODE_NAME` environment variable will be appended with the value of the `CF_INSTANCE_ID` variable. If you use `mynode` for `APPDYNAMICS_AGENT_NODE_NAME` , the AppDynamics agent will be configured as `mynode-0` for instance `0` and `mynode-1` for instance `1` , etc.
+\* The `APPDYNAMICS_AGENT_NODE_NAME` environment variable will be appended with the value of the `CF_INSTANCE_ID` variable. If you use `node` for `APPDYNAMICS_AGENT_NODE_NAME` , the AppDynamics agent will be configured as `node_0` for instance `0` and `node_1` for instance `1` , etc.
 
 For more details about nodes and tiers: [Tiers and Nodes](https://docs.appdynamics.com/22.1/en/application-monitoring/tiers-and-nodes).
 
-If you have all the environment variables specified above, the AppDynamics Java Agent will be configured for your application. 
+Required variables: `APPDYNAMICS_AGENT_ACCOUNT_NAME`, `APPDYNAMICS_AGENT_ACCOUNT_ACCESS_KEY` and `APPDYNAMICS_CONTROLLER_HOST_NAME`.
+
+If you have all the required environment variables specified above, the AppDynamics Java Agent will be configured for your application.
+The other environment variables are optional and will be set to the default values.
 After configuring these environment variables, restart your app for the agent to be enabled.
 If the agent has not been installed it is necessary to redeploy the app.
 
