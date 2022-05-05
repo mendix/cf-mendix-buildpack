@@ -18,6 +18,40 @@ APPDYNAMICS_MACHINE_AGENT_PATH = os.path.join(
     "machine-agent",
 )
 
+CF_APPLICATION_INDEX = os.getenv("CF_INSTANCE_INDEX", default=0)
+CF_APPLICATION_NAME = util.get_vcap_data()["application_name"]
+
+APPDYNAMICS_ENV_VARS = {
+    "APPDYNAMICS_AGENT_APPLICATION_NAME": os.getenv(
+        "APPDYNAMICS_AGENT_APPLICATION_NAME",
+        default=util.get_app_from_domain(),
+    ),
+    "APPDYNAMICS_AGENT_NODE_NAME": "{}_{}".format(
+        os.getenv("APPDYNAMICS_AGENT_NODE_NAME", default="node"),
+        CF_APPLICATION_INDEX,
+    ),
+    "APPDYNAMICS_AGENT_TIER_NAME": os.getenv(
+        "APPDYNAMICS_AGENT_TIER_NAME", default=CF_APPLICATION_NAME
+    ),
+    "APPDYNAMICS_CONTROLLER_PORT": os.getenv(
+        "APPDYNAMICS_CONTROLLER_PORT", default="443"
+    ),
+    "APPDYNAMICS_CONTROLLER_SSL_ENABLED": os.getenv(
+        "APPDYNAMICS_CONTROLLER_SSL_ENABLED", default="true"
+    ),
+    "APPDYNAMICS_AGENT_UNIQUE_HOST_ID": "{}_{}".format(
+        os.getenv(
+            "APPDYNAMICS_AGENT_UNIQUE_HOST_ID", default=CF_APPLICATION_NAME
+        ),
+        CF_APPLICATION_INDEX,
+    ),
+}
+
+
+def _set_default_env(m2ee):
+    for var_name, value in APPDYNAMICS_ENV_VARS.items():
+        util.upsert_custom_environment_variable(m2ee, var_name, value)
+
 
 def stage(buildpack_dir, destination_path, cache_path):
     if appdynamics_used():
@@ -58,7 +92,9 @@ def update_config(m2ee):
         )
         return
 
-    logging.info("Configuring AppDynamics.")
+    logging.info(
+        "AppDynamics Java Agent env. variables are configured. Starting..."
+    )
 
     util.upsert_javaopts(
         m2ee,
@@ -70,17 +106,7 @@ def update_config(m2ee):
         ],
     )
 
-    APPDYNAMICS_AGENT_NODE_NAME = "APPDYNAMICS_AGENT_NODE_NAME"
-    if os.getenv(APPDYNAMICS_AGENT_NODE_NAME):
-        util.upsert_custom_environment_variable(
-            m2ee,
-            APPDYNAMICS_AGENT_NODE_NAME,
-            "%s-%s"
-            % (
-                os.getenv(APPDYNAMICS_AGENT_NODE_NAME),
-                os.getenv("CF_INSTANCE_INDEX", "0"),
-            ),
-        )
+    _set_default_env(m2ee)
 
 
 def run():
@@ -95,8 +121,11 @@ def run():
         )
         return
 
-    logging.info("Starting the AppDynamics Machine Agent...")
+    logging.info(
+        "AppDynamics Machine Agent env. variable is configured. Starting..."
+    )
     env_dict = dict(os.environ)
+    env_dict.update(APPDYNAMICS_ENV_VARS)
     subprocess.Popen(
         (APPDYNAMICS_MACHINE_AGENT_PATH, "-Dmetric.http.listener=true"),
         env=env_dict,
@@ -121,11 +150,6 @@ def appdynamics_used():
         "APPDYNAMICS_AGENT_ACCOUNT_ACCESS_KEY",
         "APPDYNAMICS_AGENT_ACCOUNT_NAME",
         "APPDYNAMICS_CONTROLLER_HOST_NAME",
-        "APPDYNAMICS_AGENT_APPLICATION_NAME",
-        "APPDYNAMICS_AGENT_NODE_NAME",
-        "APPDYNAMICS_AGENT_TIER_NAME",
-        "APPDYNAMICS_CONTROLLER_PORT",
-        "APPDYNAMICS_CONTROLLER_SSL_ENABLED",
     }
 
     os_env_set = set(os.environ)
@@ -133,16 +157,8 @@ def appdynamics_used():
     diff_envs = required_envs.difference(os_env_set)
 
     if len(diff_envs) == 0:
-        logging.info("AppDynamics enabled.")
         return True
-
     else:
-        logging.info(
-            "Not enabling AppDynamics as the following required variables are missing: {}.".format(
-                ",".join(diff_envs)
-            )
-        )
-
         return False
 
 
