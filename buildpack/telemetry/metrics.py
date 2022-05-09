@@ -162,7 +162,7 @@ def configure_metrics_registry(m2ee):
     This ensures runtime micrometer sends metrics to telegraf.
     """
     if not micrometer_metrics_enabled(runtime.get_runtime_version()):
-        return {}
+        return []
 
     logging.info(
         "Configuring runtime to push metrics to influx via micrometer"
