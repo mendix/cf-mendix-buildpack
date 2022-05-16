@@ -9,7 +9,7 @@ from buildpack.core import runtime
 from . import datadog, telegraf, metrics
 
 NAMESPACE = "mx-agent"
-ARTIFACT = "mx-agent-v0.12.0.jar"
+DEPENDENCY = "mendix.%s" % NAMESPACE
 ROOT_DIR = ".local"
 
 
@@ -31,9 +31,7 @@ def _get_destination_dir(dot_local=ROOT_DIR):
 def stage(buildpack_dir, install_dir, cache_dir, runtime_version):
     if is_enabled(runtime_version):
         util.resolve_dependency(
-            util.get_blobstore_url(
-                "/mx-buildpack/{}/{}".format(NAMESPACE, ARTIFACT)
-            ),
+            DEPENDENCY,
             _get_destination_dir(install_dir),
             buildpack_dir=buildpack_dir,
             cache_dir=cache_dir,
@@ -65,7 +63,10 @@ def update_config(m2ee):
 
 
 def _enable_mx_java_agent(m2ee):
-    jar = os.path.join(_get_destination_dir(), ARTIFACT)
+    jar = os.path.join(
+        _get_destination_dir(),
+        os.path.basename(util.get_dependency(DEPENDENCY)["artifact"]),
+    )
 
     logging.debug("Checking if Mendix Java Agent is enabled...")
     if 0 in [

@@ -7,34 +7,43 @@ from distutils.util import strtobool
 
 import certifi
 from buildpack import util
+from lib.m2ee.version import MXVersion
 
-KEYUTIL_JAR = "keyutil-0.4.0.jar"
+
+JAVA_VERSION_OVERRIDE_KEY = "JAVA_VERSION"
 
 
-def _get_major_version(java_version):
-    version = java_version["version"]
+def get_java_major_version(runtime_version):
+    result = 8
+    if runtime_version >= MXVersion("8.0.0"):
+        result = 11
+    return _get_major_version(os.getenv(JAVA_VERSION_OVERRIDE_KEY, result))
+
+
+def _get_major_version(version):
     # Java 8
-    if version.startswith("8u") or version.startswith("1.8"):
+    if isinstance(version, str) and (
+        version.startswith("8u") or version.startswith("1.8")
+    ):
         return 8
     # Java >= 11
-    major_version = int(version.split(".")[0])
+    major_version = int(str(version).split(".")[0])
     if major_version >= 8:
         return major_version
     # Java < 8 is not supported
     raise ValueError("Cannot determine major version for Java [%s]" % version)
 
 
-def _get_security_properties_file(jvm_location, java_version):
-    major_version = _get_major_version(java_version)
+def _get_security_properties_file(jvm_location, java_major_version):
     conf_dir = ""
-    if major_version == 8:
+    if java_major_version == 8:
         conf_dir = "lib"
-    elif major_version >= 11:
+    elif java_major_version >= 11:
         conf_dir = "conf"
     else:
         raise ValueError(
             "Cannot determine security subdirectory for Java [%s]"
-            % major_version
+            % java_major_version
         )
     return os.path.join(
         os.path.abspath(jvm_location), conf_dir, "security", "java.security"
@@ -51,12 +60,12 @@ def _is_outgoing_tls_10_11_enabled():
 # Configures TLSv1.0 and TLSv1.1 for outgoing connections
 # These two protocols are considered insecure and have been disabled in OpenJDK after March 2021
 # Re-enabling them is at your own risk!
-def _configure_outgoing_tls_10_11(jvm_location, java_version):
+def _configure_outgoing_tls_10_11(jvm_location, java_major_version):
     if _is_outgoing_tls_10_11_enabled():
         security_properties_file = ""
         try:
             security_properties_file = _get_security_properties_file(
-                jvm_location, java_version
+                jvm_location, java_major_version
             )
         except ValueError as e:
             logging.error(
@@ -101,13 +110,17 @@ def _configure_outgoing_tls_10_11(jvm_location, java_version):
         )
 
 
-def stage(buildpack_path, cache_path, local_path, java_version):
+def stage(buildpack_path, cache_path, local_path, java_major_version):
     logging.debug("Staging Java...")
 
     # Download Java
     util.mkdir_p(os.path.join(local_path, "bin"))
     jvm_location = ensure_and_get_jvm(
-        java_version, buildpack_path, cache_path, local_path, package="jre"
+        java_major_version,
+        buildpack_path,
+        cache_path,
+        local_path,
+        package="jre",
     )
 
     # Create a symlink in .local/bin/java
@@ -124,49 +137,62 @@ def stage(buildpack_path, cache_path, local_path, java_version):
     #
     # Recent versions of Adoptium have these on board,
     # we should reconsider importing these certificates ourselves.
-    util.resolve_dependency(
-        util.get_blobstore_url(
-            "/mx-buildpack/java-keyutil/{}".format(KEYUTIL_JAR)
-        ),
+    dependency = util.resolve_dependency(
+        "java.keyutil",
         None,
         buildpack_dir=buildpack_path,
         cache_dir=cache_path,
     )
-    _update_java_cacert(cache_path, jvm_location)
+    _update_java_cacert(
+        os.path.basename(dependency["artifact"]), cache_path, jvm_location
+    )
 
     # Configure if TLSv1.0 and TLSv1.1 are allowed for outgoing connections
-    _configure_outgoing_tls_10_11(jvm_location, java_version)
+    _configure_outgoing_tls_10_11(jvm_location, java_major_version)
 
     logging.debug("Staging Java finished")
 
 
-def determine_jdk(java_version, package="jdk"):
-    if java_version["vendor"] == "Adoptium":
-        java_version.update({"type": "Adoptium-{}".format(package)})
-    else:
-        java_version.update({"type": package})
-
-    return java_version
-
-
-def compose_jvm_target_dir(jdk):
-    return "usr/lib/jvm/{type}-{version}-{vendor}-x64".format(
-        type=jdk["type"], version=jdk["version"], vendor=jdk["vendor"]
+def _compose_jvm_target_dir(dependency):
+    return "usr/lib/jvm/%s-%s-%s-%s-x64" % (
+        dependency["vendor"],
+        dependency["type"],
+        dependency["version"],
+        dependency["vendor"],
     )
 
 
-def _compose_jre_url_path(jdk):
-    return "/mx-buildpack/{type}-{version}-linux-x64.tar.gz".format(
-        type=jdk["type"], version=jdk["version"]
+def _get_java_dependency(
+    java_major_version, package, buildpack_dir=os.getcwd(), variables={}
+):
+    return util.get_dependency(
+        "java.%s-%s" % (java_major_version, package), variables, buildpack_dir
     )
 
 
 def ensure_and_get_jvm(
-    java_version, buildpack_dir, cache_dir, dot_local_location, package="jdk"
+    java_major_version,
+    buildpack_dir,
+    cache_dir,
+    dot_local_location,
+    package="jdk",
 ):
+    # Get Java override full version override
+    override_version = os.getenv(JAVA_VERSION_OVERRIDE_KEY)
+    overrides = {}
+    if override_version:
+        logging.info("Overriding Java version to [%s]..." % override_version)
+        if not override_version.isdigit():
+            overrides = {
+                "version": override_version,
+            }
 
-    jdk = determine_jdk(java_version, package)
-    jdk_dir = compose_jvm_target_dir(jdk)
+    # Get dependency
+    dependency = _get_java_dependency(
+        java_major_version, package, buildpack_dir, overrides
+    )
+
+    jdk_dir = _compose_jvm_target_dir(dependency)
 
     rootfs_java_path = "/{}".format(jdk_dir)
     if not os.path.isdir(rootfs_java_path):
@@ -176,11 +202,12 @@ def ensure_and_get_jvm(
             )
         )
         util.resolve_dependency(
-            util.get_blobstore_url(_compose_jre_url_path(jdk)),
+            dependency,
             os.path.join(dot_local_location, jdk_dir),
             buildpack_dir=buildpack_dir,
             cache_dir=cache_dir,
             unpack_strip_directories=True,
+            overrides=overrides,
         )
         logging.debug("Java {} installed".format(package.upper()))
     else:
@@ -188,14 +215,14 @@ def ensure_and_get_jvm(
 
     return util.get_existing_directory_or_raise(
         [
-            "/" + compose_jvm_target_dir(jdk),
+            "/" + jdk_dir,
             os.path.join(dot_local_location, jdk_dir),
         ],
         "Java not found",
     )
 
 
-def _update_java_cacert(cache_dir, jvm_location):
+def _update_java_cacert(jar, cache_dir, jvm_location):
     logging.debug("Importing Mozilla CA certificates into JVM keystore...")
     cacerts_file = os.path.join(jvm_location, "lib", "security", "cacerts")
     if not os.path.exists(cacerts_file):
@@ -206,7 +233,7 @@ def _update_java_cacert(cache_dir, jvm_location):
         return
 
     # Parse the Mozilla CA certificate bundle from certifi and import it into the keystore
-    keyutil_jar = os.path.abspath(os.path.join(cache_dir, KEYUTIL_JAR))
+    keyutil_jar = os.path.abspath(os.path.join(cache_dir, jar))
 
     # Import the certificate into the keystore
     try:
@@ -233,9 +260,9 @@ def _update_java_cacert(cache_dir, jvm_location):
     logging.debug("Import of Mozilla certificates finished")
 
 
-def _set_jvm_locale(m2ee, java_version):
+def _set_jvm_locale(m2ee, java_major_version):
     # override locale providers for java8
-    if java_version.startswith("8"):
+    if java_major_version == 8:
         util.upsert_javaopts(m2ee, "-Djava.locale.providers=JRE,SPI,CLDR")
 
 
@@ -253,7 +280,7 @@ def _set_user_provided_java_options(m2ee):
         util.upsert_javaopts(m2ee, options)
 
 
-def _set_jvm_memory(m2ee, vcap, java_version):
+def _set_jvm_memory(m2ee, vcap):
     max_memory = os.environ.get("MEMORY_LIMIT")
 
     if max_memory:
@@ -292,10 +319,7 @@ def _set_jvm_memory(m2ee, vcap, java_version):
     util.upsert_javaopts(m2ee, "-Xmx%s" % heap_size)
     util.upsert_javaopts(m2ee, "-Xms%s" % heap_size)
 
-    if java_version.startswith("7"):
-        util.upsert_javaopts(m2ee, "-XX:MaxPermSize=256M")
-    else:
-        util.upsert_javaopts(m2ee, "-XX:MaxMetaspaceSize=256M")
+    util.upsert_javaopts(m2ee, "-XX:MaxMetaspaceSize=256M")
 
     logging.debug("Java heap size set to %s", heap_size)
 
@@ -307,7 +331,7 @@ def _set_jvm_memory(m2ee, vcap, java_version):
         )
 
 
-def update_config(m2ee, vcap_data, java_version):
-    _set_jvm_memory(m2ee, vcap_data, java_version)
-    _set_jvm_locale(m2ee, java_version)
+def update_config(m2ee, vcap_data, runtime_version):
+    _set_jvm_memory(m2ee, vcap_data)
+    _set_jvm_locale(m2ee, get_java_major_version(runtime_version))
     _set_user_provided_java_options(m2ee)

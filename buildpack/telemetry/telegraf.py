@@ -19,16 +19,27 @@ from jinja2 import Template
 
 from . import datadog, metrics, mx_java_agent, appdynamics
 
-VERSION = "1.16.3"
 NAMESPACE = "telegraf"
+DEPENDENCY = "%s.agent" % NAMESPACE
 INSTALL_PATH = os.path.join(os.path.abspath(".local"), NAMESPACE)
-EXECUTABLE_PATH = os.path.join(
-    INSTALL_PATH, "telegraf-{}".format(VERSION), "usr", "bin", "telegraf"
-)
-CONFIG_FILE_DIR = os.path.join(
-    INSTALL_PATH, "telegraf-{}".format(VERSION), "etc", "telegraf"
-)
-CONFIG_FILE_PATH = os.path.join(CONFIG_FILE_DIR, "telegraf.conf")
+
+
+def _get_executable_path(version):
+    return os.path.join(
+        INSTALL_PATH, "telegraf-{}".format(version), "usr", "bin", "telegraf"
+    )
+
+
+def _get_config_file_dir(version):
+    return os.path.join(
+        INSTALL_PATH, "telegraf-{}".format(version), "etc", "telegraf"
+    )
+
+
+def _get_config_file_path(version):
+    return os.path.join(_get_config_file_dir(version), "telegraf.conf")
+
+
 TEMPLATE_FILENAME = "telegraf.toml.j2"
 
 APPDYNAMICS_OUTPUT_SCRIPT_PATH = os.path.join(
@@ -204,7 +215,11 @@ def update_config(m2ee, app_name):
     if mx_java_agent.meets_version_requirements(runtime_version):
         statsd_port = get_statsd_port()
 
-    template_path = os.path.join(CONFIG_FILE_DIR, TEMPLATE_FILENAME)
+    version = util.get_dependency(DEPENDENCY)["version"]
+
+    template_path = os.path.join(
+        _get_config_file_dir(version), TEMPLATE_FILENAME
+    )
 
     tags = util.get_tags()
     if datadog.is_enabled() and "service" not in tags:
@@ -234,7 +249,7 @@ def update_config(m2ee, app_name):
     )
 
     logging.debug("Writing Telegraf configuration file...")
-    with open(CONFIG_FILE_PATH, "w") as file_:
+    with open(_get_config_file_path(version), "w") as file_:
         file_.write(rendered)
     logging.debug("Telegraf configuration file written")
 
@@ -254,12 +269,8 @@ def stage(buildpack_path, build_path, cache_dir, runtime_version):
         return
 
     logging.debug("Staging the Telegraf metrics agent...")
-    util.resolve_dependency(
-        util.get_blobstore_url(
-            "/mx-buildpack/telegraf/telegraf-{}_linux_amd64.tar.gz".format(
-                VERSION
-            )
-        ),
+    dependency = util.resolve_dependency(
+        DEPENDENCY,
         os.path.join(build_path, NAMESPACE),
         buildpack_dir=buildpack_path,
         cache_dir=cache_dir,
@@ -271,7 +282,7 @@ def stage(buildpack_path, build_path, cache_dir, runtime_version):
         os.path.join(
             build_path,
             NAMESPACE,
-            "telegraf-{}".format(VERSION),
+            "telegraf-{}".format(dependency["version"]),
             "etc",
             "telegraf",
         ),
@@ -292,7 +303,14 @@ def run(runtime_version):
 
     logging.info("Starting the Telegraf metrics agent...")
     e = dict(os.environ)
+
+    version = util.get_dependency(DEPENDENCY)["version"]
+
     subprocess.Popen(
-        (EXECUTABLE_PATH, "--config", CONFIG_FILE_PATH),
+        (
+            _get_executable_path(version),
+            "--config",
+            _get_config_file_path(version),
+        ),
         env=e,
     )

@@ -4,7 +4,6 @@ import subprocess
 from distutils.util import strtobool
 from buildpack import util
 
-APPDYNAMICS_VERSION = "22.1.0"
 
 APPDYNAMICS_INSTALL_PATH = os.path.abspath(".local/appdynamics/")
 APPDYNAMICS_JAVAAGENT_PATH = os.path.join(
@@ -56,11 +55,7 @@ def _set_default_env(m2ee):
 def stage(buildpack_dir, destination_path, cache_path):
     if appdynamics_used():
         util.resolve_dependency(
-            util.get_blobstore_url(
-                "/mx-buildpack/appdynamics/appdynamics-agent-1.8-{}.zip".format(
-                    APPDYNAMICS_VERSION
-                )
-            ),
+            "appdynamics.agent",
             # destination_path - DOT_LOCAL_LOCATION
             destination_path + "/appdynamics/",
             buildpack_dir=buildpack_dir,
@@ -69,11 +64,7 @@ def stage(buildpack_dir, destination_path, cache_path):
 
         if machine_agent_enabled():
             util.resolve_dependency(
-                util.get_blobstore_url(
-                    "/mx-buildpack/appdynamics/appdynamics-machineagent-bundle-{}.zip".format(
-                        APPDYNAMICS_VERSION
-                    )
-                ),
+                "appdynamics.machine-agent",
                 destination_path + "/appdynamics/machineagent/",
                 buildpack_dir=buildpack_dir,
                 cache_dir=cache_path,

@@ -71,12 +71,6 @@ To ensure that your CF cluster has the buildpack you're developing available, us
 * `lint` : ensures that code adheres to our standards
 * `build` : builds the buildpack, i.e. updates / fetches all dependencies that need to be in source control, including all runtime Python dependencies as wheels, and compresses it to `dist/`
 
-### Vendoring Dependencies
-
-You can include ("vendor in") any dependency you want in your build by adding it to `vendor/` directory. This will ensure that the dependency is packaged in the buildpack artifact. This is especially useful for testing dependencies you have built yourself locally, but are not available online yet.
-
-The dependency resolution will detect dependencies in `vendor/` regardless of subdirectory. The only condition is that you use the same file name as the dependency you would like to vendor in instead of getting it online.
-
 ## Testing
 
 We have split up tests into unit tests, which do not need to fully start a Mendix application, and integration tests, which do.
@@ -121,19 +115,215 @@ The CLI loosely follows the Docker CLI commands for `run` , `rm` and `logs` .
 The CLI can be accessed by running the following command from the project root:
 
 ```shell
-python3 tests/integration/runner.py
+tests/integration/runner.py
 ```
 
 The CLI features a help prompt to get you started:
 
 ```shell
-python3 tests/integration/runner.py --help
+tests/integration/runner.py --help
 ```
 
 An example that runs the `myapp` application with a PostgreSQL database container and two environment variables:
 
 ```shell
-python3 tests/integration/runner.py run --name myapp --with-db -e ENV1=VALUE1 -e ENV2=VALUE2 myapp.mda
+tests/integration/runner.py run --name myapp --with-db -e ENV1=VALUE1 -e ENV2=VALUE2 myapp.mda
 ```
 
 After running the application, standard Docker commands and Docker tooling can be used to manipulate the application container(s).
+
+## Managing Dependencies
+
+The buildpack includes two types of dependencies:
+
+* **Python dependencies**. These are used to glue together everything required to run Mendix applications with the buildpack.
+* **External dependencies**. These dependencies are required to run the Mendix applications deployed with the buildpack.
+
+### Managing Python Dependencies
+
+Python dependencies are managed by [`pip-tools`](https://github.com/jazzband/pip-tools). They are specified in [`requirements.in`](requirements.in) (general dependencies) and [`requirements-dev.in`](requirements-dev.in) (dependencies specific for developing and testing). `pip-tools` converts these files into the well-known [`requirements.txt`](requirements.txt).
+
+All Python dependencies are automatically packaged as part of the build process. If the dependencies are not included in a release package, they are downloaded during the buildpack staging phase.
+
+**Note: `requirements.txt` should not be edited manually. Please read on to learn how to work with `requirements.in` and `pip-tools`.**
+
+To convert `requirements.in` into `requirements.txt`, run the following command:
+
+```shell
+make requirements
+```
+
+To install all requirements into your local development environment, run the following command:
+
+```shell
+make install_requirements
+```
+
+### Managing External Dependencies
+
+The buildpack specifies all external dependencies in [`dependencies.yml`](dependencies.yml). This file contains all information required to resolve and download an external dependency.
+How this process works is best explained by an example:
+
+```yaml
+dependencies:
+    foo:
+        bar:
+            version: 1.0.0
+            artifact: some_location/some_archive-{{ version }}.tar.gz
+```
+
+The YAML file can contain templated fields in the [Jinja2](https://jinja.palletsprojects.com/) template language. The `{{ version }}` is an example of this language.
+
+#### Specifying an External Dependency
+
+This YAML snippet contains information about the dependency name (composed of a "group" and a name), a dependency version and the artifact that should be downloaded for that dependency. This snippet is used in the dependency resolution process to form a dependency object. The dependency object is formed recursively, and any fields in a "parent" for a dependency will be propagated downwards, with [some exceptions](#special--reserved-fields).
+
+The result of this example is the following Python dictionary:
+
+```python
+{ 
+    "foo.bar": {
+        "version": "1.0.0",
+        "artifact": "some_location/some_archive-{{ version }}.tar.gz",
+        "name": ["foo", "bar"]
+    }
+}
+```
+
+#### Resolving an External Dependency
+
+This dependency object is used to resolve and download the artifact. This happens in [`util.py`](buildpack/util.py), specifically in `resolve_dependency()`.
+
+The resolution function is used by all buildpack components, and performs the following steps:
+
+0. Find the dependency with the specified name in the list of dependencies. The name is composed of all the YAML sections, separated by `.`, and is used as a key in the dependency list. For the example: `foo.bar`.
+1. Render any unparsed fields (in the example: `artifact`) with:
+   * The fields present in the dependency object itself (in the example: `version`). For the example, this will result in `some_location/some_archive-1.0.0.tar.gz`.
+   * The fields specified in a `overrides` dictionary. These override any values present in the dependency object, or will extend the dependency object when they are not present.
+2. Compose the URL for the `artifact` field:
+   * If the URL starts with `http(s)://`, don't change it
+   * If the URL starts with a `/`, prepend the blob store root URL (specified in code or in the `BLOBSTORE` environment variable).
+   * Else, prepend the blob store root URL and `mx-buildpack/`. For the example, this results in `https://cdn.mendix.com/mx-buildpack/some_location/some_archive-1.0.0.tar.gz`.
+3. Delete any other versions of the file in the URL from the cache. Alternative names can be specified in an `alias` field.
+4. Download and optionally unpack the file in the URL to a specified location:
+   * Check the [`vendor` directory](#vendoring-external-dependencies) if the file is present. If so, retrieve from there
+   * Check the Cloud Foundry cache directory if the file is present. If so, retrieve from there
+   * If not, download from the Mendix CDN
+
+Dependencies can also be retrieved individually, as dependency information could be required outside of the staging process. To do so, use the `get_dependency()` function in `util.py`.
+
+#### Special / Reserved Fields
+
+The `artifact`, `alias` and `name` fields in a dependency object are reserved / special fields:
+
+* `artifact` should always be present and contains the location of the artifact that should be downloaded
+* `alias` contains alternative names for the artifact and is used to delete other / older versions from the Cloud Foundry cache for the application. It is not part of the dependency matrix, and can be a list of strings or a string value.
+* `name` contains the list of YAML sections that compose the dependency key. It is not part of the dependency matrix.
+* `managed` indicates whether the source of the dependency is managed by the authors of this buildpack
+* `*_key` fields contain the key of dictionary fields which are recursed into the dependency graph leaf nodes. See [here](#advanced-examples) for an example.
+
+All other fields are free format.
+
+#### Advanced Examples
+
+The following example **propagates fields** downwards into the resulting dependency dictionary:
+
+```yaml
+dependencies:
+    foo:
+        version: 1.0.0
+        artifact: "some_location/some_archive-{{ type }}-{{ version }}.tar.gz"
+        bar:
+            type: "fizz" 
+        baz:
+            type: "buzz"
+```
+
+The result of this example is the following Python dictionary:
+
+```python
+{
+    "foo.bar": {
+        "artifact": "some_location/some_archive-{{ type }}-{{ version }}.tar.gz",
+        "type": "fizz",
+        "version": "1.0.0",
+        "name": ["foo", "bar"]
+    },
+    "foo.baz": {
+        "artifact": "some_location/some_archive-{{ type }}-{{ version }}.tar.gz",
+        "type": "buzz",
+        "version": "1.0.0",
+        "name": ["foo", "baz"]
+    }
+}
+```
+
+The following example renders a **dependency matrix**, and uses field values in YAML sections:
+
+```yaml
+dependencies:
+    foo:
+        "{{ type }}-{{ version_key }}":
+            artifact: "some_location/some_archive-{{ type }}-{{ version }}.tar.gz"
+            type:
+                - "fizz"
+                - "buzz"
+            version:
+                - "1": 1.0.0
+                - "2": 2.0.0
+```
+
+The result of this example is the following Python dictionary:
+
+```python
+{
+    "foo.fizz-1": {
+        "artifact": "some_location/some_archive-{{ type }}-{{ version }}.tar.gz",
+        "type": "fizz",
+        "version": "1.0.0",
+        "version_key": "1",
+        "name": ["foo", "fizz-1"]
+    },
+    "foo.buzz-1": {
+        "artifact": "some_location/some_archive-{{ type }}-{{ version }}.tar.gz",
+        "type": "buzz",
+        "version": "1.0.0",
+        "version_key": "1",
+        "name": ["foo", "buzz-1"]
+    },
+    "foo.fizz-2": {
+        "artifact": "some_location/some_archive-{{ type }}-{{ version }}.tar.gz",
+        "type": "fizz",
+        "version": "2.0.0",
+        "version_key": "2",
+        "name": ["foo", "fizz-2"]
+    },
+    "foo.buzz-2": {
+        "artifact": "some_location/some_archive-{{ type }}-{{ version }}.tar.gz",
+        "type": "buzz",
+        "version": "2.0.0",
+        "version_key": "2",
+        "name": ["foo", "buzz-2"]
+    },
+}
+```
+
+A couple of things happened in this example:
+
+* The `type` field and `version` field were used to compose a 2x2 matrix of dependencies.
+* The `type` field was literally propagated; the `version` field was a dictionary and propagated into a `version` field (containing the dictionary value) and `version_key` field (containing the dictionary key).
+* The artifact name was rendered using these fields
+
+#### Listing External Dependencies
+
+To print a list of all managed external dependencies, run the following command:
+
+```shell
+make list_external_dependencies
+```
+
+### Vendoring External Dependencies
+
+You can include ("vendor in") any external dependency you want in your build by adding it to `vendor/` directory. This will ensure that the dependency is packaged in the buildpack artifact. This is especially useful for testing dependencies you have built yourself locally, but are not available online yet.
+
+The dependency resolution will detect dependencies in `vendor/` regardless of subdirectory. The only condition is that you use the same file name as the dependency you would like to vendor in instead of getting it online.

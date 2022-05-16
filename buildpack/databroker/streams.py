@@ -15,12 +15,10 @@ from buildpack.databroker.config_generator.scripts.generators import (
 from buildpack.databroker.config_generator.scripts.utils import write_file
 
 # Constants
-BASE_URL = "/mx-buildpack/experimental/databroker/"
-TAR_EXT = "tar"
-BASE_DIR = "databroker"
+NAMESPACE = BASE_DIR = "databroker"
+DEPENDENCY = "%s.stream-sidecar" % NAMESPACE
 AZKARRA_TPLY_CONF_NAME = "topology.conf"
 PDR_STREAMS_FILENAME = "stream-sidecar"
-DEFAULT_PDR_STREAMS_VERSION = "0.23.0-9"
 PDR_STREAMS_DIR = os.path.join(BASE_DIR, "producer-streams")
 PROCESS_NAME = "kafka-streams"
 KAFKA_STREAMS_JMX_PORT = "11004"
@@ -33,39 +31,47 @@ LOG_LEVEL = (
 def get_pdr_stream_version():
     streams_version = os.getenv("DATABROKER_STREAMS_VERSION")
     if not streams_version:
-        streams_version = DEFAULT_PDR_STREAMS_VERSION
+        streams_version = util.get_dependency(DEPENDENCY)["version"]
     return streams_version
 
 
-PDR_STREAMS_HOME = os.path.join(
-    PDR_STREAMS_DIR,
-    "{}-{}".format(PDR_STREAMS_FILENAME, get_pdr_stream_version()),
-)
-AZKARRA_CONF_PATH = os.path.join(
-    os.getcwd(), LOCAL, PDR_STREAMS_HOME, "azkarra.conf"
-)
-PDR_STREAMS_JAR = os.path.join(
-    os.getcwd(),
-    LOCAL,
-    PDR_STREAMS_HOME,
-    "lib",
-    "{}-{}.{}".format(PDR_STREAMS_FILENAME, get_pdr_stream_version(), "jar"),
-)
+def _get_pdr_streams_home(version):
+    return os.path.join(
+        PDR_STREAMS_DIR,
+        "{}-{}".format(PDR_STREAMS_FILENAME, version),
+    )
+
+
+def _get_azkarra_conf_path(version):
+    return os.path.join(
+        os.getcwd(), LOCAL, _get_pdr_streams_home(version), "azkarra.conf"
+    )
+
+
+def _get_pdr_streams_jar(version):
+    return os.path.join(
+        os.getcwd(),
+        LOCAL,
+        _get_pdr_streams_home(version),
+        "lib",
+        "{}-{}.{}".format(
+            PDR_STREAMS_FILENAME, get_pdr_stream_version(), "jar"
+        ),
+    )
 
 
 def _download_pkgs(buildpack_dir, install_path, cache_dir):
     # Download producer streams artifact
-    PDR_STREAMS_DOWNLOAD_URL = "{}{}-{}.{}".format(
-        BASE_URL,
-        PDR_STREAMS_FILENAME,
-        get_pdr_stream_version(),
-        TAR_EXT,
-    )
+    overrides = {}
+    version = os.getenv("DATABROKER_STREAMS_VERSION")
+    if version:
+        overrides = {"version": version}
     util.resolve_dependency(
-        util.get_blobstore_url(PDR_STREAMS_DOWNLOAD_URL),
+        DEPENDENCY,
         os.path.join(install_path, PDR_STREAMS_DIR),
         buildpack_dir=buildpack_dir,
         cache_dir=cache_dir,
+        overrides=overrides,
     )
 
 
@@ -73,11 +79,11 @@ def stage(buildpack_dir, install_path, cache_dir):
     _download_pkgs(buildpack_dir, install_path, cache_dir)
 
 
-def setup_configs(complete_conf):
+def setup_configs(complete_conf, version):
     TPLY_CONF_PATH = os.path.join(
         os.getcwd(),
         LOCAL,
-        PDR_STREAMS_HOME,
+        _get_pdr_streams_home(version),
         AZKARRA_TPLY_CONF_NAME,
     )
     topologies_config = stream_generator.generate_config(complete_conf)
@@ -85,11 +91,12 @@ def setup_configs(complete_conf):
     os.environ["TOPOLOGY_CONFIGURATION_PATH"] = TPLY_CONF_PATH
 
     azkarra_config = azkarra_generator.generate_config(complete_conf)
-    write_file(AZKARRA_CONF_PATH, azkarra_config)
+    write_file(_get_azkarra_conf_path(version), azkarra_config)
 
 
 def run(complete_conf):
-    setup_configs(complete_conf)
+    version = get_pdr_stream_version()
+    setup_configs(complete_conf, version)
     java_path = os.path.join(os.getcwd(), LOCAL, "bin")
     os.environ["PATH"] += os.pathsep + java_path
     os.environ["JMX_PORT"] = KAFKA_STREAMS_JMX_PORT
@@ -100,13 +107,13 @@ def run(complete_conf):
         PROCESS_NAME,
         (
             "java",
-            "-Dconfig.file=" + AZKARRA_CONF_PATH,
+            "-Dconfig.file=" + _get_azkarra_conf_path(version),
             "-Dcom.sun.management.jmxremote",
             "-Dcom.sun.management.jmxremote.authenticate=false",
             "-Dcom.sun.management.jmxremote.ssl=false",
             "-Dcom.sun.management.jmxremote.port=" + KAFKA_STREAMS_JMX_PORT,
             "-jar",
-            PDR_STREAMS_JAR,
+            _get_pdr_streams_jar(version),
         ),
         env,
     )

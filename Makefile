@@ -16,6 +16,10 @@ vendor: create_build_dirs copy_vendored_dependencies download_wheels
 copy_vendored_dependencies:
 	cp -rf vendor build/
 
+.PHONY: list_external_dependencies
+list_external_dependencies:
+	@python3 buildpack/util.py list-external-dependencies
+
 .PHONY: download_wheels
 download_wheels: requirements
 	rm -rf build/vendor/wheels

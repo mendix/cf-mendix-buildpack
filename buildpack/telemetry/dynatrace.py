@@ -20,19 +20,18 @@ default_env = {
 
 def stage(buildpack_dir, build_path, cache_path):
     if is_enabled():
-        agent_url = "{url}/e/{environment}/api/v1/deployment/installer/agent/unix/paas/latest?include=java&bitness=64&Api-Token={token}".format(
-            url=os.environ.get("DT_SAAS_URL"),
-            environment=os.environ.get("DT_TENANT"),
-            token=os.environ.get("DT_PAAS_TOKEN"),
-        )
-
         try:
             util.resolve_dependency(
-                agent_url,
+                "dynatrace.agent",
                 build_path,  # DOT_LOCAL_LOCATION,
                 buildpack_dir=buildpack_dir,
                 cache_dir=cache_path,  # CACHE_DIR,
                 unpack=True,
+                overrides={
+                    "url": os.environ.get("DT_SAAS_URL"),
+                    "environment": os.environ.get("DT_TENANT"),
+                    "token": os.environ.get("DT_PAAS_TOKEN"),
+                },
             )
         except Exception as e:
             logging.warning(
