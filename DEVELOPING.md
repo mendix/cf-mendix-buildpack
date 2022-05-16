@@ -214,13 +214,14 @@ Dependencies can also be retrieved individually, as dependency information could
 
 #### Special / Reserved Fields
 
-The `artifact`, `alias` and `name` fields in a dependency object are reserved / special fields:
+A number of fields in a dependency object are reserved / special fields:
 
 * `artifact` should always be present and contains the location of the artifact that should be downloaded
 * `alias` contains alternative names for the artifact and is used to delete other / older versions from the Cloud Foundry cache for the application. It is not part of the dependency matrix, and can be a list of strings or a string value.
 * `name` contains the list of YAML sections that compose the dependency key. It is not part of the dependency matrix.
 * `managed` indicates whether the source of the dependency is managed by the authors of this buildpack
 * `*_key` fields contain the key of dictionary fields which are recursed into the dependency graph leaf nodes. See [here](#advanced-examples) for an example.
+* `cpe`, `purl` and `bom_*` fields contain information to generate a [Software Bill of Materials (SBOM)](#generating-an-sbom-for-external-dependencies).
 
 All other fields are free format.
 
@@ -321,6 +322,21 @@ To print a list of all managed external dependencies, run the following command:
 ```shell
 make list_external_dependencies
 ```
+
+#### Generating an SBOM for External Dependencies
+
+For some use cases, an official Software Bill of Materials (SBOM) is required. The following command generates a [CycloneDX](https://cyclonedx.org/) 1.4 JSON SBOM:
+
+```shell
+make generate_software_bom
+```
+
+An essential part of every SBOM is including identifiers for dependencies. Currently, there are two identifiers supported in the following fields:
+
+* `cpe`: Common Platform Enumeration (CPE) identifier. NIST maintains a [list of CPEs](https://nvd.nist.gov/products/cpe) to which vulnerabilities can be linked.
+* `purl`: Package URL (PURL). This specification can be found [here](https://github.com/package-url/purl-spec).
+
+Additionally, extra information can be included in the BOM, or override existing information. To do so, include a `bom_<key>` field, with `key` being the name of the information you are trying to add and override. The SBOM will contain this information, minus the `bom_` prefix.
 
 ### Vendoring External Dependencies
 

@@ -23,6 +23,10 @@ copy_vendored_dependencies:
 list_external_dependencies:
 	@python3 buildpack/util.py list-external-dependencies
 
+.PHONY: generate_software_bom
+generate_software_bom:
+	@python3 buildpack/util.py generate-software-bom
+
 .PHONY: download_wheels
 download_wheels: requirements
 	rm -rf build/vendor/wheels
