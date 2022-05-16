@@ -3,7 +3,6 @@ import os
 
 from buildpack import util
 
-AGENT_VERSION = "6.2.1"
 NAMESPACE = "newrelic"
 ROOT_DIR = ".local"
 
@@ -11,11 +10,7 @@ ROOT_DIR = ".local"
 def stage(buildpack_dir, install_path, cache_path):
     if get_new_relic_license_key():
         util.resolve_dependency(
-            util.get_blobstore_url(
-                "/mx-buildpack/newrelic/newrelic-java-{}.zip".format(
-                    AGENT_VERSION
-                )
-            ),
+            "%s.agent" % NAMESPACE,
             _get_destination_dir(install_path),
             buildpack_dir=buildpack_dir,
             cache_dir=cache_path,

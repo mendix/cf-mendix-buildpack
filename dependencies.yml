@@ -1,0 +1,86 @@
+---
+dependencies:
+  appdynamics:
+    agent:
+      artifact: appdynamics/appdynamics-agent-1.8-{{ version }}.zip
+    machine-agent:
+      artifact: appdynamics/appdynamics-machineagent-bundle-{{ version }}.zip
+    version: 22.1.0
+  databroker:
+    debezium:
+      artifact: experimental/databroker/debezium-{{ version }}.tar.gz
+      version: 1.2.0
+    kafka-connect:
+      artifact: experimental/databroker/kafka-connect-{{ version }}.tar.gz
+      version: 2.13-2.5.1-v2
+    stream-sidecar:
+      artifact: experimental/databroker/stream-sidecar-{{ version }}.tar
+      version: 0.23.0-9
+  datadog:
+    buildpack:
+      alias: cf-datadog-sidecar
+      artifact: datadog/datadog-cloudfoundry-buildpack-{{ version }}.zip
+      version: 4.28.0
+    trace-agent:
+      artifact: datadog/dd-java-agent-{{ version }}.jar
+      version: 0.78.3
+  dynatrace:
+    agent:
+      artifact: "{{ url }}/e/{{ environment }}/api/v1/deployment/installer/agent/unix/paas/latest?include=java&bitness=64&Api-Token={{ token }}"
+      managed: false
+  java:
+    keyutil:
+      artifact: java-keyutil/keyutil-{{ version }}.jar
+      version: 0.4.0
+    "{{ version_key }}-{{ type }}":
+      alias:
+        - AdoptOpenJDK-{{ type }}
+        - "{{ type }}"
+      artifact: "{{ vendor }}-{{ type }}-{{ version }}-linux-x64.tar.gz"
+      type:
+        - jre
+        - jdk
+      vendor: Adoptium
+      version:
+        - "8": 8u332
+        - "11": 11.0.15
+  logs:
+    mendix-logfilter:
+      artifact: mendix-logfilter
+      managed: false
+  mendix:
+    mx-agent:
+      artifact: mx-agent/mx-agent-v{{ version }}.jar
+      version: 0.12.0
+    runtime:
+      "{{ type }}":
+        artifact: "{{ url }}/runtime/{{ type }}-{{ version }}.tar.gz"
+        managed: false
+        type:
+          - mendix
+          - mxbuild
+  metering:
+    sidecar:
+      artifact: experimental/metering/metering-sidecar-linux-amd64-v{{ version }}.tar.gz
+      version: 2.0.0
+  mono:
+    "{{ version_key }}-{{ type }}":
+      artifact: mono/mono-{{ version }}-mx-ubuntu-{{ type }}.tar.gz
+      type:
+        - bionic
+      version:
+        - "3": 3.10.0
+        - "4": 4.6.2.16
+        - "5": 5.20.1.27
+  newrelic:
+    agent:
+      artifact: newrelic/newrelic-java-{{ version }}.zip
+      version: 6.2.1
+  nginx:
+    artifact: nginx_{{ version }}_linux_x64_cflinuxfs3_{{ commit }}.tgz
+    commit: f0918d6b
+    version: 1.21.1
+  telegraf:
+    agent:
+      artifact: telegraf/telegraf-{{ version }}_linux_amd64.tar.gz
+      version: 1.16.3

@@ -82,11 +82,11 @@ jdk.tls.disabledAlgorithms=SSLv3, RC4, DES, MD5withRSA
             if case[1] == "":
                 with self.assertRaises(ValueError):
                     _get_security_properties_file(
-                        "", {"version": str(case[0])}
+                        "", _get_major_version(case[0])
                     )
             else:
                 file = _get_security_properties_file(
-                    "", {"version": str(case[0])}
+                    "", _get_major_version(case[0])
                 )
                 assert case[1] in str(file)
 
@@ -104,7 +104,7 @@ jdk.tls.disabledAlgorithms=SSLv3, RC4, DES, MD5withRSA
         for case in self.MAJOR_VERSION_TEST_CASES:
             if case[1] == "":
                 with self.assertRaises(ValueError):
-                    _get_major_version({"version": case[0]})
+                    _get_major_version(case[0])
             else:
-                result = _get_major_version({"version": case[0]})
+                result = _get_major_version(case[0])
                 assert result == case[1]

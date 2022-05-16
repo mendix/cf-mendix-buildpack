@@ -2,6 +2,7 @@ import os
 
 from buildpack.telemetry import telegraf
 from tests.integration import basetest
+from buildpack.util import get_dependency
 
 
 class TestCaseTelegraf(basetest.BaseTest):
@@ -71,7 +72,7 @@ class TestCaseTelegraf(basetest.BaseTest):
 
     def test_telegraph_config_for_micrometer(self):
         """Ensure telegraf is configured to collect metrics from micrometer"""
-        version = telegraf.VERSION
+        version = get_dependency(telegraf.DEPENDENCY)["version"]
         telegraf_config_path = os.path.join(
             os.sep,
             "app",

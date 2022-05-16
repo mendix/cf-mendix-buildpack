@@ -24,15 +24,7 @@ from buildpack.infrastructure import database
 from lib.m2ee.version import MXVersion
 
 NAMESPACE = "datadog"
-
-SIDECAR_VERSION = "4.28.0"
-SIDECAR_ARTIFACT_NAME = "datadog-cloudfoundry-buildpack-{}.zip".format(
-    SIDECAR_VERSION
-)
-SIDECAR_URL_ROOT = "/mx-buildpack/{}".format(NAMESPACE)
-JAVA_AGENT_VERSION = "0.78.3"
-JAVA_AGENT_ARTIFACT_NAME = "dd-java-agent-{}.jar".format(JAVA_AGENT_VERSION)
-JAVA_AGENT_URL_ROOT = "/mx-buildpack/{}".format(NAMESPACE)
+TRACE_AGENT_DEPENDENCY = "%s.trace-agent" % NAMESPACE
 
 ROOT_DIR = os.path.abspath(".local")
 SIDECAR_ROOT_DIR = os.path.join(ROOT_DIR, NAMESPACE)
@@ -196,7 +188,12 @@ def get_statsd_port():
 def _set_up_dd_java_agent(
     m2ee, model_version, runtime_version, jmx_config_files
 ):
-    jar = os.path.join(SIDECAR_ROOT_DIR, JAVA_AGENT_ARTIFACT_NAME)
+    jar = os.path.join(
+        SIDECAR_ROOT_DIR,
+        os.path.basename(
+            util.get_dependency(TRACE_AGENT_DEPENDENCY)["artifact"]
+        ),
+    )
 
     # Check if already configured
     if 0 in [
@@ -507,18 +504,13 @@ def update_config(
 
 def _download(buildpack_dir, build_path, cache_dir):
     util.resolve_dependency(
-        util.get_blobstore_url(
-            "{}/{}".format(SIDECAR_URL_ROOT, SIDECAR_ARTIFACT_NAME)
-        ),
+        "%s.buildpack" % NAMESPACE,
         os.path.join(build_path, NAMESPACE),
         buildpack_dir=buildpack_dir,
         cache_dir=cache_dir,
-        alias="cf-datadog-sidecar",  # Removes the old sidecar if present
     )
     util.resolve_dependency(
-        util.get_blobstore_url(
-            "{}/{}".format(JAVA_AGENT_URL_ROOT, JAVA_AGENT_ARTIFACT_NAME)
-        ),
+        TRACE_AGENT_DEPENDENCY,
         os.path.join(build_path, NAMESPACE),
         buildpack_dir=buildpack_dir,
         cache_dir=cache_dir,

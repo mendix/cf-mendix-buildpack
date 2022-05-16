@@ -79,9 +79,7 @@ def stage(buildpack_path, build_path, cache_path):
     if not _is_custom_nginx():
         logging.debug("Downloading nginx...")
         util.resolve_dependency(
-            util.get_blobstore_url(
-                "/mx-buildpack/nginx_1.21.1_linux_x64_cflinuxfs3_f0918d6b.tgz"
-            ),
+            "nginx",
             os.path.join(build_path, "nginx"),
             buildpack_dir=buildpack_path,
             cache_dir=cache_path,

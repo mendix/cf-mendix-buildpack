@@ -11,6 +11,8 @@ import subprocess
 import urllib
 
 import requests
+import yaml
+from jinja2 import DebugUndefined, Template
 
 
 def print_all_logging_handlers():
@@ -54,8 +56,175 @@ def get_app_from_domain():
     return get_domain().split(".")[0]
 
 
+# Flattens a list
+def _flatten(l):
+    result = []
+    for i in l:
+        if isinstance(i, list):
+            result.extend(_flatten(i))
+        else:
+            result.append(i)
+    return result
+
+
+DEPENDENCY_ARTIFACT_KEY = "artifact"
+DEPENDENCY_MANAGED_KEY = "managed"
+DEPENDENCY_NAME_KEY = "name"
+DEPENDENCY_NAME_SEPARATOR = "."
+DEPENDENCY_ALIAS_KEY = "alias"
+DEPENDENCY_FILE = "dependencies.yml"
+DO_NOT_RECURSE_FIELDS = [DEPENDENCY_ALIAS_KEY, DEPENDENCY_NAME_KEY]
+
+
+# Returns whether an object is a "variable" / literal in a dependency definition
+def _is_dependency_literal(o):
+    return type(o) in (int, str, float, bool)
+
+
+# Renders a dependency object
+def _render(
+    o,
+    variables,
+    fields=[
+        DEPENDENCY_ARTIFACT_KEY,
+        DEPENDENCY_NAME_KEY,
+        DEPENDENCY_ALIAS_KEY,
+    ],
+):
+    for field in fields:
+        if field in o:
+            if isinstance(o[field], list):
+                o[field] = [__render(item, variables) for item in o[field]]
+            else:
+                o[field] = __render(o[field], variables)
+    return o
+
+
+def __render(o, variables):
+    return Template(o, undefined=DebugUndefined).render(variables)
+
+
+# Returns a list of external dependency objects
+# Function argument is an object, typically loaded from YAML
+# This function is a recursive descent parser
+def __get_dependencies(object):
+    if (
+        all(
+            [
+                True
+                if k in DO_NOT_RECURSE_FIELDS
+                else _is_dependency_literal(v)
+                for k, v in object.items()
+            ]
+        )
+        and DEPENDENCY_ARTIFACT_KEY in object
+    ):
+        # Leaf node found, return single artifact object
+        return _render(object, object, DO_NOT_RECURSE_FIELDS)
+    else:
+        # Normal node found, recurse further
+        result = []
+        for key, value in object.items():
+            name = {}
+            if (
+                not _is_dependency_literal(value)
+                and key not in DO_NOT_RECURSE_FIELDS
+            ):
+                # Recurse non-literals
+                # If the item is a list, recurse for every item on the list
+                if isinstance(value, list):
+                    for item in value:
+                        # Recurse over the union of the parent object and item literals
+                        if _is_dependency_literal(item):
+                            result.append(
+                                __get_dependencies({**object, **{key: item}})
+                            )
+                        else:
+                            if isinstance(item, dict):
+                                for k, v in item.items():
+                                    # Add key-value mapping for dict object
+                                    result.append(
+                                        __get_dependencies(
+                                            {
+                                                **object,
+                                                **{key: v},
+                                                **{key + "_key": k},
+                                            }
+                                        )
+                                    )
+                            else:
+                                for subitem in item:
+                                    result.append(
+                                        __get_dependencies(
+                                            {**object, **{key: subitem}}
+                                        )
+                                    )
+                # If the item is another object, recurse over the union of the item and the parent object literals
+                else:
+                    name = {}
+                    if DEPENDENCY_NAME_KEY not in object:
+                        name = {DEPENDENCY_NAME_KEY: [key]}
+                    else:
+                        name = {
+                            DEPENDENCY_NAME_KEY: object[DEPENDENCY_NAME_KEY]
+                            + [key]
+                        }
+                    variables = {
+                        k: v
+                        for k, v in object.items()
+                        if _is_dependency_literal(v)
+                    }
+                    result.append(
+                        __get_dependencies({**value, **variables, **name})
+                    )
+        return result
+
+
+# Flattens a dependency name
+def _get_dependency_name(dependency):
+    return DEPENDENCY_NAME_SEPARATOR.join(dependency[DEPENDENCY_NAME_KEY])
+
+
+def _get_dependency_file_contents(file):
+    with open(os.path.join(file), "r") as f:
+        try:
+            return yaml.safe_load(f)
+        except yaml.YAMLError as e:
+            logging.error("Cannot parse dependency configuration file: %s" % e)
+            return
+
+
+# Returns a dict of dependencies from the dependency configuration file
+# The dict key is composed of the key names of the YAML file, separated by a "."
+def _get_dependencies(buildpack_dir):
+    dependencies = _get_dependency_file_contents(
+        os.path.join(buildpack_dir, DEPENDENCY_FILE)
+    )
+    if dependencies:
+        result = _flatten(__get_dependencies(dependencies["dependencies"]))
+        return {_get_dependency_name(x): x for x in result}
+    return
+
+
+# Gets a single dependency and renders
+def get_dependency(dependency, overrides={}, buildpack_dir=os.getcwd()):
+    result = None
+    artifacts = _get_dependencies(buildpack_dir)
+    if artifacts is not None and dependency in artifacts:
+        result = artifacts[dependency]
+        if isinstance(overrides, dict) and len(overrides) > 0:
+            result = _render(result, {**result, **overrides})
+        else:
+            result = _render(result, result)
+    return result
+
+
+BLOBSTORE_DEFAULT_URL = "https://cdn.mendix.com"
+BLOBSTORE_BUILDPACK_DEFAULT_PREFIX = "/mx-buildpack/"
+
+
 def get_blobstore():
-    return os.environ.get("BLOBSTORE", "https://cdn.mendix.com")
+    return os.environ.get("BLOBSTORE", BLOBSTORE_DEFAULT_URL)
 
 
 def get_blobstore_url(filename, blobstore=get_blobstore()):
@@ -65,6 +234,21 @@ def get_blobstore_url(filename, blobstore=get_blobstore()):
     return main_url + filename
 
 
+# Gets the artifact URL for a dependency
+def _get_dependency_artifact_url(dependency):
+    if dependency and DEPENDENCY_ARTIFACT_KEY in dependency:
+        url = dependency[DEPENDENCY_ARTIFACT_KEY]
+        if is_url(url):
+            return url
+        if url.startswith("/"):
+            # Absolute path detected
+            return get_blobstore_url(url)
+        return get_blobstore_url(BLOBSTORE_BUILDPACK_DEFAULT_PREFIX + url)
+    return None
+
+
+# Deletes other versions of a given file
+# Also accounts for aliases (either a string or a list of strings)
 def _delete_other_versions(directory, file_name, alias=None):
     logging.debug(
         "Deleting other dependency versions than [{}] from [{}]...".format(
@@ -74,7 +258,10 @@ def _delete_other_versions(directory, file_name, alias=None):
     expression = r"^((?:[a-zA-Z]+-)+)((?:v*[0-9]+\.?)+.*)(\.(?:tar|tar\.gz|tgz|zip|jar))$"
     patterns = [re.sub(expression, "\\1*\\3", file_name)]
     if alias:
-        patterns.append("{}-*.*".format(alias))
+        if isinstance(alias, str):
+            alias = [alias]
+        for a in alias:
+            patterns.append("{}-*.*".format(a))
 
     for pattern in patterns:
         logging.debug("Finding files matching [{}]...".format(pattern))
@@ -107,19 +294,38 @@ def _find_file_in_directory(file_name, directory):
     return None
 
 
+# Resolves a dependency: fetches it and copies it to the specified location
+# Dependency can be either a string (dependency name) or a dependency object retrieved with get_dependency()
 def resolve_dependency(
-    url,
+    dependency,
     destination,
     buildpack_dir,
     cache_dir="/tmp/downloads",
     ignore_cache=False,
     unpack=True,
     unpack_strip_directories=False,
-    alias=None,
+    overrides={},
 ):
+    if isinstance(dependency, str):
+        name = dependency
+        dependency = get_dependency(dependency, overrides, buildpack_dir)
+        if dependency is None:
+            logging.error("Cannot find dependency [%s]" % name)
+            return
+    name = _get_dependency_name(dependency)
+
+    logging.debug("Resolving dependency [%s]..." % name)
+    url = _get_dependency_artifact_url(dependency)
+    if url is None:
+        logging.error("Cannot find dependency artifact URL for [%s]" % name)
+        return
     file_name = url.split("/")[-1]
 
     mkdir_p(cache_dir)
+    alias = None
+    if DEPENDENCY_ALIAS_KEY in dependency:
+        alias = dependency[DEPENDENCY_ALIAS_KEY]
+
     _delete_other_versions(cache_dir, file_name, alias)
 
     vendor_dir = os.path.join(buildpack_dir, "vendor")
@@ -188,6 +394,7 @@ def resolve_dependency(
                 file_name, destination
             )
         )
+    return dependency
 
 
 def mkdir_p(path):
@@ -571,3 +778,45 @@ def upsert_logging_config(m2ee, value):
     _upsert_m2ee_config_section(
         m2ee, "logging", [value], overwrite=False, append=True
     )
+
+
+# Script entry point. Only meant to be used in development
+if __name__ == "__main__":
+    import sys
+    import click
+
+    # Hacks to find project root and make script runnable in most cases
+    PROJECT_ROOT_PATH = None
+    if "__file__" in vars():
+        PROJECT_ROOT_PATH = os.path.dirname(
+            os.path.dirname(os.path.realpath(__file__))
+        )
+    else:
+        PROJECT_ROOT_PATH = os.getcwd()
+    sys.path.append(PROJECT_ROOT_PATH)
+
+    @click.group()
+    @click.option(
+        "-v",
+        "--verbose",
+        is_flag=True,
+        default=False,
+        help="Enables verbose output.",
+    )
+    @click.pass_context
+    def cli(ctx, verbose):
+        ctx.obj = {"verbose": verbose}
+
+    @cli.command(help="Lists managed external dependencies")
+    @click.pass_context
+    def list_external_dependencies(ctx):
+        verbose = ctx.obj["verbose"]
+        for key in _get_dependencies(PROJECT_ROOT_PATH).keys():
+            dependency = get_dependency(key)
+            if DEPENDENCY_MANAGED_KEY not in dependency or (
+                DEPENDENCY_MANAGED_KEY in dependency
+                and dependency[DEPENDENCY_MANAGED_KEY] == True
+            ):
+                click.echo(_get_dependency_artifact_url(dependency))
+
+    cli()  # pylint: disable=no-value-for-parameter

@@ -57,15 +57,6 @@ def is_version_maintained(version):
     return False
 
 
-def _get_runtime_dependency_url(blobstore, build_path, prefix="mendix"):
-    return util.get_blobstore_url(
-        "/runtime/{}-{}.tar.gz".format(
-            prefix, str(get_runtime_version(build_path))
-        ),
-        blobstore=blobstore,
-    )
-
-
 def stage(buildpack_dir, build_path, cache_path):
     logging.debug("Creating directory structure for Mendix runtime...")
     for name in ["runtimes", "log", "database", "data", "bin"]:
@@ -81,46 +72,32 @@ def stage(buildpack_dir, build_path, cache_path):
     resolve_runtime_dependency(buildpack_dir, build_path, cache_path)
 
 
+FORCED_MXRUNTIME_URL_KEY = "FORCED_MXRUNTIME_URL"
+
+
 def resolve_runtime_dependency(
     buildpack_dir,
     build_dir,
     cache_dir,
     destination=None,
     prefix="mendix",
-    forced_env_key="FORCED_MXRUNTIME_URL",
 ):
-    url = os.environ.get(forced_env_key, util.get_blobstore())
-    if util.is_url(url):
-        if not url.endswith(".tar.gz"):
-            # Assume that the forced URL points to a blobstore root
-            url = _get_runtime_dependency_url(url, build_dir, prefix)
-    else:
-        raise ValueError("Invalid {} set: {}".format(forced_env_key, url))
-
+    url = os.getenv(FORCED_MXRUNTIME_URL_KEY, util.get_blobstore())
+    if url.endswith("/"):
+        url = url[:-1]
     if not destination:
         destination = os.path.join(build_dir, "runtimes")
     util.resolve_dependency(
-        url,
+        "mendix.runtime.%s" % prefix,
         destination,
         buildpack_dir=buildpack_dir,
         cache_dir=cache_dir,
-        ignore_cache=forced_env_key in os.environ,
+        ignore_cache=FORCED_MXRUNTIME_URL_KEY in os.environ,
+        overrides={
+            "version": str(get_runtime_version(build_dir)),
+            "url": url,
+        },
     )
-
-
-def get_java_version(mx_version):
-    if mx_version >= MXVersion("8.0.0"):
-        java_version = {
-            "version": os.getenv("JAVA_VERSION", "11.0.15"),
-            "vendor": "Adoptium",
-        }
-    else:
-        java_version = {
-            "version": os.getenv("JAVA_VERSION", "8u332"),
-            "vendor": "Adoptium",
-        }
-
-    return java_version
 
 
 def get_metadata_value(key, build_path=BASE_PATH):
@@ -130,14 +107,15 @@ def get_metadata_value(key, build_path=BASE_PATH):
             data = json.loads(file_handle.read())
             return data[key]
     except IOError:
-        logging.warning("Cannot retrieve metadata key %s", key)
         return None
 
 
 def get_runtime_version(build_path=BASE_PATH):
     result = get_metadata_value("RuntimeVersion", build_path)
-
     if result == None:
+        logging.debug(
+            "Cannot retrieve runtime version %s from metadata file, falling back to project file"
+        )
         mpr = util.get_mpr_file_from_dir(build_path)
         if not mpr:
             raise Exception("No model/metadata.json or .mpr found in archive")

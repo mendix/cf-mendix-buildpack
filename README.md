@@ -186,21 +186,25 @@ cf set-env <YOUR_APP> HEAP_SIZE 512M
 
 This buildpack provides the [Adoptium](https://adoptium.net/) JDK and JRE.
 
-The buildpack will automatically determine the Java version to use based on the runtime version of the app being deployed. The default Java version is 8. For Mendix 8 and above the default Java version is 11. In most cases it is not needed to change the Java version determined by the buildpack.
+The buildpack will automatically determine the Java version to use based on the runtime version of the app being deployed. The default Java version is 8. For Mendix 8 and above, the default Java version is 11.
 
-*Note*: The buildpack will automatically determine the vendor based on the Mendix version. The `JAVA_VERSION` variable can be used to override the version number. The JDK or JRE with this version number must either be present on the Mendix CDN or in the `vendor` directory (see [ `DEVELOPING.md` ](DEVELOPING.md)).
+We do not recommend overriding the Java version for the buildpack. However, for cases where this is required, the `JAVA_VERSION` variable can be used to override the version number.
 
-Examples:
+Example:
 
 ```shell
 cf set-env <YOUR_APP> JAVA_VERSION 11
 ```
 
-Or to switch to a specific patch version for Java 11:
+This will resolve the Java dependency using major version number 11. The JDK or JRE with this version number must be specified in (`dependencies.yml`)[dependencies.yml] and either be present on the Mendix CDN or in the `vendor` directory (see [here](DEVELOPING.md#managing-external-dependencies)).
+
+Minor versions are also supported, but only if they are specified in the dependency configuration correctly. Example:
 
 ```shell
 cf set-env <YOUR_APP> JAVA_VERSION 11.0.15
 ```
+
+This example will only work correctly if the specific file for version 11.0.15 is present.
 
 ### Customizing the Java Virtual Machine (JVM) Settings
 
@@ -291,23 +295,16 @@ NOTE: The previously documented setting `CLUSTER_ENABLED` and the REDIS related 
 
 ### Offline Buildpack Settings
 
-If you are running Cloud Foundry without a connection to the Internet, you should specify an on-premises web server that hosts Mendix Runtime files and other buildpack resources. You can set the endpoint with the following environment variable:
+If you are running Cloud Foundry without a connection to the Internet, you should specify an on-premises web server that hosts Mendix Runtime files and other buildpack dependencies. You can set the endpoint with the following environment variable:
 
  `BLOBSTORE: https://my-intranet-webserver.my-company.com/mendix/`
 
 The preferred way to set up this on-premises web server is as a transparent proxy to `https://cdn.mendix.com/` . This prevents manual work by system administrators every time a new Mendix version is released.
+Alternatively you can [vendorize the required dependencies](DEVELOPING.md#vendoring-external-dependencies).
 
-Alternatively you can make the required mendix runtime files `mendix-VERSION.tar.gz` available under `BLOBSTORE/runtime/` . The original files can be downloaded from `https://cdn.mendix.com/` . You should also make the Java version available on:
+A list of buildpack dependencies can be downloaded from [here](https://cdn.mendix.com/listing.txt).
 
-* `BLOBSTORE/mx-buildpack/jre-8-linux-x64.tar.gz` (Mendix < 8)
-* `BLOBSTORE/mx-buildpack/jdk-8-linux-x64.tar.gz` (Mendix < 8)
-* `BLOBSTORE/mx-buildpack/jre-11-linux-x64.tar.gz` (Mendix 8)
-* `BLOBSTORE/mx-buildpack/jdk-11-linux-x64.tar.gz` (Mendix 8)
-
-And for [Mendix \< 6.6](https://docs.mendix.com/releasenotes/desktop-modeler/6.6#fixes):
-
-* `BLOBSTORE/mx-buildpack/jre-8u51-linux-x64.tar.gz`
-* `BLOBSTORE/mx-buildpack/jdk-8u51-linux-x64.tar.gz`
+For more information about external dependency management, please check [here](DEVELOPING.md#managing-external-dependencies).
 
 ### Managing Certificate Authorities
 
