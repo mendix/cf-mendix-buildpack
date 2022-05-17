@@ -1,0 +1,13 @@
+name: Sanity check (main branch)
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  call-workflow-version-changed:
+    name: Check if version has changed
+    uses: ./.github/workflows/version-changed.yml
+    with:
+      fail_on_change: false

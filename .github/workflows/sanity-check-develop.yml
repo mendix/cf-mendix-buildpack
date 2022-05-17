@@ -1,0 +1,16 @@
+name: Sanity check (development branch)
+
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  call-workflow-version-changed:
+    name: Check if version has not changed
+    uses: ./.github/workflows/version-changed.yml
+    with:
+      fail_on_change: true
