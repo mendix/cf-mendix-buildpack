@@ -1,0 +1,26 @@
+name: Sanity Check
+
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+    branches:
+      - develop
+      - master
+
+jobs:
+  check-version-changed:
+    name: Check for VERSION changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check if VERSION has been changed
+        uses: tj-actions/verify-changed-files@v9
+        id: verify-version-changed
+        with:
+          files: |
+            VERSION
+      - name: Fail when branch is not the main branch
+        if: steps.verify-changed-files.outputs.files_changed && ( github.ref != 'refs/heads/master' )
+        run: exit 1
