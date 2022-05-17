@@ -25,7 +25,7 @@ jobs:
       uses: fkirc/skip-duplicate-actions@master
       with:
         github_token: ${{ github.token }}
-        paths_ignore: '["**.md", "dev/**"]'
+        paths_ignore: '["**.md", "dev/**", "LICENSE", "VERSION"]'
   build:
     name: Build
     needs: pre
@@ -84,11 +84,11 @@ jobs:
     - name: Run test (${{ matrix.test }})
       run: make test_integration TEST_FILES=tests/integration/${{ matrix.test }}
   integration-test-result:
-    if: ${{ always() }}
+    if: ${{ needs.pre.outputs.skip != 'true' }}
     runs-on: ubuntu-latest
     name: Get integration test results
     needs: [pre, integration-test]
     steps:
       - name: Get integration test results
-        if: ${{ needs.pre.outputs.skip != 'true' && needs.integration-test.result != 'success' }}
+        if: ${{ needs.integration-test.result != 'success' }}
         run: exit 1
