@@ -2,27 +2,48 @@ name: Build
 
 on:
   workflow_call:
+    outputs:
+      version_tag:
+        description: "Semantic version tag"
+        value: ${{ jobs.get-version.outputs.version_tag }}
 
 jobs:
+  get-version:
+    name: Determine semantic version
+    runs-on: ubuntu-latest
+    outputs:
+      version_tag: ${{ steps.semantic-version.outputs.version_tag }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - id: semantic-version
+        uses: paulhatch/semantic-version@v4.0.3
+        with:
+          tag_prefix: "v"
+          major_pattern: "(major)"
+          minor_pattern: "(minor)"
+          format: "${major}.${minor}.${patch}-pre${increment}"
   build:
     name: Build
+    needs: get-version
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python
-      uses: actions/setup-python@v3
-      with:
-        python-version: 3.6
-    - name: Install Python requirements
-      run: make install_requirements
-    - name: Lint
-      run: make lint
-    - name: Run unit tests
-      run: make test_unit
-    - name: Build
-      run: make build
-    - name: Upload artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: dist
-        path: dist
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.6
+      - name: Install Python requirements
+        run: make install_requirements
+      - name: Lint
+        run: make lint
+      - name: Run unit tests
+        run: make test_unit
+      - name: Build
+        run: VERSION=${{ needs.get-version.outputs.version_tag }} make build
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: dist

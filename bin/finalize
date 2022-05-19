@@ -8,9 +8,11 @@ CACHE_PATH=$2
 DEPS_PATH=$3/$4
 PROFILE_DIR=${5:-}
 
-VERSION=$(cat $BUILDPACK_PATH/VERSION | tr -d '[:space:]')
+VERSION_PATH="${BUILDPACK_PATH}/VERSION"
+VERSION="DEVELOPMENT"
+if [[ -f "${VERSION_PATH}" ]]; then VERSION=$(cat ${VERSION_PATH} | tr -d '[:space:]'); fi
 COMMIT_PATH="${BUILDPACK_PATH}/.commit"
-COMMIT="development"
+COMMIT="HEAD"
 if [[ -f "${COMMIT_PATH}" ]]; then COMMIT=$(cat ${COMMIT_PATH} | tr -d '[:space:]'); fi
     
 echo " ---> Mendix Cloud Foundry Buildpack $VERSION [$COMMIT] staging..."
