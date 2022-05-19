@@ -15,7 +15,7 @@ jobs:
     steps:
       - name: Check if workflow should be skipped
         id: skip-check
-        uses: fkirc/skip-duplicate-actions@master
+        uses: fkirc/skip-duplicate-actions@v3
         with:
           github_token: ${{ github.token }}
           paths_ignore: '["**.md", "dev/**"]'
@@ -24,6 +24,8 @@ jobs:
     needs: pre
     if: ${{ needs.pre.outputs.skip != 'true' && github.event.pull_request.merged }}
     uses: ./.github/workflows/build.yml
+    with:
+      skip_tests: true
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
@@ -78,8 +80,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch origin master
-          git fetch origin develop
           git checkout develop
           git merge master --ff-only
-          git push origin develop
+          git push

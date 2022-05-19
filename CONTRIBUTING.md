@@ -56,11 +56,11 @@ The following guidelines apply to releases and hotfixes:
 
 0. Ensure that you are merging `develop` to `master` (release), or that your branch is based on `master` (hotfix).
 1. Ask at least one person to review the PR. This review counts as a release approval; in the case of a release, this is a formality.
-2. Merge to `master` using the **"Rebase and Merge"** strategy.
+2. Merge to `master` using the **"Merge Commit"** strategy.
 
 After a release or hotfix PR is merged to `master`, a draft release is created automatically. Be sure to:
 
 * **"Undraft"** the release to release it.
 * For a hotfix:
   * **Delete** your release or hotfix branch.
-  * If the automated backmerge from `master` into `develop` did not work, **rebase** `master` on `develop`, and **force push** it to ensure that the hotfix changes are in `develop`.
+  * If the automated backmerge from `master` into `develop` did not work, ensure that the changes from `master` are merged or rebased into `develop`, and **force push** it to ensure that the hotfix changes are in `develop`.
