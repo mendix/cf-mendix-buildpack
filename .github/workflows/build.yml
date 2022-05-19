@@ -4,8 +4,11 @@ on:
   workflow_call:
     outputs:
       version_tag:
-        description: "Semantic version tag"
+        description: "Auto-generated semantic version tag"
         value: ${{ jobs.get-version.outputs.version_tag }}
+      current_version_tag:
+        description: "Current semantic version tag"
+        value: ${{ jobs.get-version.outputs.current_version_tag }}
 
 jobs:
   get-version:
@@ -13,10 +16,15 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version_tag: ${{ steps.semantic-version.outputs.version_tag }}
+      current_version_tag: ${{ steps.get-current-version.outputs.current_version_tag}}
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      - id: get-current-version
+        run: |
+          CURRENT_VERSION_TAG=$(git tag --list --sort=-version:refname "v*" | head -n 1)
+          echo "::set-output name=current_version_tag::${CURRENT_VERSION_TAG}"
       - id: semantic-version
         uses: paulhatch/semantic-version@v4.0.3
         with:
