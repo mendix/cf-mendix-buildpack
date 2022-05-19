@@ -38,6 +38,9 @@ jobs:
         uses: mikepenz/release-changelog-builder-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          fromTag: ${{ needs.build.outputs.current_version_tag }}
+          toTag: ${{ github.base_ref }}
       - name: Create Github release
         id: create-release
         uses: actions/create-release@v1
