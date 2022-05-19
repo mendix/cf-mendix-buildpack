@@ -1,0 +1,28 @@
+name: Build
+
+on:
+  workflow_call:
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: 3.6
+    - name: Install Python requirements
+      run: make install_requirements
+    - name: Lint
+      run: make lint
+    - name: Run unit tests
+      run: make test_unit
+    - name: Build
+      run: make build
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: dist
+        path: dist
