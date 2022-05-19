@@ -25,7 +25,7 @@ jobs:
       uses: fkirc/skip-duplicate-actions@master
       with:
         github_token: ${{ github.token }}
-        paths_ignore: '["**.md", "dev/**", "LICENSE", "VERSION"]'
+        paths_ignore: '["**.md", "dev/**", "LICENSE"]'
   build:
     name: Build
     needs: pre

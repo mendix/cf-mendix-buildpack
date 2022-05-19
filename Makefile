@@ -1,13 +1,16 @@
-PROJECT_NAME := $(if $(PROJECT_NAME),$(PROJECT_NAME),cf-mendix-buildpack)
-PREFIX=$(shell p='$(TEST_PREFIX)'; echo "$${p:-test}")
-TEST_PROCESSES := $(if $(TEST_PROCESSES),$(TEST_PROCESSES),2)
-TEST_FILES := $(if $(TEST_FILES),$(TEST_FILES),tests/integration/test_*.py)
+PROJECT_NAME ?= cf-mendix-buildpack
+PREFIX = $(shell p='$(TEST_PREFIX)'; echo "$${p:-test}")
+TEST_PROCESSES ?= 2
+TEST_FILES ?= tests/integration/test_*.py
 MAX_LINE_LENGTH = $(shell cat .pylintrc | grep max-line-length | cut -d '=' -f 2 | xargs)
 
-PIP_TOOLS_VERSION = 6.4.0
-PIP_VERSION = 21.3
-PYTHON_PLATFORM := $(if $(PYTHON_PLATFORM),$(PYTHON_PLATFORM),manylinux2014_x86_64)
-PYTHON_VERSION := $(if $(PYTHON_VERSION),$(PYTHON_VERSION),36)
+VERSION ?= $(shell git tag --list --sort=-version:refname "v*" | head -n 1)
+COMMIT ?= $(shell git rev-parse --short HEAD)
+
+PIP_TOOLS_VERSION ?= 6.4.0
+PIP_VERSION ?= 21.3.1
+PYTHON_PLATFORM ?= manylinux2014_x86_64
+PYTHON_VERSION ?= 36
 
 .PHONY: vendor
 vendor: create_build_dirs copy_vendored_dependencies download_wheels
@@ -33,10 +36,10 @@ create_build_dirs:
 	mkdir -p dist
 
 .PHONY: build
-build: create_build_dirs vendor write_commit
+build: fixup create_build_dirs vendor write_version write_commit
 	# git archive -o source.tar HEAD
 	git ls-files | tar Tcf - source.tar
-	tar xf source.tar -C build/ --exclude=.commit
+	tar xf source.tar -C build/ --exclude=.commit --exclude=VERSION
 	rm source.tar
 	cd build && rm -rf .github/ .gitignore .pylintrc .travis.yml* Makefile *.in tests/ dev/
 	cd build && zip -r  -9 ../dist/${PROJECT_NAME}.zip .
@@ -55,9 +58,13 @@ requirements: install_piptools
 	pip-compile requirements*.in -o requirements-all.txt
 	pip-compile requirements.in
 
+.PHONY: write_version
+write_version:
+	echo ${VERSION} > build/VERSION
+
 .PHONY: write_commit
 write_commit:
-	git rev-parse --short HEAD > build/.commit
+	echo ${COMMIT} > build/.commit
 
 .PHONY: clean
 clean:
@@ -71,6 +78,12 @@ clean:
 	rm -f *.mda *.mpk
 	find . -regex ".*__pycache__.*" -delete
 	find . -regex "*.py[co]" -delete
+
+.PHONY: fixup
+fixup:
+	chmod -R +r *
+	chmod +x bin/*
+	chmod -R +x vendor
 
 .PHONY: test_unit
 test_unit:

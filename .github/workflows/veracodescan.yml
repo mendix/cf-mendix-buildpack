@@ -1,32 +1,21 @@
 name: Scan with Veracode
 
-on: 
-  pull_request:
-    types: [closed]
-    branches:
-      - master
+on:
+  workflow_run:
+    workflows: ["Deploy to Github Releases"]
+    types:
+      - completed
 
 jobs:
-  pre:
-    runs-on: ubuntu-latest
-    outputs:
-      skip: ${{ steps.skip-check.outputs.should_skip }}
-    steps:
-    - id: skip-check
-      uses: fkirc/skip-duplicate-actions@master
-      with:
-        github_token: ${{ github.token }}
-        paths_ignore: '["**.md", "dev/**"]'
   veracode-scan:
     name: Perform scan
     runs-on: ubuntu-latest
-    needs: pre
     steps:
       - name: Download PR artifact
         uses: dawidd6/action-download-artifact@v2
         with:
-          workflow: test.yml
-          pr: ${{github.event.pull_request.number}}
+          workflow: deploy.yml
+          branch: master
           name: dist
       - name: Upload and scan
         uses: veracode/veracode-uploadandscan-action@master
