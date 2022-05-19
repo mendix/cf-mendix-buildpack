@@ -118,10 +118,12 @@ def copy_buildpack_resources():
             commit_file_path,
             os.path.join(BUILD_DIR, ".commit"),
         )
-    shutil.copy(
-        os.path.join(BUILDPACK_DIR, "VERSION"),
-        os.path.join(BUILD_DIR, "VERSION"),
-    )
+    version_file_path = os.path.join(BUILDPACK_DIR, "VERSION")
+    if os.path.isfile(version_file_path):
+        shutil.copy(
+            version_file_path,
+            os.path.join(BUILD_DIR, "VERSION"),
+        )
 
 
 def copy_dependency_file():

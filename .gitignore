@@ -243,6 +243,7 @@ mxbuild/
 .noseids
 source.tar
 .commit
+VERSION
 
 vendor/
 !vendor/mendix-logfilter/mendix-logfilter
