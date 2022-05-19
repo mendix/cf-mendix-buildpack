@@ -9,41 +9,28 @@ on:
       - develop
       - master
 
+concurrency: 
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   pre:
+    name: Prepare workflow run
     runs-on: ubuntu-latest
     outputs:
       skip: ${{ steps.skip-check.outputs.should_skip }}
     steps:
-    - id: skip-check
+    - name: Check if workflow should be skipped
+      id: skip-check
       uses: fkirc/skip-duplicate-actions@master
       with:
         github_token: ${{ github.token }}
-        paths_ignore: '["**.md", "dev/**"]'
+        paths_ignore: '["**.md", "dev/**", "LICENSE", "VERSION"]'
   build:
     name: Build
-    runs-on: ubuntu-latest
     needs: pre
+    uses: ./.github/workflows/build.yml
     if: ${{ needs.pre.outputs.skip != 'true' }}
-    steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.6
-    - name: Install Python requirements
-      run: make install_requirements
-    - name: Lint
-      run: make lint
-    - name: Run unit tests
-      run: make test_unit
-    - name: Build
-      run: make build
-    - name: Upload artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: dist
-        path: dist
   setup-integration-tests:
     name: Set up integration tests
     runs-on: ubuntu-latest
@@ -52,7 +39,7 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - id: set-matrix
       name: Set up test matrix
       run: |
@@ -71,13 +58,13 @@ jobs:
       TEST_MEMORY: 1G
       TEST_PROCESSES: 1
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/download-artifact@v2
+    - uses: actions/checkout@v3
+    - uses: actions/download-artifact@v3
       with:
         name: dist
         path: dist
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: 3.6
     - name: Install Python requirements
@@ -97,11 +84,11 @@ jobs:
     - name: Run test (${{ matrix.test }})
       run: make test_integration TEST_FILES=tests/integration/${{ matrix.test }}
   integration-test-result:
-    if: ${{ always() }}
+    if: ${{ needs.pre.outputs.skip != 'true' }}
     runs-on: ubuntu-latest
     name: Get integration test results
     needs: [pre, integration-test]
     steps:
       - name: Get integration test results
-        if: ${{ needs.pre.outputs.skip != 'true' && needs.integration-test.result != 'success' }}
+        if: ${{ needs.integration-test.result != 'success' }}
         run: exit 1
