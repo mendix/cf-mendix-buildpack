@@ -63,4 +63,4 @@ After a release or hotfix PR is merged to `master`, a draft release is created a
 * **"Undraft"** the release to release it.
 * For a hotfix:
   * **Delete** your release or hotfix branch.
-  * **Rebase** `master` on `develop`, and **force push** it to ensure that the hotfix changes are in `develop`.
+  * If the automated backmerge from `master` into `develop` did not work, **rebase** `master` on `develop`, and **force push** it to ensure that the hotfix changes are in `develop`.
