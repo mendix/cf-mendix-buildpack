@@ -19,6 +19,7 @@ ALLOWED_HEADERS = {
     "Access-Control-Allow-Origin": r"(?i)(^\*$|^null$|^https?://([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*(:\d+)?$)",  # noqa: E501
     "X-Content-Type-Options": r"(?i)(^nosniff$)",
     "Content-Security-Policy": r"[a-zA-Z0-9:;/''\"\*_\- \.\n?=%&+]+",
+    "Strict-Transport-Security": r"(?i)(^max-age=[0-9]*$|^max-age=[0-9]*; includeSubDomains$|^max-age=[0-9]*; preload$)", # noqa: E501
     "X-Permitted-Cross-Domain-Policies": r"(?i)(^all$|^none$|^master-only$|^by-content-type$|^by-ftp-filename$)",  # noqa: E501
     "X-XSS-Protection": r"(?i)(^0$|^1$|^1; mode=block$|^1; report=https?://([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*(:\d+)?$)",  # noqa: E501
 }
