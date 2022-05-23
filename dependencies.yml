@@ -37,6 +37,10 @@ dependencies:
         - AdoptOpenJDK-{{ type }}
         - "{{ type }}"
       artifact: "{{ vendor }}-{{ type }}-{{ version }}-linux-x64.tar.gz"
+      bom_type: framework
+      bom_version: "{{ version if version_key != '8' else '1.8.0.' + version.split('u')[1] }}"
+      cpe: cpe:2.3:a:oracle:jdk:{{ version if version_key != "8" else "1.8.0" }}:{{ "*" if version_key != "8" else "update" + version.split("u")[1] }}:*:*:*:*:*:*
+      purl: pkg:generic/{{ vendor|lower }}-{{ type }}@{{ version if version_key != "8" else "1.8.0." + version.split("u")[1] }}?arch=amd64
       type:
         - jre
         - jdk
@@ -66,6 +70,8 @@ dependencies:
   mono:
     "{{ version_key }}-{{ type }}":
       artifact: mono/mono-{{ version }}-mx-ubuntu-{{ type }}.tar.gz
+      bom_type: framework
+      cpe: cpe:2.3:a:mono-project:mono:{{ version }}:*:*:*:*:*:*:*
       type:
         - bionic
       version:
@@ -79,6 +85,7 @@ dependencies:
   nginx:
     artifact: nginx_{{ version }}_linux_x64_cflinuxfs3_{{ commit }}.tgz
     commit: f0918d6b
+    cpe: cpe:2.3:a:f5:nginx:{{ version }}:*:*:*:*:*:*:*
     version: 1.21.1
   telegraf:
     agent:
