@@ -2,6 +2,11 @@ name: Build
 
 on:
   workflow_call:
+    inputs:
+      skip_tests:
+        type: boolean
+        required: false
+        default: false
     outputs:
       version_tag:
         description: "Auto-generated semantic version tag"
@@ -12,20 +17,22 @@ on:
 
 jobs:
   get-version:
-    name: Determine semantic version
+    name: Get semantic versions
     runs-on: ubuntu-latest
     outputs:
-      version_tag: ${{ steps.semantic-version.outputs.version_tag }}
+      version_tag: ${{ steps.autogenerate-version.outputs.version_tag }}
       current_version_tag: ${{ steps.get-current-version.outputs.current_version_tag}}
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - id: get-current-version
+      - name: Get current version
+        id: get-current-version
         run: |
           CURRENT_VERSION_TAG=$(git tag --list --sort=-version:refname "v*" | head -n 1)
           echo "::set-output name=current_version_tag::${CURRENT_VERSION_TAG}"
-      - id: semantic-version
+      - name: Auto-generate future version
+        id: autogenerate-version
         uses: paulhatch/semantic-version@v4.0.3
         with:
           tag_prefix: "v"
@@ -42,11 +49,14 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: 3.6
+          cache: pip
       - name: Install Python requirements
         run: make install_requirements
       - name: Lint
+        if: ${{ inputs.skip_tests == 'false' }}
         run: make lint
       - name: Run unit tests
+        if: ${{ inputs.skip_tests == 'false' }}
         run: make test_unit
       - name: Build
         run: VERSION=${{ needs.get-version.outputs.version_tag }} make build
