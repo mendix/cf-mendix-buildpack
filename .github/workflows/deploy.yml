@@ -35,14 +35,6 @@ jobs:
         with:
           name: dist
           path: dist
-      - name: Generate changelog
-        id: generate-changelog
-        uses: mikepenz/release-changelog-builder-action@v3
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          fromTag: ${{ needs.build.outputs.current_version_tag }}
-          toTag: ${{ github.base_ref }}
       - name: Create Github release
         id: create-release
         uses: actions/create-release@v1
@@ -51,11 +43,7 @@ jobs:
         with:
           tag_name: ${{ needs.build.outputs.version_tag }}
           release_name: "${{ needs.build.outputs.version_tag }}: ${{ github.event.pull_request.title }}"
-          body: |
-            ${{ github.event.pull_request.body }}
-            
-            ## Changelog
-            ${{ steps.generate-changelog.outputs.changelog }}
+          body: ${{ github.event.pull_request.body }}
           draft: true
           prerelease: false
       - name: Upload release asset

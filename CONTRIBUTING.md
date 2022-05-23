@@ -60,7 +60,9 @@ The following guidelines apply to releases and hotfixes:
 
 After a release or hotfix PR is merged to `master`, a draft release is created automatically. Be sure to:
 
-* **"Undraft"** the release to release it.
+* **Edit** the draft release:
+  * Press the magic [**"Automatically generate changelog"** button](https://docs.github.com/en/repositories/releasing-projects-on-github/automatically-generated-release-notes#creating-automatically-generated-release-notes-for-a-new-release) to include the changelog
+  * Release the release, i.e. **"undraft"** it
 * For a hotfix:
   * **Delete** your release or hotfix branch.
   * If the automated backmerge from `master` into `develop` did not work, ensure that the changes from `master` are merged or rebased into `develop`, and **force push** it to ensure that the hotfix changes are in `develop`.
