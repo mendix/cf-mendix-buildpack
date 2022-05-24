@@ -819,4 +819,64 @@ if __name__ == "__main__":
             ):
                 click.echo(_get_dependency_artifact_url(dependency))
 
+    # CycloneDX specifications can be found at https://cyclonedx.org/
+    @cli.command(
+        help="Generate CycloneDX 1.4 Software BOM for managed external dependencies"
+    )
+    @click.pass_context
+    def generate_software_bom(ctx):
+        import uuid
+
+        verbose = ctx.obj["verbose"]
+        # CycloneDX top fields
+        result = {
+            "bomFormat": "CycloneDX",
+            "specVersion": "1.4",
+            "serialNumber": "urn:uuid:%s" % uuid.uuid1(),
+            "version": 1,
+        }
+        components = []
+        for key in _get_dependencies(PROJECT_ROOT_PATH).keys():
+            dependency = get_dependency(key)
+            if DEPENDENCY_MANAGED_KEY not in dependency or (
+                DEPENDENCY_MANAGED_KEY in dependency
+                and dependency[DEPENDENCY_MANAGED_KEY] == True
+            ):
+                # Standard fields
+                component = {
+                    "type": "library",
+                    "name": key,
+                    "version": dependency["version"],
+                    "url": _get_dependency_artifact_url(dependency),
+                }
+                # Publisher field
+                if "vendor" in dependency:
+                    component = {
+                        **component,
+                        **{"publisher": dependency["vendor"]},
+                    }
+                # Identifier (CPE, PURL) fields
+                for id in ["cpe", "purl"]:
+                    if id in dependency:
+                        component = {
+                            **component,
+                            **{id: _render(dependency, dependency, [id])[id]},
+                        }
+                # BOM prefixed fields
+                for bom_key in [
+                    x for x in dependency.keys() if x.startswith("bom_")
+                ]:
+                    real_key = bom_key.split("_")[1]
+                    component = {
+                        **component,
+                        **{
+                            real_key: _render(
+                                dependency, dependency, [bom_key]
+                            )[bom_key]
+                        },
+                    }
+                components.append(component)
+        result = {**result, **{"components": components}}
+        click.echo(json.dumps(result, indent=4))
+
     cli()  # pylint: disable=no-value-for-parameter

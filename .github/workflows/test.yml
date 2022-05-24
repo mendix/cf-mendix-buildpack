@@ -22,7 +22,7 @@ jobs:
     steps:
     - name: Check if workflow should be skipped
       id: skip-check
-      uses: fkirc/skip-duplicate-actions@master
+      uses: fkirc/skip-duplicate-actions@v3
       with:
         github_token: ${{ github.token }}
         paths_ignore: '["**.md", "dev/**", "LICENSE"]'
@@ -48,7 +48,7 @@ jobs:
         echo "::set-output name=matrix::${TEST}"
   integration-test:      
     needs: [build, setup-integration-tests]
-    name: Run test
+    name: Run integration tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -67,6 +67,7 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: 3.6
+        cache: pip
     - name: Install Python requirements
       run: make install_requirements
     - name: Install Cloud Foundry development tools

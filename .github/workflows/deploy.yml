@@ -15,7 +15,7 @@ jobs:
     steps:
       - name: Check if workflow should be skipped
         id: skip-check
-        uses: fkirc/skip-duplicate-actions@master
+        uses: fkirc/skip-duplicate-actions@v3
         with:
           github_token: ${{ github.token }}
           paths_ignore: '["**.md", "dev/**"]'
@@ -24,6 +24,8 @@ jobs:
     needs: pre
     if: ${{ needs.pre.outputs.skip != 'true' && github.event.pull_request.merged }}
     uses: ./.github/workflows/build.yml
+    with:
+      skip_tests: true
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
@@ -33,14 +35,6 @@ jobs:
         with:
           name: dist
           path: dist
-      - name: Generate changelog
-        id: generate-changelog
-        uses: mikepenz/release-changelog-builder-action@v3
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          fromTag: ${{ needs.build.outputs.current_version_tag }}
-          toTag: ${{ github.base_ref }}
       - name: Create Github release
         id: create-release
         uses: actions/create-release@v1
@@ -49,11 +43,7 @@ jobs:
         with:
           tag_name: ${{ needs.build.outputs.version_tag }}
           release_name: "${{ needs.build.outputs.version_tag }}: ${{ github.event.pull_request.title }}"
-          body: |
-            ${{ github.event.pull_request.body }}
-            
-            ## Changelog
-            ${{ steps.generate-changelog.outputs.changelog }}
+          body: ${{ github.event.pull_request.body }}
           draft: true
           prerelease: false
       - name: Upload release asset
@@ -78,8 +68,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch origin master
-          git fetch origin develop
           git checkout develop
           git merge master --ff-only
-          git push origin develop
+          git push
