@@ -77,8 +77,8 @@ git fetch origin develop
 git fetch origin master
 git checkout develop
 git pull
-git merge origin/master --ff-only
+git merge origin/master
 git push
 ```
 
-The above series of commands will fetch the remote origin branches, checkout the `develop` branch, fast-forward merge `master` into `develop`, and push the result.
+The above series of commands will fetch the remote origin branches, checkout the `develop` branch, merge `master` into `develop`, and push the result.
