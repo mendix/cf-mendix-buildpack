@@ -548,7 +548,7 @@ Please note that AppDynamics requires Mendix 7.15 or higher.
 | `APPDYNAMICS_AGENT_TIER_NAME`          | `<env_id>`                                                              | App Environment UUID       | How a tier is displayed on the Controller UI     |
 
 
-\* The `APPDYNAMICS_AGENT_NODE_NAME` environment variable will be appended with the value of the `CF_INSTANCE_ID` variable. If you use `node` for `APPDYNAMICS_AGENT_NODE_NAME` , the AppDynamics agent will be configured as `node_0` for instance `0` and `node_1` for instance `1` , etc.
+\* The `APPDYNAMICS_AGENT_NODE_NAME` environment variable will be appended with the value of the `CF_INSTANCE_ID` variable. If you use `node` for `APPDYNAMICS_AGENT_NODE_NAME` , the AppDynamics agent will be configured as `node-0` for instance `0` and `node-1` for instance `1` , etc.
 
 For more details about nodes and tiers: [Tiers and Nodes](https://docs.appdynamics.com/22.1/en/application-monitoring/tiers-and-nodes).
 
