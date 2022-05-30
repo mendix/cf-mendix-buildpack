@@ -399,7 +399,7 @@ Example:
 cf set-env <YOUR_APP> JAVA_VERSION 11
 ```
 
-This will resolve the Java dependency using major version number 11. The JDK or JRE with this version number must be specified in (`dependencies.yml`)[dependencies.yml] and either be present on the Mendix CDN or in the `vendor` directory (see [here](DEVELOPING.md#managing-external-dependencies)).
+This will resolve the Java dependency using major version number 11. The JDK or JRE with this version number must be specified in [`dependencies.yml`](dependencies.yml) and either be present on the Mendix CDN or in the `vendor` directory (see [here](DEVELOPING.md#managing-external-dependencies)).
 
 Minor versions are also supported, but only if they are specified in the dependency configuration correctly. Example:
 
