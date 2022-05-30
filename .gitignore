@@ -246,4 +246,3 @@ source.tar
 VERSION
 
 vendor/
-!vendor/mendix-logfilter/mendix-logfilter

@@ -20,10 +20,10 @@ dependencies:
     buildpack:
       alias: cf-datadog-sidecar
       artifact: datadog/datadog-cloudfoundry-buildpack-{{ version }}.zip
-      version: 4.28.0
+      version: 4.31.0
     trace-agent:
       artifact: datadog/dd-java-agent-{{ version }}.jar
-      version: 0.78.3
+      version: 0.101.0
   dynatrace:
     agent:
       artifact: "{{ url }}/e/{{ environment }}/api/v1/deployment/installer/agent/unix/paas/latest?include=java&bitness=64&Api-Token={{ token }}"
@@ -50,8 +50,7 @@ dependencies:
         - "11": 11.0.15
   logs:
     mendix-logfilter:
-      artifact: mendix-logfilter
-      managed: false
+      artifact: logs/mendix-logfilter.tar.gz
   mendix:
     mx-agent:
       artifact: mx-agent/mx-agent-v{{ version }}.jar

@@ -25,7 +25,7 @@ APPDYNAMICS_ENV_VARS = {
         "APPDYNAMICS_AGENT_APPLICATION_NAME",
         default=util.get_app_from_domain(),
     ),
-    "APPDYNAMICS_AGENT_NODE_NAME": "{}_{}".format(
+    "APPDYNAMICS_AGENT_NODE_NAME": "{}-{}".format(
         os.getenv("APPDYNAMICS_AGENT_NODE_NAME", default="node"),
         CF_APPLICATION_INDEX,
     ),
@@ -38,7 +38,7 @@ APPDYNAMICS_ENV_VARS = {
     "APPDYNAMICS_CONTROLLER_SSL_ENABLED": os.getenv(
         "APPDYNAMICS_CONTROLLER_SSL_ENABLED", default="true"
     ),
-    "APPDYNAMICS_AGENT_UNIQUE_HOST_ID": "{}_{}".format(
+    "APPDYNAMICS_AGENT_UNIQUE_HOST_ID": "{}-{}".format(
         os.getenv(
             "APPDYNAMICS_AGENT_UNIQUE_HOST_ID", default=CF_APPLICATION_NAME
         ),

@@ -35,6 +35,7 @@ Release notes are available for the [buildpack](https://github.com/mendix/cf-men
 - [Built-In Proxy Configuration](#built-in-proxy-configuration)
   - [HTTP Headers](#http-headers)
   - [Access Restrictions](#access-restrictions)
+  - [Custom Locations](#custom-locations)
 - [Telemetry Configuration](#telemetry-configuration)
   - [New Relic](#new-relic)
   - [AppDynamics](#appdynamics)
@@ -399,7 +400,7 @@ Example:
 cf set-env <YOUR_APP> JAVA_VERSION 11
 ```
 
-This will resolve the Java dependency using major version number 11. The JDK or JRE with this version number must be specified in (`dependencies.yml`)[dependencies.yml] and either be present on the Mendix CDN or in the `vendor` directory (see [here](DEVELOPING.md#managing-external-dependencies)).
+This will resolve the Java dependency using major version number 11. The JDK or JRE with this version number must be specified in [`dependencies.yml`](dependencies.yml) and either be present on the Mendix CDN or in the `vendor` directory (see [here](DEVELOPING.md#managing-external-dependencies)).
 
 Minor versions are also supported, but only if they are specified in the dependency configuration correctly. Example:
 
@@ -515,6 +516,28 @@ A path restriction object is composed of the following fields:
 | `satisfy`     | `string(any\|all)`                      | `"any"`                                       | Defines how restrictions are evaluated. `any` is equivalent to logical `OR` , `all` to `AND` .                                                                                                               |
 | `issuer_dn`   | `string`                                | `"CN=example.com,O=example Inc."`             | Adds certificate pinning through the `"Ssl-Client-Issuer-Dn"` header. This header must be supplied through an upstream proxy.                                                                                |
 
+### Custom Locations
+
+The buildpack proxy features a more general mechanism than [access restrictions](#access-restrictions) to configure custom `nginx` locations. To use this feature, set the `NGINX_CUSTOM_LOCATIONS` environment variable.
+
+Example:
+
+```json
+{
+    "/custom_location_1": {"body": "internal;\nset $some_value_1 $other_value_1;"},
+    "/custom_location_1/custom_location_2": {"body": "internal;\nset $some_value_2 $other_value_2;"},
+}
+```
+
+#### Custom Locations Format
+The environment variable is in JSON format and is a collection ( `{}` ) of **custom location objects**. Each object is defined by a `path` (relative to the application root URL). A custom location object applies to that path and all sub-paths. Inheritance can be overridden by adding a custom location object for a sub-path. These settings will then override the parent object.
+
+The only allowed field in a custom location object is `body`. This field contains the escaped `nginx` configuration for that location. If there are more fields present, the custom location will be rejected.
+
+Note that:
+
+* [Access restrictions](#access-restrictions) take precedence over custom locations, i.e. an access restriction with the same path as a custom location overrides that custom location
+* Custom locations are not supported for reserved system paths
 
 ## Telemetry Configuration
 The buildpack includes a variety of telemetry agents, and can configure logging.
@@ -548,7 +571,7 @@ Please note that AppDynamics requires Mendix 7.15 or higher.
 | `APPDYNAMICS_AGENT_TIER_NAME`          | `<env_id>`                                                              | App Environment UUID       | How a tier is displayed on the Controller UI     |
 
 
-\* The `APPDYNAMICS_AGENT_NODE_NAME` environment variable will be appended with the value of the `CF_INSTANCE_ID` variable. If you use `node` for `APPDYNAMICS_AGENT_NODE_NAME` , the AppDynamics agent will be configured as `node_0` for instance `0` and `node_1` for instance `1` , etc.
+\* The `APPDYNAMICS_AGENT_NODE_NAME` environment variable will be appended with the value of the `CF_INSTANCE_ID` variable. If you use `node` for `APPDYNAMICS_AGENT_NODE_NAME` , the AppDynamics agent will be configured as `node-0` for instance `0` and `node-1` for instance `1` , etc.
 
 For more details about nodes and tiers: [Tiers and Nodes](https://docs.appdynamics.com/22.1/en/application-monitoring/tiers-and-nodes).
 

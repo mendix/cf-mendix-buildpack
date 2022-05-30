@@ -65,4 +65,20 @@ After a release or hotfix PR is merged to `master`, a draft release is created a
   * Release the release, i.e. **"undraft"** it
 * For a hotfix:
   * **Delete** your release or hotfix branch.
-  * If the automated backmerge from `master` into `develop` did not work, ensure that the changes from `master` are merged or rebased into `develop`, and **force push** it to ensure that the hotfix changes are in `develop`.
+  * Ensure that the changes from `master` are [backmerged](#backmerge-hotfixes) into `develop`.
+
+#### Backmerge Hotfixes
+If you merge a change directly from a hotfix branch into `master`, it will not automatically also be included in `develop`. Since `develop` is a protected branch, pushing to this branch cannot be automated with Github Actions.
+
+To get hotfix changes into `develop`, **backmerge** them:
+
+```shell
+git fetch origin develop
+git fetch origin master
+git checkout develop
+git pull
+git merge origin/master
+git push
+```
+
+The above series of commands will fetch the remote origin branches, checkout the `develop` branch, merge `master` into `develop`, and push the result.
