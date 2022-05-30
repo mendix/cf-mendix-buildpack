@@ -6,12 +6,12 @@ import os
 import re
 import shutil
 import subprocess
+from dataclasses import dataclass
 
 from buildpack import util
 from buildpack.core import runtime, security
-from lib.m2ee.version import MXVersion
-
 from jinja2 import Template
+from lib.m2ee.version import MXVersion
 
 ALLOWED_HEADERS = {
     "X-Frame-Options": r"(?i)(^allow-from https?://([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*(:\d+)?$|^deny$|^sameorigin$)",  # noqa: E501
@@ -148,8 +148,25 @@ def _get_proxy_buffers():
     return os.environ.get("NGINX_PROXY_BUFFERS", None)
 
 
+# Access restriction configuration
+# Example:
+#   {
+#       "/": {'ipfilter': ['10.0.0.0/8'], 'client_cert': true, 'satisfy': 'any'},
+#       "/ws/MyWebService/": {'ipfilter': ['10.0.0.0/8'], 'client_cert': true, 'satisfy': 'all'},
+#       "/CustomRequestHandler/": {'ipfilter': ['10.0.0.0/8']},
+#       "/CustomRequestHandler2/": {'basic_auth': {'user1': 'password', 'user2': 'password2'}},
+#   }
 def _get_access_restrictions():
-    return os.environ.get("ACCESS_RESTRICTIONS", "{}")
+    return json.loads(os.environ.get("ACCESS_RESTRICTIONS", "{}"))
+
+
+# Custom location configuration
+# Example:
+#   {
+#       "/some_location", {"body": "set $something $other;"},
+#   }
+def _get_custom_locations():
+    return json.loads(os.environ.get("NGINX_CUSTOM_LOCATIONS", "{}"))
 
 
 def _get_http_headers():
@@ -231,21 +248,23 @@ def _generate_password_file(users_passwords, file_name_suffix=""):
                 )
 
 
+@dataclass
 class Location:
-    def __init__(self):
-        # General location parameters
-        self.path = None
-        self.index = None
-        self.proxy_buffering_enabled = True
-        self.proxy_intercept_errors_enabled = False
+    path: str = None
+    body: str = None
+    index: int = 0
 
-        # Access restriction parameters
-        self.satisfy = "any"
-        self.ipfilter_ips = None
-        self.basic_auth_enabled = False
-        self.client_cert_enabled = False
-        self.issuer_dn_regex = None
-        self.issuer_dn = None
+    # Proxy parameters
+    proxy_buffering_enabled: bool = True
+    proxy_intercept_errors_enabled: bool = False
+
+    # Access restriction parameters
+    satisfy: str = "any"
+    ipfilter_ips: list = None
+    basic_auth_enabled: bool = False
+    client_cert_enabled: bool = False
+    issuer_dn_regex: str = None
+    issuer_dn: str = None
 
 
 # Adds a "/" after a path for comparison
@@ -273,18 +292,11 @@ def _is_subpath_of(path, others):
     return any(_is_subpath_of(path, p) for p in others)
 
 
-def _get_locations(locations_env=_get_access_restrictions()):
-    # Load access restriction configuration
-    # ACCESS_RESTRICTIONS example:
-    # {
-    #     "/": {'ipfilter': ['10.0.0.0/8'], 'client_cert': true, 'satisfy': 'any'},
-    #     "/ws/MyWebService/": {'ipfilter': ['10.0.0.0/8'], 'client_cert': true, 'satisfy': 'all'},
-    #     "/CustomRequestHandler/": {'ipfilter': ['10.0.0.0/8']},
-    #     "/CustomRequestHandler2/": {'basic_auth': {'user1': 'password', 'user2': 'password2'}},
-    # }
-    #
-    # Note: Default for satisfy is any
-    locations = json.loads(locations_env)
+def _get_locations(
+    access_restrictions=_get_access_restrictions(),
+    custom_locations=_get_custom_locations(),
+):
+    locations = {**custom_locations, **access_restrictions}
 
     # Add default locations
     for default_path in DEFAULT_LOCATION_PATHS:
@@ -296,10 +308,11 @@ def _get_locations(locations_env=_get_access_restrictions()):
     # i.e. most likely for an API, e.g. REST
     dynamic_handler_paths = []
     request_handlers = runtime.get_metadata_value("RequestHandlers")
-    paths = [handler["Name"] for handler in request_handlers]
-    dynamic_handler_paths = list(
-        set(paths) - set(DEFAULT_REQUEST_HANDLER_PATHS)
-    )
+    if request_handlers is not None:
+        paths = [handler["Name"] for handler in request_handlers]
+        dynamic_handler_paths = list(
+            set(paths) - set(DEFAULT_REQUEST_HANDLER_PATHS)
+        )
 
     # Add dynamic request handler locations
     for dynamic_handler_path in dynamic_handler_paths:
@@ -308,11 +321,17 @@ def _get_locations(locations_env=_get_access_restrictions()):
         ] = _get_most_specific_location_config(dynamic_handler_path, locations)
 
     # Get REST request handlers from metadata and add locations
-    rest_handler_paths = runtime.get_rest_request_handler_paths()
-    for rest_handler_path in rest_handler_paths:
-        locations[
-            _get_slashed_path(rest_handler_path)
-        ] = _get_most_specific_location_config(rest_handler_path, locations)
+    rest_handler_paths = []
+    try:
+        rest_handler_paths = runtime.get_rest_request_handler_paths()
+        for rest_handler_path in rest_handler_paths:
+            locations[
+                _get_slashed_path(rest_handler_path)
+            ] = _get_most_specific_location_config(
+                rest_handler_path, locations
+            )
+    except Exception as e:
+        logging.error("Cannot get REST handlers from model: %s" % e)
 
     # Convert dictionary into list of locations
     index = 0
@@ -326,76 +345,83 @@ def _get_locations(locations_env=_get_access_restrictions()):
         # Reserved path prefixes are restricted
         if any(path.startswith(prefix) for prefix in RESERVED_PATH_PREFIXES):
             raise Exception(
-                "Can not override access restrictions on reserved path [%s]"
-                % path
+                "Can not override location on reserved path [%s]" % path
             )
 
-        # Disable proxy buffering for files
-        if path == FILE_HANDLER_PATH:
-            location.proxy_buffering_enabled = False
+        # If body is set and is only element, assume custom location
+        if len(config) == 1 and "body" in config:
+            location.body = config["body"]
 
-        # Enable error interception for default runtime paths
-        # This is required for custom error pages
-        if (
-            _is_subpath_of(path, DEFAULT_REQUEST_HANDLER_PATHS)
-            or path in DEFAULT_LOCATION_PATHS
-        ):
-            location.proxy_intercept_errors_enabled = True
+        # Else, assume access restriction
+        else:
+            # Disable proxy buffering for files
+            if path == FILE_HANDLER_PATH:
+                location.proxy_buffering_enabled = False
 
-        # Explicitly disable error interception for dynamic request handlers
-        # This is not strictly required (default is disabled), but it might be in the future
-        if _is_subpath_of(path, dynamic_handler_paths) or _is_subpath_of(
-            path, rest_handler_paths
-        ):
-            location.proxy_intercept_errors_enabled = False
+            # Enable error interception for default runtime paths
+            # This is required for custom error pages
+            if (
+                _is_subpath_of(path, DEFAULT_REQUEST_HANDLER_PATHS)
+                or path in DEFAULT_LOCATION_PATHS
+            ):
+                location.proxy_intercept_errors_enabled = True
 
-        # Add the  access restrictions configuration
-        # "Satisfy" specifies if restrictions should be evaluated as "AND" (all) or "OR" (any)
-        if "satisfy" in config:
-            if config["satisfy"] in ["any", "all"]:
-                location.satisfy = config["satisfy"]
-            else:
-                raise Exception(
-                    "Invalid satisfy value: %s" % config["satisfy"]
-                )
+            # Explicitly disable error interception for dynamic request handlers
+            # This is not strictly required (default is disabled), but it might be in the future
+            if _is_subpath_of(path, dynamic_handler_paths) or _is_subpath_of(
+                path, rest_handler_paths
+            ):
+                location.proxy_intercept_errors_enabled = False
 
-        # Add IP filter configuration
-        if "ipfilter" in config:
-            location.ipfilter_ips = []
-            for ip in config["ipfilter"]:
-                location.ipfilter_ips.append(ip)
+            # Add the  access restrictions configuration
+            # "Satisfy" specifies if restrictions should be evaluated as "AND" (all) or "OR" (any)
+            if "satisfy" in config:
+                if config["satisfy"] in ["any", "all"]:
+                    location.satisfy = config["satisfy"]
+                else:
+                    raise Exception(
+                        "Invalid satisfy value: %s" % config["satisfy"]
+                    )
 
-        # Add HTTP basic auth configuration
-        if "basic_auth" in config:
-            location.basic_auth_enabled = True
-            _generate_password_file(config["basic_auth"], str(index))
+            # Add IP filter configuration
+            if "ipfilter" in config:
+                location.ipfilter_ips = []
+                for ip in config["ipfilter"]:
+                    location.ipfilter_ips.append(ip)
 
-        # Add client certificate configuration
-        if config.get("client-cert") or config.get("client_cert"):
-            location.client_cert_enabled = True
+            # Add HTTP basic auth configuration
+            if "basic_auth" in config:
+                location.basic_auth_enabled = True
+                _generate_password_file(config["basic_auth"], str(index))
 
-        # Add "Issuer DN" check for the client certificate chain. The required header is passed on from an upstream proxy,
-        # which in the case of Mendix Cloud is the Front-Facing Fleet
-        # This scenario isn't covered by integration tests. Please test manually if Nginx is properly matching the
-        # SSL-Client-I-DN HTTP header with the configuration in the ACCESS_RESTRICTIONS environment variable.
-        if "issuer_dn" in config:
-            location.issuer_dn_regex = ""
-            location.issuer_dn = ""
-            for i in config["issuer_dn"]:
-                # Workaround for missing identifier strings from Java
-                # This should be fixed in upstream code by using different certificate libraries
-                issuer = i.replace("OID.2.5.4.97", "organizationIdentifier")
+            # Add client certificate configuration
+            if config.get("client-cert") or config.get("client_cert"):
+                location.client_cert_enabled = True
 
-                location.issuer_dn += "{}|".format(issuer)
+            # Add "Issuer DN" check for the client certificate chain. The required header is passed on from an upstream proxy,
+            # which in the case of Mendix Cloud is the Front-Facing Fleet
+            # This scenario isn't covered by integration tests. Please test manually if Nginx is properly matching the
+            # SSL-Client-I-DN HTTP header with the configuration in the ACCESS_RESTRICTIONS environment variable.
+            if "issuer_dn" in config:
+                location.issuer_dn_regex = ""
+                location.issuer_dn = ""
+                for i in config["issuer_dn"]:
+                    # Workaround for missing identifier strings from Java
+                    # This should be fixed in upstream code by using different certificate libraries
+                    issuer = i.replace(
+                        "OID.2.5.4.97", "organizationIdentifier"
+                    )
 
-                # Escape special characters
-                issuer = issuer.replace(" ", "\\040")
-                issuer = issuer.replace(".", "\\.")
-                issuer = issuer.replace("'", "\\'")
+                    location.issuer_dn += "{}|".format(issuer)
 
-                location.issuer_dn_regex += "{}|".format(issuer)
-            location.issuer_dn = location.issuer_dn[:-1]
-            location.issuer_dn_regex = location.issuer_dn_regex[:-1]
+                    # Escape special characters
+                    issuer = issuer.replace(" ", "\\040")
+                    issuer = issuer.replace(".", "\\.")
+                    issuer = issuer.replace("'", "\\'")
+
+                    location.issuer_dn_regex += "{}|".format(issuer)
+                location.issuer_dn = location.issuer_dn[:-1]
+                location.issuer_dn_regex = location.issuer_dn_regex[:-1]
 
         result.append(location)
         index += 1
