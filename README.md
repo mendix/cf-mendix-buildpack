@@ -35,6 +35,7 @@ Release notes are available for the [buildpack](https://github.com/mendix/cf-men
 - [Built-In Proxy Configuration](#built-in-proxy-configuration)
   - [HTTP Headers](#http-headers)
   - [Access Restrictions](#access-restrictions)
+  - [Custom Locations](#custom-locations)
 - [Telemetry Configuration](#telemetry-configuration)
   - [New Relic](#new-relic)
   - [AppDynamics](#appdynamics)
@@ -515,6 +516,28 @@ A path restriction object is composed of the following fields:
 | `satisfy`     | `string(any\|all)`                      | `"any"`                                       | Defines how restrictions are evaluated. `any` is equivalent to logical `OR` , `all` to `AND` .                                                                                                               |
 | `issuer_dn`   | `string`                                | `"CN=example.com,O=example Inc."`             | Adds certificate pinning through the `"Ssl-Client-Issuer-Dn"` header. This header must be supplied through an upstream proxy.                                                                                |
 
+### Custom Locations
+
+The buildpack proxy features a more general mechanism than [access restrictions](#access-restrictions) to configure custom `nginx` locations. To use this feature, set the `NGINX_CUSTOM_LOCATIONS` environment variable.
+
+Example:
+
+```json
+{
+    "/custom_location_1": {"body": "internal;\nset $some_value_1 $other_value_1;"},
+    "/custom_location_1/custom_location_2": {"body": "internal;\nset $some_value_2 $other_value_2;"},
+}
+```
+
+#### Custom Locations Format
+The environment variable is in JSON format and is a collection ( `{}` ) of **custom location objects**. Each object is defined by a `path` (relative to the application root URL). A custom location object applies to that path and all sub-paths. Inheritance can be overridden by adding a custom location object for a sub-path. These settings will then override the parent object.
+
+The only allowed field in a custom location object is `body`. This field contains the escaped `nginx` configuration for that location. If there are more fields present, the custom location will be rejected.
+
+Note that:
+
+* [Access restrictions](#access-restrictions) take precedence over custom locations, i.e. an access restriction with the same path as a custom location overrides that custom location
+* Custom locations are not supported for reserved system paths
 
 ## Telemetry Configuration
 The buildpack includes a variety of telemetry agents, and can configure logging.

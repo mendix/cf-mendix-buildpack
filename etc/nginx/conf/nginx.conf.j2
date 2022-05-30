@@ -93,6 +93,10 @@ http {
         {%- endmacro %}
         {% for location in locations %}
         location {{ location.path }} {
+        {% if location.body is not none %}
+        {{ location.body }}
+        }
+        {% else %}    
             if ($request_uri ~ ^/(.*\.(css|js)|forms/.*|img/.*|pages/.*|mxclientsystem/images/.*)\?[0-9]+$) {
                     expires 1y;
             }
@@ -114,6 +118,7 @@ http {
             {% endif %}
             {{ location_body(location)|indent }}
         }
+        {% endif %}
         {% endif %}
         {% if location.client_cert_enabled or location.issuer_dn_regex %}
 
