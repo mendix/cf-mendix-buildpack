@@ -38,9 +38,10 @@ download_wheels: requirements
 create_build_dirs:
 	mkdir -p build
 	mkdir -p dist
+	mkdir -p vendor
 
 .PHONY: build
-build: fixup create_build_dirs vendor write_version write_commit
+build: create_build_dirs fixup vendor write_version write_commit
 	# git archive -o source.tar HEAD
 	git ls-files | tar Tcf - source.tar
 	tar xf source.tar -C build/ --exclude=.commit --exclude=VERSION
@@ -87,7 +88,6 @@ clean:
 fixup:
 	chmod -R +r *
 	chmod +x bin/*
-	chmod -R +x vendor
 
 .PHONY: test_unit
 test_unit:

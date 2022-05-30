@@ -116,5 +116,4 @@ def stage(buildpack_dir, build_dir, cache_dir):
         os.path.join(build_dir, ".local", NAMESPACE),
         buildpack_dir=buildpack_dir,
         cache_dir=cache_dir,
-        unpack=False,
     )
