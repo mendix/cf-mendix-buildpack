@@ -4,7 +4,7 @@ This document describes best practices of developing the Mendix Buildpack. Use i
 
 ## Buildpack Structure
 
-The buildpack features the following directories:
+The buildpack project features the following directories:
 
 * `bin` : Cloud Foundry buildpack lifecycle scripts, utility scripts and binaries live here
 * `buildpack` : All Python code lives here, this is the home of the main buildpack module. Entry points are `stage.py` and `start.py`
@@ -12,7 +12,12 @@ The buildpack features the following directories:
 * `etc` : Configuration templates for e.g. nginx and M2EE live here
 * `lib` : A forked version of M2EE Tools suited for the cloud lives here, used for working with the Mendix Runtime
 * `tests` : All test code lives here
-* `vendor` : All vendorized dependencies live here
+
+The following directories are not included in the repositoty, but are used in the development process:
+
+* `build` : Working directory for building the buildpack
+* `dist` : The final build artifact lives here
+* `vendor` : All [vendorized dependencies](#vendoring-external-dependencies) live here
 
 ## Prerequisites
 
@@ -219,6 +224,7 @@ A number of fields in a dependency object are reserved / special fields:
 * `alias` contains alternative names for the artifact and is used to delete other / older versions from the Cloud Foundry cache for the application. It is not part of the dependency matrix, and can be a list of strings or a string value.
 * `name` contains the list of YAML sections that compose the dependency key. It is not part of the dependency matrix.
 * `managed` indicates whether the source of the dependency is managed by the authors of this buildpack
+* `version` indicates that an artifact is versioned. The presence of this field indicates that earlier versions of an artifact can be removed from the buildpack cache during dependency resolution.
 * `*_key` fields contain the key of dictionary fields which are recursed into the dependency graph leaf nodes. See [here](#advanced-examples) for an example.
 * `cpe`, `purl` and `bom_*` fields contain information to generate a [Software Bill of Materials (SBOM)](#generating-an-sbom-for-external-dependencies).
 

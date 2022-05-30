@@ -72,6 +72,7 @@ DEPENDENCY_MANAGED_KEY = "managed"
 DEPENDENCY_NAME_KEY = "name"
 DEPENDENCY_NAME_SEPARATOR = "."
 DEPENDENCY_ALIAS_KEY = "alias"
+DEPENDENCY_VERSION_KEY = "version"
 DEPENDENCY_FILE = "dependencies.yml"
 DO_NOT_RECURSE_FIELDS = [DEPENDENCY_ALIAS_KEY, DEPENDENCY_NAME_KEY]
 
@@ -326,7 +327,8 @@ def resolve_dependency(
     if DEPENDENCY_ALIAS_KEY in dependency:
         alias = dependency[DEPENDENCY_ALIAS_KEY]
 
-    _delete_other_versions(cache_dir, file_name, alias)
+    if DEPENDENCY_VERSION_KEY in dependency:
+        _delete_other_versions(cache_dir, file_name, alias)
 
     vendor_dir = os.path.join(buildpack_dir, "vendor")
     logging.debug(
