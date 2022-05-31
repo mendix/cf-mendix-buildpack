@@ -113,7 +113,7 @@ We push an MDA (Mendix Deployment Archive) that was built by Mendix Studio Pro t
 cf push <YOUR_APP> -b <LINK-TO-BUILDPACK> -p <YOUR_MDA>.mda -t 180
 ```
 
-We can also push a project directory. This will move the build process (using MxBuild, a component of Studio Pro) to Cloud Foundry:
+We can also push a project directory. This will move the build process (using MxBuild, a component of Mendix Studio Pro) to Cloud Foundry:
 
 ```shell
 cd <PROJECT DIR>; cf push -b <LINK-TO-BUILDPACK> -t 180
@@ -125,7 +125,7 @@ Also note that building the project in Cloud Foundry takes more time and require
 
 ### 3. Configure an Admin Password
 
-The first push generates a new app. In order to login to your application as admin you can set the password using the `ADMIN_PASSWORD` environment variable. Keep in mind that the admin password should comply with the policy you have set in the Mendix Modeler. For security reasons it is recommended to set this environment variable once to create the admin user, then remove the environment variable and restart the app. Finally log in to the app and change the password via the web interface. Similarly, the setting can be used to reset the password of an administrator.
+The first push generates a new app. In order to login to your application as admin you can set the password using the `ADMIN_PASSWORD` environment variable. Keep in mind that the admin password should comply with the policy you have set in Mendix Studio (Pro). For security reasons it is recommended to set this environment variable once to create the admin user, then remove the environment variable and restart the app. Finally log in to the app and change the password via the web interface. Similarly, the setting can be used to reset the password of an administrator.
 
 ```shell
 cf set-env <YOUR_APP> ADMIN_PASSWORD "<YOURSECRETPASSWORD>"
@@ -699,7 +699,7 @@ It is possible to configure Mendix Runtime log levels using environment variable
 }
 ```
 
-You can see the available Log Nodes in your application in the Mendix Modeler. The level should be one of:
+You can see the available Log Nodes in your application in Mendix Studio Pro. The level should be one of:
 
 * `CRITICAL`
 * `ERROR`
@@ -742,7 +742,7 @@ For more information about external dependency management, please check [here](D
 The buildpack provides several facilities for troubleshooting.
 ### Enabling the Mendix Debugger
 
-You can enable the Mendix Debugger by setting a `DEBUGGER_PASSWORD` environment variable. This will enable and open up the debugger for the lifetime of this process and is to be used with caution. The debugger is reachable on https://DOMAIN/debugger/. You can follow the second half of this [How To](https://docs.mendix.com/howto/monitoring-troubleshooting/debug-microflows) to connect with the Mendix Business Modeler. To stop the debugger, unset the environment variable and restart the application.
+You can enable the Mendix Debugger by setting a `DEBUGGER_PASSWORD` environment variable. This will enable and open up the debugger for the lifetime of this process and is to be used with caution. The debugger is reachable on https://DOMAIN/debugger/. You can follow the second half of this [How To](https://docs.mendix.com/howto/monitoring-troubleshooting/debug-microflows) to connect with Mendix Studio Pro. To stop the debugger, unset the environment variable and restart the application.
 
 ### Rescue Mode
 Sometimes the app won't run because it exits with status code 143. Or, for any reason, the app is unable to start, leaving you unable to debug the issue from within the container. For these cases we have introduced a `DEBUG_CONTAINER` mode. To enable it:
