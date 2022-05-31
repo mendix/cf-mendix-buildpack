@@ -308,16 +308,16 @@ The following environment variables are optional:
 The buildpack allows setting various Mendix Runtime configuration options.
 ### Horizontal Scaling
 
-Mendix allows scaling out horizontally. The absence of the need for a state store results in the fact that nothing needs to be configured for running Mendix in clustering mode. Based on the `CF_INSTANCE_INDEX` variable, the runtime starts either in leader or slave mode. The leader mode will do the database synchronization activities (when necessary), while the slaves will automatically wait until that is finished.
+Mendix allows scaling out horizontally. The absence of the need for a state store results in the fact that nothing needs to be configured for running Mendix in clustering mode. Based on the `CF_INSTANCE_INDEX` variable, the runtime starts either in leader or worker mode. The leader mode will do the database synchronization activities (when necessary), while the workers will automatically wait until that is finished.
 
-When you make changes to your domain model, the Mendix Runtime will need to synchronize data model changes with the database on startup. This will only happen on instance `0` . The other instances will wait until the database is fully synchronized. This is determined via the `CF_INSTANCE_INDEX` environment variable. This is a built-in variable in Cloud Foundry, you do not need to set it yourself. If the environment variable is not present (this is the case older Cloud Foundry versions) every instance will attempt to synchronize the database. A warning containing the text `CF_INSTANCE_INDEX environment variable not found` will be printed in the log.
+When you make changes to your domain model, the Mendix Runtime will need to synchronize data model changes with the database on startup. This will only happen on instance `0` . The other instances will wait until the database is fully synchronized. This is determined via the `CF_INSTANCE_INDEX` environment variable. This is a built-in variable in Cloud Foundry, you do not need to set it yourself. If the environment variable is not present (this is the case in e.g. older Cloud Foundry versions) every instance will attempt to synchronize the database. A warning containing the text `CF_INSTANCE_INDEX environment variable not found` will be printed in the log.
 
 For Mendix < 9.12, scheduled events will also only be executed on instance `0`. See the section [Configuring Scheduled Events](#scheduled-events).
 
 In all horizontal scaling scenarios, extra care needs to be taken when programming Java actions. Examples of things to be avoided are:
 
-* relying on singleton variables to keep global application state
-* relying on scheduled events to make changes in memory, scheduled events will only run on the primary instance
+* Relying on singleton variables to keep global application state
+* Relying on scheduled events to make changes in memory, scheduled events will only run on the primary instance
   
 ### Constants
 
