@@ -18,7 +18,7 @@ Release notes are available for the [buildpack](https://github.com/mendix/cf-men
   - [4. Connect a Database](#4-connect-a-database)
 - [Infrastructure Configuration](#infrastructure-configuration)
   - [Connect a Database](#connect-a-database)
-  - [Connect an External Filestore](#connect-an-external-filestore)
+  - [Connect an External File Store](#connect-an-external-file-store)
 - [Mendix Runtime Configuration](#mendix-runtime-configuration)
   - [Horizontal Scaling](#horizontal-scaling)
   - [Constants](#constants)
@@ -83,15 +83,15 @@ cf push <YOUR_APP> -b https://github.com/mendix/cf-mendix-buildpack/releases/dow
 
 You can find the list of available releases [here](https://github.com/mendix/cf-mendix-buildpack/releases).
 
-**Note: do not directly pin to the buildpack source code, but always pin to a specific release. The release is a runnable version of the buildpack and always contains the (binary) dependencies needed to run the buildpack directly; we do not guarantee that the source code by itself runs.**
+**:warning: Do not directly pin to the buildpack source code, but always pin to a specific release. The release is a runnable version of the buildpack and always contains the (binary) dependencies needed to run the buildpack directly; we do not guarantee that the source code by itself runs.**
 
 
 ## Lifecycle
 
 The buildpack lifecycle has two main phases:
 
-* `stage` : Fetch the JRE, Mendix Runtime, and nginx and bundle these together with the application model into a Cloud Foundry droplet. This is handled by `buildpack/stage.py` .
-* `run` : Start the various processes and run the application. `buildpack/start.py` is for orchestration, the JVM is for executing the Mendix Model, and nginx is used as reverse proxy including handling access restrictions.
+* `stage` : Fetch the JRE, Mendix Runtime, and nginx and bundle these together with the application model into a Cloud Foundry droplet. This is handled by [`stage.py`](buildpack/stage.py) .
+* `run` : Start the various processes and run the application. [`start.py`](buildpack/start.py) is for orchestration, the JVM is for executing the Mendix Model, and nginx is used as reverse proxy including handling access restrictions.
 
 The staging phase accepts archives in `.mda` format (Mendix Deployment Archive). There is experimental support for `.mpk` archives (Mendix Project Package). If an `.mpk` file is pushed, `mxbuild` is executed using Mono in the compile phase as well, the run phase stays the same.
 
@@ -105,15 +105,15 @@ Install the Cloud Foundry command line executable. You can find this on the [rel
 
 ### 2. Push your App
 
-We push an MDA (Mendix Deployment Archive) that was built by Mendix Studio Pro to Cloud Foundry.
+The following commands push an MDA (Mendix Deployment Archive) that was built by Mendix Studio Pro to Cloud Foundry.
 
-*Note: please replace `<LINK-TO-BUILDPACK>` in the commands below with a link to the version of the buildpack you are trying to deploy. Please check [this section](#buildpack-releases-and-version-pinning) for details on how to pick a release.*
+*:warning: Please replace `<LINK-TO-BUILDPACK>` in the commands below with a link to the version of the buildpack you are trying to deploy. Check [this section](#buildpack-releases-and-version-pinning) for details on how to pick a release.*
 
 ```shell
 cf push <YOUR_APP> -b <LINK-TO-BUILDPACK> -p <YOUR_MDA>.mda -t 180
 ```
 
-We can also push a project directory. This will move the build process (using MxBuild, a component of Mendix Studio Pro) to Cloud Foundry:
+Pushing a project directory is also possible. This will move the build process (using MxBuild, a component of Mendix Studio Pro) to Cloud Foundry:
 
 ```shell
 cd <PROJECT DIR>; cf push -b <LINK-TO-BUILDPACK> -t 180
@@ -125,7 +125,7 @@ Also note that building the project in Cloud Foundry takes more time and require
 
 ### 3. Configure an Admin Password
 
-The first push generates a new app. In order to login to your application as admin you can set the password using the `ADMIN_PASSWORD` environment variable. Keep in mind that the admin password should comply with the policy you have set in Mendix Studio (Pro). For security reasons it is recommended to set this environment variable once to create the admin user, then remove the environment variable and restart the app. Finally log in to the app and change the password via the web interface. Similarly, the setting can be used to reset the password of an administrator.
+The first push generates a new app. In order to login to your application as admin, you can set the password using the `ADMIN_PASSWORD` environment variable. Keep in mind that the admin password should comply with the policy you have set in Mendix Studio Pro. For security reasons, it is recommended to set this environment variable once to create the admin user, then remove the environment variable and restart the app. Finally, log in to the app and change the password via the web interface. Similarly, the setting can be used to reset the password of an administrator.
 
 ```shell
 cf set-env <YOUR_APP> ADMIN_PASSWORD "<YOURSECRETPASSWORD>"
@@ -135,9 +135,9 @@ cf set-env <YOUR_APP> ADMIN_PASSWORD "<YOURSECRETPASSWORD>"
 After configuring an admin password, proceed with [connecting a database](#connect-a-database).
 
 ## Infrastructure Configuration
-Mendix applications can use a variety of databases and external file stores to run. The buildpack can configure the Mendix Runtime to use these databases and file stores.
+Mendix applications can use a variety of databases and external file stores. The buildpack can configure the Mendix Runtime to use these databases and file stores.
 
-**Note: support for file stores and databases in the buildpack is ultimately dependent on Mendix Runtime support. The buildpack only plays a role in configuring them in the Mendix Runtime.**
+**:warning: Support for file stores and databases in the buildpack is ultimately dependent on Mendix Runtime support. The buildpack only plays a role in configuring them in the Mendix Runtime.**
 ### Connect a Database
 
 To deploy an app, you need to connect a PostgreSQL, MySQL or any other [Mendix Runtime supported database](https://docs.mendix.com/refguide/data-storage/) instance which allows at least 5 connections to the database. Find out which services are available in your Cloud Foundry foundation with the `marketplace` command.
@@ -177,7 +177,7 @@ For PostgreSQL, the buildpack supports setting additional parameters in the conn
 cf set-env <YOUR_APP> DATABASE_CONNECTION_PARAMS '{"tcpKeepAlive": "true", "connectionTimeout": 30, "loginTimeout": 15}'
 ```
 
-*Note: if you set `DATABASE_URL` as JDBC connection string (prefixed with `jdbc:` and including parameters, `DATABASE_CONNECTION_PARAMS` is not required.*
+*:warning: If you set `DATABASE_URL` as JDBC connection string (prefixed with `jdbc:` and including parameters, `DATABASE_CONNECTION_PARAMS` is not required.*
 
 #### Supported VCAP Schemas
 
@@ -250,7 +250,7 @@ Selection based on name `hana` and tags `["hana", "database", "relational"]`.
   ],
 ```
 
-### Connect an External Filestore
+### Connect an External File Store
 
 The Mendix Runtime supports multiple external file stores: AWS S3, Azure Storage and Swift (Bluemix Object Storage).
 
@@ -277,7 +277,7 @@ The buildpack can configure AWS S3 file stores in the Mendix Runtime in two ways
 
 The buildpack will set up the [custom runtime settings for AWS S3](https://docs.mendix.com/refguide/custom-settings/#amazon-s3-storage-service-settings) based on environment variables or a service binding.
 
-**Note: support for other file stores that offer the S3 API (S3 compatible file stores) is dependent on the Mendix Runtime and the level of compatibility offered by these non-AWS file stores.**
+**:warning: Support for other file stores that offer the S3 API (S3 compatible file stores) is dependent on the Mendix Runtime and the level of compatibility offered by these non-AWS file stores.**
 ##### Use IAM Credentials
 
 Create an IAM user and provide IAM user credential using following environment variables.
@@ -294,7 +294,7 @@ Create a TVM (Token Vending Machine) and provide TVM credential using following 
 * `S3_TVM_USERNAME` : tvm_username
 * `S3_TVM_PASSWORD` : tvm_password
 
-Please check [s3-tvm-spec](https://github.com/mendix/s3-tvm-spec) for api documentation help for tvm.
+Please check [s3-tvm-spec](https://github.com/mendix/s3-tvm-spec) for API documentation help for TVM.
 
 The following environment variables are optional:
 
@@ -306,6 +306,7 @@ The following environment variables are optional:
 
 ## Mendix Runtime Configuration
 The buildpack allows setting various Mendix Runtime configuration options.
+
 ### Horizontal Scaling
 
 Mendix allows scaling out horizontally. The absence of the need for a state store results in the fact that nothing needs to be configured for running Mendix in clustering mode. Based on the `CF_INSTANCE_INDEX` variable, the runtime starts either in leader or worker mode. The leader mode will do the database synchronization activities (when necessary), while the workers will automatically wait until that is finished.
@@ -317,7 +318,7 @@ For Mendix < 9.12, scheduled events will also only be executed on instance `0`. 
 In all horizontal scaling scenarios, extra care needs to be taken when programming Java actions. Examples of things to be avoided are:
 
 * Relying on singleton variables to keep global application state
-* Relying on scheduled events to make changes in memory, scheduled events will only run on the primary instance
+* Relying on scheduled events to make changes in memory. Scheduled events will only run on the primary instance for Mendix < 9.12.
   
 ### Constants
 
@@ -327,7 +328,7 @@ The default values for constants will be used as defined in your project. Howeve
 cf set-env <YOUR_APP> MX_Module_Constant "ABC123"
 ```
 
-After changing environment variables you need to restart your app. A full push is not necessary.
+After changing environment variables, you need to restart your app. A full push is not necessary.
 
 ```shell
 cf restart <YOUR_APP>
@@ -337,13 +338,13 @@ cf restart <YOUR_APP>
 
 The scheduled events can be configured using environment variable `SCHEDULED_EVENTS` .
 
-Possible values are `ALL` , `NONE` or a comma separated list of the scheduled events that you would like to enable. For example: `ModuleA. ScheduledEvent, ModuleB. OtherScheduledEvent`
+Possible values are `ALL` , `NONE`, or a comma separated list of the scheduled events that you would like to enable. For example: `ModuleA. ScheduledEvent, ModuleB. OtherScheduledEvent`
 
 For Mendix versions < 9.12, when scaling to multiple instances, the scheduled events that are enabled via the settings above will only be executed on instance `0` . The other instances will not execute scheduled events at all.
 
 ### Custom Runtime Settings
 
-To configure any of the advanced [Custom Runtime Settings](https://docs.mendix.com/refguide/custom-settings) you can use setting name prefixed with `MXRUNTIME_` as an environment variable.
+To configure any of the advanced [Custom Runtime Settings](https://docs.mendix.com/refguide/custom-settings), you can use setting name prefixed with `MXRUNTIME_` as an environment variable.
 
 For example, to configure the `ConnectionPoolingMinIdle` setting to value `10` , you can set the following environment variable:
 
@@ -384,7 +385,9 @@ The environment variable is in JSON format and is a list ( `[]` ) of **client ce
 
 ### Data Snapshots
 
-If you want to enable initializing your database and files from an existing data snapshot included in the MDA, set the environment variable `USE_DATA_SNAPSHOT` to `true` . Please note: this only works when the database is completely empty. If there are any Mendix tables defined in the database already, the Runtime will refuse the overwrite it. So, if you have ever started an app before setting this environment variable (thereby initializing the database), you will not be able to import a data snapshot.
+If you want to enable initializing your database and files from an existing data snapshot included in the MDA, set the environment variable `USE_DATA_SNAPSHOT` to `true` .
+
+*:warning: This only works when the database is completely empty. If there are any Mendix tables defined in the database, the Mendix Runtime will refuse to overwrite it. If you have ever started an app before setting this environment variable (thereby initializing the database), you will not be able to import a data snapshot.*
 
 ### License Activation
 
@@ -426,7 +429,7 @@ This example will only work correctly if the specific file for version 11.0.15 i
 
 ### Java Heap Size
 
-The Java heap size is configured automatically based on best practices. You can tweak this to your needs by using another environment variable in which case it is used directly.
+The Java heap size is configured automatically based on best practices. You can tweak this to your needs by using another environment variable, in which case it is used directly.
 
 ```shell
 cf set-env <YOUR_APP> HEAP_SIZE 512M
@@ -444,15 +447,15 @@ cf set-env <YOUR_APP> JAVA_OPTS '["-Djava.rmi.server.hostname=127.0.0.1", "-Dcom
 
 #### Enabling TLSv1.0 and TLSv1.1 for Outgoing Connections
 
-OpenJDK switched off the insecure / End-of-Life TLSv1.0 and TLSv1.1 protocols for outgoing connections by default in April 2021. Since the buildpack uses an OpenJDK distribution, these protocols are also disabled by default for the buildpack.
+OpenJDK disabled the insecure / End-of-Life TLSv1.0 and TLSv1.1 protocols for outgoing connections by default in April 2021. Since the buildpack uses an OpenJDK distribution, these protocols are also disabled by default for the buildpack.
 
 To re-enable TLSv1.0 and TLSv1.1 for outgoing connections, set the `ENABLE_OUTGOING_TLS_10_11` environment variable to `true`, and **restage** your application.
 
-**Enabling TLSv1.0 and TLSv1.1 for outgoing connections is at your own risk, and this functionality may disappear at any time.**
+**:warning: Enabling TLSv1.0 and TLSv1.1 for outgoing connections is at your own risk, and this functionality may disappear at any time.**
 
 ### Certificate Authorities
 
-To import Certificate Authorities (CAs) into the Java truststore, use the `CERTIFICATE_AUTHORITIES` environment variable.
+To import Certificate Authorities (CAs) into the Java trust store, use the `CERTIFICATE_AUTHORITIES` environment variable.
 
 The contents of this variable should be a concatenated string containing a the additional CAs in [PEM format](https://en.wikipedia.org/wiki/Privacy-Enhanced_Mail) that are trusted.
 
@@ -554,7 +557,7 @@ Note that:
 * Custom locations are not supported for reserved system paths
 
 ## Telemetry Configuration
-The buildpack includes a variety of telemetry agents, and can configure logging.
+The buildpack includes a variety of telemetry agents, and can configure logging for the Mendix Runtime.
 
 ### New Relic
 
@@ -592,17 +595,18 @@ For more details about nodes and tiers: [Tiers and Nodes](https://docs.appdynami
 Required variables: `APPDYNAMICS_AGENT_ACCOUNT_NAME`, `APPDYNAMICS_AGENT_ACCOUNT_ACCESS_KEY` and `APPDYNAMICS_CONTROLLER_HOST_NAME`.
 
 If you have all the required environment variables specified above, the AppDynamics Java Agent will be configured for your application.
+
 The other environment variables are optional and will be set to the default values.
 After configuring these environment variables, restart your app for the agent to be enabled.
 If the agent has not been installed it is necessary to redeploy the app.
 
 #### Extended functionality
 
-:warning: **This functionality is fully supported in Mendix version 9.7 and later. 
-For older versions, limited amount of metrics is available:**
+**:warning: This functionality is fully supported in Mendix version 9.7 and later. 
+For older versions, a limited amount of metrics are available:**
 
-* 'postgres.' metrics,
-* 'mx.client.' metrics.
+* `postgres.` metrics,
+* `mx.client.` metrics.
 
 The Mendix App metrics collected by the Telegraf Agent also can be pushed to AppDynamics Controller.
 These metrics are pushed to [Machine Agent HTTP Listener](https://docs.appdynamics.com/22.1/en/infrastructure-visibility/machine-agent/extensions-and-custom-metrics/machine-agent-http-listener).
@@ -705,7 +709,7 @@ To set the log level for the buildpack itself to `DEBUG`, set the `BUILDPACK_XTR
 
 #### Mendix Runtime Log Levels
 
-It is possible to configure Mendix Runtime log levels using environment variables. This allows getting a better insight in the behavior of your Mendix app. This happens by adding one or more environment variables starting with the name `LOGGING_CONFIG` (the part of the name after that is not relevant and only used to distinguish between multiple entries if necessary). Its value should be valid JSON, in the format:
+It is possible to configure Mendix Runtime log levels using environment variables. This allows getting a better insight in the behavior of your Mendix app. This happens by adding one or more environment variables starting with the name `LOGGING_CONFIG`. The part of the name after that is not relevant and only used to distinguish between multiple entries if necessary. Its value should be valid JSON, in the format:
 
 ```json
 {
