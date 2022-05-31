@@ -135,23 +135,25 @@ cf set-env <YOUR_APP> ADMIN_PASSWORD "<YOURSECRETPASSWORD>"
 After configuring an admin password, proceed with [connecting a database](#connect-a-database).
 
 ## Infrastructure Configuration
-Mendix applications can use a variety of databases and external file stores to run.
+Mendix applications can use a variety of databases and external file stores to run. The buildpack can configure the Mendix Runtime to use these databases and file stores.
+
+**Note: support for file stores and databases in the buildpack is ultimately dependent on Mendix Runtime support. The buildpack only plays a role in configuring them in the Mendix Runtime.**
 ### Connect a Database
 
-To deploy an app, you need to connect a PostgreSQL, MySQL or any other Mendix supported database instance which allows at least 5 connections to the database. Find out which services are available in your Cloud Foundry foundation with the `marketplace` command.
+To deploy an app, you need to connect a PostgreSQL, MySQL or any other [Mendix Runtime supported database](https://docs.mendix.com/refguide/data-storage/) instance which allows at least 5 connections to the database. Find out which services are available in your Cloud Foundry foundation with the `marketplace` command.
 
 ```shell
 cf marketplace
 ```
 
-In our trial we found the service `elephantsql` which offered the free `turtle` plan. All you need to do is give it a name and bind it to your application.
+Example: a Cloud Foundry Marketplace offers the `elephantsql` service, which offers the free `turtle` plan. All you need to do is give it a name and bind it to your application.
 
 ```shell
 cf create-service elephantsql turtle <SERVICE_NAME>
 cf bind-service <YOUR_APP> <SERVICE_NAME>
 ```
 
-Note that not all databases are automatically picked up by the buildpack. If `cf push` returns an error like `Could not parse database credentials` , you need to set the `DATABASE_URL` variable manually or set database [Mendix custom runtime variables](https://docs.mendix.com/refguide/custom-settings) to configure a database. Note these variables need to be prefixed with `MXRUNTIME_` , as per example:
+Note that not all databases are automatically picked up by the buildpack. If `cf push` returns an error like `Could not parse database credentials` , you need to set the `DATABASE_URL` variable manually or [set](#custom-runtime-settings) database [Mendix custom runtime variables](https://docs.mendix.com/refguide/custom-settings) to configure a database. Note these variables need to be prefixed with `MXRUNTIME_` , as per example:
 
 ```shell
 cf set-env <YOUR_APP> MXRUNTIME_DatabaseType PostgreSQL
@@ -161,7 +163,7 @@ cf set-env <YOUR_APP> MXRUNTIME_DatabaseUserName user
 cf set-env <YOUR_APP> MXRUNTIME_DatabasePassword password
 ```
 
-Now we need to push the application once more.
+Now, push the application once more.
 
 ```shell
 cf push <YOUR_APP> -b <LINK-TO-BUILDPACK> -p <YOUR_MDA>.mda
@@ -169,19 +171,19 @@ cf push <YOUR_APP> -b <LINK-TO-BUILDPACK> -p <YOUR_MDA>.mda
 
 You can now log in to your application with the configured admin password.
 
-For PostgreSQL we support setting additional parameters in the connection uri retrieved from the VCAP. To set additional JDBC parameters set the `DATABASE_CONNECTION_PARAMS` environment variable as JSON key-value string.
+For PostgreSQL, the buildpack supports setting additional parameters in the connection URI retrieved from the service binding. To set additional JDBC parameters, set the `DATABASE_CONNECTION_PARAMS` environment variable as JSON key-value string.
 
 ```shell
 cf set-env <YOUR_APP> DATABASE_CONNECTION_PARAMS '{"tcpKeepAlive": "true", "connectionTimeout": 30, "loginTimeout": 15}'
 ```
 
-Note: if you set `DATABASE_URL` provide it as JDBC connection string (prefixed with `jdbc:` and including parameters, `DATABASE_CONNECTION_PARAMS` is not needed then.
+*Note: if you set `DATABASE_URL` as JDBC connection string (prefixed with `jdbc:` and including parameters, `DATABASE_CONNECTION_PARAMS` is not required.*
 
 #### Supported VCAP Schemas
 
- Cloud Foundry database services are detected from VCAP bindings and translated into Mendix M2EE configuration. In case no database service is bound the fallback is the environment variable `DATABASE_URL`.
+ Cloud Foundry database services are detected from Cloud Foundry service bindings ([VCAP](https://docs.cloudfoundry.org/devguide/deploy-apps/environment-variable.html#VCAP-SERVICES)) and translated into Mendix Runtime configuration. In case no database service is bound, the fallback is the environment variable `DATABASE_URL`.
 
-All database configuration code can be found in `lib/database_config.py`. VCAP service bindings have preference over `DATABASE_URL`. VCAP are recognized on the identifier and/or tags.
+All database configuration code can be found in [`database.py`](buildpack/core/database.py). Service bindings have preference over `DATABASE_URL`. Service bindings are recognized on the identifier and/or tags.
 
 ##### PostgreSQL using RDS Service Broker
 
@@ -250,20 +252,32 @@ Selection based on name `hana` and tags `["hana", "database", "relational"]`.
 
 ### Connect an External Filestore
 
-Mendix supports multiple external file stores: AWS S3 compatible file stores, Azure Storage and Swift, used in Bluemix Object Storage. All of these can be configured manually via [Custom Runtime Settings](#custom-runtime-settings), but S3, Azure Storage and Swift (Bluemix Object Storage) can be configured in easier ways.
+The Mendix Runtime supports multiple external file stores: AWS S3, Azure Storage and Swift (Bluemix Object Storage).
+
+All of these can be configured manually via [Custom Runtime Settings](#custom-runtime-settings), but the buildpack provides ways to more easily configure AWS S3, Azure Storage and Swift (Bluemix Object Storage).
 
 #### Swift (Bluemix Object Storage) Settings
 
-When deploying to Bluemix, you can simply create an [Object Storage service](https://console.ng.bluemix.net/catalog/services/object-storage) and attach it to your app. No further configuration in necessary, you just need to restart your app. By default, a storage container will be created for you called `mendix` . If you want to use a different container name (for example if you are sharing the Object Storage service between multiple apps), you can configure the container name with the environment variable `SWIFT_CONTAINER_NAME` .
+When deploying to Bluemix, you can create an [Object Storage service](https://console.ng.bluemix.net/catalog/services/object-storage) and attach it to your app. No further configuration in necessary, you just need to restart your app.
+
+The buildpack will set up the [custom runtime settings for the Object Storage service](https://docs.mendix.com/refguide/custom-settings/#8-ibm-cloud-bluemix-object-storage-settings) based on the service binding. By default, a storage container will be created for you called `mendix` . If you want to use a different container name (for example if you are sharing the Object Storage service between multiple apps), you can configure the container name with the environment variable `SWIFT_CONTAINER_NAME` .
 
 #### Azure Storage Service Settings
 
-When deploying Mendix to CF on Azure with the Azure Service Broker, you can simply create an Azure Storage Service instance and attach it to your app. No further configuration in necessary, you just need to restart your app. By default, a storage container will be created for you called `mendix` . If you want to use a different container name (for example if you are sharing the Azure Storage service between multiple apps), you can configure the container name with the environment variable `AZURE_CONTAINER_NAME` .
+When deploying Mendix to Cloud Foundry on Azure with the Azure Service Broker, you can create an Azure Storage Service instance and attach it to your app. No further configuration in necessary, you just need to restart your app. 
+
+The buildpack will set up the [custom runtime settings for the Azure Storage Service](https://docs.mendix.com/refguide/custom-settings/#azure-blob) based on the service binding. By default, a storage container will be created for you called `mendix` . If you want to use a different container name (for example if you are sharing the Azure Storage service between multiple apps), you can configure the container name with the environment variable `AZURE_CONTAINER_NAME` .
 
 #### S3 Settings
 
-Mendix can use external file stores with an S3 compatible api. There are two ways to enable this.
+The buildpack can configure AWS S3 file stores in the Mendix Runtime in two ways:
 
+* [Using IAM Credentials](#use-iam-credentials).
+* [Using a Token Vending Machine](#implement-tvm-token-vending-machine)
+
+The buildpack will set up the [custom runtime settings for AWS S3](https://docs.mendix.com/refguide/custom-settings/#amazon-s3-storage-service-settings) based on environment variables or a service binding.
+
+**Note: support for other file stores that offer the S3 API (S3 compatible file stores) is dependent on the Mendix Runtime and the level of compatibility offered by these non-AWS file stores.**
 ##### Use IAM Credentials
 
 Create an IAM user and provide IAM user credential using following environment variables.
@@ -284,7 +298,7 @@ Please check [s3-tvm-spec](https://github.com/mendix/s3-tvm-spec) for api docume
 
 The following environment variables are optional:
 
-* `S3_PERFORM_DELETES` : set to `false` to never delete items from the filestore. This is useful when you use a highly redundant service without a separate backup mechanism, such as AWS S3.
+* `S3_PERFORM_DELETES` : set to `false` to never delete items from the file store. This is useful when you use a highly redundant service without a separate backup mechanism, such as AWS S3.
 * `S3_KEY_SUFFIX` : if your bucket is multi-tenant you can append a string after each object name, you can restrict IAM users to objects with this suffix.
 * `S3_ENDPOINT` : for S3 itself this is not needed, for S3 compatible object stores set the domain on which the object store is available.
 * `S3_USE_V2_AUTH` : use Signature Version 2 Signing Process, this is useful for connecting to S3 compatible object stores like Riak-CS, or Ceph.
