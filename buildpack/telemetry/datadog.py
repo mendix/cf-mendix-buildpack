@@ -182,7 +182,7 @@ def _get_datadog_tags(model_version):
 
 
 def get_statsd_port():
-    return STATSD_PORT
+    return os.getenv("DD_DOGSTATSD_PORT", STATSD_PORT)
 
 
 def _set_up_dd_java_agent(
