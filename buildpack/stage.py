@@ -11,6 +11,8 @@ from buildpack.telemetry import (
     appdynamics,
     datadog,
     dynatrace,
+    fluentbit,
+    splunk,
     logs,
     metering,
     mx_java_agent,
@@ -188,6 +190,8 @@ if __name__ == "__main__":
     )
     appdynamics.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)
     dynatrace.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)
+    splunk.stage()
+    fluentbit.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)
     newrelic.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)
     mx_java_agent.stage(
         BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR, runtime_version
