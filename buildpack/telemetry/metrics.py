@@ -128,6 +128,26 @@ def get_appmetrics_target():
     return os.getenv("APPMETRICS_TARGET")
 
 
+def get_micrometer_metrics_url():
+    """
+    This function is used to provide selection of the trends storage URL.
+    There are two options - URL of trends-storage-server (old trends stack),
+    or URL of trends-forwarder (new trends stack). This selection is relevant for
+    micrometer metrics only. Runtime version 9.7 and above is required.
+
+    """
+    use_trends_forwarder = strtobool(
+        os.getenv("USE_TRENDS_FORWARDER", default="false")
+    )
+
+    trends_forwarder_url = os.getenv("TRENDS_FORWARDER_URL", default="")
+
+    if use_trends_forwarder and trends_forwarder_url:
+        return trends_forwarder_url
+    else:
+        return get_metrics_url()
+
+
 def get_metrics_url():
     return os.getenv("TRENDS_STORAGE_URL")
 
@@ -151,9 +171,9 @@ def _micrometer_runtime_requirement(runtime_version):
 
 def micrometer_metrics_enabled(runtime_version):
     """Check for metrics from micrometer."""
-    return bool(get_metrics_url()) and _micrometer_runtime_requirement(
-        runtime_version
-    )
+    return bool(
+        get_micrometer_metrics_url()
+    ) and _micrometer_runtime_requirement(runtime_version)
 
 
 def configure_metrics_registry(m2ee):
