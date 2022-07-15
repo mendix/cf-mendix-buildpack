@@ -167,6 +167,7 @@
         withdbname = false
         tagvalue = "schema"
         measurement = "postgresql.table"
+
     {% if database_rate_count_metrics_enabled %}
 
     # pg_stat_database metrics (rates)
@@ -194,7 +195,6 @@
         sqlquery = """
             SELECT
                 datname,
-                temp_files AS temp_files_rate,
                 temp_files AS temp_files_rate
             FROM pg_stat_database
         """
