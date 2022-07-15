@@ -55,13 +55,14 @@
 
     # Drop fields not present in the Datadog Agent PostgreSQL check
     fielddrop = ["datname"]
+    interval = "{{ postgres_metrics_interval }}s"
 
     # Add port tag
     [inputs.postgresql_extensible.tags]
         db = "{{ db_config['DatabaseName'] }}" # Global database tag
         port = "5432"
         {% if database_rate_count_metrics_enabled %}
-        interval = "{{ interval }}s" # Helpful for determining rollup for counter and rate metrics
+        interval = "{{ postgres_metrics_interval }}s"  # Helpful for determining rollup for counter and rate metrics
         {% endif %}
 
     # pg_stat_database metrics (gauges)
