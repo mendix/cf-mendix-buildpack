@@ -1,4 +1,5 @@
 import os
+import re
 import unittest
 import uuid
 from distutils.util import strtobool
@@ -91,6 +92,46 @@ class BaseTest(unittest.TestCase):
 
     def await_string_in_recent_logs(self, *args, **kwargs):
         return self._runner.await_string_in_logs(*args, **kwargs)
+
+    def check_patterns_in_recent_logs(self, patterns):
+
+        output = self._runner.get_logs()
+        missed_patterns = []
+        found_patterns = []
+
+        for pattern in patterns:
+            substrings = re.findall(pattern, output)
+
+            if len(substrings) == 0:
+                missed_patterns.append(pattern)
+            else:
+                found_patterns.append(pattern)
+
+        return missed_patterns, found_patterns, output
+
+    def assert_patterns_not_in_recent_logs(self, patterns):
+
+        _, found_patterns, output = self.check_patterns_in_recent_logs(
+            patterns
+        )
+
+        if found_patterns:
+            self.fail(
+                "Some patterns were found in recent logs: {}. Output: {}".format(
+                    ", ".join(found_patterns), output
+                )
+            )
+
+    def assert_patterns_in_recent_logs(self, patterns):
+
+        missed_patterns, _, _ = self.check_patterns_in_recent_logs(patterns)
+
+        if missed_patterns:
+            self.fail(
+                "Failed to find patterns in recent logs: {}".format(
+                    ", ".join(missed_patterns)
+                )
+            )
 
     def assert_string_in_recent_logs(self, substring):
         output = self._runner.get_logs()

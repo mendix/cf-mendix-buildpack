@@ -14,6 +14,8 @@ from buildpack.telemetry import (
     appdynamics,
     datadog,
     dynatrace,
+    fluentbit,
+    splunk,
     logs,
     metering,
     metrics,
@@ -148,6 +150,8 @@ if __name__ == "__main__":
         newrelic.update_config(m2ee, application_name)
         appdynamics.update_config(m2ee)
         dynatrace.update_config(m2ee, application_name)
+        splunk.update_config(m2ee)
+        fluentbit.update_config(m2ee)
         mx_java_agent.update_config(m2ee)
         telegraf.update_config(m2ee, application_name)
         (
@@ -172,6 +176,7 @@ if __name__ == "__main__":
         # Start components and runtime
         telegraf.run(runtime_version)
         datadog.run(model_version, runtime_version)
+        fluentbit.run()
         metering.run()
         logs.run(m2ee)
         runtime.run(m2ee, logs.get_loglevels())
