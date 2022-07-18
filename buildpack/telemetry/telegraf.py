@@ -245,7 +245,7 @@ def update_config(m2ee, app_name):
         datadog_api_key=datadog.get_api_key(),
         datadog_api_url="{}series/".format(datadog.get_api_url()),
         http_outputs=_get_http_outputs(),
-        trends_storage_url=metrics.get_metrics_url(),
+        trends_storage_url=metrics.get_micrometer_metrics_url(),
         micrometer_metrics=metrics.micrometer_metrics_enabled(runtime_version),
         cf_instance_index=_get_app_index(),
         app_name=app_name,
