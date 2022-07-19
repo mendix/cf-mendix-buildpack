@@ -168,12 +168,13 @@ def _runtime_sts_support(version):
     ):
         return True
     # Only enable STS support for these versions when CERTIFICATE_AUTHORITIES
-    # is not set or STS will break.
+    # is not set and CLIENT_CERTIFICATES is not set or STS will break.
     elif (
         version >= 9.2
         or (version.major == 8 and version >= MXVersion("8.18.7"))
         or (version.major == 7 and version >= MXVersion("7.23.22"))
-    ) and not os.getenv("CERTIFICATE_AUTHORITIES", None):
+    ) and not os.getenv("CERTIFICATE_AUTHORITIES", None)
+    and not os.getenv("CLIENT_CERTIFICATES", None):
         return True
     else:
         return False
