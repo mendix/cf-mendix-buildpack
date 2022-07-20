@@ -49,6 +49,11 @@ APPDYNAMICS_OUTPUT_SCRIPT_PATH = os.path.join(
     "appdynamics_telegraf_output.py",
 )
 
+POSTGRES_METRICS_INTERVAL = os.getenv(
+    "POSTGRES_METRICS_INTERVAL",
+    default=10
+)
+
 STATSD_PORT = 8125
 STATSD_PORT_ALT = 18125
 
@@ -230,6 +235,7 @@ def update_config(m2ee, app_name):
         template = Template(file_.read(), trim_blocks=True, lstrip_blocks=True)
     rendered = template.render(
         interval=10,  # in seconds
+        postgres_metrics_interval=POSTGRES_METRICS_INTERVAL,
         tags=tags,
         hostname=util.get_hostname(),
         statsd_port=statsd_port,
@@ -239,7 +245,7 @@ def update_config(m2ee, app_name):
         datadog_api_key=datadog.get_api_key(),
         datadog_api_url="{}series/".format(datadog.get_api_url()),
         http_outputs=_get_http_outputs(),
-        trends_storage_url=metrics.get_metrics_url(),
+        trends_storage_url=metrics.get_micrometer_metrics_url(),
         micrometer_metrics=metrics.micrometer_metrics_enabled(runtime_version),
         cf_instance_index=_get_app_index(),
         app_name=app_name,

@@ -6,6 +6,7 @@ from lib.m2ee.version import MXVersion
 
 from unittest import TestCase
 from unittest.mock import Mock, patch
+from parameterized import parameterized
 
 
 class TestMicrometerMetrics(TestCase):
@@ -15,6 +16,31 @@ class TestMicrometerMetrics(TestCase):
             "buildpack.telemetry.metrics.get_metrics_url",
             return_value="non_empty_url",
         ).start()
+
+    @parameterized.expand(
+        [
+            ["false", "dummy_forwarder_url", "non_empty_url"],
+            ["false", "", "non_empty_url"],
+            ["true", "", "non_empty_url"],
+            ["true", "dummy_forwarder_url", "dummy_forwarder_url"],
+        ]
+    )
+    def test_get_micrometer_metrics_url(
+        self,
+        use_trends_forwarder,
+        trends_forwarder_url,
+        expected_url,
+    ):
+        with patch.dict(
+            os.environ,
+            {
+                "USE_TRENDS_FORWARDER": use_trends_forwarder,
+                "TRENDS_FORWARDER_URL": trends_forwarder_url,
+            },
+        ):
+
+            url = metrics.get_micrometer_metrics_url()
+            self.assertEqual(url, expected_url)
 
     def test_old_runtime_forced_to_disable(self):
         with patch.dict(os.environ, {"DISABLE_MICROMETER_METRICS": "true"}):

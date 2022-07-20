@@ -38,6 +38,7 @@ Release notes are available for the [buildpack](https://github.com/mendix/cf-men
   - [Custom Locations](#custom-locations)
 - [Telemetry Configuration](#telemetry-configuration)
   - [New Relic](#new-relic)
+  - [Splunk](#splunk)
   - [AppDynamics](#appdynamics)
   - [Datadog](#datadog)
   - [Dynatrace](#dynatrace)
@@ -563,6 +564,28 @@ The buildpack includes a variety of telemetry agents, and can configure logging 
 
 To enable New Relic, simply bind a New Relic service to this app and settings will be picked up automatically. Afterwards you have to restage your application to enable the New Relic agent.
 
+### Splunk
+
+To collect Mendix Runtime logs to [Splunk Cloud Platform](https://www.splunk.com/en_us/products/splunk-cloud-platform.html), 
+[Fluent Bit](https://docs.fluentbit.io/manual/) is used.
+
+To enable Splunk integration for a Mendix application, following environment variables should be configured.
+
+:warning: For the first usage of Splunk integration the Mendix app should be **redeployed** after setting the variables up.
+
+| Environment variable | Value example | Default | Description |
+|-|-|-|-|
+| `SPLUNK_HOST` | `test.splunkcloud.com` | - | Host of Splunk Cloud without 'http://' |
+| `SPLUNK_PORT` | `8088` | `8088` | Port of Splunk Cloud |
+| `SPLUNK_TOKEN`<sup>1</sup> | `uuid token` | - | Token from Splunk Cloud dashboard |
+| `SPLUNK_LOGS_REDACTION` | `true` | `true` | If `true` emails in log message are redacted |
+
+1) To create new token on Splunk Cloud dashboard go to `Settings -> Data Input -> HTTP Event Collector` and push
+button `New Token` in the top-right corner of the page. 
+
+Once the Mendix application is redeployed/restarted, the runtime application logs should appear on the Splunk Cloud under `Search & Reporting`.
+In the search line specify: `source="http:your_token_name"`, click search button.
+
 ### AppDynamics
 
 All the information collected with AppDynamics Java Agent and Machine Agent is pushed to Controller and displayed 
@@ -576,19 +599,19 @@ More information here: [Environment variables](https://docs.appdynamics.com/22.2
 
 Please note that AppDynamics requires Mendix 7.15 or higher.
 
-| Environment Variable                   | Value example                                                           | Default                    | Description                                      |
-| -------------------------------------- | ----------------------------------------------------------------------- | -------------------------- | ------------------------------------------------ |
-| `APPDYNAMICS_CONTROLLER_PORT`          | `443`                                                                   | `443`                      | Port of AppDynamics controller                   |
-| `APPDYNAMICS_CONTROLLER_SSL_ENABLED`   | `true`                                                                  | `true`                     | Set if SSL is required                           |
-| `APPDYNAMICS_CONTROLLER_HOST_NAME`     | `<acc_name>.test.com`                                                   | -                          | Name of AppDynamics host without 'http://'       |
-| `APPDYNAMICS_AGENT_APPLICATION_NAME`   | `<test-accp>`                                                           | App name as on Dev. Portal | Name of the app to be displayed on Controller UI |
-| `APPDYNAMICS_AGENT_ACCOUNT_NAME`       | `<acc_name>`                                                            | -                          | See 'License/Account' on the Controller UI       |
+| Environment Variable                | Value example                                                           | Default                    | Description                                      |
+| ----------------------------------- | ----------------------------------------------------------------------- | -------------------------- | ------------------------------------------------ |
+| `APPDYNAMICS_CONTROLLER_PORT`       | `443`                                                                   | `443`                      | Port of AppDynamics controller                   |
+| `APPDYNAMICS_CONTROLLER_SSL_ENABLED` | `true`                                                                  | `true`                     | Set if SSL is required                           |
+| `APPDYNAMICS_CONTROLLER_HOST_NAME`  | `<acc_name>.test.com`                                                   | -                          | Name of AppDynamics host without 'http://'       |
+| `APPDYNAMICS_AGENT_APPLICATION_NAME` | `<test-accp>`                                                           | App name as on Dev. Portal | Name of the app to be displayed on Controller UI |
+| `APPDYNAMICS_AGENT_ACCOUNT_NAME`    | `<acc_name>`                                                            | -                          | See 'License/Account' on the Controller UI       |
 | `APPDYNAMICS_AGENT_ACCOUNT_ACCESS_KEY` | `<secret>`                                                              | -                          | See 'License/Account' on the Controller UI       |
-| `APPDYNAMICS_AGENT_NODE_NAME` *        | `<node>` (finally `<node>_<num>`, `<num>` is being added automatically) | node                       | How a node is displayed on the Controller UI     |
-| `APPDYNAMICS_AGENT_TIER_NAME`          | `<env_id>`                                                              | App Environment UUID       | How a tier is displayed on the Controller UI     |
+| `APPDYNAMICS_AGENT_NODE_NAME`<sup>1</sup>       | `<node>` (finally `<node>_<num>`, `<num>` is being added automatically) | node                       | How a node is displayed on the Controller UI     |
+| `APPDYNAMICS_AGENT_TIER_NAME`       | `<env_id>`                                                              | App Environment UUID       | How a tier is displayed on the Controller UI     |
 
 
-\* The `APPDYNAMICS_AGENT_NODE_NAME` environment variable will be appended with the value of the `CF_INSTANCE_ID` variable. If you use `node` for `APPDYNAMICS_AGENT_NODE_NAME` , the AppDynamics agent will be configured as `node-0` for instance `0` and `node-1` for instance `1` , etc.
+1) The `APPDYNAMICS_AGENT_NODE_NAME` environment variable will be appended with the value of the `CF_INSTANCE_ID` variable. If you use `node` for `APPDYNAMICS_AGENT_NODE_NAME` , the AppDynamics agent will be configured as `node-0` for instance `0` and `node-1` for instance `1` , etc.
 
 For more details about nodes and tiers: [Tiers and Nodes](https://docs.appdynamics.com/22.1/en/application-monitoring/tiers-and-nodes).
 
