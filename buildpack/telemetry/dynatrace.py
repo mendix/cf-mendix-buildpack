@@ -32,6 +32,7 @@ def stage(buildpack_dir, build_path, cache_path):
                     "environment": os.environ.get("DT_TENANT"),
                     "token": os.environ.get("DT_PAAS_TOKEN"),
                 },
+                ignore_cache=True
             )
         except Exception as e:
             logging.warning(
