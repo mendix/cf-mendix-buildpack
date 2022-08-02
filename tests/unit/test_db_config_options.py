@@ -188,9 +188,9 @@ class CertGen:
         self.root_key = self._newkey()
         ca_subj = x509.Name(
             [
-                NameAttribute(NameOID.COUNTRY_NAME, u"US"),
-                NameAttribute(NameOID.ORGANIZATION_NAME, u"Authority, Inc"),
-                NameAttribute(NameOID.COMMON_NAME, u"Authority CA"),
+                NameAttribute(NameOID.COUNTRY_NAME, "US"),
+                NameAttribute(NameOID.ORGANIZATION_NAME, "Authority, Inc"),
+                NameAttribute(NameOID.COMMON_NAME, "Authority CA"),
             ]
         )
         self.root_cert = self._sign(
@@ -201,9 +201,9 @@ class CertGen:
         self.postgresql_key = self._newkey()
         subj = x509.Name(
             [
-                NameAttribute(NameOID.COUNTRY_NAME, u"US"),
-                NameAttribute(NameOID.ORGANIZATION_NAME, u"Authority, Inc"),
-                NameAttribute(NameOID.COMMON_NAME, u"SQL Client"),
+                NameAttribute(NameOID.COUNTRY_NAME, "US"),
+                NameAttribute(NameOID.ORGANIZATION_NAME, "Authority, Inc"),
+                NameAttribute(NameOID.COMMON_NAME, "SQL Client"),
             ]
         )
         self.postgresql_cert = self._sign(
