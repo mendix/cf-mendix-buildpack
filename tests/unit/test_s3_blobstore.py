@@ -171,9 +171,9 @@ class TestCaseS3BlobStoreDryRun(TestCase):
         )
 
     """
-    STS support is broken when CERTIFICATE_AUTHORITIES is set for Mendix
-    versions 7.23.22-, 8.18.7-8.18.10 and 9.2-9.5). Fallback to IAM
-    credentials.
+    STS support is broken when CERTIFICATE_AUTHORITIES and/or
+    CLIENT_CERTIFICATES is set for Mendix versions 7.23.22-, 8.18.7-8.18.10
+    and 9.2-9.5). Fallback to IAM credentials.
     """
 
     @mock.patch(
@@ -207,9 +207,30 @@ class TestCaseS3BlobStoreDryRun(TestCase):
             == "fake-s3-endpoint-from-tvm-vcap/fake-bucket-from-tvm-vcap"
         )
 
+    def test_s3_blobstore_tvm_runtime_with_sts_and_ccs_broken(self):
+        vcap = json.loads(S3_TVM_STORAGE_VCAP_EXAMPLE)
+        os.environ["CLIENT_CERTIFICATES"] = "fake-client-certificate"
+        config = storage._get_s3_specific_config(vcap)
+        assert (
+            config["com.mendix.core.StorageService"] == "com.mendix.storage.s3"
+        )
+        assert config["com.mendix.storage.s3.AccessKeyId"] == "fake-access-key"
+        assert (
+            config["com.mendix.storage.s3.SecretAccessKey"]
+            == "fake-secret-access-key"
+        )
+        assert (
+            config["com.mendix.storage.s3.BucketName"]
+            == "fake-key-prefix-from-tvm-vcap"
+        )
+        assert (
+            config["com.mendix.storage.s3.EndPoint"]
+            == "fake-s3-endpoint-from-tvm-vcap/fake-bucket-from-tvm-vcap"
+        )
+
     """
-    Configure STS for Mendix versions 8.18.11+ and 9.6+ when
-    CERTIFICATE_AUTHORITIES is configured
+    Configure STS for Mendix versions 7.23.30+, 8.18.11+, and 9.6+
+    when CERTIFICATE_AUTHORITIES and/or CLIENT_CERTIFICATES is configured
     """
 
     @mock.patch(
@@ -225,6 +246,42 @@ class TestCaseS3BlobStoreDryRun(TestCase):
     def test_s3_blobstore_tvm_runtime_with_sts_and_cas_fixed(self):
         vcap = json.loads(S3_TVM_STORAGE_VCAP_EXAMPLE)
         os.environ["CERTIFICATE_AUTHORITIES"] = "fake-certificate-authority"
+        config = storage._get_s3_specific_config(vcap)
+        assert (
+            config["com.mendix.core.StorageService"] == "com.mendix.storage.s3"
+        )
+        assert (
+            config["com.mendix.storage.s3.tokenService.Url"]
+            == "https://tvm-endpoint.mendix.com/v1/gettoken"
+        )
+        assert (
+            config["com.mendix.storage.s3.tokenService.Username"]
+            == "fake-username-from-tvm-vcap"
+        )
+        assert (
+            config["com.mendix.storage.s3.tokenService.Password"]
+            == "fake-password-from-tvm-vcap"
+        )
+        assert (
+            config["com.mendix.storage.s3.tokenService.RefreshPercentage"]
+            == 80
+        )
+        assert (
+            config["com.mendix.storage.s3.tokenService.RetryIntervalInSeconds"]
+            == 10
+        )
+        assert (
+            config["com.mendix.storage.s3.BucketName"]
+            == "fake-key-prefix-from-tvm-vcap"
+        )
+        assert (
+            config["com.mendix.storage.s3.EndPoint"]
+            == "fake-s3-endpoint-from-tvm-vcap/fake-bucket-from-tvm-vcap"
+        )
+
+    def test_s3_blobstore_tvm_runtime_with_sts_and_ccs_fixed(self):
+        vcap = json.loads(S3_TVM_STORAGE_VCAP_EXAMPLE)
+        os.environ["CLIENT_CERTIFICATES"] = "fake-client-certificate"
         config = storage._get_s3_specific_config(vcap)
         assert (
             config["com.mendix.core.StorageService"] == "com.mendix.storage.s3"

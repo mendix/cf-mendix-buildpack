@@ -137,7 +137,7 @@ def get_micrometer_metrics_url():
 
     """
     use_trends_forwarder = strtobool(
-        os.getenv("USE_TRENDS_FORWARDER", default="false")
+        os.getenv("USE_TRENDS_FORWARDER", default="true")
     )
 
     trends_forwarder_url = os.getenv("TRENDS_FORWARDER_URL", default="")
