@@ -30,6 +30,7 @@ Release notes are available for the [buildpack](https://github.com/mendix/cf-men
 - [Java Configuration](#java-configuration)
   - [Java Version](#java-version)
   - [Java Heap Size](#java-heap-size)
+  - [Java Max Metaspace Size](#java-max-metaspace-size)
   - [Java Virtual Machine (JVM) Settings](#java-virtual-machine-jvm-settings)
   - [Certificate Authorities](#certificate-authorities)
 - [Built-In Proxy Configuration](#built-in-proxy-configuration)
@@ -435,6 +436,14 @@ The Java heap size is configured automatically based on best practices. You can 
 ```shell
 cf set-env <YOUR_APP> HEAP_SIZE 512M
 ```
+### Java Max Metaspace Size
+
+The Java Max Metaspace Size is configured automatically based on best practices. You can tweak this to your needs by using another environment variable, in which case it is used directly.
+
+```shell
+cf set-env <YOUR_APP> MAX_METASPACE_SIZE 512M
+```
+
 
 ### Java Virtual Machine (JVM) Settings
 

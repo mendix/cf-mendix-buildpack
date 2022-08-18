@@ -305,6 +305,10 @@ def _set_jvm_memory(m2ee, vcap):
     heap_size = str(heap_size) + "M"
 
     env_heap_size = os.environ.get("HEAP_SIZE")
+    max_metaspace_size = os.getenv("MAX_METASPACE_SIZE", "256M")
+    
+    util.upsert_javaopts(m2ee, "-XX:MaxMetaspaceSize=%s" % max_metaspace_size)
+
     if env_heap_size:
         if int(env_heap_size[:-1]) < limit:
             heap_size = env_heap_size
@@ -318,8 +322,6 @@ def _set_jvm_memory(m2ee, vcap):
 
     util.upsert_javaopts(m2ee, "-Xmx%s" % heap_size)
     util.upsert_javaopts(m2ee, "-Xms%s" % heap_size)
-
-    util.upsert_javaopts(m2ee, "-XX:MaxMetaspaceSize=256M")
 
     logging.debug("Java heap size set to %s", heap_size)
 
