@@ -146,7 +146,23 @@ def is_source_push():
         return False
 
 
+def cleanup_dependency_cache(cached_dir, dependency_list):
+    # get directory structure
+    for root, dirs, files in os.walk(cached_dir):
+        for file in files:
+            file_full_path = os.path.join(root, file)
+            logging.debug("dependency in cache folder: [{}]".format(file_full_path))
+            if file_full_path not in dependency_list:
+                # delete from cache
+                os.remove(file_full_path)
+                logging.debug(
+                    "deleted unused dependency [{}] from [{}]...".format(file_full_path, root)
+                )
+
+
 if __name__ == "__main__":
+    util.initialize_globals()
+
     logging.basicConfig(
         level=util.get_buildpack_loglevel(),
         stream=sys.stdout,
@@ -207,3 +223,5 @@ if __name__ == "__main__":
     databroker.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)
     nginx.stage(BUILDPACK_DIR, BUILD_DIR, CACHE_DIR)
     logging.info("Mendix Cloud Foundry Buildpack staging completed")
+
+    cleanup_dependency_cache(CACHE_DIR, util.CACHED_DEPENDENCIES)
