@@ -75,7 +75,12 @@ DEPENDENCY_ALIAS_KEY = "alias"
 DEPENDENCY_VERSION_KEY = "version"
 DEPENDENCY_FILE = "dependencies.yml"
 DO_NOT_RECURSE_FIELDS = [DEPENDENCY_ALIAS_KEY, DEPENDENCY_NAME_KEY]
+CACHED_DEPENDENCIES = []
 
+
+def initialize_globals():
+    global CACHED_DEPENDENCIES
+    CACHED_DEPENDENCIES = []
 
 # Returns whether an object is a "variable" / literal in a dependency definition
 def _is_dependency_literal(o):
@@ -339,6 +344,7 @@ def resolve_dependency(
 
     vendored_location = _find_file_in_directory(file_name, vendor_dir)
     cached_location = os.path.join(cache_dir, file_name)
+    CACHED_DEPENDENCIES.append(cached_location)
     if not is_path_accessible(vendored_location):
         if ignore_cache or not is_path_accessible(cached_location):
             download(url, cached_location)
