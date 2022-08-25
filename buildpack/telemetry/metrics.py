@@ -467,7 +467,22 @@ class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
 
     def _inject_database_stats(self, stats):
         database_stats = {}
-        index_size = self._get_database_index_size()
+        stats["database"] = database_stats
+
+        try:
+            index_size = self._get_database_index_size()
+        except psycopg2.OperationalError as err:
+            # For basic apps using Aurora serverless, db connections
+            # are closed every day. Handle this db connection error gracefully
+            # and need not proceed collecting db stats for this round.
+            # https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless.html#aurora-serverless.limitations
+            # The database connection will be refreshed in the next round
+            # of stats collection.
+            logging.warn(
+                "Database is currently not reachable. Failed to gather database stats."
+            )
+            return stats
+
         if index_size:
             database_stats["indexes_size"] = index_size
         storage = self._get_database_storage()
@@ -479,7 +494,6 @@ class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
         mutations_stats = self._get_database_mutations()
         if mutations_stats:
             database_stats.update(mutations_stats)
-        stats["database"] = database_stats
         tcp_latency = self._get_database_tcp_latency()
         if tcp_latency:
             database_stats["tcp_latency"] = tcp_latency
