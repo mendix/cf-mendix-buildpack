@@ -7,3 +7,4 @@ omegaconf==2.1.1
 psycopg2-binary==2.9.3
 pyyaml==6.0
 requests==2.27.1
+cloudfoundry-client==1.30.0

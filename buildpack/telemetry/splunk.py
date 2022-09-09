@@ -42,6 +42,8 @@ def print_ready_message():
         return
 
     logging.info("Splunk has been configured successfully.")
+    from buildpack.telemetry import rtr_logs
+    rtr_logs.main()
 
 
 def print_failed_message():
