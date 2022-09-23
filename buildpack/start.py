@@ -146,7 +146,7 @@ if __name__ == "__main__":
         # Update runtime configuration based on component configuration
         database.update_config(m2ee)
         storage.update_config(m2ee)
-        java.update_config(m2ee, util.get_vcap_data(), runtime_version)
+        java.update_config(m2ee, application_name, util.get_vcap_data(), runtime_version)
         newrelic.update_config(m2ee, application_name)
         appdynamics.update_config(m2ee)
         dynatrace.update_config(m2ee, application_name)

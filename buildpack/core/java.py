@@ -1,3 +1,4 @@
+from email.mime import application
 import json
 import logging
 import os
@@ -306,7 +307,7 @@ def _set_jvm_memory(m2ee, vcap):
 
     env_heap_size = os.environ.get("HEAP_SIZE")
     max_metaspace_size = os.getenv("MAX_METASPACE_SIZE", "256M")
-    
+
     util.upsert_javaopts(m2ee, "-XX:MaxMetaspaceSize=%s" % max_metaspace_size)
 
     if env_heap_size:
@@ -333,7 +334,12 @@ def _set_jvm_memory(m2ee, vcap):
         )
 
 
-def update_config(m2ee, vcap_data, runtime_version):
+def _set_application_name(m2ee, application_name):
+    util.upsert_javaopts(m2ee, "-DapplicationName=%s", application_name)
+
+
+def update_config(m2ee, application_name, vcap_data, runtime_version):
+    _set_application_name(m2ee, application_name)
     _set_jvm_memory(m2ee, vcap_data)
     _set_jvm_locale(m2ee, get_java_major_version(runtime_version))
     _set_user_provided_java_options(m2ee)
