@@ -335,7 +335,7 @@ def _set_jvm_memory(m2ee, vcap):
 
 
 def _set_application_name(m2ee, application_name):
-    util.upsert_javaopts(m2ee, "-DapplicationName=%s", application_name)
+    util.upsert_javaopts(m2ee, "-DapplicationName=%s" % application_name)
 
 
 def update_config(m2ee, application_name, vcap_data, runtime_version):
