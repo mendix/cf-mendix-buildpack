@@ -80,6 +80,7 @@ METRICS_REGISTRIES_KEY = "Metrics.Registries"
 # from the micrometer library via the telegraf agent
 MXVERSION_MICROMETER = MXVersion("9.7.0")
 
+
 # Handler for exit(0) and exit(1)
 def _stop():
     _emit(jvm={"crash": 1.0})
@@ -284,6 +285,7 @@ class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
         self.micrometer_metrics_enabled = micrometer_metrics_enabled(
             runtime.get_runtime_version()
         )
+
         if bypass_loggregator():
             logging.info("Metrics are logged direct to metrics server.")
             self.emitter = MetricsServerEmitter(metrics_url=get_metrics_url())
@@ -442,6 +444,16 @@ class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
             stats["mendix_runtime"][
                 "critical_logs_count"
             ] = critical_logs_count
+        return stats
+
+    def _inject_jvm_failure_metrics(self, stats):
+
+        if "jvm" not in stats:
+            stats["jvm"] = {}
+
+        stats["jvm"]["errors"] = 0.
+        stats["jvm"]["ooms"] = 0.
+
         return stats
 
     def _inject_storage_stats(self, stats):
@@ -681,6 +693,7 @@ class PaidAppsMetricsEmitterThread(BaseMetricsEmitterThread):
         else:
             selected_stats.append(self._inject_smap_stats)
         selected_stats.append(self._inject_critical_log_stats)
+        selected_stats.append(self._inject_jvm_failure_metrics)
 
         return selected_stats
 
