@@ -1,4 +1,3 @@
-import atexit
 import datetime
 import json
 import logging
@@ -81,11 +80,6 @@ METRICS_REGISTRIES_KEY = "Metrics.Registries"
 MXVERSION_MICROMETER = MXVersion("9.7.0")
 
 
-# Handler for exit(0) and exit(1)
-def _stop():
-    _emit(jvm={"crash": 1.0})
-
-
 # Handler for user signals
 # Initialized from within the start procedure in start.py
 def handle_sigusr(_signo, _stack_frame):
@@ -114,7 +108,6 @@ def int_or_default(value, default=0):
 def run(m2ee):
     metrics_interval = os.getenv("METRICS_INTERVAL")
     if metrics_interval:
-        atexit.register(_stop)
         if util.is_free_app():
             thread = FreeAppsMetricsEmitterThread(int(metrics_interval), m2ee)
         else:
