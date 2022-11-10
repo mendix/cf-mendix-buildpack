@@ -53,7 +53,8 @@ dependencies:
         - "11": 11.0.15
   logs:
     mendix-logfilter:
-      artifact: logs/mendix-logfilter.tar.gz
+      artifact: logs/mendix-logfilter-{{version}}.tar.gz
+      version: 0.0.2
   mendix:
     mx-agent:
       artifact: mx-agent/mx-agent-v{{ version }}.jar
