@@ -10,7 +10,6 @@ from buildpack.infrastructure import database
 from buildpack.telemetry import (
     appdynamics,
     datadog,
-    dynatrace,
     fluentbit,
     splunk,
     logs,
@@ -205,7 +204,6 @@ if __name__ == "__main__":
         java_version,
     )
     appdynamics.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)
-    dynatrace.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)
     splunk.stage()
     fluentbit.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)
     newrelic.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)

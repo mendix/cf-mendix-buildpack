@@ -724,15 +724,12 @@ The most important metrics ( `before_xid_wraparound` , `connections` , `database
 
 To enable Dynatrace, configure the following environment variables:
 
-| Environment Variable | Description                                                                                                                                                    |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DT_PAAS_TOKEN`      | The token for integrating your Dynatrace environment with Cloud Foundry. You can find it in the deploy Dynatrace section within your environment.              |
-| `DT_SAAS_URL`        | Monitoring endpoint url of the Dynatrace service                                                                                                               |
-| `DT_TENANT`          | Your Dynatrace environment ID is the unique identifier of your Dynatrace environment. You can find it in the deploy Dynatrace section within your environment. |
+| Environment Variable | Description                                                                                   |
+| -------------------- | ----------------------------------------------------------------------------------------------|
+| `DT_PAAS_TOKEN`      | The token for integrating your Dynatrace environment with your Mendix app                     |
+| `DT_SAAS_URL`        | Monitoring endpoint url of the Dynatrace service                                              |
 
-By setting these environment variables automatically the Dynatrace OneAgent will be loaded in the container. 
-
-OneAgent will be able to measure all J2EE related Metrics from the Application. See OneAgent documention for more details. 
+By setting these environment variables, ingestion of metrics to Dynatrace will start.
 
 ### Logging
 The buildpack provides several options to configure logging.

@@ -24,10 +24,6 @@ dependencies:
     trace-agent:
       artifact: datadog/dd-java-agent-{{ version }}.jar
       version: 0.101.0
-  dynatrace:
-    agent:
-      artifact: "{{ url }}/e/{{ environment }}/api/v1/deployment/installer/agent/unix/paas/latest?include=java&bitness=64&Api-Token={{ token }}"
-      managed: false
   fluentbit:
     artifact: fluentbit/fluent-bit-{{ version }}.tar.gz
     version: 1.9.2
