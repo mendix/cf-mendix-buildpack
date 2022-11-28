@@ -25,7 +25,9 @@ CLIENT_CONFIG_URL_KEY = "ClientConfigUrl"
 
 def update_config(m2ee, vcap_services_data):
     # if kafka is present in vcap services upsert Business Events constants
-    util.upsert_microflow_constants(m2ee, _get_config(vcap_services_data))
+    existing_constants = util.get_microflow_constants(m2ee)
+    be_config = _get_config(vcap_services_data, existing_constants)
+    util.upsert_microflow_constants(m2ee, be_config)
     logging.debug("Business Events config added to MicroflowConstants")
 
 
@@ -44,7 +46,17 @@ def _get_client_config(url, auth_token, version):
     return resp.text
 
 
-def _get_config(vcap_services):
+def _configure_business_events_metrics(be_config, existing_constants):
+    if f"{CONSTANTS_PREFIX}.GenerateMetrics" in existing_constants:
+        if util.is_free_app():
+            be_config[f"{CONSTANTS_PREFIX}.GenerateMetrics"] = "false"
+            be_config[f"{CONSTANTS_PREFIX}.EnableHeartbeat"] = "false"
+        else:
+            be_config[f"{CONSTANTS_PREFIX}.GenerateMetrics"] = "true"
+            be_config[f"{CONSTANTS_PREFIX}.EnableHeartbeat"] = "true"
+
+
+def _get_config(vcap_services, existing_constants):
     be_config = {}
     try:
         for service_name, service_creds in vcap_services.items():
@@ -85,6 +97,11 @@ def _get_config(vcap_services):
                         )
                 else:
                     logging.error("Business Events: configuration is empty")
+
+                # Update Business Events constants for metrics
+                _configure_business_events_metrics(
+                    be_config, existing_constants
+                )
     except Exception as ex:
         logging.error(
             "Business Events: error reading deployment configuration "
