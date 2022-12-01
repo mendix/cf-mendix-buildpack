@@ -138,13 +138,42 @@ class TestDataBrokerBusinessEvents(unittest.TestCase):
         }
     """
 
+    module_constants_with_metrics = {
+        "BusinessEvents.ApplyLimits": "False",
+        "BusinessEvents.ChannelName": "superchannel",
+        "BusinessEvents.ClientConfiguration": expected_client_config,
+        "BusinessEvents.Password": "itsasecret",
+        "BusinessEvents.PublishedEventEnvironmentMap": "",
+        "BusinessEvents.ServerUrl": "0.0.0.0:0000",
+        "BusinessEvents.SummaryLogIntervalSeconds": 120,
+        "BusinessEvents.TruststoreLocation": "",
+        "BusinessEvents.TruststorePassword": "",
+        "BusinessEvents.UserName": "awesomeuser",
+        "BusinessEvents.EnableHeartbeat": "True",
+        "BusinessEvents.GenerateMetrics": "True",
+    }
+
+    module_constants_without_metrics = {
+        "BusinessEvents.ApplyLimits": "False",
+        "BusinessEvents.ChannelName": "superchannel",
+        "BusinessEvents.ClientConfiguration": expected_client_config,
+        "BusinessEvents.Password": "itsasecret",
+        "BusinessEvents.PublishedEventEnvironmentMap": "",
+        "BusinessEvents.ServerUrl": "0.0.0.0:0000",
+        "BusinessEvents.SummaryLogIntervalSeconds": 120,
+        "BusinessEvents.TruststoreLocation": "",
+        "BusinessEvents.TruststorePassword": "",
+        "BusinessEvents.UserName": "awesomeuser",
+    }
+
     def _verify_vcap_info(self, is_apply_limits_present=True):
         with mock.patch(
             "buildpack.databroker.business_events._get_client_config",
             mock.MagicMock(return_value=self.expected_client_config),
         ):
             business_events_cfg = business_events._get_config(
-                util.get_vcap_services_data()
+                util.get_vcap_services_data(),
+                self.module_constants_with_metrics,
             )
         prefix = business_events.CONSTANTS_PREFIX
 
@@ -173,5 +202,30 @@ class TestDataBrokerBusinessEvents(unittest.TestCase):
         os.environ["VCAP_SERVICES"] = self.kafka_shared_vcap_with_null_creds
         # make sure any exceptions in the business events does not cause any errors
         business_events_cfg = business_events._get_config(
-            util.get_vcap_services_data()
+            util.get_vcap_services_data(), self.module_constants_with_metrics
         )
+
+    def test_business_events_metrics_constants_config_free(self):
+        be_config = {}
+        os.environ["PROFILE"] = "free"
+        business_events._configure_business_events_metrics(
+            be_config, self.module_constants_with_metrics
+        )
+        assert be_config["BusinessEvents.GenerateMetrics"] == "false"
+        assert be_config["BusinessEvents.EnableHeartbeat"] == "false"
+
+    def test_business_events_metrics_constants_config_free(self):
+        be_config = {}
+        business_events._configure_business_events_metrics(
+            be_config, self.module_constants_with_metrics
+        )
+        assert be_config["BusinessEvents.GenerateMetrics"] == "true"
+        assert be_config["BusinessEvents.EnableHeartbeat"] == "true"
+
+    def test_business_events_no_metrics_constants_config(self):
+        be_config = {}
+        business_events._configure_business_events_metrics(
+            be_config, self.module_constants_without_metrics
+        )
+        assert not "BusinessEvents.GenerateMetrics" in be_config
+        assert not "BusinessEvents.EnableHeartbeat" in be_config
