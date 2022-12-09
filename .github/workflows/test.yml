@@ -16,7 +16,7 @@ concurrency:
 jobs:
   pre:
     name: Prepare workflow run
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     outputs:
       skip: ${{ steps.skip-check.outputs.should_skip }}
     steps:

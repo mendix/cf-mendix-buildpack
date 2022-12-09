@@ -18,7 +18,7 @@ on:
 jobs:
   get-version:
     name: Get semantic versions
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     outputs:
       version_tag: ${{ steps.autogenerate-version.outputs.version_tag }}
       current_version_tag: ${{ steps.get-current-version.outputs.current_version_tag}}
