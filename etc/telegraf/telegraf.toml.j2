@@ -312,6 +312,14 @@
 # Ignore any micrometer_metrics
     [outputs.dynatrace.tagdrop]
         micrometer_metrics = ["true"]
+#
+# Optional dimensions to be added to every metric
+    [outputs.dynatrace.default_dimensions]
+        app = "{{ app_name }}"
+        instance_index = "{{ cf_instance_index }}"
+        {% if dynatrace_env %}
+        env = "{{ dynatrace_env }}"
+        {% endif %}
 {% endif %}
 
 {% if micrometer_metrics %}

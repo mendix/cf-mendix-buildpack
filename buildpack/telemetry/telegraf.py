@@ -259,6 +259,7 @@ def update_config(m2ee, app_name):
         dynatrace_enabled=dynatrace.is_enabled(),
         dynatrace_ingest_url=dynatrace_ingest_url,
         dynatrace_token=dynatrace_token,
+        dynatrace_env=os.getenv('DT_ENV'),
     )
 
     logging.debug("Writing Telegraf configuration file...")
