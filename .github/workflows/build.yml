@@ -18,7 +18,7 @@ on:
 jobs:
   get-version:
     name: Get semantic versions
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     outputs:
       version_tag: ${{ steps.autogenerate-version.outputs.version_tag }}
       current_version_tag: ${{ steps.get-current-version.outputs.current_version_tag}}
@@ -42,7 +42,7 @@ jobs:
   build:
     name: Build
     needs: get-version
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python

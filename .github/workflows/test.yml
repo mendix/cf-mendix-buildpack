@@ -16,7 +16,7 @@ concurrency:
 jobs:
   pre:
     name: Prepare workflow run
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     outputs:
       skip: ${{ steps.skip-check.outputs.should_skip }}
     steps:
@@ -49,7 +49,7 @@ jobs:
   integration-test:      
     needs: [build, setup-integration-tests]
     name: Run integration tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     timeout-minutes: 30
     strategy:
       matrix: ${{fromJson(needs.setup-integration-tests.outputs.matrix)}}
