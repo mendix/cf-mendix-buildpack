@@ -42,13 +42,13 @@ jobs:
   build:
     name: Build
     needs: get-version
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
-          python-version: 3.6
+          python-version: 3.6.15
           cache: pip
       - name: Install Python requirements
         run: make install_requirements
