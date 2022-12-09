@@ -37,6 +37,13 @@ INFLUX_REGISTRY = {
         "step": "10s",
     },
     "filters": [
+        # Login metrics needs to be enabled explicitly as it's disabled
+        # by default
+        {
+            "type": "nameStartsWith",
+            "result": "accept",
+            "values": ["mx.runtime.user.login"],
+        },
         # Filter out irrelevant metrics to reduce
         # the payload size passed to TSS
         # https://docs.mendix.com/refguide/metrics#filters
@@ -53,7 +60,7 @@ STATSD_REGISTRY = {
     "settings": {"port": datadog.get_statsd_port()},
 }
 
-# For freeapps we push only the session metrics
+# For freeapps we push only the session & login metrics
 FREEAPPS_METRICS_REGISTRY = [
     {
         "type": "influx",
@@ -66,7 +73,10 @@ FREEAPPS_METRICS_REGISTRY = [
             {
                 "type": "nameStartsWith",
                 "result": "accept",
-                "values": ["mx.runtime.stats.sessions"],
+                "values": [
+                    "mx.runtime.stats.sessions",
+                    "mx.runtime.user.login",
+                ],
             },
             {"type": "nameStartsWith", "result": "deny", "values": [""]},
         ],
@@ -444,8 +454,8 @@ class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
         if "jvm" not in stats:
             stats["jvm"] = {}
 
-        stats["jvm"]["errors"] = 0.
-        stats["jvm"]["ooms"] = 0.
+        stats["jvm"]["errors"] = 0.0
+        stats["jvm"]["ooms"] = 0.0
 
         return stats
 
