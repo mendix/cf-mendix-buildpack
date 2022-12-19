@@ -184,6 +184,20 @@ def _get_db_config():
     return None
 
 
+def _get_dynatrace_config(app_name):
+    token, ingest_url = dynatrace.get_ingestion_info()
+    tags = util.get_tags()
+    return {
+        "token": token,
+        "ingest_url": ingest_url,
+        "dimensions": {
+            "app": app_name,
+            "instance_index": _get_app_index(),
+            **tags
+        }
+    }
+
+
 def _fix_metrics_registries_config(m2ee):
     # Metrics.Registries is a nested JSON entry. As a result, when we read
     # from the environment, it is not a list of registries but a string.
@@ -257,9 +271,7 @@ def update_config(m2ee, app_name):
         appdynamics_enabled=appdynamics.machine_agent_enabled(),
         appdynamics_output_script_path=APPDYNAMICS_OUTPUT_SCRIPT_PATH,
         dynatrace_enabled=dynatrace.is_enabled(),
-        dynatrace_ingest_url=dynatrace_ingest_url,
-        dynatrace_token=dynatrace_token,
-        dynatrace_env=os.getenv('DT_ENV'),
+        dynatrace_config=_get_dynatrace_config(app_name),
     )
 
     logging.debug("Writing Telegraf configuration file...")
