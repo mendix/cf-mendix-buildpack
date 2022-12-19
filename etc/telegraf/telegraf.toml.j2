@@ -284,6 +284,12 @@
 {% endfor %}
 {% endif %}
 
+[[outputs.file]]
+  files = ["stdout"]
+  data_format = "influx"
+  [outputs.file.tagdrop]
+      micrometer_metrics = ["true"]
+
 {% if appdynamics_enabled %}
 # if AppDynamics is enabled this 'exec' output is activated.
 # The command (python script) reads the metrics from STDIN and transform it
