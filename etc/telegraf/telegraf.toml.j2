@@ -334,9 +334,8 @@
   data_format = "json"
   json_timestamp_units = "1ns"
 
-  # tagexlude drops the custom tag set for micrometer metrics
-  # and any other non-relevant tags
-  tagexclude = ["micrometer_metrics", "host", "metric_type"]
+  # tagexlude drops any non-relevant tags
+  tagexclude = ["host"]
 
   ## Additional HTTP headers
   [outputs.http.headers]
