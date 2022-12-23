@@ -132,6 +132,36 @@ class TestCaseS3BlobStoreDryRun(TestCase):
 
     @mock.patch(
         "buildpack.core.runtime.get_runtime_version",
+        mock.MagicMock(return_value=MXVersion(7.23)),
+    )
+    @mock.patch("buildpack.infrastructure.storage.requests")
+    def test_s3_blobstore_tvm_runtime_without_sts_getcredentials_disabled(
+        self, mock_requests
+    ):
+        mock_response = mock.MagicMock()
+        mock_response.status_code = 403
+        mock_response.content = b"""{"Error":{"Status":403,
+        "Message":"GetCredentials not supported"}}"""
+        mock_response.json.return_value = {
+            "Error": {
+                "Status": 403,
+                "Message": "GetCredentials not supported",
+            }
+        }
+
+        mock_requests.get.return_value = mock_response
+
+        vcap = json.loads(S3_TVM_STORAGE_VCAP_EXAMPLE)
+        with self.assertRaises(Exception) as context:
+            storage._get_s3_specific_config(vcap)
+
+        self.assertTrue(
+            "failed to get IAM credential from TVM for tvm_user"
+            in str(context.exception)
+        )
+
+    @mock.patch(
+        "buildpack.core.runtime.get_runtime_version",
         mock.MagicMock(return_value=MXVersion(9.2)),
     )
     def test_s3_blobstore_tvm_runtime_with_sts(self):
