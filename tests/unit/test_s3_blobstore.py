@@ -99,13 +99,18 @@ class TestCaseS3BlobStoreDryRun(TestCase):
         "buildpack.core.runtime.get_runtime_version",
         mock.MagicMock(return_value=MXVersion(7.23)),
     )
-    @mock.patch(
-        "buildpack.infrastructure.storage._get_credentials_from_tvm",
-        mock.MagicMock(
-            return_value=("fake-access-key", "fake-secret-access-key")
-        ),
-    )
-    def test_s3_blobstore_tvm_runtime_without_sts(self):
+    @mock.patch("buildpack.infrastructure.storage.requests")
+    def test_s3_blobstore_tvm_runtime_without_sts(self, mock_requests):
+        mock_response = mock.MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "AccessKeyId": "fake-access-key",
+            "SecretAccessKey": "fake-secret-access-key",
+            "SchemaVersion": "v1",
+        }
+
+        mock_requests.get.return_value = mock_response
+
         vcap = json.loads(S3_TVM_STORAGE_VCAP_EXAMPLE)
         config = storage._get_s3_specific_config(vcap)
         assert (
@@ -174,13 +179,20 @@ class TestCaseS3BlobStoreDryRun(TestCase):
         "buildpack.core.runtime.get_runtime_version",
         mock.MagicMock(return_value=MXVersion(9.2)),
     )
-    @mock.patch(
-        "buildpack.infrastructure.storage._get_credentials_from_tvm",
-        mock.MagicMock(
-            return_value=("fake-access-key", "fake-secret-access-key")
-        ),
-    )
-    def test_s3_blobstore_tvm_runtime_with_sts_and_cas_broken(self):
+    @mock.patch("buildpack.infrastructure.storage.requests")
+    def test_s3_blobstore_tvm_runtime_with_sts_and_cas_broken(
+        self, mock_requests
+    ):
+        mock_response = mock.MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "AccessKeyId": "fake-access-key",
+            "SecretAccessKey": "fake-secret-access-key",
+            "SchemaVersion": "v1",
+        }
+
+        mock_requests.get.return_value = mock_response
+
         vcap = json.loads(S3_TVM_STORAGE_VCAP_EXAMPLE)
         os.environ["CERTIFICATE_AUTHORITIES"] = "fake-certificate-authority"
         config = storage._get_s3_specific_config(vcap)
@@ -205,13 +217,20 @@ class TestCaseS3BlobStoreDryRun(TestCase):
         "buildpack.core.runtime.get_runtime_version",
         mock.MagicMock(return_value=MXVersion(9.2)),
     )
-    @mock.patch(
-        "buildpack.infrastructure.storage._get_credentials_from_tvm",
-        mock.MagicMock(
-            return_value=("fake-access-key", "fake-secret-access-key")
-        ),
-    )
-    def test_s3_blobstore_tvm_runtime_with_sts_and_ccs_broken(self):
+    @mock.patch("buildpack.infrastructure.storage.requests")
+    def test_s3_blobstore_tvm_runtime_with_sts_and_ccs_broken(
+        self, mock_requests
+    ):
+        mock_response = mock.MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "AccessKeyId": "fake-access-key",
+            "SecretAccessKey": "fake-secret-access-key",
+            "SchemaVersion": "v1",
+        }
+
+        mock_requests.get.return_value = mock_response
+
         vcap = json.loads(S3_TVM_STORAGE_VCAP_EXAMPLE)
         os.environ["CLIENT_CERTIFICATES"] = "fake-client-certificate"
         config = storage._get_s3_specific_config(vcap)
