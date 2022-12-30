@@ -129,12 +129,6 @@ class TestCaseS3BlobStoreDryRun(TestCase):
         "buildpack.core.runtime.get_runtime_version",
         mock.MagicMock(return_value=MXVersion(9.2)),
     )
-    @mock.patch(
-        "buildpack.infrastructure.storage._get_credentials_from_tvm",
-        mock.MagicMock(
-            return_value=("fake-access-key", "fake-secret-access-key")
-        ),
-    )
     def test_s3_blobstore_tvm_runtime_with_sts(self):
         vcap = json.loads(S3_TVM_STORAGE_VCAP_EXAMPLE)
         config = storage._get_s3_specific_config(vcap)
@@ -246,12 +240,6 @@ class TestCaseS3BlobStoreDryRun(TestCase):
     @mock.patch(
         "buildpack.core.runtime.get_runtime_version",
         mock.MagicMock(return_value=MXVersion("9.6.1")),
-    )
-    @mock.patch(
-        "buildpack.infrastructure.storage._get_credentials_from_tvm",
-        mock.MagicMock(
-            return_value=("fake-access-key", "fake-secret-access-key")
-        ),
     )
     def test_s3_blobstore_tvm_runtime_with_sts_and_cas_fixed(self):
         vcap = json.loads(S3_TVM_STORAGE_VCAP_EXAMPLE)
