@@ -39,7 +39,7 @@
 {% endif %}
 
 {% if db_config %}
-{% if not (datadog_api_key or appdynamics_enabled) %}
+{% if not (datadog_api_key or appdynamics_enabled or dynatrace_enabled) %}
 # PostgreSQL input (standard)
 [[inputs.postgresql]]
     address = "postgres://{{ db_config['DatabaseUserName'] }}:{{ db_config['DatabasePassword'] }}@{{ db_config['DatabaseHost'] }}/{{ db_config['DatabaseName'] }}"
@@ -295,6 +295,29 @@
     # Ignore any micrometer_metrics
     [outputs.exec.tagdrop]
         micrometer_metrics = ["true"]
+{% endif %}
+
+{% if dynatrace_enabled %}
+[[outputs.dynatrace]]
+# Your Dynatrace environment URL.
+# For Dynatrace SaaS environments the URL scheme is "https://{your-environment-id}.live.dynatrace.com/api/v2/metrics/ingest"
+# For Dynatrace Managed environments the URL scheme is "https://{your-domain}/e/{your-environment-id}/api/v2/metrics/ingest"
+    url = "{{ dynatrace_config['ingest_url'] }}"
+#
+# Your Dynatrace API token.
+# Create an API token within your Dynatrace environment, by navigating to Access Tokens > Generate new token
+# The API token needs "Ingest metrics" scope permission.
+    api_token = "{{ dynatrace_config['token'] }}"
+#
+# Ignore any micrometer_metrics
+    [outputs.dynatrace.tagdrop]
+        micrometer_metrics = ["true"]
+#
+# Optional dimensions to be added to every metric
+    [outputs.dynatrace.default_dimensions]
+        {% for key, value in dynatrace_config['dimensions'].items() %}
+        {{ key }} = "{{ value }}"
+        {% endfor %}
 {% endif %}
 
 {% if micrometer_metrics %}

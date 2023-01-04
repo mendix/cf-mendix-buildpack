@@ -17,7 +17,7 @@ from buildpack.core import runtime
 from buildpack.infrastructure import database
 from jinja2 import Template
 
-from . import datadog, metrics, mx_java_agent, appdynamics
+from . import datadog, metrics, mx_java_agent, appdynamics, dynatrace
 
 NAMESPACE = "telegraf"
 DEPENDENCY = "%s.agent" % NAMESPACE
@@ -91,6 +91,7 @@ def include_db_metrics():
         is_appmetrics
         or datadog.is_enabled()
         or appdynamics.machine_agent_enabled()
+        or dynatrace.is_enabled()
     ):
         # For customers who have Datadog or AppDynamics or APPMETRICS_TARGET enabled,
         # we always include the database metrics. They can opt out
@@ -109,6 +110,7 @@ def is_enabled(runtime_version):
         metrics.get_appmetrics_target() is not None
         or datadog.is_enabled()
         or appdynamics.machine_agent_enabled()
+        or dynatrace.is_enabled()
         or metrics.micrometer_metrics_enabled(runtime_version)
     )
 
@@ -182,6 +184,20 @@ def _get_db_config():
     return None
 
 
+def _get_dynatrace_config(app_name):
+    token, ingest_url = dynatrace.get_ingestion_info()
+    tags = util.get_tags()
+    return {
+        "token": token,
+        "ingest_url": ingest_url,
+        "dimensions": {
+            "app": app_name,
+            "instance_index": _get_app_index(),
+            **tags
+        }
+    }
+
+
 def _fix_metrics_registries_config(m2ee):
     # Metrics.Registries is a nested JSON entry. As a result, when we read
     # from the environment, it is not a list of registries but a string.
@@ -231,6 +247,8 @@ def update_config(m2ee, app_name):
         # app and / or service tag not set
         tags["service"] = datadog.get_service_tag()
 
+    dynatrace_token, dynatrace_ingest_url = dynatrace.get_ingestion_info()
+
     with open(template_path, "r") as file_:
         template = Template(file_.read(), trim_blocks=True, lstrip_blocks=True)
     rendered = template.render(
@@ -252,6 +270,8 @@ def update_config(m2ee, app_name):
         # For Telegraf config only AppDynamics Machine Agent makes sense.
         appdynamics_enabled=appdynamics.machine_agent_enabled(),
         appdynamics_output_script_path=APPDYNAMICS_OUTPUT_SCRIPT_PATH,
+        dynatrace_enabled=dynatrace.is_enabled(),
+        dynatrace_config=_get_dynatrace_config(app_name),
     )
 
     logging.debug("Writing Telegraf configuration file...")
