@@ -197,10 +197,20 @@ def _get_credentials_from_tvm(tvm_endpoint, tvm_username, tvm_password):
             auth=(tvm_username, tvm_password),
         )
 
-        if response.ok:
+        if 200 <= response.status_code <= 299:
             break
-        elif not response.ok and retry == 0:
-            logging.error("Failed to get IAM credential from TVM")
+        elif 400 <= response.status_code <= 499:
+            message = response.content.decode("UTF-8").strip()
+            try:
+                message = json.loads(message)["Error"]["Message"]
+            except Exception:
+                pass
+
+            logging.error(
+                "Failed to get IAM credential from TVM (HTTP {}): {}".format(
+                    response.status_code, message
+                )
+            )
             raise Exception(
                 "failed to get IAM credential from TVM for tvm_user %s"
                 % tvm_username
@@ -214,6 +224,11 @@ def _get_credentials_from_tvm(tvm_endpoint, tvm_username, tvm_password):
                 )
             )
             logging.error("Number of retries left = {}".format(retry))
+            if retry == 0:
+                raise Exception(
+                    "failed to get IAM credential from TVM for tvm_user %s"
+                    % tvm_username
+                )
 
     result = response.json()
     if "AccessKeyId" not in result:
