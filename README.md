@@ -720,19 +720,20 @@ The most important metrics ( `before_xid_wraparound` , `connections` , `database
 
 ### Dynatrace
 
-[Dynatrace SaaS/Managed](http://www.dynatrace.com/cloud-foundry/) is your full stack monitoring solution - powered by artificial intelligence. Dynatrace SaaS/Managed allows you insights into all application requests from the users click in the browser down to the database statement and code-level.
-
+Dynatrace integration is supported in Mendix version 9.7 and above.
 To enable Dynatrace, configure the following environment variables:
 
-| Environment Variable | Description                                                                                                                                                    |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DT_PAAS_TOKEN`      | The token for integrating your Dynatrace environment with Cloud Foundry. You can find it in the deploy Dynatrace section within your environment.              |
-| `DT_SAAS_URL`        | Monitoring endpoint url of the Dynatrace service                                                                                                               |
-| `DT_TENANT`          | Your Dynatrace environment ID is the unique identifier of your Dynatrace environment. You can find it in the deploy Dynatrace section within your environment. |
+| Environment Variable | Description                                                                                   |
+| -------------------- | ----------------------------------------------------------------------------------------------|
+| `DT_PAAS_TOKEN`      | The token for integrating your Dynatrace environment with your Mendix app                     |
+| `DT_SAAS_URL`        | Monitoring endpoint url of the Dynatrace service                                              |
 
-By setting these environment variables automatically the Dynatrace OneAgent will be loaded in the container. 
+Buildpack attaches these default tags to metrics that are pushed to Dynatrace:
 
-OneAgent will be able to measure all J2EE related Metrics from the Application. See OneAgent documention for more details. 
+* `app` - Environment Id of the Mendix application
+* `instance_index` - Instance index that metrics belong to
+
+Extra tags can be attached via `TAGS` environment variable (example value: `[env:accp]`)
 
 ### Logging
 The buildpack provides several options to configure logging.

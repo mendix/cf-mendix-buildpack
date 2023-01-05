@@ -13,7 +13,6 @@ from buildpack.infrastructure import database, storage
 from buildpack.telemetry import (
     appdynamics,
     datadog,
-    dynatrace,
     fluentbit,
     splunk,
     logs,
@@ -149,7 +148,6 @@ if __name__ == "__main__":
         java.update_config(m2ee, application_name, util.get_vcap_data(), runtime_version)
         newrelic.update_config(m2ee, application_name)
         appdynamics.update_config(m2ee)
-        dynatrace.update_config(m2ee, application_name)
         splunk.update_config(m2ee)
         fluentbit.update_config(m2ee)
         mx_java_agent.update_config(m2ee)
