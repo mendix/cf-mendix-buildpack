@@ -9,7 +9,7 @@ COMMIT ?= $(shell git rev-parse --short HEAD)
 
 PIP_TOOLS_VERSION ?= 6.4.0
 PIP_VERSION ?= 21.3.1
-PYTHON_PLATFORM ?= manylinux2014_x86_64
+PYTHON_PLATFORM ?= manylinux_x86_64
 PYTHON_VERSION ?= 36
 
 .PHONY: vendor
