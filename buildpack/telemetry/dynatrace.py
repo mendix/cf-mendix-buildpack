@@ -11,8 +11,10 @@ INGEST_ENDPOINT = "/api/v2/metrics/ingest"
 
 
 def is_enabled():
-    return "DT_PAAS_TOKEN" in os.environ.keys() and \
-           "DT_SAAS_URL" in os.environ.keys()
+    return (
+        "DT_PAAS_TOKEN" in os.environ.keys()
+        and "DT_SAAS_URL" in os.environ.keys()
+    )
 
 
 def get_ingestion_info():

@@ -214,7 +214,7 @@ class TestDataBrokerBusinessEvents(unittest.TestCase):
         assert be_config["BusinessEvents.GenerateMetrics"] == "false"
         assert be_config["BusinessEvents.EnableHeartbeat"] == "false"
 
-    def test_business_events_metrics_constants_config_free(self):
+    def test_business_events_metrics_constants_config(self):
         be_config = {}
         business_events._configure_business_events_metrics(
             be_config, self.module_constants_with_metrics

@@ -49,10 +49,7 @@ APPDYNAMICS_OUTPUT_SCRIPT_PATH = os.path.join(
     "appdynamics_telegraf_output.py",
 )
 
-POSTGRES_METRICS_INTERVAL = os.getenv(
-    "POSTGRES_METRICS_INTERVAL",
-    default=10
-)
+POSTGRES_METRICS_INTERVAL = os.getenv("POSTGRES_METRICS_INTERVAL", default=10)
 
 STATSD_PORT = 8125
 STATSD_PORT_ALT = 18125
@@ -193,8 +190,8 @@ def _get_dynatrace_config(app_name):
         "dimensions": {
             "app": app_name,
             "instance_index": _get_app_index(),
-            **tags
-        }
+            **tags,
+        },
     }
 
 

@@ -150,12 +150,16 @@ def cleanup_dependency_cache(cached_dir, dependency_list):
     for root, dirs, files in os.walk(cached_dir):
         for file in files:
             file_full_path = os.path.join(root, file)
-            logging.debug("dependency in cache folder: [{}]".format(file_full_path))
+            logging.debug(
+                "dependency in cache folder: [{}]".format(file_full_path)
+            )
             if file_full_path not in dependency_list:
                 # delete from cache
                 os.remove(file_full_path)
                 logging.debug(
-                    "deleted unused dependency [{}] from [{}]...".format(file_full_path, root)
+                    "deleted unused dependency [{}] from [{}]...".format(
+                        file_full_path, root
+                    )
                 )
 
 
