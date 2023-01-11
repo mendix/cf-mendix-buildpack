@@ -82,6 +82,7 @@ def initialize_globals():
     global CACHED_DEPENDENCIES
     CACHED_DEPENDENCIES = []
 
+
 # Returns whether an object is a "variable" / literal in a dependency definition
 def _is_dependency_literal(o):
     return type(o) in (int, str, float, bool)

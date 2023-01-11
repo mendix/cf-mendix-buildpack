@@ -66,7 +66,8 @@ class Log:
         else:
             form_name = None
 
-        return " \
+        return (
+            " \
 Database queries: %s \n\n \
 RequestId: %s \n \
 Username: %s \n \
@@ -78,18 +79,20 @@ End: %s \n \
 Duration: %sms \n \
 Form: %s \n \
 Original request: %s \n\n \
-" % (
-            queries,
-            self.request_id,
-            self.username,  # pylint: disable=no-member
-            userroles,
-            self.still_running,  # pylint: disable=no-member
-            self.action,
-            self.start_time_formatted,
-            self.end_time_formatted,
-            self.duration,  # pylint: disable=no-member
-            form_name,
-            self.request_content,  # pylint: disable=no-member
+"
+            % (
+                queries,
+                self.request_id,
+                self.username,  # pylint: disable=no-member
+                userroles,
+                self.still_running,  # pylint: disable=no-member
+                self.action,
+                self.start_time_formatted,
+                self.end_time_formatted,
+                self.duration,  # pylint: disable=no-member
+                form_name,
+                self.request_content,  # pylint: disable=no-member
+            )
         )
 
 

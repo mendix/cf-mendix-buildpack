@@ -31,7 +31,7 @@ generate_software_bom:
 download_wheels: requirements
 	rm -rf build/vendor/wheels
 	mkdir -p build/vendor/wheels
-	pip3 download -d build/vendor/wheels/ --only-binary :all: pip==${PIP_VERSION} setuptools wheel
+	pip3 download -d build/vendor/wheels/ --only-binary :all: pip==${PIP_VERSION} setuptools setuptools-rust wheel
 	pip3 download -d build/vendor/wheels/ --no-deps --platform ${PYTHON_PLATFORM} --python-version ${PYTHON_VERSION} -r requirements.txt
 
 .PHONY: create_build_dirs
