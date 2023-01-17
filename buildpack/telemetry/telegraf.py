@@ -269,6 +269,7 @@ def update_config(m2ee, app_name):
         appdynamics_output_script_path=APPDYNAMICS_OUTPUT_SCRIPT_PATH,
         dynatrace_enabled=dynatrace.is_enabled(),
         dynatrace_config=_get_dynatrace_config(app_name),
+        telegraf_debug_enabled=os.getenv("TELEGRAF_DEBUG_ENABLED", "false"),
     )
 
     logging.debug("Writing Telegraf configuration file...")
