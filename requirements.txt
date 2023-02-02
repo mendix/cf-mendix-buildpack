@@ -4,11 +4,11 @@
 #
 #    pip-compile requirements.in
 #
-antlr4-python3-runtime==4.8
+antlr4-python3-runtime==4.9.3
     # via omegaconf
 backoff==1.11.1
     # via -r requirements.in
-certifi==2021.10.8
+certifi==2022.12.7
     # via
     #   -r requirements.in
     #   requests
@@ -16,11 +16,11 @@ cffi==1.14.4
     # via cryptography
 charset-normalizer==2.0.3
     # via requests
-cryptography==36.0.2
+cryptography==39.0.0
     # via -r requirements.in
 dataclasses==0.8
     # via omegaconf
-httplib2==0.20.4
+httplib2==0.21.0
     # via -r requirements.in
 idna==2.8
     # via requests
@@ -28,9 +28,9 @@ jinja2==3.0.3
     # via -r requirements.in
 markupsafe==2.0.1
     # via jinja2
-omegaconf==2.1.1
+omegaconf==2.3.0
     # via -r requirements.in
-psycopg2-binary==2.9.3
+psycopg2-binary==2.9.5
     # via -r requirements.in
 pycparser==2.20
     # via cffi
