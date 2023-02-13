@@ -21,6 +21,7 @@ from buildpack.telemetry import (
     mx_java_agent,
     newrelic,
     telegraf,
+    dynatrace,
 )
 
 
@@ -150,6 +151,7 @@ if __name__ == "__main__":
         )
         newrelic.update_config(m2ee, application_name)
         appdynamics.update_config(m2ee)
+        dynatrace.update_config(m2ee, application_name)
         splunk.update_config(m2ee)
         fluentbit.update_config(m2ee)
         mx_java_agent.update_config(m2ee)

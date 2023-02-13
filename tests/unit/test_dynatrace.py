@@ -9,7 +9,7 @@ from unittest import TestCase
 class TestDynatrace(TestCase):
     def test_is_enabled_false(self):
         # Should be False without necessary environment variables
-        self.assertFalse(dynatrace.is_enabled())
+        self.assertFalse(dynatrace.is_telegraf_enabled())
 
     def test_get_ingestion_info(self):
         # for get_ingestion_info(), also covers enabled case of is_enabled()
