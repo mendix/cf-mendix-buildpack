@@ -8,7 +8,7 @@ import os
 import json
 from urllib.parse import urljoin
 
-INGEST_ENDPOINT = "/api/v2/metrics/ingest"
+INGEST_ENDPOINT = "api/v2/metrics/ingest"
 
 
 from buildpack import util
@@ -148,5 +148,22 @@ def get_ingestion_info():
 
     logging.info("Metrics ingestion to Dynatrace via telegraf is configured")
     token = os.getenv("DT_PAAS_TOKEN")
-    ingest_url = urljoin(os.getenv("DT_SAAS_URL"), INGEST_ENDPOINT)
+    ingest_url = _get_ingestion_url(os.getenv("DT_SAAS_URL"), INGEST_ENDPOINT)
     return token, ingest_url
+
+
+def _get_ingestion_url(saas_url, endpoint):
+    """
+    Basic url join but purposefully isolated to add some unittests easily.
+    When merging an url and an additional endpoint, python's urljoin method
+    has so many little details. See:
+    https://stackoverflow.com/questions/10893374/python-confusions-with-urljoin
+
+    So, basically we need to make sure that the url ends with '/' and
+    the endpoint does not start with '/'
+    """
+
+    saas_url = f"{saas_url}/"
+    if endpoint.startswith('/'):
+        endpoint = endpoint[1:]
+    return urljoin(saas_url, endpoint)
