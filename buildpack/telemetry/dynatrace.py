@@ -12,24 +12,35 @@ INGEST_ENDPOINT = "/api/v2/metrics/ingest"
 
 
 from buildpack import util
-'''
-TODO: If agent works without them, try removing unused env vars 
-to prevent confusion. 
-'''
+# Environment variables for Dynatrace OneAgent
+# Only passed to the agent if set as environment variable
 default_env = {
-    "DT_TENANTTOKEN": None,  # optional, default to one found in manifest.json
+    # -- Environment variables for the integration
+    # "DT_PAAS_TOKEN": required, also used for telegraf integration
+    # "DT_SAAS_URL": required, also used for telegraf integration
+    "DT_TENANT": None,  # required for agent integration, dynatrace environment ID
+    "DT_TENANTTOKEN": None,  # optional, default value is get from manifest.json which is downloaded along with the agent installer
+    # -- Environment variables for orchestration
+    "DT_LOCALTOVIRTUALHOSTNAME": None,  # optional, default not set
     "DT_APPLICATIONID": None,  # optional, default not set
-    "DT_TENANT": None,  # required, environment ID (uuid format)
-    # "DT_PAAS_TOKEN": None,  # required
-    # "DT_SAAS_URL": None,  # required
-    "DT_LOGSTREAM": "stdout",
-    "DT_NETWORK_ZONE": None,  # optional, not sure what this means :D
-    "DT_CUSTOM_PROP": None,  # optional metadata e.g. Department=Acceptance Stage=Sprint
+    "DT_NODE_ID": None,  # optional, default not set
+    "DT_CLUSTER_ID": None,  # optional, default not set
     "DT_TAGS": None,  # optional tags e.g. MikesStuff easyTravel=Mike
+    "DT_CUSTOM_PROP": None,  # optional metadata e.g. Department=Acceptance Stage=Sprint
+    # -- Environment variables for troubleshooting
+    "DT_LOGSTREAM": "stdout",  # optional
+    "DT_LOGLEVELCON": None,  # Use this environment variable to define the console log level. Valid options are: NONE, SEVERE, and INFO.
+    "DT_AGENTACTIVE": None,  # Set to true or false to enable or disable OneAgent.
+    # -- Networking environment variables
+    "DT_NETWORK_ZONE": None,  # optional, Specifies to use a network zone. For more information
+    "DT_PROXY": None, # Optional, When using a proxy, use this environment variable to pass proxy credentials.
 }
 
 
 def stage(buildpack_dir, build_path, cache_path):
+    """
+    Downloads and unzips necessary OneAgent components
+    """
     if is_agent_enabled():
         try:
             util.resolve_dependency(
@@ -52,6 +63,9 @@ def stage(buildpack_dir, build_path, cache_path):
 
 
 def update_config(m2ee, app_name):
+    """
+    Injects Dynatrace configuration to java runtime
+    """
     if not is_agent_enabled():
         logging.debug(
             "Skipping Dynatrace OneAgent setup, required env vars are not set"
