@@ -1,17 +1,22 @@
 """
-For Dynatrace, metrics are directly ingested through telegraf.
-No additional setup is needed.
-This module only collects information for telegraf from environment variables.
+For Dynatrace, we have two different ingestion methods:
+1. via Dynatrace OneAgent. It's being downloaded and injected to the java
+runtime.
+2. via telegraf. Telegraf ingests custom runtime metrics using Dynatrace
+output plugin
 """
 import logging
 import os
 import json
+from functools import lru_cache
 from urllib.parse import urljoin
 
-INGEST_ENDPOINT = "api/v2/metrics/ingest"
-
-
 from buildpack import util
+
+INGEST_ENDPOINT = "api/v2/metrics/ingest"
+NAMESPACE = "dynatrace"
+BUILD_PATH = os.path.join(".local", NAMESPACE)
+
 # Environment variables for Dynatrace OneAgent
 # Only passed to the agent if set as environment variable
 default_env = {
@@ -21,40 +26,37 @@ default_env = {
     "DT_TENANT": None,  # required for agent integration, dynatrace environment ID
     "DT_TENANTTOKEN": None,  # optional, default value is get from manifest.json which is downloaded along with the agent installer
     # -- Environment variables for orchestration
-    "DT_LOCALTOVIRTUALHOSTNAME": None,  # optional, default not set
-    "DT_APPLICATIONID": None,  # optional, default not set
-    "DT_NODE_ID": None,  # optional, default not set
     "DT_CLUSTER_ID": None,  # optional, default not set
-    "DT_TAGS": None,  # optional tags e.g. MikesStuff easyTravel=Mike
     "DT_CUSTOM_PROP": None,  # optional metadata e.g. Department=Acceptance Stage=Sprint
     # -- Environment variables for troubleshooting
     "DT_LOGSTREAM": "stdout",  # optional
     "DT_LOGLEVELCON": None,  # Use this environment variable to define the console log level. Valid options are: NONE, SEVERE, and INFO.
     "DT_AGENTACTIVE": None,  # Set to true or false to enable or disable OneAgent.
-    # -- Networking environment variables
-    "DT_NETWORK_ZONE": None,  # optional, Specifies to use a network zone. For more information
-    "DT_PROXY": None, # Optional, When using a proxy, use this environment variable to pass proxy credentials.
 }
 
 
-def stage(buildpack_dir, build_path, cache_path):
+def stage(buildpack_dir, root_dir, cache_path):
     """
     Downloads and unzips necessary OneAgent components
     """
     if is_agent_enabled():
         try:
             util.resolve_dependency(
-                "dynatrace.agent",
-                build_path,  # DOT_LOCAL_LOCATION,
+                dependency="dynatrace.agent",
+                destination=os.path.join(root_dir, NAMESPACE),
                 buildpack_dir=buildpack_dir,
                 cache_dir=cache_path,  # CACHE_DIR,
                 unpack=True,
                 overrides={
-                    "url": os.environ.get("DT_SAAS_URL"),
+                    # need to us rstrip because otherwise the download link formed with double slashes and it doesn't work
+                    "url": os.environ.get("DT_SAAS_URL").rstrip("/"),
                     "environment": os.environ.get("DT_TENANT"),
                     "token": os.environ.get("DT_PAAS_TOKEN"),
                 },
-                ignore_cache=True
+                # cache is not working properly, so ignoring for now.
+                # Can be debugged later, a stack trace exists in the PR:
+                # https://github.com/mendix/cf-mendix-buildpack/pull/562
+                ignore_cache=True,
             )
         except Exception as e:
             logging.warning(
@@ -71,6 +73,7 @@ def update_config(m2ee, app_name):
             "Skipping Dynatrace OneAgent setup, required env vars are not set"
         )
         return
+
     logging.info("Enabling Dynatrace OneAgent")
     try:
         manifest = get_manifest()
@@ -80,22 +83,23 @@ def update_config(m2ee, app_name):
         )
         return
 
+    agent_path = get_agent_path()
+    logging.debug("Agent path: [%s]", agent_path)
+    if not os.path.exists(agent_path):
+        raise Exception(
+            "Dynatrace Agent not found: {agent_path}".format(agent_path)
+        )
+
     # dynamic default
     default_env.update({"DT_TENANTTOKEN": manifest.get("tenantToken")})
 
     for key, dv in default_env.items():
         value = os.environ.get(key, dv)
-        if value:
+        if value is not None:
             util.upsert_custom_environment_variable(m2ee, key, value)
     util.upsert_custom_environment_variable(
         m2ee, "DT_CONNECTION_POINT", get_connection_endpoint()
     )
-
-    agent_path = os.path.join(".local", get_agent_path())
-    if not os.path.exists(agent_path):
-        raise Exception(
-            "Dynatrace Agent not found: {agent_path}".format(agent_path)
-        )
 
     util.upsert_javaopts(
         m2ee,
@@ -106,8 +110,10 @@ def update_config(m2ee, app_name):
     )
 
 
+@lru_cache(maxsize=None)
 def get_manifest():
-    with open(".local/manifest.json", "r") as f:
+    manifest_path = os.path.join(BUILD_PATH, "manifest.json")
+    with open(manifest_path, "r") as f:
         return json.load(f)
 
 
@@ -116,7 +122,7 @@ def get_connection_endpoint():
     endpoints = manifest.get("communicationEndpoints", [])
     # prepend the DT_SAAS_URL because the communication endpoints might not be correct
     endpoints.insert(
-        0, "{url}/communication".format(url=os.environ.get("DT_SAAS_URL"))
+        0, _join_url(os.environ.get("DT_SAAS_URL"), "communication")
     )
     return ";".join(endpoints)
 
@@ -125,10 +131,10 @@ def get_agent_path():
     manifest = get_manifest()
     technologies = manifest.get("technologies")
     java_binaries = technologies.get("java").get("linux-x86-64")
-    for f in java_binaries:
-        binary_type = f.get("binarytype")
+    for file in java_binaries:
+        binary_type = file.get("binarytype")
         if binary_type == "loader":
-            return f.get("path")
+            return os.path.join(BUILD_PATH, file.get("path"))
 
 
 def is_telegraf_enabled():
@@ -148,11 +154,11 @@ def get_ingestion_info():
 
     logging.info("Metrics ingestion to Dynatrace via telegraf is configured")
     token = os.getenv("DT_PAAS_TOKEN")
-    ingest_url = _get_ingestion_url(os.getenv("DT_SAAS_URL"), INGEST_ENDPOINT)
+    ingest_url = _join_url(os.getenv("DT_SAAS_URL"), INGEST_ENDPOINT)
     return token, ingest_url
 
 
-def _get_ingestion_url(saas_url, endpoint):
+def _join_url(saas_url, endpoint):
     """
     Basic url join but purposefully isolated to add some unittests easily.
     When merging an url and an additional endpoint, python's urljoin method
@@ -164,6 +170,5 @@ def _get_ingestion_url(saas_url, endpoint):
     """
 
     saas_url = f"{saas_url}/"
-    if endpoint.startswith('/'):
-        endpoint = endpoint[1:]
+    endpoint = endpoint.lstrip("/")
     return urljoin(saas_url, endpoint)

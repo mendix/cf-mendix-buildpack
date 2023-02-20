@@ -720,15 +720,24 @@ The most important metrics ( `before_xid_wraparound` , `connections` , `database
 
 ### Dynatrace
 
-Dynatrace integration is supported in Mendix version 9.7 and above.
-To enable Dynatrace, configure the following environment variables:
+The Dynatrace integration features Dynatrace OneAgent installation and telegraf output configuration.
+
+* Dynatrace OneAgent collects various system metrics
+* Custom metrics are provided via telegraf (only applicable for Mendix version 9.7 and above)
+
+To enable Dynatrace ingestion, configure the following environment variables:
 
 | Environment Variable | Description                                                                                   |
 | -------------------- | ----------------------------------------------------------------------------------------------|
 | `DT_PAAS_TOKEN`      | The token for integrating your Dynatrace environment with your Mendix app                     |
 | `DT_SAAS_URL`        | Monitoring endpoint url of the Dynatrace service                                              |
+| `DT_TENANT`          | Environment id of your Dynatrace environment. (see: https://www.dynatrace.com/support/help/get-started/monitoring-environment/environment-id) |
 
-Buildpack attaches these default tags to metrics that are pushed to Dynatrace:
+These scopes must be included while creating the access token (`DT_PAAS_TOKEN`):
+* PaaS integration - Installer download
+* Ingest metrics
+
+For the custom metrics (via telegraf), buildpack attaches these default tags to metrics that are pushed to Dynatrace:
 
 * `app` - Environment Id of the Mendix application
 * `instance_index` - Instance index that metrics belong to
