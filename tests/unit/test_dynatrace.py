@@ -13,6 +13,41 @@ class TestDynatrace(TestCase):
         # Should be False without necessary environment variables
         self.assertFalse(dynatrace.is_telegraf_enabled())
 
+    def test_get_ingestion_info_for_saas(self):
+        token = "DUMMY_TOKEN"
+        url = "DUMMY_URL"
+
+        env_vars = {
+            "DT_PAAS_TOKEN": token,
+            "DT_SAAS_URL": url,
+        }
+
+        with patch.dict(os.environ, env_vars):
+            actual_info = dynatrace.get_ingestion_info()
+
+        expected_ingest_url = _join_url(url, dynatrace.INGEST_ENDPOINT)
+        expected_info = (token, expected_ingest_url)
+        self.assertEqual(expected_info, actual_info)
+
+    def test_get_ingestion_info_for_managed(self):
+        token = "DUMMY_TOKEN"
+        url = "DUMMY_URL"
+        tenant = "DUMMY_TENANT"
+
+        env_vars = {
+            "DT_PAAS_TOKEN": token,
+            "DT_SAAS_URL": url,
+            "DT_TENANT": tenant,
+            "DT_IS_MANAGED": "true"
+        }
+
+        with patch.dict(os.environ, env_vars):
+            actual_info = dynatrace.get_ingestion_info()
+        url = _join_url(url, f"e/{tenant}")
+        expected_ingest_url = _join_url(url, dynatrace.INGEST_ENDPOINT)
+        expected_info = (token, expected_ingest_url)
+        self.assertEqual(expected_info, actual_info)
+
     def test_get_ingestion_url(self):
         url_endpoint_combinations = [
             (

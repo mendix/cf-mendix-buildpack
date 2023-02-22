@@ -732,6 +732,9 @@ To enable Dynatrace ingestion, configure the following environment variables:
 | `DT_PAAS_TOKEN`      | The token for integrating your Dynatrace environment with your Mendix app                     |
 | `DT_SAAS_URL`        | Monitoring endpoint url of the Dynatrace service                                              |
 | `DT_TENANT`          | Environment id of your Dynatrace environment. (see: https://www.dynatrace.com/support/help/get-started/monitoring-environment/environment-id) |
+| `DT_IS_MANAGED`      | [Optional] Should be set to `true` for Dynatrace Managed                                      |
+| `DT_CLUSTER_ID`      | [Optional] Can be used to tag process groups                                                  |
+| `DT_CUSTOM_PROP`     | [Optional] Can be used to provide metadata for process groups                                 |
 
 These scopes must be included while creating the access token (`DT_PAAS_TOKEN`):
 * PaaS integration - Installer download

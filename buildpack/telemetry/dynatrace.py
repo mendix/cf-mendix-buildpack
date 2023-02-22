@@ -154,7 +154,11 @@ def get_ingestion_info():
 
     logging.info("Metrics ingestion to Dynatrace via telegraf is configured")
     token = os.getenv("DT_PAAS_TOKEN")
-    ingest_url = _join_url(os.getenv("DT_SAAS_URL"), INGEST_ENDPOINT)
+    base_url = os.getenv("DT_SAAS_URL")
+    tenant_id = os.getenv("DT_TENANT")
+    if os.getenv("DT_IS_MANAGED", "false").lower() == "true":
+        base_url = _join_url(base_url, f"e/{tenant_id}")
+    ingest_url = _join_url(base_url, INGEST_ENDPOINT)
     return token, ingest_url
 
 
