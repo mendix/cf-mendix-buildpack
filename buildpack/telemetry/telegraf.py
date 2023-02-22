@@ -88,7 +88,7 @@ def include_db_metrics():
         is_appmetrics
         or datadog.is_enabled()
         or appdynamics.machine_agent_enabled()
-        or dynatrace.is_enabled()
+        or dynatrace.is_telegraf_enabled()
     ):
         # For customers who have Datadog or AppDynamics or APPMETRICS_TARGET enabled,
         # we always include the database metrics. They can opt out
@@ -107,7 +107,7 @@ def is_enabled(runtime_version):
         metrics.get_appmetrics_target() is not None
         or datadog.is_enabled()
         or appdynamics.machine_agent_enabled()
-        or dynatrace.is_enabled()
+        or dynatrace.is_telegraf_enabled()
         or metrics.micrometer_metrics_enabled(runtime_version)
     )
 
@@ -267,7 +267,7 @@ def update_config(m2ee, app_name):
         # For Telegraf config only AppDynamics Machine Agent makes sense.
         appdynamics_enabled=appdynamics.machine_agent_enabled(),
         appdynamics_output_script_path=APPDYNAMICS_OUTPUT_SCRIPT_PATH,
-        dynatrace_enabled=dynatrace.is_enabled(),
+        dynatrace_enabled=dynatrace.is_telegraf_enabled(),
         dynatrace_config=_get_dynatrace_config(app_name),
         telegraf_debug_enabled=os.getenv("TELEGRAF_DEBUG_ENABLED", "false"),
     )
