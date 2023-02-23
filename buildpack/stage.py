@@ -17,6 +17,7 @@ from buildpack.telemetry import (
     mx_java_agent,
     newrelic,
     telegraf,
+    dynatrace,
 )
 
 BUILDPACK_DIR = os.path.abspath(
@@ -208,6 +209,7 @@ if __name__ == "__main__":
         java_version,
     )
     appdynamics.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)
+    dynatrace.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)
     splunk.stage()
     fluentbit.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)
     newrelic.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)

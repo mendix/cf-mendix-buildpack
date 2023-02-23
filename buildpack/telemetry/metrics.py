@@ -200,7 +200,7 @@ def configure_metrics_registry(m2ee):
         datadog.is_enabled()
         or get_appmetrics_target()
         or appdynamics.machine_agent_enabled()
-        or dynatrace.is_enabled()
+        or dynatrace.is_telegraf_enabled()
     ):
         paidapps_registries.append(STATSD_REGISTRY)
 
