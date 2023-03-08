@@ -270,6 +270,7 @@ def update_config(m2ee, app_name):
         dynatrace_enabled=dynatrace.is_telegraf_enabled(),
         dynatrace_config=_get_dynatrace_config(app_name),
         telegraf_debug_enabled=os.getenv("TELEGRAF_DEBUG_ENABLED", "false"),
+        telegraf_fileout_enabled=strtobool(os.getenv("TELEGRAF_FILEOUT_ENABLED", "false"))
     )
 
     logging.debug("Writing Telegraf configuration file...")
