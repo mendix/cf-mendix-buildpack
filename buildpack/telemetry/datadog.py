@@ -398,9 +398,6 @@ def _set_up_environment(model_version, runtime_version):
     e["DD_LOGS_ENABLED"] = "true"
     e["DD_ENABLE_CHECKS"] = str(bool(_is_checks_enabled())).lower()
     e["LOGS_CONFIG"] = json.dumps(_get_logging_config())
-    e[
-        "SUPPRESS_DD_AGENT_OUTPUT"
-    ] = "false"  # Has to be set explicitly since DD buildpack 4.22.0
 
     return e
 
