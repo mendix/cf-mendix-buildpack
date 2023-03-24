@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64  python:3.9
+FROM --platform=linux/amd64 python:3.10
 
 WORKDIR /app
 
@@ -6,9 +6,7 @@ COPY ./requirements.in ./
 COPY ./requirements-dev.in ./
 COPY ./Makefile ./
 
-# RUN make install_requirements
-
-# RUN wget -q -O - https://packages.cloudfoundry.org/debian/cli.cloudfoundry.org.key | gpg --dearmor | tee /etc/apt/trusted.gpg.d/cloudfoundry-cli.gpg
+RUN make install_requirements
 
 RUN wget -q -O - https://packages.cloudfoundry.org/debian/cli.cloudfoundry.org.key | apt-key add - \
  && echo "deb https://packages.cloudfoundry.org/debian stable main" | tee /etc/apt/sources.list.d/cloudfoundry-cli.list \

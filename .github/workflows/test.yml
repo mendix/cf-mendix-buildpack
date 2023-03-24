@@ -49,7 +49,7 @@ jobs:
   integration-test:
     needs: [build, setup-integration-tests]
     name: Run integration tests
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 30
     strategy:
       matrix: ${{fromJson(needs.setup-integration-tests.outputs.matrix)}}
@@ -64,9 +64,9 @@ jobs:
         name: dist
         path: dist
     - name: Set up Python
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
-        python-version: 3.6.15
+        python-version: 3.10.6
         cache: pip
     - name: Install Python requirements
       run: make install_requirements

@@ -1,16 +1,14 @@
 PROJECT_NAME ?= cf-mendix-buildpack
 PREFIX = $(shell p='$(TEST_PREFIX)'; echo "$${p:-test}")
-TEST_PROCESSES ?= 2
 TEST_FILES ?= tests/integration/test_*.py
-MAX_LINE_LENGTH = $(shell cat .pylintrc | grep max-line-length | cut -d '=' -f 2 | xargs)
 
 VERSION ?= $(shell git tag --list --sort=-version:refname "v*" | head -n 1)
 COMMIT ?= $(shell git rev-parse --short HEAD)
 
-PIP_TOOLS_VERSION ?= 6.4.0
-PIP_VERSION ?= 21.3.1
+PIP_TOOLS_VERSION ?= 6.13.0
+PIP_VERSION ?= 23.1
 PYTHON_PLATFORM ?= manylinux2014_x86_64
-PYTHON_VERSION ?= 36
+PYTHON_VERSION ?= 310
 
 .PHONY: vendor
 vendor: create_build_dirs copy_vendored_dependencies download_wheels
@@ -60,8 +58,8 @@ install_requirements: install_piptools requirements
 
 .PHONY: requirements
 requirements: install_piptools
-	pip-compile requirements*.in -o requirements-all.txt
-	pip-compile requirements.in
+	pip-compile --resolver=backtracking requirements*.in -o requirements-all.txt
+	pip-compile --resolver=backtracking requirements.in
 
 .PHONY: write_version
 write_version:
@@ -102,9 +100,9 @@ test: test_unit test_integration
 
 .PHONY: format
 format:
-	black --line-length=${MAX_LINE_LENGTH} buildpack lib/m2ee/* tests/*/
+	ruff check buildpack lib/m2ee/* tests/*/ --fix-only --show-fixes
 
 .PHONY: lint
 lint:
-	black --line-length=${MAX_LINE_LENGTH} --check --diff buildpack lib/m2ee/* tests/*/
+	ruff check buildpack lib/m2ee/* tests/*/ --show-source
 	pylint --disable=W,R,C buildpack lib/m2ee/* tests/*/

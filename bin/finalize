@@ -3,9 +3,9 @@
 # Finalize script is executed from /home/vcap and buildpack is downloaded in /tmp/buildpacks/<<something>>/
 # Determine the buildpack folder based on this file
 BUILDPACK_PATH=$(dirname "$0")/..
-BUILD_PATH=$1
+BUILD_PATH=$1  #/tmp/app -> /home/vcap/app
 CACHE_PATH=$2
-DEPS_PATH=$3/$4
+DEPS_PATH=$3/$4  #tmp/deps/0/ -> /home/vcap/deps/0/
 PROFILE_DIR=${5:-}
 
 VERSION_PATH="${BUILDPACK_PATH}/VERSION"
@@ -22,6 +22,14 @@ cat >$DEPS_PATH/config.yml <<EOF
 name: mendix
 version: ${VERSION}
 EOF
+
+# Install python if stack is cflinuxfs4
+if [ "$CF_STACK" == "cflinuxfs4" ]; then
+  echo " ---> Detected cflinuxfs4 without built-in python-dev..."
+  PYTHON_DIR="$DEPS_PATH/python"
+  mkdir -p $PYTHON_DIR
+  source "$BUILDPACK_PATH/bin/install-python" "$PYTHON_DIR" "$BUILDPACK_PATH"
+fi
 
 # Bootstrap the Python dependencies needed for the buildpack
 source ${BUILDPACK_PATH}/bin/bootstrap-python
