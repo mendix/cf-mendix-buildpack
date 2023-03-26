@@ -22,7 +22,7 @@ jobs:
     steps:
     - name: Check if workflow should be skipped
       id: skip-check
-      uses: fkirc/skip-duplicate-actions@v3
+      uses: fkirc/skip-duplicate-actions@v5
       with:
         github_token: ${{ github.token }}
         paths_ignore: '["**.md", "dev/**", "LICENSE"]'
@@ -49,7 +49,7 @@ jobs:
   integration-test:
     needs: [build, setup-integration-tests]
     name: Run integration tests
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 30
     strategy:
       matrix: ${{fromJson(needs.setup-integration-tests.outputs.matrix)}}
@@ -64,9 +64,9 @@ jobs:
         name: dist
         path: dist
     - name: Set up Python
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
-        python-version: 3.6.15
+        python-version: 3.11.2
         cache: pip
     - name: Install Python requirements
       run: make install_requirements

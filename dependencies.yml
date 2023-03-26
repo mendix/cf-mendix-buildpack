@@ -86,10 +86,10 @@ dependencies:
       artifact: newrelic/newrelic-java-{{ version }}.zip
       version: 6.2.1
   nginx:
-    artifact: nginx_{{ version }}_linux_x64_cflinuxfs3_{{ commit }}.tgz
-    commit: f0918d6b
+    artifact: nginx_{{ version }}_linux_x64_cflinuxfs4_{{ commit }}.tgz
+    commit: 909b06a9
     cpe: cpe:2.3:a:f5:nginx:{{ version }}:*:*:*:*:*:*:*
-    version: 1.21.1
+    version: 1.22.1
   telegraf:
     agent:
       artifact: telegraf/telegraf-{{ version }}_linux_amd64.tar.gz
