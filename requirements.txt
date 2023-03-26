@@ -18,6 +18,8 @@ charset-normalizer==2.0.3
     # via requests
 cryptography==40.0.1
     # via -r requirements.in
+distro==1.8.0
+    # via -r requirements.in
 httplib2==0.22.0
     # via -r requirements.in
 idna==2.8

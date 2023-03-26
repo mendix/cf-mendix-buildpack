@@ -11,10 +11,14 @@ class TestCaseCustomHeaders(basetest.BaseTest):
                 "X_FRAME_OPTIONS": "DENY",
                 "HTTP_RESPONSE_HEADERS": json.dumps(
                     {
-                        "X-Permitted-Cross-Domain-Policies": "by-content-type",
-                        "Access-Control-Allow-Origin": "https://this.is.mydomain.nl",
-                        "X-XSS-Protection": "1; report=https://domainwithnewstyle.tld.consultancy",  # noqa: line-too-long
-                        "X-Content-Type-Options": "nosniff",
+                        "X-Permitted-Cross-Domain-Policies":
+                        "by-content-type",
+                        "Access-Control-Allow-Origin":
+                        "https://this.is.mydomain.nl",
+                        "X-XSS-Protection":
+                        "1; report=https://domainwithnewstyle.tld.consultancy",
+                        "X-Content-Type-Options":
+                        "nosniff",
                     }
                 ),
             },

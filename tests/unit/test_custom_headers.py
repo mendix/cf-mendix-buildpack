@@ -106,7 +106,8 @@ class TestCaseCustomHeaderConfig(unittest.TestCase):
     def test_invalid_header_contentSecurity(self):
         os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps(
             {
-                "Content-Security-Policy": "$# default-src https://my.csp.domain.amsterdam"  # noqa: line-too-long
+                "Content-Security-Policy":
+                "$# default-src https://my.csp.domain.amsterdam"
             }
         )
         header_config = nginx._get_http_headers()
@@ -131,7 +132,10 @@ class TestCaseCustomHeaderConfig(unittest.TestCase):
 
     def test_valid_header_xssProtection(self):
         os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps(
-            {"X-XSS-Protection": "1; report=https://domainwithnewstyle.tld.consultancy"}
+            {
+                "X-XSS-Protection": 
+                "1; report=https://domainwithnewstyle.tld.consultancy"
+            }
         )
         header_config = nginx._get_http_headers()
         self.assertIn(

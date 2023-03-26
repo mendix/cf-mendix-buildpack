@@ -117,8 +117,8 @@ def __render(o, variables):
 def __get_dependencies(obj):
     if (
         all(
-            True if k in DO_NOT_RECURSE_FIELDS else _is_dependency_literal(v)
-            for (k, v) in obj.items()  # noqa: line-too-long
+            True if k in DO_NOT_RECURSE_FIELDSelse _is_dependency_literal(v)
+            for (k, v) in obj.items()
         )
         and DEPENDENCY_ARTIFACT_KEY in obj
     ):
@@ -427,7 +427,7 @@ def set_up_launch_environment(deps_dir, profile_dir):
         files = [
             f
             for f in os.listdir(directory)
-            if os.path.isfile(os.path.join(directory, f))  # noqa: line-too-long
+            if os.path.isfile(os.path.join(directory, f))
         ]
 
         for f in files:
