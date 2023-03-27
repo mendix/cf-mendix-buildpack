@@ -81,13 +81,9 @@ jdk.tls.disabledAlgorithms=SSLv3, RC4, DES, MD5withRSA
         for case in self.SECURITY_PROPERTIES_FILES_PATHS_CASES:
             if case[1] == "":
                 with self.assertRaises(ValueError):
-                    _get_security_properties_file(
-                        "", _get_major_version(case[0])
-                    )
+                    _get_security_properties_file("", _get_major_version(case[0]))
             else:
-                file = _get_security_properties_file(
-                    "", _get_major_version(case[0])
-                )
+                file = _get_security_properties_file("", _get_major_version(case[0]))
                 assert case[1] in str(file)
 
     MAJOR_VERSION_TEST_CASES = [

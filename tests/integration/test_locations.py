@@ -19,9 +19,7 @@ BLOCK_ALL_BUT_SUB_PATH_WIDE_OPEN_RESOURCE = (
 MY_IP_FILTER_RESOURCE = MY_IP_FILTER + "GeoLocationForPhoneGap.xml"
 OTHER_IP_FILTER_RESOURCE = OTHER_IP_FILTER + "ProfileMenu.js"
 BASIC_AUTH_RESOURCE = BASIC_AUTH + "CameraWidgetForPhoneGap.css"
-BASIC_AUTH_AND_MY_IP_FILTER_RESOURCE = (
-    BASIC_AUTH_AND_MY_IP_FILTER + "_wizard.scss"
-)
+BASIC_AUTH_AND_MY_IP_FILTER_RESOURCE = BASIC_AUTH_AND_MY_IP_FILTER + "_wizard.scss"
 BASIC_AUTH_AND_OTHER_IP_FILTER_RESOURCE = (
     BASIC_AUTH_AND_OTHER_IP_FILTER + "_alerts.scss"
 )
@@ -43,9 +41,7 @@ class TestCaseAccessRestrictions(basetest.BaseTest):
                 "ACCESS_RESTRICTIONS": json.dumps(
                     {
                         BLOCK_ALL: {"ipfilter": []},
-                        BLOCK_ALL_BUT_SUB_PATH_WIDE_OPEN: {
-                            "ipfilter": wide_open_ips
-                        },
+                        BLOCK_ALL_BUT_SUB_PATH_WIDE_OPEN: {"ipfilter": wide_open_ips},
                         MY_IP_FILTER: {"ipfilter": myips},
                         OTHER_IP_FILTER: {"ipfilter": other_ips},
                         BASIC_AUTH: {"basic_auth": {"user": "password"}},
@@ -83,31 +79,19 @@ class TestCaseAccessRestrictions(basetest.BaseTest):
         success = all(
             [
                 self._check_http_code(BLOCK_ALL_RESOURCE, 403),
-                self._check_http_code(
-                    BLOCK_ALL_BUT_SUB_PATH_WIDE_OPEN_RESOURCE, 200
-                ),
+                self._check_http_code(BLOCK_ALL_BUT_SUB_PATH_WIDE_OPEN_RESOURCE, 200),
                 self._check_http_code(MY_IP_FILTER_RESOURCE, 200),
                 self._check_http_code(OTHER_IP_FILTER_RESOURCE, 403),
-                self._check_http_code(
-                    OTHER_IP_FILTER_RESOURCE, 403, auth=auth
-                ),
+                self._check_http_code(OTHER_IP_FILTER_RESOURCE, 403, auth=auth),
                 self._check_http_code(BASIC_AUTH_RESOURCE, 200, auth=auth),
                 self._check_http_code(BASIC_AUTH_RESOURCE, 401),
-                self._check_http_code(
-                    BASIC_AUTH_RESOURCE, 401, auth=auth_wrong_user
-                ),
-                self._check_http_code(
-                    BASIC_AUTH_RESOURCE, 401, auth=auth_wrong_pass
-                ),
-                self._check_http_code(
-                    BASIC_AUTH_RESOURCE, 401, auth=auth_wrong_pass2
-                ),
+                self._check_http_code(BASIC_AUTH_RESOURCE, 401, auth=auth_wrong_user),
+                self._check_http_code(BASIC_AUTH_RESOURCE, 401, auth=auth_wrong_pass),
+                self._check_http_code(BASIC_AUTH_RESOURCE, 401, auth=auth_wrong_pass2),
                 self._check_http_code(
                     BASIC_AUTH_AND_MY_IP_FILTER_RESOURCE, 200, auth=auth
                 ),
-                self._check_http_code(
-                    BASIC_AUTH_AND_MY_IP_FILTER_RESOURCE, 401
-                ),
+                self._check_http_code(BASIC_AUTH_AND_MY_IP_FILTER_RESOURCE, 401),
                 self._check_http_code(
                     BASIC_AUTH_AND_MY_IP_FILTER_RESOURCE,
                     401,
@@ -119,9 +103,7 @@ class TestCaseAccessRestrictions(basetest.BaseTest):
                 self._check_http_code(
                     BASIC_AUTH_OR_MY_IP_FILTER_RESOURCE, 200, auth=auth
                 ),
-                self._check_http_code(
-                    BASIC_AUTH_OR_MY_IP_FILTER_RESOURCE, 200
-                ),
+                self._check_http_code(BASIC_AUTH_OR_MY_IP_FILTER_RESOURCE, 200),
                 self._check_http_code(
                     BASIC_AUTH_OR_MY_IP_FILTER_RESOURCE,
                     200,
@@ -145,17 +127,11 @@ class TestCaseAccessRestrictions(basetest.BaseTest):
                     401,
                     auth=auth_wrong_pass2,
                 ),
-                self._check_http_code(
-                    BASIC_AUTH_OR_OTHER_IP_FILTER_RESOURCE, 401
-                ),
+                self._check_http_code(BASIC_AUTH_OR_OTHER_IP_FILTER_RESOURCE, 401),
             ]
         )
         if not success:
-            print(
-                self.run_on_container(
-                    "cat /home/vcap/app/nginx/conf/nginx.conf"
-                )
-            )
+            print(self.run_on_container("cat /home/vcap/app/nginx/conf/nginx.conf"))
         assert success
 
     def _check_http_code(self, path, expected_code, auth=None):

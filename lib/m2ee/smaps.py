@@ -136,11 +136,7 @@ def _educated_guess_category(smaps, debug=False):
             else:
                 stage = STAGE_SEEN_JVM_HEAP
         if stage == STAGE_SEEN_JVM_HEAP:
-            if (
-                smap.inode != 0
-                and smap.descr is not None
-                and smap.flags == "r-xp"
-            ):
+            if smap.inode != 0 and smap.descr is not None and smap.flags == "r-xp":
                 smap.category = CATEGORY_CODE
             elif (
                 i > 0
@@ -212,10 +208,7 @@ if __name__ == "__main__":
     totals = _get_rss_by_category(smaps)
 
     print("Native code: %s kB" % totals[CATEGORY_CODE])
-    print(
-        "Native heap and memory arenas: %s kB"
-        % totals[CATEGORY_NATIVE_HEAP_ARENA]
-    )
+    print("Native heap and memory arenas: %s kB" % totals[CATEGORY_NATIVE_HEAP_ARENA])
     print("JVM Heap: %s kB" % totals[CATEGORY_JVM_HEAP])
     print("Thread stacks: %s kB" % totals[CATEGORY_THREAD_STACK])
     print("JAR files: %s kB" % totals[CATEGORY_JAR])

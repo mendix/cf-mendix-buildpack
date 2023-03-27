@@ -16,14 +16,10 @@ class LoggingHeartbeatEmitterThread(threading.Thread):
         self.interval = interval
 
     def run(self):
-        logging.debug(
-            "Starting metrics emitter with interval %d", self.interval
-        )
+        logging.debug("Starting metrics emitter with interval %d", self.interval)
         counter = 1
         while True:
-            logging.info(
-                "MENDIX-LOGGING-HEARTBEAT: Heartbeat number %s", counter
-            )
+            logging.info("MENDIX-LOGGING-HEARTBEAT: Heartbeat number %s", counter)
             time.sleep(self.interval)
             counter += 1
 
@@ -100,9 +96,7 @@ def run(m2ee):
     _redirect_logs()
 
     # Start the logging heartbeat
-    logging_interval = os.getenv(
-        "METRICS_LOGGING_HEARTBEAT_INTERVAL", str(3600)
-    )
+    logging_interval = os.getenv("METRICS_LOGGING_HEARTBEAT_INTERVAL", str(3600))
     thread = LoggingHeartbeatEmitterThread(int(logging_interval))
     thread.setDaemon(True)
     thread.start()

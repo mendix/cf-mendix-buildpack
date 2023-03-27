@@ -36,7 +36,7 @@ then
     echo " ---> Copying bundled Python dependencies to cache...";
     mkdir -p $PIP_WHEELDIR
     cp -rf $WHEELS_PATH/* $PIP_WHEELDIR/ 2>/dev/null
-fi    
+fi
 
 echo " ---> Bootstrapping pip..."
 PIP_CMD="pip"

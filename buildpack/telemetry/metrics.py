@@ -140,9 +140,7 @@ def get_micrometer_metrics_url():
     micrometer metrics only. Runtime version 9.7 and above is required.
 
     """
-    use_trends_forwarder = strtobool(
-        os.getenv("USE_TRENDS_FORWARDER", default="true")
-    )
+    use_trends_forwarder = strtobool(os.getenv("USE_TRENDS_FORWARDER", default="true"))
 
     trends_forwarder_url = os.getenv("TRENDS_FORWARDER_URL", default="")
 
@@ -161,9 +159,7 @@ def _micrometer_runtime_requirement(runtime_version):
     # TODO: DISABLE_MICROMETER_METRICS is a temporary flag to disable metrics
     # collection via micrometer till we are ready to do the switchover
     # from admin port metrics to micrometer based metrics
-    disable_micrometer = strtobool(
-        os.getenv("DISABLE_MICROMETER_METRICS", "false")
-    )
+    disable_micrometer = strtobool(os.getenv("DISABLE_MICROMETER_METRICS", "false"))
 
     runtime_version_supported = runtime_version >= MXVERSION_MICROMETER
 
@@ -175,9 +171,9 @@ def _micrometer_runtime_requirement(runtime_version):
 
 def micrometer_metrics_enabled(runtime_version):
     """Check for metrics from micrometer."""
-    return bool(
-        get_micrometer_metrics_url()
-    ) and _micrometer_runtime_requirement(runtime_version)
+    return bool(get_micrometer_metrics_url()) and _micrometer_runtime_requirement(
+        runtime_version
+    )
 
 
 def configure_metrics_registry(m2ee):
@@ -188,9 +184,7 @@ def configure_metrics_registry(m2ee):
     if not micrometer_metrics_enabled(runtime.get_runtime_version()):
         return []
 
-    logging.info(
-        "Configuring runtime to push metrics to influx via micrometer"
-    )
+    logging.info("Configuring runtime to push metrics to influx via micrometer")
     if util.is_free_app():
         return FREEAPPS_METRICS_REGISTRY
 
@@ -253,9 +247,7 @@ class MetricsServerEmitter(MetricsEmitter):
         try:
             response = requests.post(self.metrics_url, json=stats, timeout=10)
         except Exception:
-            logging.debug(
-                "Failed to send metrics to trends server.", exc_info=True
-            )
+            logging.debug("Failed to send metrics to trends server.", exc_info=True)
             # Fallback to old pipeline and stdout for now.
             # Later, we will want to buffer and resend.
             # This will be done in DEP-75.
@@ -326,9 +318,7 @@ class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
         pass
 
     def run(self):
-        logging.debug(
-            "Starting metrics emitter with interval %d" % self.interval
-        )
+        logging.debug("Starting metrics emitter with interval %d" % self.interval)
         while True:
             stats = self._gather_metrics()
             stats = self._set_stats_info(stats)
@@ -345,8 +335,7 @@ class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
             if health_response.has_error():
                 if (
                     health_response.get_result() == 3
-                    and health_response.get_cause()
-                    == "java.lang.IllegalArgument"
+                    and health_response.get_cause() == "java.lang.IllegalArgument"
                     "Exception: Action should not be null"
                 ):
                     # Because of an incomplete implementation,
@@ -356,8 +345,7 @@ class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
                     health["health"] = translation["unknown"]
                     health["diagnosis"] = "No health check microflow defined"
                 elif (
-                    health_response.get_result()
-                    == health_response.ERR_ACTION_NOT_FOUND
+                    health_response.get_result() == health_response.ERR_ACTION_NOT_FOUND
                 ):
                     # Admin action 'check_health' does not exist.
                     health["health"] = translation["unknown"]
@@ -435,9 +423,7 @@ class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
     def _inject_critical_log_stats(self, stats):
         critical_logs_count = 0
         try:
-            critical_logs_count = len(
-                self.m2ee.client.get_critical_log_messages()
-            )
+            critical_logs_count = len(self.m2ee.client.get_critical_log_messages())
         except Exception:
             logging.warning("Unable to get critical logs count from runtime")
         finally:
@@ -445,9 +431,7 @@ class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
             # port and we continue to fetch that even after the micrometer metrics
             if "mendix_runtime" not in stats:
                 stats["mendix_runtime"] = {}
-            stats["mendix_runtime"][
-                "critical_logs_count"
-            ] = critical_logs_count
+            stats["mendix_runtime"]["critical_logs_count"] = critical_logs_count
         return stats
 
     def _inject_jvm_failure_metrics(self, stats):
@@ -466,17 +450,13 @@ class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
         try:
             storage_stats["get_number_of_files"] = self._get_number_of_files()
         except Exception as e:
-            logging.warn(
-                "Metrics: Failed to retrieve number of files, " + str(e)
-            )
+            logging.warn("Metrics: Failed to retrieve number of files, " + str(e))
             raise
         if runtime_version >= MXVersion("7.4.0"):
             try:
                 storage_stats["get_size_of_files"] = self._get_size_of_files()
             except Exception as e:
-                logging.warn(
-                    "Metrics: Failed to retrieve size of files, " + str(e)
-                )
+                logging.warn("Metrics: Failed to retrieve size of files, " + str(e))
                 raise
         stats["storage"] = storage_stats
         return stats
@@ -665,9 +645,7 @@ WHERE t.schemaname='public';
                 port=port,
                 connect_timeout=3,
             )
-            self.db.set_isolation_level(
-                psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT
-            )
+            self.db.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
         return self.db
 
     @staticmethod
@@ -728,9 +706,7 @@ class PaidAppsMetricsEmitterThread(BaseMetricsEmitterThread):
 
 class FreeAppsMetricsEmitterThread(BaseMetricsEmitterThread):
     def _get_munin_stats(self):
-        m2ee_stats, _ = munin.get_stats_from_runtime(
-            self.m2ee.client, self.m2ee.config
-        )
+        m2ee_stats, _ = munin.get_stats_from_runtime(self.m2ee.client, self.m2ee.config)
         return m2ee_stats
 
     def _inject_user_session_metrics(self, stats):

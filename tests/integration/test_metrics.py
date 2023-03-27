@@ -12,9 +12,7 @@ class TestCaseEmitMetrics(basetest.BaseTestWithPostgreSQL):
     # threads work as expected, just not that the metrics get to the right
     # destination.
     def test_read_metrics_in_logs(self):
-        self.stage_container(
-            "sample-6.2.0.mda", env_vars={"METRICS_INTERVAL": "10"}
-        )
+        self.stage_container("sample-6.2.0.mda", env_vars={"METRICS_INTERVAL": "10"})
         self.start_container()
 
         assert self.await_string_in_recent_logs("MENDIX-METRICS: ", 10)
@@ -51,9 +49,7 @@ class TestNewMetricsFlows(basetest.BaseTestWithPostgreSQL):
         self.start_container()
 
         assert self.await_string_in_recent_logs("MENDIX-METRICS: ", 10)
-        self.assert_string_in_recent_logs(
-            "Failed to send metrics to trends server"
-        )
+        self.assert_string_in_recent_logs("Failed to send metrics to trends server")
 
     def test_fallback_when_no_url_set(self):
         self.stage_container(
@@ -79,9 +75,7 @@ class TestNewMetricsFlows(basetest.BaseTestWithPostgreSQL):
         self.start_container()
 
         assert self.await_string_in_recent_logs("MENDIX-METRICS: ", 10)
-        self.assert_string_in_recent_logs(
-            "Bypass loggregator has a nonsensical value"
-        )
+        self.assert_string_in_recent_logs("Bypass loggregator has a nonsensical value")
 
     def test_posting_metrics_works(self):
         self.stage_container(

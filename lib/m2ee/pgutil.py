@@ -45,9 +45,7 @@ def restoredb(config, dump_name):
     env = os.environ.copy()
     env.update(config.get_pg_environment())
 
-    db_dump_file_name = os.path.join(
-        config.get_database_dump_path(), dump_name
-    )
+    db_dump_file_name = os.path.join(config.get_database_dump_path(), dump_name)
     if not os.path.isfile(db_dump_file_name):
         logger.error("file %s does not exist: " % db_dump_file_name)
         return False

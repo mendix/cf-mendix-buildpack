@@ -31,9 +31,7 @@ def _get_executable_path(version):
 
 
 def _get_config_file_dir(version):
-    return os.path.join(
-        INSTALL_PATH, "telegraf-{}".format(version), "etc", "telegraf"
-    )
+    return os.path.join(INSTALL_PATH, "telegraf-{}".format(version), "etc", "telegraf")
 
 
 def _get_config_file_path(version):
@@ -157,9 +155,7 @@ def _get_http_outputs():
                 # http_output['password'] = password
                 http_output.credentials = base64.b64encode(
                     (
-                        "{}:{}".format(
-                            http_config["username"], http_config["password"]
-                        )
+                        "{}:{}".format(http_config["username"], http_config["password"])
                     ).encode()
                 ).decode("ascii")
 
@@ -172,9 +168,7 @@ def _get_http_outputs():
 
 
 def _get_db_config():
-    if (
-        include_db_metrics() or datadog.get_api_key()
-    ) and util.is_cluster_leader():
+    if (include_db_metrics() or datadog.get_api_key()) and util.is_cluster_leader():
         db_config = database.get_config()
         if db_config and db_config["DatabaseType"] == "PostgreSQL":
             return db_config
@@ -235,9 +229,7 @@ def update_config(m2ee, app_name):
 
     version = util.get_dependency(DEPENDENCY)["version"]
 
-    template_path = os.path.join(
-        _get_config_file_dir(version), TEMPLATE_FILENAME
-    )
+    template_path = os.path.join(_get_config_file_dir(version), TEMPLATE_FILENAME)
 
     tags = util.get_tags()
     if datadog.is_enabled() and "service" not in tags:
@@ -270,7 +262,9 @@ def update_config(m2ee, app_name):
         dynatrace_enabled=dynatrace.is_telegraf_enabled(),
         dynatrace_config=_get_dynatrace_config(app_name),
         telegraf_debug_enabled=os.getenv("TELEGRAF_DEBUG_ENABLED", "false"),
-        telegraf_fileout_enabled=strtobool(os.getenv("TELEGRAF_FILEOUT_ENABLED", "false"))
+        telegraf_fileout_enabled=strtobool(
+            os.getenv("TELEGRAF_FILEOUT_ENABLED", "false")
+        ),
     )
 
     logging.debug("Writing Telegraf configuration file...")

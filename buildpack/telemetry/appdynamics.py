@@ -6,9 +6,7 @@ from buildpack import util
 
 
 APPDYNAMICS_INSTALL_PATH = os.path.abspath(".local/appdynamics/")
-APPDYNAMICS_JAVAAGENT_PATH = os.path.join(
-    APPDYNAMICS_INSTALL_PATH, "javaagent.jar"
-)
+APPDYNAMICS_JAVAAGENT_PATH = os.path.join(APPDYNAMICS_INSTALL_PATH, "javaagent.jar")
 
 APPDYNAMICS_MACHINE_AGENT_PATH = os.path.join(
     APPDYNAMICS_INSTALL_PATH,
@@ -39,9 +37,7 @@ APPDYNAMICS_ENV_VARS = {
         "APPDYNAMICS_CONTROLLER_SSL_ENABLED", default="true"
     ),
     "APPDYNAMICS_AGENT_UNIQUE_HOST_ID": "{}-{}".format(
-        os.getenv(
-            "APPDYNAMICS_AGENT_UNIQUE_HOST_ID", default=CF_APPLICATION_NAME
-        ),
+        os.getenv("APPDYNAMICS_AGENT_UNIQUE_HOST_ID", default=CF_APPLICATION_NAME),
         CF_APPLICATION_INDEX,
     ),
 }
@@ -83,17 +79,13 @@ def update_config(m2ee):
         )
         return
 
-    logging.info(
-        "AppDynamics Java Agent env. variables are configured. Starting..."
-    )
+    logging.info("AppDynamics Java Agent env. variables are configured. Starting...")
 
     util.upsert_javaopts(
         m2ee,
         [
             "-javaagent:{path}".format(path=APPDYNAMICS_JAVAAGENT_PATH),
-            "-Dappagent.install.dir={path}".format(
-                path=APPDYNAMICS_INSTALL_PATH
-            ),
+            "-Dappagent.install.dir={path}".format(path=APPDYNAMICS_INSTALL_PATH),
         ],
     )
 
@@ -112,9 +104,7 @@ def run():
         )
         return
 
-    logging.info(
-        "AppDynamics Machine Agent env. variable is configured. Starting..."
-    )
+    logging.info("AppDynamics Machine Agent env. variable is configured. Starting...")
     env_dict = dict(os.environ)
     env_dict.update(APPDYNAMICS_ENV_VARS)
     subprocess.Popen(

@@ -69,9 +69,7 @@ def _enable_mx_java_agent(m2ee):
     )
 
     logging.debug("Checking if Mendix Java Agent is enabled...")
-    if 0 in [
-        v.find("-javaagent:{}".format(jar)) for v in util.get_javaopts(m2ee)
-    ]:
+    if 0 in [v.find("-javaagent:{}".format(jar)) for v in util.get_javaopts(m2ee)]:
         logging.debug("Mendix Java Agent is already enabled")
         return
 
@@ -100,9 +98,7 @@ def _enable_mx_java_agent(m2ee):
                 "config",
                 _to_file(
                     "METRICS_AGENT_CONFIG",
-                    util.get_custom_runtime_setting(
-                        m2ee, "MetricsAgentConfig"
-                    ),
+                    util.get_custom_runtime_setting(m2ee, "MetricsAgentConfig"),
                 ),
             )
         )
@@ -118,16 +114,12 @@ def _enable_mx_java_agent(m2ee):
             os.environ.get("METRICS_AGENT_INSTRUMENTATION_CONFIG"),
         )
 
-    mx_agent_args.append(
-        _to_arg("instrumentation_config", instrumentation_config)
-    )
+    mx_agent_args.append(_to_arg("instrumentation_config", instrumentation_config))
 
     mx_agent_args = list(filter(lambda x: x, mx_agent_args))
     mx_agent_args_str = f'={",".join(mx_agent_args)}' if mx_agent_args else ""
 
-    util.upsert_javaopts(
-        m2ee, "-javaagent:{}{}".format(jar, mx_agent_args_str)
-    )
+    util.upsert_javaopts(m2ee, "-javaagent:{}{}".format(jar, mx_agent_args_str))
 
     # If not explicitly set,
     # - default to StatsD (MxVersion < metrics.MXVERSION_MICROMETER)

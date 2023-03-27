@@ -492,9 +492,7 @@ class TestMetricParsingPerJavaVersion(TestCase):
         old_stats = _populate_stats_by_java_version_old(
             copy.deepcopy(stats), java_version
         )
-        new_stats = _populate_stats_by_java_version(
-            copy.deepcopy(stats), java_version
-        )
+        new_stats = _populate_stats_by_java_version(copy.deepcopy(stats), java_version)
         self.assertEqual(old_stats, new_stats)
 
     def test_mendix_6_java_8_stats_parallelgc(self):
@@ -503,9 +501,7 @@ class TestMetricParsingPerJavaVersion(TestCase):
         old_stats = _populate_stats_by_java_version_old(
             copy.deepcopy(stats), java_version
         )
-        new_stats = _populate_stats_by_java_version(
-            copy.deepcopy(stats), java_version
-        )
+        new_stats = _populate_stats_by_java_version(copy.deepcopy(stats), java_version)
         self.assertEqual(old_stats, new_stats)
 
     def test_mendix_6_java_8_stats_g1gc(self):
@@ -514,9 +510,7 @@ class TestMetricParsingPerJavaVersion(TestCase):
         old_stats = _populate_stats_by_java_version_old(
             copy.deepcopy(stats), java_version
         )
-        new_stats = _populate_stats_by_java_version(
-            copy.deepcopy(stats), java_version
-        )
+        new_stats = _populate_stats_by_java_version(copy.deepcopy(stats), java_version)
         self.assertEqual(old_stats, new_stats)
 
     def test_mendix_6_java_8_stats_concmarksweepgc(self):
@@ -525,9 +519,7 @@ class TestMetricParsingPerJavaVersion(TestCase):
         old_stats = _populate_stats_by_java_version_old(
             copy.deepcopy(stats), java_version
         )
-        new_stats = _populate_stats_by_java_version(
-            copy.deepcopy(stats), java_version
-        )
+        new_stats = _populate_stats_by_java_version(copy.deepcopy(stats), java_version)
         self.assertEqual(old_stats, new_stats)
 
     def test_mendix_7_java_8_memorypools(self):
@@ -536,9 +528,7 @@ class TestMetricParsingPerJavaVersion(TestCase):
         old_stats = _populate_stats_by_java_version_old(
             copy.deepcopy(stats), java_version
         )
-        new_stats = _populate_stats_by_java_version(
-            copy.deepcopy(stats), java_version
-        )
+        new_stats = _populate_stats_by_java_version(copy.deepcopy(stats), java_version)
         self.assertEqual(old_stats, new_stats)
 
     def test_mendix_6_no_memorypools(self):
@@ -547,9 +537,7 @@ class TestMetricParsingPerJavaVersion(TestCase):
         old_stats = _populate_stats_by_java_version_old(
             copy.deepcopy(stats), java_version
         )
-        new_stats = _populate_stats_by_java_version(
-            copy.deepcopy(stats), java_version
-        )
+        new_stats = _populate_stats_by_java_version(copy.deepcopy(stats), java_version)
         self.assertEqual(old_stats, new_stats)
 
     def test_mendix_5_java_7_memory(self):
@@ -579,9 +567,7 @@ class TestMetricParsingPerJavaVersion(TestCase):
         old_stats = _populate_stats_by_java_version_old(
             copy.deepcopy(stats), java_version
         )
-        new_stats = _populate_stats_by_java_version(
-            copy.deepcopy(stats), java_version
-        )
+        new_stats = _populate_stats_by_java_version(copy.deepcopy(stats), java_version)
         # Old stats were broken for Mendix 8, so this test is fairly useless,
         # but whatever.
         self.assertNotEqual(old_stats, new_stats)
@@ -592,9 +578,7 @@ class TestMetricParsingPerJavaVersion(TestCase):
         old_stats = _populate_stats_by_java_version_old(
             copy.deepcopy(stats), java_version
         )
-        new_stats = _populate_stats_by_java_version(
-            copy.deepcopy(stats), java_version
-        )
+        new_stats = _populate_stats_by_java_version(copy.deepcopy(stats), java_version)
         # if we have reached here without any exception
         # means we do support the alternate memory pool names
         self.assertNotEqual(old_stats, new_stats)
@@ -605,9 +589,7 @@ class TestMetricParsingPerJavaVersion(TestCase):
         old_stats = _populate_stats_by_java_version_old(
             copy.deepcopy(stats), java_version
         )
-        new_stats = _populate_stats_by_java_version(
-            copy.deepcopy(stats), java_version
-        )
+        new_stats = _populate_stats_by_java_version(copy.deepcopy(stats), java_version)
         # if we have reached here without any exception
         # means we do support the alternate memory pool names
         self.assertNotEqual(old_stats, new_stats)
@@ -618,9 +600,7 @@ class TestMetricParsingPerJavaVersion(TestCase):
         old_stats = _populate_stats_by_java_version_old(
             copy.deepcopy(stats), java_version
         )
-        new_stats = _populate_stats_by_java_version(
-            copy.deepcopy(stats), java_version
-        )
+        new_stats = _populate_stats_by_java_version(copy.deepcopy(stats), java_version)
         # if we have reached here without any exception
         # means we do support the alternate memory pool names
         self.assertNotEqual(old_stats, new_stats)
@@ -842,10 +822,7 @@ class TestAugmentStats(TestCase):
             javaheap = fixed_stats["memory"]["javaheap"]
             self.assertEqual(
                 javaheap,
-                (
-                    stats["memory"]["committed_heap"]
-                    - stats["memory"]["used_heap"]
-                ),
+                (stats["memory"]["committed_heap"] - stats["memory"]["used_heap"]),
             )
 
     def test_unused_heap_java11(self):
@@ -894,8 +871,5 @@ class TestAugmentStats(TestCase):
             javaheap = fixed_stats["memory"]["javaheap"]
             self.assertEqual(
                 javaheap,
-                (
-                    stats["memory"]["committed_heap"]
-                    - stats["memory"]["used_heap"]
-                ),
+                (stats["memory"]["committed_heap"] - stats["memory"]["used_heap"]),
             )

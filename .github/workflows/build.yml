@@ -33,12 +33,12 @@ jobs:
           echo "::set-output name=current_version_tag::${CURRENT_VERSION_TAG}"
       - name: Auto-generate future version
         id: autogenerate-version
-        uses: paulhatch/semantic-version@v4.0.3
+        uses: paulhatch/semantic-version@v5.0.3
         with:
           tag_prefix: "v"
           major_pattern: "(major)"
           minor_pattern: "(minor)"
-          format: "${major}.${minor}.${patch}-pre${increment}"
+          version_format: "${major}.${minor}.${patch}-pre${increment}"
   build:
     name: Build
     needs: get-version
@@ -46,17 +46,17 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: 3.6.15
           cache: pip
       - name: Install Python requirements
         run: make install_requirements
       - name: Lint
-        if: ${{ inputs.skip_tests == 'false' }}
+        if: ${{ inputs.skip_tests == false }}
         run: make lint
       - name: Run unit tests
-        if: ${{ inputs.skip_tests == 'false' }}
+        if: ${{ inputs.skip_tests == false }}
         run: make test_unit
       - name: Build
         run: VERSION=${{ needs.get-version.outputs.version_tag }} make build

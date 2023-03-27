@@ -36,9 +36,7 @@ class DataBrokerProcess:
             logging.debug("{} is already terminated".format(self.name))
         except Exception as ex:
             logging.error(
-                "Stop failed for {} process due to error {}".format(
-                    self.name, ex
-                )
+                "Stop failed for {} process due to error {}".format(self.name, ex)
             )
 
     def kill(self):

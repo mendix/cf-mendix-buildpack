@@ -33,8 +33,7 @@ class Log:
         self.queries = data["database_queries"]
         if hasattr(self, "start_time"):
             self.end_time_formatted = datetime.datetime.fromtimestamp(
-                (self.start_time + self.duration)  # pylint: disable=no-member
-                // 1000
+                (self.start_time + self.duration) // 1000  # pylint: disable=no-member
             )
             self.start_time_formatted = datetime.datetime.fromtimestamp(
                 self.start_time // 1000  # pylint: disable=no-member
