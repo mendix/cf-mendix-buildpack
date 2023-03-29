@@ -31,7 +31,6 @@ logging.getLogger("m2ee").propagate = False
 def is_version_implemented(version):
     if version.major >= 6:
         return True
-
     return False
 
 
@@ -39,7 +38,6 @@ def is_version_supported(version):
     # Support for the latest three major versions: https://docs.mendix.com/releasenotes/studio-pro/lts-mts
     if version.major >= 7:
         return True
-
     return False
 
 
@@ -51,9 +49,12 @@ def is_version_maintained(version):
         return True
     if version.major == 9 and version.minor == 6:
         return True
-    if version.major == 9 and version.minor >= 12:
+    if version.major == 9 and version.minor == 12:
         return True
-
+    if version.major == 9 and version.minor == 18:
+        return True
+    if version.major == 9 and version.minor == 24:
+        return True
     return False
 
 
