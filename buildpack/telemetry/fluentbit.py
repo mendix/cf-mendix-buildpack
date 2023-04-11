@@ -12,7 +12,7 @@ from buildpack.telemetry import splunk
 
 NAMESPACE = "fluentbit"
 CONF_FILENAME = f"{NAMESPACE}.conf"
-FILTER_FILENAME = "redaction.lua"
+FILTER_FILENAMES = ("redaction.lua", "metadata.lua")
 FLUENTBIT_ENV_VARS = {
     "FLUENTBIT_LOGS_PORT": os.getenv("FLUENTBIT_LOGS_PORT", default="5170"),
 }
@@ -36,7 +36,7 @@ def stage(buildpack_dir, destination_path, cache_path):
         cache_dir=cache_path,
     )
 
-    for filename in (CONF_FILENAME, FILTER_FILENAME):
+    for filename in (CONF_FILENAME, *FILTER_FILENAMES):
         shutil.copy(
             os.path.join(buildpack_dir, "etc", NAMESPACE, filename),
             os.path.join(
