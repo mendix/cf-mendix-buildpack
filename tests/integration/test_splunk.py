@@ -25,7 +25,7 @@ class TestCaseDeployWithSplunk(basetest.BaseTest):
         # check if Fluentbit is running
         output = self.run_on_container("ps -ef| grep fluentbit")
         assert output is not None
-        print("output", output)
+        print("output: ", output)
         assert str(output).find("fluent-bit") >= 0
 
     def _test_fluentbit_not_running(self, mda_file):
