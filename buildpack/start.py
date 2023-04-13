@@ -159,9 +159,7 @@ if __name__ == "__main__":
         (
             databroker_jmx_instance_cfg,
             databroker_jmx_config_files,
-        ) = databroker_processes.get_datadog_config(
-            datadog._get_user_checks_dir()
-        )
+        ) = databroker_processes.get_datadog_config(datadog._get_user_checks_dir())
         datadog.update_config(
             m2ee,
             model_version=model_version,
@@ -171,9 +169,7 @@ if __name__ == "__main__":
         )
         nginx.update_config()
         databroker.update_config(m2ee)
-        databroker.business_events.update_config(
-            m2ee, util.get_vcap_services_data()
-        )
+        databroker.business_events.update_config(m2ee, util.get_vcap_services_data())
 
         # Start components and runtime
         telegraf.run(runtime_version)

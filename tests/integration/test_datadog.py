@@ -10,9 +10,7 @@ class TestCaseDeployWithDatadog(basetest.BaseTestWithPostgreSQL):
         self.stage_container(
             mda_file,
             env_vars={
-                "DD_API_KEY": os.environ.get(
-                    "DD_API_KEY", "NON-VALID-TEST-KEY"
-                ),
+                "DD_API_KEY": os.environ.get("DD_API_KEY", "NON-VALID-TEST-KEY"),
                 "DD_SITE": os.environ.get("DD_SITE", "datadoghq.com"),
                 "DD_TRACE_ENABLED": "true",
                 # "DD_TRACE_DEBUG": "true",
@@ -32,9 +30,7 @@ class TestCaseDeployWithDatadog(basetest.BaseTestWithPostgreSQL):
         # Validate Telegraf and Datadog are running and have expected ports open
         # Telegraf
         self.assert_running("telegraf")
-        self.assert_string_not_in_recent_logs(
-            "E! [inputs.postgresql_extensible]"
-        )
+        self.assert_string_not_in_recent_logs("E! [inputs.postgresql_extensible]")
         # Agent: 18125
         self.assert_listening_on_port(datadog.get_statsd_port(), "agent")
         # Trace Agent: 8126
@@ -53,9 +49,7 @@ class TestCaseDeployWithDatadog(basetest.BaseTestWithPostgreSQL):
         self._test_logsubscriber_active()
 
     def _test_logsubscriber_active(self):
-        self.assert_string_in_recent_logs(
-            "Datadog Agent log subscriber is ready"
-        )
+        self.assert_string_in_recent_logs("Datadog Agent log subscriber is ready")
 
         logsubscribers_json = self.query_mxadmin(
             {"action": "get_log_settings", "params": {"sort": "subscriber"}}

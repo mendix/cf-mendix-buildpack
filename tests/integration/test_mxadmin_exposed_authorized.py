@@ -13,7 +13,5 @@ class TestCaseMxAdminExposed(basetest.BaseTest):
         assert r.status_code == 401
 
     def test_mxadmin_exposed_authorized(self):
-        r = self.httpget(
-            "/_mxadmin/", auth=("MxAdmin", self._runner.get_mx_password())
-        )
+        r = self.httpget("/_mxadmin/", auth=("MxAdmin", self._runner.get_mx_password()))
         assert r.status_code == 200

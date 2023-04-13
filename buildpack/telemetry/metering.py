@@ -35,9 +35,7 @@ def _get_project_id(file_path):
             return data["ProjectID"]
     except IOError as ioerror:
         raise Exception(
-            "Error while trying to get the ProjectID. Reason: '{}'".format(
-                ioerror
-            )
+            "Error while trying to get the ProjectID. Reason: '{}'".format(ioerror)
         )
 
 
@@ -71,17 +69,13 @@ def _set_up_environment():
         ]
     dbconfig = database.get_config()
     if dbconfig:
-        os.environ[
-            "MXUMS_DB_CONNECTION_URL"
-        ] = "postgres://{}:{}@{}/{}".format(
+        os.environ["MXUMS_DB_CONNECTION_URL"] = "postgres://{}:{}@{}/{}".format(
             dbconfig["DatabaseUserName"],
             dbconfig["DatabasePassword"],
             dbconfig["DatabaseHost"],
             dbconfig["DatabaseName"],
         )
-    project_id = _get_project_id(
-        os.path.join(SIDECAR_DIR, SIDECAR_CONFIG_FILE)
-    )
+    project_id = _get_project_id(os.path.join(SIDECAR_DIR, SIDECAR_CONFIG_FILE))
     os.environ["MXUMS_PROJECT_ID"] = project_id
     e = dict(os.environ.copy())
     return e

@@ -18,9 +18,7 @@ class TestCaseDeployWithMetering(basetest.BaseTestWithPostgreSQL):
         self.assert_app_running()
         output = self.run_on_container("ps -ef | grep 'metering-sidecar'")
         assert output is not None
-        assert (
-            str(output).find("/home/vcap/app/metering/metering-sidecar") >= 0
-        )
+        assert str(output).find("/home/vcap/app/metering/metering-sidecar") >= 0
 
         self.assert_string_in_recent_logs("Scheduling call home every 43200s")
 

@@ -93,9 +93,7 @@ class TestUtil(unittest.TestCase):
         m2ee.config._conf["SomeSection"] = {"SomeKey": "value1"}
 
         with self.assertRaises(ValueError):
-            util._upsert_m2ee_config_setting(
-                m2ee, "SomeSection", "SomeKey", "value2"
-            )
+            util._upsert_m2ee_config_setting(m2ee, "SomeSection", "SomeKey", "value2")
 
     def test_upsert_m2ee_config_append_type_difference(self):
         m2ee = M2EEMock()
@@ -126,16 +124,10 @@ class TestUtil(unittest.TestCase):
 
     def test_upsert_custom_environment_vars(self):
         m2ee = M2EEMock()
-        m2ee.config._conf["m2ee"] = {
-            "custom_environment": {"SOME_VAR": "SOME_VALUE"}
-        }
+        m2ee.config._conf["m2ee"] = {"custom_environment": {"SOME_VAR": "SOME_VALUE"}}
 
-        util.upsert_custom_environment_variable(
-            m2ee, "ANOTHER_VAR", "ANOTHER_VALUE"
-        )
-        util.upsert_custom_environment_variable(
-            m2ee, "SOME_VAR", "ANOTHER_VALUE"
-        )
+        util.upsert_custom_environment_variable(m2ee, "ANOTHER_VAR", "ANOTHER_VALUE")
+        util.upsert_custom_environment_variable(m2ee, "SOME_VAR", "ANOTHER_VALUE")
 
         assert util.get_custom_environment_variables(m2ee) == {
             "SOME_VAR": "ANOTHER_VALUE",

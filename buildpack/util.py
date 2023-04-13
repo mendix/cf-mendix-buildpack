@@ -118,9 +118,7 @@ def __get_dependencies(object):
     if (
         all(
             [
-                True
-                if k in DO_NOT_RECURSE_FIELDS
-                else _is_dependency_literal(v)
+                True if k in DO_NOT_RECURSE_FIELDS else _is_dependency_literal(v)
                 for k, v in object.items()
             ]
         )
@@ -133,19 +131,14 @@ def __get_dependencies(object):
         result = []
         for key, value in object.items():
             name = {}
-            if (
-                not _is_dependency_literal(value)
-                and key not in DO_NOT_RECURSE_FIELDS
-            ):
+            if not _is_dependency_literal(value) and key not in DO_NOT_RECURSE_FIELDS:
                 # Recurse non-literals
                 # If the item is a list, recurse for every item on the list
                 if isinstance(value, list):
                     for item in value:
                         # Recurse over the union of the parent object and item literals
                         if _is_dependency_literal(item):
-                            result.append(
-                                __get_dependencies({**object, **{key: item}})
-                            )
+                            result.append(__get_dependencies({**object, **{key: item}}))
                         else:
                             if isinstance(item, dict):
                                 for k, v in item.items():
@@ -162,9 +155,7 @@ def __get_dependencies(object):
                             else:
                                 for subitem in item:
                                     result.append(
-                                        __get_dependencies(
-                                            {**object, **{key: subitem}}
-                                        )
+                                        __get_dependencies({**object, **{key: subitem}})
                                     )
                 # If the item is another object, recurse over the union of the item and the parent object literals
                 else:
@@ -173,17 +164,12 @@ def __get_dependencies(object):
                         name = {DEPENDENCY_NAME_KEY: [key]}
                     else:
                         name = {
-                            DEPENDENCY_NAME_KEY: object[DEPENDENCY_NAME_KEY]
-                            + [key]
+                            DEPENDENCY_NAME_KEY: object[DEPENDENCY_NAME_KEY] + [key]
                         }
                     variables = {
-                        k: v
-                        for k, v in object.items()
-                        if _is_dependency_literal(v)
+                        k: v for k, v in object.items() if _is_dependency_literal(v)
                     }
-                    result.append(
-                        __get_dependencies({**value, **variables, **name})
-                    )
+                    result.append(__get_dependencies({**value, **variables, **name}))
         return result
 
 
@@ -262,7 +248,9 @@ def _delete_other_versions(directory, file_name, alias=None):
             file_name, directory
         )
     )
-    expression = r"^((?:[a-zA-Z]+-)+)((?:v*[0-9]+\.?)+.*)(\.(?:tar|tar\.gz|tgz|zip|jar))$"
+    expression = (
+        r"^((?:[a-zA-Z]+-)+)((?:v*[0-9]+\.?)+.*)(\.(?:tar|tar\.gz|tgz|zip|jar))$"
+    )
     patterns = [re.sub(expression, "\\1*\\3", file_name)]
     if alias:
         if isinstance(alias, str):
@@ -289,9 +277,7 @@ def _find_file_in_directory(file_name, directory):
         a
         for a in [
             os.path.abspath(p)
-            for p in glob.glob(
-                "{}/**/{}".format(directory, file_name), recursive=True
-            )
+            for p in glob.glob("{}/**/{}".format(directory, file_name), recursive=True)
         ]
         if os.path.isfile(a)
     ]
@@ -338,9 +324,7 @@ def resolve_dependency(
 
     vendor_dir = os.path.join(buildpack_dir, "vendor")
     logging.debug(
-        "Looking for [{}] in [{}] and [{}]...".format(
-            file_name, vendor_dir, cache_dir
-        )
+        "Looking for [{}] in [{}] and [{}]...".format(file_name, vendor_dir, cache_dir)
     )
 
     vendored_location = _find_file_in_directory(file_name, vendor_dir)
@@ -358,18 +342,14 @@ def resolve_dependency(
     else:
         shutil.copy(vendored_location, cached_location)
         logging.debug(
-            "Found vendored dependency, not downloading [{}]".format(
-                vendored_location
-            )
+            "Found vendored dependency, not downloading [{}]".format(vendored_location)
         )
     if destination:
         mkdir_p(destination)
         if unpack:
             # Unpack the artifact
             logging.debug(
-                "Extracting [{}] to [{}]...".format(
-                    cached_location, destination
-                )
+                "Extracting [{}] to [{}]...".format(cached_location, destination)
             )
             if (
                 file_name.endswith(".tar.gz")
@@ -399,9 +379,7 @@ def resolve_dependency(
             shutil.copy(cached_location, os.path.join(destination, file_name))
 
         logging.debug(
-            "Dependency [{}] is now present at [{}]".format(
-                file_name, destination
-            )
+            "Dependency [{}] is now present at [{}]".format(file_name, destination)
         )
     return dependency
 
@@ -462,9 +440,7 @@ def set_up_launch_environment(deps_dir, profile_dir):
 
         deps_idx = sections[len(sections) - 2]
 
-        files = [
-            f for f in os.listdir(dir) if os.path.isfile(os.path.join(dir, f))
-        ]
+        files = [f for f in os.listdir(dir) if os.path.isfile(os.path.join(dir, f))]
 
         for file in files:
             src = os.path.join(dir, file)
@@ -474,9 +450,7 @@ def set_up_launch_environment(deps_dir, profile_dir):
 
 def get_existing_deps_dirs(deps_dir, sub_dir, prefix):
     files = [
-        f
-        for f in os.listdir(deps_dir)
-        if os.path.isdir(os.path.join(deps_dir, f))
+        f for f in os.listdir(deps_dir) if os.path.isdir(os.path.join(deps_dir, f))
     ]
     existing_dirs = []
 
@@ -547,9 +521,7 @@ def get_tags():
     try:
         tags = json.loads(os.getenv("TAGS", "[]"))
     except ValueError:
-        logging.warning(
-            "Invalid TAGS set. Please check if it is a valid JSON array."
-        )
+        logging.warning("Invalid TAGS set. Please check if it is a valid JSON array.")
 
     result = {}
     for kv in [t.split(":") for t in tags]:
@@ -557,9 +529,7 @@ def get_tags():
             result[kv[0]] = kv[1]
         else:
             logging.warning(
-                "Skipping tag [{}] from TAGS: not in key:value format".format(
-                    kv[0]
-                )
+                "Skipping tag [{}] from TAGS: not in key:value format".format(kv[0])
             )
     return result
 
@@ -573,11 +543,7 @@ def is_url(url):
 
 
 def is_path_accessible(path, mode=os.R_OK):
-    return (
-        path
-        and os.path.exists(path)
-        and os.access(os.path.dirname(path), mode)
-    )
+    return path and os.path.exists(path) and os.access(os.path.dirname(path), mode)
 
 
 def set_executable(path_or_glob):
@@ -587,16 +553,11 @@ def set_executable(path_or_glob):
         files = glob.glob(path_or_glob)
     for f in files:
         if not os.access(f, os.X_OK):
-            logging.debug(
-                "Setting executable permissions for [{}]...".format(f)
-            )
+            logging.debug("Setting executable permissions for [{}]...".format(f))
             try:
                 os.chmod(
                     f,
-                    os.stat(f).st_mode
-                    | stat.S_IXUSR
-                    | stat.S_IXGRP
-                    | stat.S_IXOTH,
+                    os.stat(f).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH,
                 )
             except PermissionError as err:
                 logging.exception(
@@ -667,9 +628,7 @@ def _upsert_m2ee_config_setting(
 
 # Upserts a complete section into the m2ee-tools config
 # Operation: config[section] (+)= settings
-def _upsert_m2ee_config_section(
-    m2ee, section, settings, overwrite=False, append=False
-):
+def _upsert_m2ee_config_section(m2ee, section, settings, overwrite=False, append=False):
     _upsert_config(
         m2ee.config._conf,
         section,
@@ -681,9 +640,7 @@ def _upsert_m2ee_config_section(
 
 # Upserts a custom runtime setting
 # Operation: config["mxruntime"][key] (+)= value
-def upsert_custom_runtime_setting(
-    m2ee, key, value, overwrite=False, append=False
-):
+def upsert_custom_runtime_setting(m2ee, key, value, overwrite=False, append=False):
     _upsert_m2ee_config_setting(
         m2ee,
         M2EE_TOOLS_CUSTOM_RUNTIME_SETTINGS_SECTION,
@@ -696,9 +653,7 @@ def upsert_custom_runtime_setting(
 
 # Upserts multiple custom runtime settings
 # Operation: config["mxruntime"] (+)= settings
-def upsert_custom_runtime_settings(
-    m2ee, settings, overwrite=False, append=False
-):
+def upsert_custom_runtime_settings(m2ee, settings, overwrite=False, append=False):
     _upsert_m2ee_config_section(
         m2ee,
         M2EE_TOOLS_CUSTOM_RUNTIME_SETTINGS_SECTION,
@@ -784,9 +739,7 @@ def get_custom_environment_variables(m2ee):
 def upsert_logging_config(m2ee, value):
     if not isinstance(value, dict):
         raise ValueError("Value must be a dictionary")
-    _upsert_m2ee_config_section(
-        m2ee, "logging", [value], overwrite=False, append=True
-    )
+    _upsert_m2ee_config_section(m2ee, "logging", [value], overwrite=False, append=True)
 
 
 # Script entry point. Only meant to be used in development
@@ -797,9 +750,7 @@ if __name__ == "__main__":
     # Hacks to find project root and make script runnable in most cases
     PROJECT_ROOT_PATH = None
     if "__file__" in vars():
-        PROJECT_ROOT_PATH = os.path.dirname(
-            os.path.dirname(os.path.realpath(__file__))
-        )
+        PROJECT_ROOT_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     else:
         PROJECT_ROOT_PATH = os.getcwd()
     sys.path.append(PROJECT_ROOT_PATH)
@@ -872,16 +823,14 @@ if __name__ == "__main__":
                             **{id: _render(dependency, dependency, [id])[id]},
                         }
                 # BOM prefixed fields
-                for bom_key in [
-                    x for x in dependency.keys() if x.startswith("bom_")
-                ]:
+                for bom_key in [x for x in dependency.keys() if x.startswith("bom_")]:
                     real_key = bom_key.split("_")[1]
                     component = {
                         **component,
                         **{
-                            real_key: _render(
-                                dependency, dependency, [bom_key]
-                            )[bom_key]
+                            real_key: _render(dependency, dependency, [bom_key])[
+                                bom_key
+                            ]
                         },
                     }
                 components.append(component)

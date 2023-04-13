@@ -86,9 +86,7 @@ class TestCaseTelegraf(basetest.BaseTest):
         self._stage_test_app()
         # Ensure we have the influxdb_listener plugin added
         output = self.run_on_container(
-            "cat {} | grep -A2 inputs.influxdb_listener".format(
-                telegraf_config_path
-            )
+            "cat {} | grep -A2 inputs.influxdb_listener".format(telegraf_config_path)
         )
         assert output is not None
         assert str(output).find("influxdb_listener") >= 0
@@ -102,9 +100,7 @@ class TestCaseTelegraf(basetest.BaseTest):
 
         # Ensure we have the appropriate headers
         output = self.run_on_container(
-            "cat {} | grep -A5 outputs.http.headers".format(
-                telegraf_config_path
-            )
+            "cat {} | grep -A5 outputs.http.headers".format(telegraf_config_path)
         )
         assert output is not None
         assert str(output).find("Micrometer-Metrics") >= 0

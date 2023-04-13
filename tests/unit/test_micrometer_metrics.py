@@ -110,9 +110,7 @@ class TestMicrometerMetricRegistry(TestCase):
 class TestOldApps(TestCase):
     @patch("buildpack.core.runtime.get_runtime_version", return_value="9.6.0")
     @patch("buildpack.telemetry.datadog.is_enabled", return_value=True)
-    def test_paidapps_less_than_9_7(
-        self, dd_is_enabled, mocked_runtime_version
-    ):
+    def test_paidapps_less_than_9_7(self, dd_is_enabled, mocked_runtime_version):
         with patch.dict(os.environ, {"PROFILE": "some-random-mx-profile"}):
             result = metrics.configure_metrics_registry(Mock())
             # nothing to configure for apps below 9.7.0

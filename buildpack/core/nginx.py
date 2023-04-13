@@ -54,9 +54,7 @@ def _is_samesite_cookie_workaround_enabled(mx_version):
                 SAMESITE_COOKIE_WORKAROUND_ENV_KEY,
                 str(SAMESITE_COOKIE_WORKAROUND_DEFAULT),
             )
-        ) and mx_version < MXVersion(
-            SAMESITE_COOKIE_WORKAROUND_LESS_MX_VERSION
-        )
+        ) and mx_version < MXVersion(SAMESITE_COOKIE_WORKAROUND_LESS_MX_VERSION)
     except (ValueError, AttributeError):
         logging.warning(
             "Invalid value for [%s], disabling SameSite cookie workaround",
@@ -86,14 +84,12 @@ def stage(buildpack_path, build_path, cache_path):
             cache_dir=cache_path,
         )
     else:
-        logging.debug(
-            "Custom nginx path provided, nginx will not be downloaded"
-        )
+        logging.debug("Custom nginx path provided, nginx will not be downloaded")
 
 
 def update_config():
-    samesite_cookie_workaround_enabled = (
-        _is_samesite_cookie_workaround_enabled(runtime.get_runtime_version())
+    samesite_cookie_workaround_enabled = _is_samesite_cookie_workaround_enabled(
+        runtime.get_runtime_version()
     )
     if samesite_cookie_workaround_enabled:
         logging.info("SameSite cookie workaround is enabled")
@@ -192,14 +188,10 @@ def _get_http_headers():
     for header_key, header_value in headers_from_json.items():
         regEx = ALLOWED_HEADERS[header_key]
         if regEx and re.match(regEx, header_value):
-            escaped_value = header_value.replace('"', '\\"').replace(
-                "'", "\\'"
-            )
+            escaped_value = header_value.replace('"', '\\"').replace("'", "\\'")
             result.append((header_key, escaped_value))
             logging.debug(
-                "Added header {} '{}' to nginx config".format(
-                    header_key, header_value
-                )
+                "Added header {} '{}' to nginx config".format(header_key, header_value)
             )
         else:
             logging.warning(
@@ -212,9 +204,7 @@ def _get_http_headers():
 
 
 def _get_nginx_bin_path():
-    nginx_bin_path = os.environ.get(
-        "NGINX_CUSTOM_BIN_PATH", "nginx/sbin/nginx"
-    )
+    nginx_bin_path = os.environ.get("NGINX_CUSTOM_BIN_PATH", "nginx/sbin/nginx")
     return nginx_bin_path
 
 
@@ -241,9 +231,7 @@ def _generate_password_file(users_passwords, file_name_suffix=""):
                     "%s:%s\n"
                     % (
                         user,
-                        crypt.crypt(
-                            password, crypt.mksalt(crypt.METHOD_SHA512)
-                        ),
+                        crypt.crypt(password, crypt.mksalt(crypt.METHOD_SHA512)),
                     )
                 )
 
@@ -310,9 +298,7 @@ def _get_locations(
     request_handlers = runtime.get_metadata_value("RequestHandlers")
     if request_handlers is not None:
         paths = [handler["Name"] for handler in request_handlers]
-        dynamic_handler_paths = list(
-            set(paths) - set(DEFAULT_REQUEST_HANDLER_PATHS)
-        )
+        dynamic_handler_paths = list(set(paths) - set(DEFAULT_REQUEST_HANDLER_PATHS))
 
     # Add dynamic request handler locations
     for dynamic_handler_path in dynamic_handler_paths:
@@ -327,9 +313,7 @@ def _get_locations(
         for rest_handler_path in rest_handler_paths:
             locations[
                 _get_slashed_path(rest_handler_path)
-            ] = _get_most_specific_location_config(
-                rest_handler_path, locations
-            )
+            ] = _get_most_specific_location_config(rest_handler_path, locations)
     except Exception as e:
         logging.error("Cannot get REST handlers from model: %s" % e)
 
@@ -344,9 +328,7 @@ def _get_locations(
 
         # Reserved path prefixes are restricted
         if any(path.startswith(prefix) for prefix in RESERVED_PATH_PREFIXES):
-            raise Exception(
-                "Can not override location on reserved path [%s]" % path
-            )
+            raise Exception("Can not override location on reserved path [%s]" % path)
 
         # If body is set and is only element, assume custom location
         if len(config) == 1 and "body" in config:
@@ -379,9 +361,7 @@ def _get_locations(
                 if config["satisfy"] in ["any", "all"]:
                     location.satisfy = config["satisfy"]
                 else:
-                    raise Exception(
-                        "Invalid satisfy value: %s" % config["satisfy"]
-                    )
+                    raise Exception("Invalid satisfy value: %s" % config["satisfy"])
 
             # Add IP filter configuration
             if "ipfilter" in config:
@@ -408,9 +388,7 @@ def _get_locations(
                 for i in config["issuer_dn"]:
                     # Workaround for missing identifier strings from Java
                     # This should be fixed in upstream code by using different certificate libraries
-                    issuer = i.replace(
-                        "OID.2.5.4.97", "organizationIdentifier"
-                    )
+                    issuer = i.replace("OID.2.5.4.97", "organizationIdentifier")
 
                     location.issuer_dn += "{}|".format(issuer)
 

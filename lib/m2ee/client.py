@@ -39,9 +39,9 @@ class M2EEClient:
         self._url = url
         self._headers = {
             "Content-Type": "application/json",
-            "X-M2EE-Authentication": b64encode(
-                password.encode("utf-8")
-            ).decode("ascii"),
+            "X-M2EE-Authentication": b64encode(password.encode("utf-8")).decode(
+                "ascii"
+            ),
         }
 
     def request(self, action, params=None, timeout=None):
@@ -58,13 +58,10 @@ class M2EEClient:
         )
         if response_headers["status"] == "200":
             logger.trace("M2EE response: %s" % response_body)
-            return M2EEResponse(
-                action, json.loads(response_body.decode("utf-8"))
-            )
+            return M2EEResponse(action, json.loads(response_body.decode("utf-8")))
         else:
             logger.error(
-                "non-200 http status code: %s %s"
-                % (response_headers, response_body)
+                "non-200 http status code: %s %s" % (response_headers, response_body)
             )
 
     def ping(self, timeout=5):
@@ -186,9 +183,7 @@ class M2EEClient:
     def get_profiler_logs(self):
         return self.request("get_profiler_logs")
 
-    def start_profiler(
-        self, minimum_duration_to_log=None, flush_interval=None
-    ):
+    def start_profiler(self, minimum_duration_to_log=None, flush_interval=None):
         params = {}
         if minimum_duration_to_log is not None:
             params["minimum_duration_to_log"] = minimum_duration_to_log

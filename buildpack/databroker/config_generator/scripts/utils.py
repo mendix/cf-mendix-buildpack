@@ -32,9 +32,7 @@ def convert_dot_field_to_dict(field):
     if type(field) is dict:
         for key, value in field.items():
             path = key.split(".")
-            target = reduce(
-                lambda d, k: d.setdefault(k, {}), path[:-1], output
-            )
+            target = reduce(lambda d, k: d.setdefault(k, {}), path[:-1], output)
             target[path[-1]] = convert_dot_field_to_dict(value)
         return output
     else:

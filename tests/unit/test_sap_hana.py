@@ -84,12 +84,8 @@ class TestCaseSapHanaDryRun(TestCase):
 
         factory = DatabaseConfigurationFactory()
         assert factory.present_in_vcap("hana") is not None
-        assert factory.present_in_vcap(
-            "hana", tags=["hana", "database", "relational"]
-        )
-        assert factory.present_in_vcap(
-            None, tags=["hana", "database", "relational"]
-        )
+        assert factory.present_in_vcap("hana", tags=["hana", "database", "relational"])
+        assert factory.present_in_vcap(None, tags=["hana", "database", "relational"])
 
         assert factory.get_instance().database_type == "SAPHANA"
 
@@ -143,9 +139,7 @@ class TestCaseSapHanaDryRun(TestCase):
         assert expected_query_params == queryparams
 
     def test_sap_hana_with_ending_slash(self):
-        expected_query_params = {
-            "currentschema": ["USR_AH5QOFLOWIHFVAJKKG41UZBPD"]
-        }
+        expected_query_params = {"currentschema": ["USR_AH5QOFLOWIHFVAJKKG41UZBPD"]}
         vcap = json.loads(self.sap_hana_vcap_example_with_slash)
 
         sapHanaConfiguration = SapHanaDatabaseConfiguration(
@@ -204,8 +198,6 @@ class TestCaseSapHanaDryRun(TestCase):
         assert factory.present_in_vcap(
             "hanatrial", tags=["hana", "database", "relational"]
         )
-        assert factory.present_in_vcap(
-            None, tags=["hana", "database", "relational"]
-        )
+        assert factory.present_in_vcap(None, tags=["hana", "database", "relational"])
 
         assert factory.get_instance().database_type == "SAPHANA"

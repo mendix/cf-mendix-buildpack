@@ -36,9 +36,7 @@ class TestCaseDeployWithAppdynamics(basetest.BaseTest):
 
     def _test_appdynamics(self, mda_file):
         self._test_appdynamics_running(mda_file)
-        self.assert_string_in_recent_logs(
-            "Started AppDynamics Java Agent Successfully"
-        )
+        self.assert_string_in_recent_logs("Started AppDynamics Java Agent Successfully")
 
     def test_appdynamics_mx9(self):
         self._test_appdynamics("BuildpackTestApp-mx9-7.mda")

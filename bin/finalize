@@ -14,7 +14,7 @@ if [[ -f "${VERSION_PATH}" ]]; then VERSION=$(cat ${VERSION_PATH} | tr -d '[:spa
 COMMIT_PATH="${BUILDPACK_PATH}/.commit"
 COMMIT="HEAD"
 if [[ -f "${COMMIT_PATH}" ]]; then COMMIT=$(cat ${COMMIT_PATH} | tr -d '[:space:]'); fi
-    
+
 echo " ---> Mendix Cloud Foundry Buildpack $VERSION [$COMMIT] staging..."
 
 # Set the buildpack metadata
@@ -28,4 +28,3 @@ source ${BUILDPACK_PATH}/bin/bootstrap-python
 
 # Start the staging magic in Python
 PYTHONPATH=$PYTHONPATH:${BUILDPACK_PATH}:${BUILDPACK_PATH}/lib:${BUILDPACK_PATH}/buildpack:$SITE_PACKAGES_PATH python3 "${BUILDPACK_PATH}/buildpack/stage.py" "$@"
-
