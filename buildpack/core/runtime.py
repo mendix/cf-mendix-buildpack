@@ -31,7 +31,6 @@ logging.getLogger("m2ee").propagate = False
 def is_version_implemented(version):
     if version.major >= 6:
         return True
-
     return False
 
 
@@ -39,7 +38,6 @@ def is_version_supported(version):
     # Support for the latest three major versions: https://docs.mendix.com/releasenotes/studio-pro/lts-mts
     if version.major >= 7:
         return True
-
     return False
 
 
@@ -51,9 +49,12 @@ def is_version_maintained(version):
         return True
     if version.major == 9 and version.minor == 6:
         return True
-    if version.major == 9 and version.minor >= 12:
+    if version.major == 9 and version.minor == 12:
         return True
-
+    if version.major == 9 and version.minor == 18:
+        return True
+    if version.major == 9 and version.minor == 24:
+        return True
     return False
 
 
@@ -177,25 +178,19 @@ def _activate_license():
     license_key = os.environ.get(
         "FORCED_LICENSE_KEY", os.environ.get("LICENSE_KEY", None)
     )
-    server_id = os.environ.get(
-        "FORCED_SERVER_ID", os.environ.get("SERVER_ID", None)
-    )
-    license_id = os.environ.get(
-        "FORCED_LICENSE_ID", os.environ.get("LICENSE_ID", None)
-    )
+    server_id = os.environ.get("FORCED_SERVER_ID", os.environ.get("SERVER_ID", None))
+    license_id = os.environ.get("FORCED_LICENSE_ID", os.environ.get("LICENSE_ID", None))
     if server_id:
-        logging.warning(
-            "SERVER_ID is deprecated, please use LICENSE_ID instead"
-        )
+        logging.warning("SERVER_ID is deprecated, please use LICENSE_ID instead")
 
     if not license_id:
         license_id = server_id
 
     if license_key is not None and license_id is not None:
         logging.debug("A license was supplied, activating...")
-        prefs_body = prefs_template.replace(
-            "{{LICENSE_ID}}", license_id
-        ).replace("{{LICENSE_KEY}}", license_key)
+        prefs_body = prefs_template.replace("{{LICENSE_ID}}", license_id).replace(
+            "{{LICENSE_KEY}}", license_key
+        )
         with open(os.path.join(prefs_dir, "prefs.xml"), "w") as prefs_file:
             prefs_file.write(prefs_body)
 
@@ -203,10 +198,7 @@ def _activate_license():
 def _get_scheduled_events(metadata):
     scheduled_events = os.getenv("SCHEDULED_EVENTS", None)
     # Scheduled events need to be enabled on every instance >= 9.12
-    if (
-        get_runtime_version() < MXVersion(9.12)
-        and not util.is_cluster_leader()
-    ):
+    if get_runtime_version() < MXVersion(9.12) and not util.is_cluster_leader():
         logging.debug(
             "This instance is not a cluster leader, disabling scheduled events..."
         )
@@ -220,8 +212,7 @@ def _get_scheduled_events(metadata):
     else:
         parsed_scheduled_events = scheduled_events.split(",")
         metadata_scheduled_events = [
-            scheduled_event["Name"]
-            for scheduled_event in metadata["ScheduledEvents"]
+            scheduled_event["Name"] for scheduled_event in metadata["ScheduledEvents"]
         ]
         result = []
         for scheduled_event in parsed_scheduled_events:
@@ -240,9 +231,7 @@ def _get_constants(metadata):
     constants = {}
 
     constants_from_json = {}
-    constants_json = os.environ.get(
-        "CONSTANTS", json.dumps(constants_from_json)
-    )
+    constants_json = os.environ.get("CONSTANTS", json.dumps(constants_from_json))
     try:
         constants_from_json = json.loads(constants_json)
     except Exception:
@@ -255,9 +244,7 @@ def _get_constants(metadata):
     for constant in metadata["Constants"]:
         constant_name = constant["Name"]
         env_name = "MX_%s" % constant_name.replace(".", "_")
-        value = os.environ.get(
-            env_name, constants_from_json.get(constant_name)
-        )
+        value = os.environ.get(env_name, constants_from_json.get(constant_name))
         if value is None:
             value = constant["DefaultValue"]
             logging.debug(
@@ -304,8 +291,7 @@ def _get_license_subscription():
         if "mendix-platform" in vcap_services:
             subscription = vcap_services["mendix-platform"][0]
             logging.debug(
-                "Configuring license subscription for [%s]..."
-                % subscription["name"]
+                "Configuring license subscription for [%s]..." % subscription["name"]
             )
             credentials = subscription["credentials"]
             return {
@@ -355,9 +341,7 @@ def _get_application_root_url(vcap_data):
 
 
 def _set_runtime_config(m2ee, metadata, vcap_data):
-    scheduled_event_execution, my_scheduled_events = _get_scheduled_events(
-        metadata
-    )
+    scheduled_event_execution, my_scheduled_events = _get_scheduled_events(metadata)
 
     app_config = {
         "ApplicationRootUrl": _get_application_root_url(vcap_data),
@@ -384,9 +368,7 @@ def _set_runtime_config(m2ee, metadata, vcap_data):
         app_config["com.mendix.core.SessionIdCookieName"] = "JSESSIONID"
 
     util.mkdir_p(os.path.join(os.getcwd(), "model", "resources"))
-    util.upsert_custom_runtime_settings(
-        m2ee, app_config, overwrite=True, append=True
-    )
+    util.upsert_custom_runtime_settings(m2ee, app_config, overwrite=True, append=True)
     util.upsert_custom_runtime_settings(
         m2ee,
         security.get_certificate_authorities(),
@@ -461,9 +443,7 @@ def _stop(m2ee, timeout=10):
             os.waitpid(m2ee.runner.get_pid(), os.WNOHANG)
             m2ee.runner.cleanup_pid()
         except OSError as error:
-            logging.warning(
-                "Waiting for runtime process failed: {}".format(error)
-            )
+            logging.warning("Waiting for runtime process failed: {}".format(error))
             return False
     return True
 
@@ -486,9 +466,7 @@ def await_termination(m2ee, interval=1):
 def await_database_ready(m2ee, timeout=30):
     logging.info("Waiting for runtime database initialization to complete...")
     if not m2ee.client.ping(timeout):
-        raise Exception(
-            "Failed to receive successful ping from runtime Admin API"
-        )
+        raise Exception("Failed to receive successful ping from runtime Admin API")
     logging.info("Runtime database is now available")
 
 
@@ -560,9 +538,7 @@ def _start_app(m2ee):
                 )
                 abort = True
             elif result == 7 or result == 8 or result == 9:
-                logging.warning(
-                    "Invalid configuration, please check it for errors"
-                )
+                logging.warning("Invalid configuration, please check it for errors")
                 abort = True
             else:
                 abort = True

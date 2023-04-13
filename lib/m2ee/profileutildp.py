@@ -38,9 +38,7 @@
 #     for phylogenetic computing. Bioinformatics 26: 1569-1571.
 
 
-def format_dict_table(
-    rows, column_names=None, max_column_width=None, border_style=2
-):
+def format_dict_table(rows, column_names=None, max_column_width=None, border_style=2):
     """
     Returns a string representation of a tuple of dictionaries in a
     table format. This method can read the column names directly off the
@@ -91,9 +89,7 @@ def format_dict_table(
                 for row in rows:
                     new_row = {}
                     for k in row.keys():
-                        new_row[k[:max_column_width]] = str(row[k])[
-                            :max_column_width
-                        ]
+                        new_row[k[:max_column_width]] = str(row[k])[:max_column_width]
                     trunc_rows.append(new_row)
                 rows = trunc_rows
 
@@ -124,9 +120,7 @@ def format_dict_table(
                 display.append(full_line)
             for row in rows:
                 display.append(
-                    left_table_edge_rule
-                    + (row_template % row)
-                    + right_table_edge_rule
+                    left_table_edge_rule + (row_template % row) + right_table_edge_rule
                 )
             if border_style > 0:
                 display.append(full_line)

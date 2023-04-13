@@ -16,9 +16,7 @@ try:
     import readline
 
     # allow - in filenames we're completing without messing up completion
-    readline.set_completer_delims(
-        readline.get_completer_delims().replace("-", "")
-    )
+    readline.set_completer_delims(readline.get_completer_delims().replace("-", ""))
 except ImportError:
     pass
 
@@ -43,15 +41,11 @@ def unpack(config, mda_name):
     cmd = ("unzip", "-tqq", mda_file_name)
     logger.trace("Executing %s" % str(cmd))
     try:
-        proc = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (stdout, stderr) = proc.communicate()
 
         if proc.returncode != 0:
-            logger.error(
-                "An error occured while testing archive " "consistency:"
-            )
+            logger.error("An error occured while testing archive " "consistency:")
             logger.error("stdout: %s" % stdout)
             logger.error("stderr: %s" % stderr)
             return False
@@ -62,9 +56,7 @@ def unpack(config, mda_name):
         import errno
 
         if ose.errno == errno.ENOENT:
-            logger.error(
-                "The unzip program could not be found: %s" % ose.strerror
-            )
+            logger.error("The unzip program could not be found: %s" % ose.strerror)
         else:
             logger.error("An error occured while executing unzip: %s" % ose)
         return False
@@ -79,9 +71,7 @@ def unpack(config, mda_name):
     logger.debug("Extracting archive...")
     cmd = ("unzip", "-oq", mda_file_name, "web/*", "model/*", "-d", app_base)
     logger.trace("Executing %s" % str(cmd))
-    proc = subprocess.Popen(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     (stdout, stderr) = proc.communicate()
 
     if proc.returncode != 0:
@@ -100,9 +90,7 @@ def unpack(config, mda_name):
 
 def fix_mxclientsystem_symlink(config):
     logger.debug("Running fix_mxclientsystem_symlink...")
-    mxclient_symlink = os.path.join(
-        config.get_public_webroot_path(), "mxclientsystem"
-    )
+    mxclient_symlink = os.path.join(config.get_public_webroot_path(), "mxclientsystem")
     logger.trace("mxclient_symlink: %s" % mxclient_symlink)
     real_mxclientsystem_path = config.get_real_mxclientsystem_path()
     logger.trace("real_mxclientsystem_path: %s" % real_mxclientsystem_path)
@@ -113,15 +101,12 @@ def fix_mxclientsystem_symlink(config):
                 "mxclientsystem symlink exists, but points "
                 "to %s" % current_real_mxclientsystem_path
             )
-            logger.debug(
-                "redirecting symlink to %s" % real_mxclientsystem_path
-            )
+            logger.debug("redirecting symlink to %s" % real_mxclientsystem_path)
             os.unlink(mxclient_symlink)
             os.symlink(real_mxclientsystem_path, mxclient_symlink)
     elif not os.path.exists(mxclient_symlink):
         logger.debug(
-            "creating mxclientsystem symlink pointing to %s"
-            % real_mxclientsystem_path
+            "creating mxclientsystem symlink pointing to %s" % real_mxclientsystem_path
         )
         try:
             os.symlink(real_mxclientsystem_path, mxclient_symlink)
@@ -129,8 +114,7 @@ def fix_mxclientsystem_symlink(config):
             logger.error("creating symlink failed: %s" % e)
     else:
         logger.warn(
-            "Not touching mxclientsystem symlink: file exists "
-            "and is not a symlink"
+            "Not touching mxclientsystem symlink: file exists " "and is not a symlink"
         )
 
 
@@ -146,13 +130,10 @@ def run_post_unpack_hook(post_unpack_hook):
                 )
         else:
             logger.error(
-                "post-unpack-hook script %s is not "
-                "executable." % post_unpack_hook
+                "post-unpack-hook script %s is not " "executable." % post_unpack_hook
             )
     else:
-        logger.error(
-            "post-unpack-hook script %s does not exist." % post_unpack_hook
-        )
+        logger.error("post-unpack-hook script %s does not exist." % post_unpack_hook)
 
 
 def check_download_runtime_existence(url):
@@ -167,8 +148,7 @@ def check_download_runtime_existence(url):
         socket.error,
     ) as e:
         logger.error(
-            "Checking download url %s failed: %s: %s"
-            % (url, e.__class__.__name__, e)
+            "Checking download url %s failed: %s: %s" % (url, e.__class__.__name__, e)
         )
         return False
 

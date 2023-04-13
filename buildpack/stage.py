@@ -21,9 +21,7 @@ from buildpack.telemetry import (
 )
 
 BUILDPACK_DIR = os.path.abspath(
-    os.path.dirname(
-        os.path.dirname(os.path.join(os.path.dirname(__file__), ".."))
-    )
+    os.path.dirname(os.path.dirname(os.path.join(os.path.dirname(__file__), "..")))
 )
 BUILD_DIR = os.path.abspath(sys.argv[1])
 CACHE_DIR = os.path.abspath(os.path.join(sys.argv[2], "bust"))
@@ -75,9 +73,7 @@ def preflight_check(version):
         )
     if not runtime.is_version_implemented(version):
         raise NotImplementedError(
-            "Mendix [{}] is not supported by this buildpack".format(
-                version.major
-            )
+            "Mendix [{}] is not supported by this buildpack".format(version.major)
         )
     if not runtime.is_version_supported(version):
         logging.warning(
@@ -111,9 +107,7 @@ def copy_buildpack_resources():
         os.path.join(BUILDPACK_DIR, "buildpack"),
         os.path.join(BUILD_DIR, "buildpack"),
     )
-    shutil.copytree(
-        os.path.join(BUILDPACK_DIR, "lib"), os.path.join(BUILD_DIR, "lib")
-    )
+    shutil.copytree(os.path.join(BUILDPACK_DIR, "lib"), os.path.join(BUILD_DIR, "lib"))
     commit_file_path = os.path.join(BUILDPACK_DIR, ".commit")
     if os.path.isfile(commit_file_path):
         shutil.copy(
@@ -151,9 +145,7 @@ def cleanup_dependency_cache(cached_dir, dependency_list):
     for root, dirs, files in os.walk(cached_dir):
         for file in files:
             file_full_path = os.path.join(root, file)
-            logging.debug(
-                "dependency in cache folder: [{}]".format(file_full_path)
-            )
+            logging.debug("dependency in cache folder: [{}]".format(file_full_path))
             if file_full_path not in dependency_list:
                 # delete from cache
                 os.remove(file_full_path)
@@ -213,12 +205,8 @@ if __name__ == "__main__":
     splunk.stage()
     fluentbit.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)
     newrelic.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)
-    mx_java_agent.stage(
-        BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR, runtime_version
-    )
-    telegraf.stage(
-        BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR, runtime_version
-    )
+    mx_java_agent.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR, runtime_version)
+    telegraf.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR, runtime_version)
     datadog.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)
     metering.stage(BUILDPACK_DIR, BUILD_DIR, CACHE_DIR)
     database.stage(BUILDPACK_DIR, BUILD_DIR)

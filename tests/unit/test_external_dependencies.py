@@ -48,7 +48,7 @@ dependencies:
         version: 1.0.0
         artifact: "some_location/some_archive-{{ type }}-{{ version }}.tar.gz"
         bar:
-            type: "fizz" 
+            type: "fizz"
         baz:
             type: "buzz"
 """,
@@ -215,8 +215,7 @@ dependencies:
                 DEPENDENCY_ARTIFACT_KEY: "/some_location/some_archive-1.0.0.tar.gz",
                 DEPENDENCY_NAME_KEY: ["foo"],
             },
-            "%s/some_location/some_archive-1.0.0.tar.gz"
-            % BLOBSTORE_DEFAULT_URL,
+            "%s/some_location/some_archive-1.0.0.tar.gz" % BLOBSTORE_DEFAULT_URL,
         ),
         # Full url
         (
@@ -243,9 +242,7 @@ dependencies:
 
         files = []
         for version in versions:
-            files.append(
-                os.path.join(temp_dir.name, "{}{}".format(prefix, version))
-            )
+            files.append(os.path.join(temp_dir.name, "{}{}".format(prefix, version)))
 
         for f in files:
             open(f, "a").close()
@@ -276,9 +273,7 @@ dependencies:
         openjdk_prefix = "AdoptOpenJDK-jre-"
         openjdk_versions = ["11.0.3-linux-x64.tar.gz"]
 
-        assert self._test_delete_old_versions(
-            openjdk_prefix, openjdk_versions, 0, {}
-        )
+        assert self._test_delete_old_versions(openjdk_prefix, openjdk_versions, 0, {})
 
         dd_prefix = "cf-datadog-sidecar-"
         dd_versions = [
@@ -297,9 +292,7 @@ dependencies:
             "8.7.0.1476.tar.gz",
         ]
 
-        assert self._test_delete_old_versions(
-            mx_prefix, mx_versions, 1, [0, 2, 3]
-        )
+        assert self._test_delete_old_versions(mx_prefix, mx_versions, 1, [0, 2, 3])
 
         ng_prefix = "nginx-"
         ng_versions = ["1.15.10-linux-x64-cflinuxfs2-6247377a.tgz"]
@@ -321,13 +314,7 @@ dependencies:
             open(f, "a").close()
 
         for f in file_names:
-            result = _find_file_in_directory(
-                os.path.basename(f), temp_dir.name
-            )
-            assert (
-                result
-                and is_path_accessible(result)
-                and os.path.isfile(result)
-            )
+            result = _find_file_in_directory(os.path.basename(f), temp_dir.name)
+            assert result and is_path_accessible(result) and os.path.isfile(result)
 
         temp_dir.cleanup()

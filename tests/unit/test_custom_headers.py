@@ -69,9 +69,7 @@ class TestCaseCustomHeaderConfig(unittest.TestCase):
         self.assertIn(("X-Content-Type-Options", "nosniff"), header_config)
 
     def test_invalid_header_contentType(self):
-        os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps(
-            {"X-Content-Type-Options": ""}
-        )
+        os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps({"X-Content-Type-Options": ""})
         header_config = nginx._get_http_headers()
         self.assertEquals([], header_config)
 
@@ -133,9 +131,7 @@ class TestCaseCustomHeaderConfig(unittest.TestCase):
 
     def test_valid_header_xssProtection(self):
         os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps(
-            {
-                "X-XSS-Protection": "1; report=https://domainwithnewstyle.tld.consultancy"
-            }
+            {"X-XSS-Protection": "1; report=https://domainwithnewstyle.tld.consultancy"}
         )
         header_config = nginx._get_http_headers()
         self.assertIn(

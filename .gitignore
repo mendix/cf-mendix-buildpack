@@ -246,3 +246,6 @@ source.tar
 VERSION
 
 vendor/
+
+# ruff
+.ruff_cache/

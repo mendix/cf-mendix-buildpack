@@ -1,3 +1,4 @@
+---
 mxnode:
   mxjar_repo: BUILD_PATH/runtimes/
 
@@ -40,7 +41,7 @@ logging:
     name: FileSubscriber
     autosubscribe: INFO
     filename: BUILD_PATH/log/out.log
-    max_size: 1125899906842624 # 1PiB should be enough until we implement stdout logging
+    max_size: 1125899906842624  # 1PiB should be enough until we implement stdout logging
     max_rotation: 1
 
 mxruntime:

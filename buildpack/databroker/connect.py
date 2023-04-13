@@ -89,9 +89,7 @@ def run(complete_conf):
     java_path = os.path.join(os.getcwd(), LOCAL, "bin")
     os.environ["PATH"] += os.pathsep + java_path
     os.environ["JMX_PORT"] = KAFKA_CONNECT_JMX_PORT
-    os.environ[
-        "KAFKA_LOG4J_OPTS"
-    ] = "-Dlog4j.configuration=file:" + os.path.join(
+    os.environ["KAFKA_LOG4J_OPTS"] = "-Dlog4j.configuration=file:" + os.path.join(
         os.getcwd(), LOG4J_CFG_PATH
     )
     kafka_connect_heap_opts = os.environ.get(
@@ -108,9 +106,7 @@ def run(complete_conf):
 
     # Wait for kafka connect to initialize and then issue a request for debezium connector
     time.sleep(INITIAL_WAIT)
-    debezium_config = json.loads(
-        debezium_generator.generate_config(complete_conf)
-    )
+    debezium_config = json.loads(debezium_generator.generate_config(complete_conf))
 
     def backoff_hdlr(details):
         logging.warn(

@@ -3,12 +3,10 @@ from unittest import TestCase
 from buildpack.core import runtime
 from lib.m2ee.version import MXVersion
 
-"""
-Current supported / maintained versions (https://docs.mendix.com/releasenotes/studio-pro/lts-mts):
-- Mendix 7: 7.23.x (LTS)
-- Mendix 8: 8.18.x (LTS)
-- Mendix 9: 9.6.x (MTS), 9.12.x (MTS), > 9.12 (monthly / latest)
-"""
+# Current supported / maintained versions (https://docs.mendix.com/releasenotes/studio-pro/lts-mts):
+# - Mendix 7: 7.23.x (LTS)
+# - Mendix 8: 8.18.x (LTS)
+# - Mendix 9: 9.6.x (MTS), 9.12.x (MTS), 9.18.x (MTS), 9.24.x (LTS)
 
 
 class TestCaseMxImplemented(TestCase):
@@ -43,7 +41,8 @@ class TestCaseMxMaintained(TestCase):
     def test_mx9_maintained(self):
         assert runtime.is_version_maintained(MXVersion("9.6.9"))
         assert runtime.is_version_maintained(MXVersion("9.12.1"))
-        assert runtime.is_version_maintained(MXVersion("9.13.0"))
+        assert runtime.is_version_maintained(MXVersion("9.18.3"))
+        assert runtime.is_version_maintained(MXVersion("9.24.0"))
 
     def test_mx9_not_maintained(self):
-        assert not runtime.is_version_maintained(MXVersion("9.7"))
+        assert not runtime.is_version_maintained(MXVersion("9.16"))

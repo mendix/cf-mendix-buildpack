@@ -35,7 +35,5 @@ class TestConvertPayload(TestCase):
 
             self.assertEqual(
                 last_request_json[0]["metricName"],
-                "|".join(
-                    (METRIC_TREE_BASE_NODE, "test_name|Database 'test_db'")
-                ),
+                "|".join((METRIC_TREE_BASE_NODE, "test_name|Database 'test_db'")),
             )

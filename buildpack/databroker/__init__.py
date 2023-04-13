@@ -158,9 +158,7 @@ class Databroker:
             self.kafka_streams = streams.run(complete_conf)
             logging.info("Databroker: Initialization complete")
         except Exception as ex:
-            logging.error(
-                "Databroker: Initialization failed due to {}".format(ex)
-            )
+            logging.error("Databroker: Initialization failed due to {}".format(ex))
             raise Exception("Databroker initailization failed") from ex
 
         if not self.restart_if_any_component_not_healthy():

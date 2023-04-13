@@ -96,7 +96,7 @@ http {
         {% if location.body is not none %}
         {{ location.body }}
         }
-        {% else %}    
+        {% else %}
             if ($request_uri ~ ^/(.*\.(css|js)|forms/.*|img/.*|pages/.*|mxclientsystem/images/.*)\?[0-9]+$) {
                     expires 1y;
             }
@@ -165,4 +165,3 @@ http {
         }
     }
 }
-

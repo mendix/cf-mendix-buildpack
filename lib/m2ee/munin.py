@@ -96,9 +96,7 @@ def print_config(m2ee, name):
 
     print_requests_config(name, stats)
     print_connectionbus_config(name, stats)
-    print_sessions_config(
-        name, stats, options.get("graph_total_named_users", True)
-    )
+    print_sessions_config(name, stats, options.get("graph_total_named_users", True))
     print_jvmheap_config(name, stats)
     print_threadpool_config(name, stats)
     print_cache_config(name, stats)
@@ -115,9 +113,7 @@ def print_values(m2ee, name):
 
     print_requests_values(name, stats)
     print_connectionbus_values(name, stats)
-    print_sessions_values(
-        name, stats, options.get("graph_total_named_users", True)
-    )
+    print_sessions_values(name, stats, options.get("graph_total_named_users", True))
     print_jvmheap_values(name, stats)
     print_threadpool_values(name, stats)
     print_cache_values(name, stats)
@@ -153,9 +149,7 @@ def _guess_java_version(m2ee_response, runtime_version, m2ee_stats):
         about = m2ee_response.get_feedback()
         if "java_version" in about:
             java_version_string = about["java_version"]
-            return _get_jre_major_version_from_version_string(
-                java_version_string
-            )
+            return _get_jre_major_version_from_version_string(java_version_string)
 
     # This happens for some older Mendix 6 versions, but not all, the
     # java_version field was added somewhere between Mendix 6.5 (not present)
@@ -184,9 +178,7 @@ def get_stats(action, client, config):
     options = config.get_munin_options()
     config_cache = options.get(
         "config_cache",
-        os.path.join(
-            config.get_default_dotm2ee_directory(), "munin-cache.json"
-        ),
+        os.path.join(config.get_default_dotm2ee_directory(), "munin-cache.json"),
     )
 
     # TODO: even better error/exception handling
@@ -314,16 +306,13 @@ def _standardize_memory_pools_output(runtime_memory_pools, java_version):
     # which is more what we want. Additionally ensure we use a standard pool
     # name. ie. For "PS Eden Space" use "Eden Space"
     memory_pools_dict = {
-        _standard_pool_name(f["name"]): f["usage"]
-        for f in runtime_memory_pools
+        _standard_pool_name(f["name"]): f["usage"] for f in runtime_memory_pools
     }
 
     output_stats = {}
     for our_memory_type, pool_names in pool_mapping.items():
         try:
-            total = sum(
-                [memory_pools_dict[pool_name] for pool_name in pool_names]
-            )
+            total = sum([memory_pools_dict[pool_name] for pool_name in pool_names])
         except KeyError as exc:
             got_fields = list(memory_pools_dict.keys())
             required_fields = list(itertools.chain(*pool_mapping.values()))
@@ -334,8 +323,7 @@ def _standardize_memory_pools_output(runtime_memory_pools, java_version):
                 got_fields,
             )
             raise RuntimeError(
-                "Unable to collect JVM memory pool stats. "
-                "Please contact support!"
+                "Unable to collect JVM memory pool stats. " "Please contact support!"
             ) from exc
         output_stats[our_memory_type] = total
 
@@ -438,9 +426,7 @@ def write_last_known_good_stats_cache(stats, config_cache):
         with open(config_cache, "w+") as f:
             f.write(json.dumps(stats))
     except Exception as e:
-        logger.error(
-            "Error writing munin config cache to %s: %s", config_cache, e
-        )
+        logger.error("Error writing munin config cache to %s: %s", config_cache, e)
 
 
 def read_stats_from_last_known_good_stats_cache(config_cache):
@@ -451,13 +437,9 @@ def read_stats_from_last_known_good_stats_cache(config_cache):
         stats = json.loads(fd.read())
         fd.close()
     except IOError as e:
-        logger.error(
-            "Error reading munin cache file %s: %s" % (config_cache, e)
-        )
+        logger.error("Error reading munin cache file %s: %s" % (config_cache, e))
     except ValueError as e:
-        logger.error(
-            "Error parsing munin cache file %s: %s" % (config_cache, e)
-        )
+        logger.error("Error parsing munin cache file %s: %s" % (config_cache, e))
     return stats
 
 
@@ -467,9 +449,7 @@ def print_requests_config(name, stats):
     print("graph_vlabel Requests per second")
     print("graph_title %s - MxRuntime Requests" % name)
     print("graph_category Mendix")
-    print(
-        "graph_info This graph shows the amount of requests this MxRuntime handles"
-    )
+    print("graph_info This graph shows the amount of requests this MxRuntime handles")
     for sub in stats["requests"].keys():
         substrip = "_" + sub.strip("/").replace("-", "_")
         if sub != "":
@@ -503,9 +483,7 @@ def print_connectionbus_config(name, stats):
     print("graph_vlabel Statements per second")
     print("graph_title %s - Database Queries" % name)
     print("graph_category Mendix")
-    print(
-        "graph_info This graph shows the amount of executed transactions and queries"
-    )
+    print("graph_info This graph shows the amount of executed transactions and queries")
     for s in stats["connectionbus"].keys():
         print("%s.label %ss" % (s, s))
         print("%s.draw LINE1" % s)
@@ -568,23 +546,17 @@ def print_sessions_since254_config(name, stats, graph_total_named_users):
     print("graph_vlabel Concurrent user sessions")
     print("graph_title %s - MxRuntime Users" % name)
     print("graph_category Mendix")
-    print(
-        "graph_info This graph shows the amount of user accounts and sessions"
-    )
+    print("graph_info This graph shows the amount of user accounts and sessions")
     if graph_total_named_users:
         print("named_users.label named users")
         print("named_users.draw LINE1")
-        print(
-            "named_users.info total amount of named users in the application"
-        )
+        print("named_users.info total amount of named users in the application")
     print("named_user_sessions.label concurrent named user sessions")
     print("named_user_sessions.draw LINE1")
     print("named_user_sessions.info amount of concurrent named user sessions")
     print("anonymous_sessions.label concurrent anonymous user sessions")
     print("anonymous_sessions.draw LINE1")
-    print(
-        "anonymous_sessions.info amount of concurrent anonymous user sessions"
-    )
+    print("anonymous_sessions.info amount of concurrent anonymous user sessions")
     print("")
 
 
@@ -592,13 +564,8 @@ def print_sessions_since254_values(name, stats, graph_total_named_users):
     print("multigraph mxruntime_sessions_%s" % name)
     if graph_total_named_users:
         print("named_users.value %s" % stats["sessions"]["named_users"])
-    print(
-        "named_user_sessions.value %s"
-        % stats["sessions"]["named_user_sessions"]
-    )
-    print(
-        "anonymous_sessions.value %s" % stats["sessions"]["anonymous_sessions"]
-    )
+    print("named_user_sessions.value %s" % stats["sessions"]["named_user_sessions"])
+    print("anonymous_sessions.value %s" % stats["sessions"]["anonymous_sessions"])
     print("")
 
 
@@ -608,14 +575,10 @@ def print_jvmheap_config(name, stats):
     print("graph_vlabel Bytes")
     print("graph_title %s - JVM Heap Memory Usage" % name)
     print("graph_category Mendix")
-    print(
-        "graph_info This graph shows memory pool information on the Java JVM"
-    )
+    print("graph_info This graph shows memory pool information on the Java JVM")
     print("tenured.label tenured generation")
     print("tenured.draw AREA")
-    print(
-        "tenured.info Old generation of the heap that holds long living objects"
-    )
+    print("tenured.info Old generation of the heap that holds long living objects")
     print("tenured.colour COLOUR2")
     print("survivor.label survivor space")
     print("survivor.draw STACK")
@@ -721,9 +684,7 @@ def print_jvm_threads_config(name, stats):
     print("graph_vlabel objects")
     print("graph_title %s - JVM Threads" % name)
     print("graph_category Mendix")
-    print(
-        "graph_info This graph shows the total amount of threads in the JVM process"
-    )
+    print("graph_info This graph shows the total amount of threads in the JVM process")
     print("total.label threads")
     print("total.draw LINE1")
     print("total.info Total amount of threads in the JVM process")
@@ -746,9 +707,7 @@ def print_jvm_process_memory_config(name):
     print("graph_vlabel Bytes")
     print("graph_title %s - JVM Process Memory Usage" % name)
     print("graph_category Mendix")
-    print(
-        "graph_info This graph shows the total memory usage of the Java JVM process"
-    )
+    print("graph_info This graph shows the total memory usage of the Java JVM process")
     print("nativecode.label native code")
     print("nativecode.draw AREA")
     print("nativecode.info Native program code, e.g. the java binary itself")
@@ -757,9 +716,7 @@ def print_jvm_process_memory_config(name):
     print("jar.info JAR file contents loaded into memory")
     print("tenured.label tenured generation")
     print("tenured.draw STACK")
-    print(
-        "tenured.info Old generation of the Java Heap that holds long living objects"
-    )
+    print("tenured.info Old generation of the Java Heap that holds long living objects")
     print("survivor.label survivor space")
     print("survivor.draw STACK")
     print("survivor.info Survivor Space of the Young Generation, Java Heap")
@@ -771,9 +728,7 @@ def print_jvm_process_memory_config(name):
     print("javaheap.info Unused Java Heap")
     print("permanent.label permanent generation")
     print("permanent.draw STACK")
-    print(
-        "permanent.info Non-heap memory used to store bytecode versions of classes"
-    )
+    print("permanent.info Non-heap memory used to store bytecode versions of classes")
     print("codecache.label code cache")
     print("codecache.draw STACK")
     print(
@@ -884,10 +839,7 @@ def augment_and_fix_stats(stats, pid, java_version):
         # This branch should never be reached, as java
         # version less than 8 is no more supported.
         javaheap = (
-            javaheap_raw
-            - memory["used_heap"]
-            - memory["code"]
-            - memory["permanent"]
+            javaheap_raw - memory["used_heap"] - memory["code"] - memory["permanent"]
         )
 
     memory["javaheap"] = javaheap

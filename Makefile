@@ -95,7 +95,7 @@ test_unit:
 	nosetests --verbosity=3 --nocapture --with-timer --timer-no-color tests/unit/test_*.py
 
 .PHONY: test_integration
-test_integration: 
+test_integration:
 	export PYTHONPATH=.:lib/
 	nosetests --verbosity=3 --nocapture --processes=${TEST_PROCESSES} --process-timeout=3600 --with-timer --timer-no-color ${TEST_FILES}
 

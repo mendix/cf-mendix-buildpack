@@ -85,18 +85,14 @@ def _is_logs_redaction_enabled():
 # Toggles database rare / count metrics which are collected by Telegraf
 # By default, they are not compatible with the Datadog Postgres integration due to Telegraf limitations
 def is_database_rate_count_metrics_enabled():
-    return strtobool(
-        os.environ.get("DATADOG_DATABASE_RATE_COUNT_METRICS", "false")
-    )
+    return strtobool(os.environ.get("DATADOG_DATABASE_RATE_COUNT_METRICS", "false"))
 
 
 # Toggles the database diskstorage metrics
 # It is basically a fixed value based on an environment variable
 def is_database_diskstorage_metric_enabled():
     return (
-        strtobool(
-            os.environ.get("DATADOG_DATABASE_DISKSTORAGE_METRIC", "true")
-        )
+        strtobool(os.environ.get("DATADOG_DATABASE_DISKSTORAGE_METRIC", "true"))
         and os.environ.get("DATABASE_DISKSTORAGE") is not None
     )
 
@@ -135,9 +131,7 @@ def get_env_tag():
 
 
 def get_service_tag():
-    dd_service = os.environ.get(
-        "DD_SERVICE", os.environ.get("DD_SERVICE_NAME")
-    )
+    dd_service = os.environ.get("DD_SERVICE", os.environ.get("DD_SERVICE_NAME"))
     if dd_service:
         return dd_service
     else:
@@ -185,20 +179,14 @@ def get_statsd_port():
     return os.getenv("DD_DOGSTATSD_PORT", STATSD_PORT)
 
 
-def _set_up_dd_java_agent(
-    m2ee, model_version, runtime_version, jmx_config_files
-):
+def _set_up_dd_java_agent(m2ee, model_version, runtime_version, jmx_config_files):
     jar = os.path.join(
         SIDECAR_ROOT_DIR,
-        os.path.basename(
-            util.get_dependency(TRACE_AGENT_DEPENDENCY)["artifact"]
-        ),
+        os.path.basename(util.get_dependency(TRACE_AGENT_DEPENDENCY)["artifact"]),
     )
 
     # Check if already configured
-    if 0 in [
-        v.find("-javaagent:{}".format(jar)) for v in util.get_javaopts(m2ee)
-    ]:
+    if 0 in [v.find("-javaagent:{}".format(jar)) for v in util.get_javaopts(m2ee)]:
         return
 
     # Inject Datadog Java agent
@@ -217,9 +205,7 @@ def _set_up_dd_java_agent(
     # Expllicitly set tracing flag
     util.upsert_javaopts(
         m2ee,
-        "-D{}={}".format(
-            "dd.trace.enabled", str(bool(_is_tracing_enabled())).lower()
-        ),
+        "-D{}={}".format("dd.trace.enabled", str(bool(_is_tracing_enabled())).lower()),
     )
 
     # Explicitly set profiling flag
@@ -315,9 +301,7 @@ def _get_runtime_jmx_config(extra_jmx_instance_config=None):
                             "bean": "com.mendix:type=General",
                             # Languages = en_US;
                             # Entities = 24;
-                            "attribute": {
-                                "Entities": {"metrics_type": "gauge"}
-                            },
+                            "attribute": {"Entities": {"metrics_type": "gauge"}},
                         }
                     },
                     {
@@ -573,9 +557,7 @@ def run(model_version, runtime_version):
     logging.info("Starting Datadog Agent...")
 
     agent_environment = _set_up_environment(model_version, runtime_version)
-    logging.debug(
-        "Datadog Agent environment variables: [{}]".format(agent_environment)
-    )
+    logging.debug("Datadog Agent environment variables: [{}]".format(agent_environment))
 
     subprocess.Popen(
         os.path.join(_get_agent_dir(), "run-datadog.sh"), env=agent_environment

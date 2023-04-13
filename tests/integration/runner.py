@@ -136,9 +136,7 @@ class CfLocalRunner(metaclass=abc.ABCMeta):
         )
 
         if not result[1]:
-            raise RuntimeError(
-                "Could not stage container: {}".format(result[0])
-            )
+            raise RuntimeError("Could not stage container: {}".format(result[0]))
 
         return result
 
@@ -167,9 +165,7 @@ class CfLocalRunner(metaclass=abc.ABCMeta):
             finally:
                 process_stdout.close()
 
-            @backoff.on_predicate(
-                backoff.constant, interval=1, max_time=5, logger=None
-            )
+            @backoff.on_predicate(backoff.constant, interval=1, max_time=5, logger=None)
             def _await_container_id():
                 return self._get_container_id(self._container_name)
 
@@ -213,9 +209,9 @@ class CfLocalRunner(metaclass=abc.ABCMeta):
         self._workdir.cleanup()
 
     def get_logs(self):
-        return self._cmd(
-            ("docker", "logs", "-t", "--tail", "all", self._container_id)
-        )[0]
+        return self._cmd(("docker", "logs", "-t", "--tail", "all", self._container_id))[
+            0
+        ]
 
     def get_exitcode(self):
         status = self._cmd(
@@ -247,9 +243,7 @@ class CfLocalRunner(metaclass=abc.ABCMeta):
         if target_container is None:
             target_container = self._container_id
 
-        result = self._cmd(
-            ("docker", "exec", target_container, "bash", "-c", command)
-        )
+        result = self._cmd(("docker", "exec", target_container, "bash", "-c", command))
         if not result[1]:
             raise RuntimeError(
                 "Error running command on container: {}".format(result[0])
@@ -265,9 +259,7 @@ class CfLocalRunner(metaclass=abc.ABCMeta):
     def mxadmin(self, command):
         basic_auth = "MxAdmin:{}".format(self._mx_password)
         basic_auth_base64 = b64encode(self._bytes(basic_auth)).decode("utf-8")
-        m2ee_auth_base64 = b64encode(self._bytes(self._mx_password)).decode(
-            "utf-8"
-        )
+        m2ee_auth_base64 = b64encode(self._bytes(self._mx_password)).decode("utf-8")
 
         return self.httppost(
             "/_mxadmin/",
@@ -388,15 +380,13 @@ class CfLocalRunner(metaclass=abc.ABCMeta):
             ),
         )
         if not result[1]:
-            raise RuntimeError(
-                "Cannot get container port: {}".format(result[0])
-            )
+            raise RuntimeError("Cannot get container port: {}".format(result[0]))
         return int(result[0].split(":")[1].rstrip())
 
     def _get_container_ids(self, name):
-        return self._cmd(("docker", "ps", "-aqf", "name={}*".format(name)))[
-            0
-        ].rsplit("\n")
+        return self._cmd(("docker", "ps", "-aqf", "name={}*".format(name)))[0].rsplit(
+            "\n"
+        )
 
     def _get_container_id(self, name):
         return self._get_container_ids(name)[0]
@@ -418,10 +408,7 @@ class CfLocalRunner(metaclass=abc.ABCMeta):
     def _remove_all_containers(self, name_prefix=None):
         if not name_prefix:
             name_prefix = self._app_name
-        [
-            self._remove_container(id)
-            for id in self._get_container_ids(name_prefix)
-        ]
+        [self._remove_container(id) for id in self._get_container_ids(name_prefix)]
 
     def _remove_container(self, id_or_name=None):
         if not id_or_name:
@@ -495,9 +482,7 @@ class CfLocalRunnerWithPostgreSQL(CfLocalRunner):
         )
 
         if not result[1]:
-            raise RuntimeError(
-                "Cannot create database container: {}".format(result[0])
-            )
+            raise RuntimeError("Cannot create database container: {}".format(result[0]))
 
         self._database_port = self._get_container_host_port(
             self._database_container_name, DEFAULT_PORT
@@ -516,9 +501,9 @@ class CfLocalRunnerWithPostgreSQL(CfLocalRunner):
         # Wait until the database is up
         @backoff.on_predicate(backoff.expo, lambda x: x > 0, max_time=30)
         def _await_database():
-            return socket.socket(
-                socket.AF_INET, socket.SOCK_STREAM
-            ).connect_ex(("localhost", int(self._database_port)))
+            return socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect_ex(
+                ("localhost", int(self._database_port))
+            )
 
         _await_database()
 
@@ -574,9 +559,7 @@ def _get_env_variables(env_option):
 
 
 def _parse_env_options(env_options):
-    return dict(
-        [j for i in [_get_env_variables(k) for k in env_options] for j in i]
-    )
+    return dict([j for i in [_get_env_variables(k) for k in env_options] for j in i])
 
 
 @cli.command(help="Stages and starts a Mendix application.")
@@ -625,9 +608,7 @@ def _parse_env_options(env_options):
 def run(ctx, name, password, package, env, use_snapshot, with_db, debug, host):
     verbose = ctx.obj["verbose"]
     runner = _create_runner(name, with_db=with_db)
-    buildpack = os.path.join(
-        PROJECT_ROOT_PATH, "dist", "cf-mendix-buildpack.zip"
-    )
+    buildpack = os.path.join(PROJECT_ROOT_PATH, "dist", "cf-mendix-buildpack.zip")
     if not util.is_path_accessible(buildpack):
         raise RuntimeError(
             "Cannot find buildpack at {}. Please run make build first.".format(
@@ -662,9 +643,7 @@ def run(ctx, name, password, package, env, use_snapshot, with_db, debug, host):
 
     try:
         if verbose:
-            click.echo(
-                "Starting application {}...".format(runner.get_app_name())
-            )
+            click.echo("Starting application {}...".format(runner.get_app_name()))
         runner.start()
     except Exception as ex:
         runner.destroy()
