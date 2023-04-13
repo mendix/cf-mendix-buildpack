@@ -2,12 +2,8 @@ from tests.integration import basetest
 
 
 class TestCaseTermination(basetest.BaseTest):
-    def _test_termination_signal(
-        self, signal="SIGTERM", env_vars=None, exitcode=0
-    ):
-        self.stage_container(
-            "Mendix8.1.1.58432_StarterApp.mda", env_vars=env_vars
-        )
+    def _test_termination_signal(self, signal="SIGTERM", env_vars=None, exitcode=0):
+        self.stage_container("Mendix8.1.1.58432_StarterApp.mda", env_vars=env_vars)
         self.start_container()
         self.assert_app_running()
         self.terminate_container(signal=signal)
@@ -28,9 +24,7 @@ class TestCaseTermination(basetest.BaseTest):
             signal="SIGUSR1", exitcode=1, env_vars={"METRICS_INTERVAL": "10"}
         )
         self.assert_string_in_recent_logs("SIGUSR1 received")
-        self.assert_string_in_recent_logs(
-            "Handling user signal for metrics..."
-        )
+        self.assert_string_in_recent_logs("Handling user signal for metrics...")
 
     # Tests if termination works if a shutdown command is sent to the runtime
     def test_termination_shutdown_command(self):
@@ -50,9 +44,7 @@ class TestCaseTermination(basetest.BaseTest):
         )
         with self.assertRaises(RuntimeError):
             self.start_container(start_timeout=30)
-        self.assert_string_in_recent_logs(
-            'json.loads(os.getenv("S3_ENCRYPTION_KEYS"))'
-        )
+        self.assert_string_in_recent_logs('json.loads(os.getenv("S3_ENCRYPTION_KEYS"))')
         assert self.get_container_exitcode() == 1
 
     # Tests if a broken application terminates
@@ -80,9 +72,5 @@ class TestCaseTermination(basetest.BaseTest):
         self.assert_app_running()
         self.run_on_container("killall java")
         assert self.await_container_health("unhealthy", 60)
-        self.assert_string_in_recent_logs(
-            "Runtime process has been terminated"
-        )
-        assert (
-            self.get_container_exitcode() == 0
-        )  # A manual kill command is all fine
+        self.assert_string_in_recent_logs("Runtime process has been terminated")
+        assert self.get_container_exitcode() == 0  # A manual kill command is all fine

@@ -105,8 +105,7 @@ class M2EERunner:
             if pid > 0:
                 self._pid = None
                 logger.trace(
-                    "[%s] Waiting for intermediate process to "
-                    "exit..." % os.getpid()
+                    "[%s] Waiting for intermediate process to " "exit..." % os.getpid()
                 )
                 # prevent zombie process
                 (waitpid, result) = os.waitpid(pid, 0)
@@ -116,13 +115,9 @@ class M2EERunner:
                 logger.error("Starting the JVM process did not succeed...")
                 return False
         except OSError as e:
-            logger.error(
-                "Forking subprocess failed: %d (%s)\n" % (e.errno, e.strerror)
-            )
+            logger.error("Forking subprocess failed: %d (%s)\n" % (e.errno, e.strerror))
             return
-        logger.trace(
-            "[%s] Now in intermediate forked process..." % os.getpid()
-        )
+        logger.trace("[%s] Now in intermediate forked process..." % os.getpid())
         # decouple from parent environment
         os.chdir("/")
         os.setsid()
@@ -148,8 +143,7 @@ class M2EERunner:
         except OSError as ose:
             if ose.errno == errno.ENOENT:
                 logger.error(
-                    "The java binary cannot be found in the default "
-                    "search path!"
+                    "The java binary cannot be found in the default " "search path!"
                 )
                 logger.error(
                     "By default, when starting the JVM, the "
@@ -164,9 +158,7 @@ class M2EERunner:
         # always write pid asap, so that monitoring can detect apps that should
         # be started but fail to do so
         self._pid = proc.pid
-        logger.trace(
-            "[%s] Writing JVM pid to pidfile: %s" % (os.getpid(), self._pid)
-        )
+        logger.trace("[%s] Writing JVM pid to pidfile: %s" % (os.getpid(), self._pid))
         self._write_pidfile()
         # wait for m2ee to become available
         t = 0
@@ -174,9 +166,7 @@ class M2EERunner:
             sleep(step)
             dead = proc.poll()
             if dead is not None:
-                logger.error(
-                    "Java subprocess terminated with errorcode %s" % dead
-                )
+                logger.error("Java subprocess terminated with errorcode %s" % dead)
                 logger.debug(
                     "[%s] Doing unclean exit from intermediate "
                     "process now." % os.getpid()
@@ -208,8 +198,7 @@ class M2EERunner:
                 t += step
             if t >= timeout:
                 logger.trace(
-                    "Timeout: Process %s takes too long to "
-                    "disappear." % self._pid
+                    "Timeout: Process %s takes too long to " "disappear." % self._pid
                 )
                 return False
         self.cleanup_pid()

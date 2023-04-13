@@ -32,9 +32,7 @@ def check(runner, client):
 
     # everything seems to be fine, print version info and exit
     about_feedback = client.about().get_feedback()
-    print(
-        "MxRuntime OK: healthy, using version %s" % about_feedback["version"]
-    )
+    print("MxRuntime OK: healthy, using version %s" % about_feedback["version"])
     return STATE_OK
 
 
@@ -57,9 +55,7 @@ def check_health(runner, client):
 
 def check_critical_logs(runner, client):
     if client.ping():
-        (critical_logs_status, critical_logs_message) = _check_critical_logs(
-            client
-        )
+        (critical_logs_status, critical_logs_message) = _check_critical_logs(client)
         print(critical_logs_message)
         return critical_logs_status
     print("Runtime not running. Critical Logs could not be determined")
@@ -97,10 +93,7 @@ def _check_process(runner, client):
         return (STATE_WARNING, message)
 
     if not m2ee_alive:
-        message = (
-            "MxRuntime WARNING: plugin has broken logic, m2ee should "
-            "be alive"
-        )
+        message = "MxRuntime WARNING: plugin has broken logic, m2ee should " "be alive"
         return (STATE_WARNING, message)
 
     status_feedback = client.runtime_status().get_feedback()
@@ -109,8 +102,7 @@ def _check_process(runner, client):
         return (STATE_WARNING, message)
     elif status_feedback["status"] != "running":
         message = (
-            "MxRuntime CRITICAL: application is in state %s"
-            % status_feedback["status"]
+            "MxRuntime CRITICAL: application is in state %s" % status_feedback["status"]
         )
         return (STATE_CRITICAL, message)
 
@@ -145,10 +137,7 @@ def _check_health(client):
             # 2.5.5 this means that the runtime is health-check
             # capable, but no health check microflow is defined.
             pass
-        elif (
-            health_response.get_result()
-            == health_response.ERR_ACTION_NOT_FOUND
-        ):
+        elif health_response.get_result() == health_response.ERR_ACTION_NOT_FOUND:
             # Admin action 'check_health' does not exist.
             pass
         else:
@@ -164,10 +153,7 @@ def _check_critical_logs(client):
     errors = client.get_critical_log_messages()
     if len(errors) != 0:
         message = "\n".join(
-            [
-                "MxRuntime CRITICAL: %d critical error(s) were "
-                "logged" % len(errors)
-            ]
+            ["MxRuntime CRITICAL: %d critical error(s) were " "logged" % len(errors)]
             + errors
         )
         return (STATE_CRITICAL, message)

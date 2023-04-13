@@ -23,9 +23,7 @@ PDR_STREAMS_DIR = os.path.join(BASE_DIR, "producer-streams")
 PROCESS_NAME = "kafka-streams"
 KAFKA_STREAMS_JMX_PORT = "11004"
 LOCAL = ".local"
-LOG_LEVEL = (
-    "DEBUG" if util.get_buildpack_loglevel() == logging.DEBUG else "INFO"
-)
+LOG_LEVEL = "DEBUG" if util.get_buildpack_loglevel() == logging.DEBUG else "INFO"
 
 
 def get_pdr_stream_version():
@@ -54,9 +52,7 @@ def _get_pdr_streams_jar(version):
         LOCAL,
         _get_pdr_streams_home(version),
         "lib",
-        "{}-{}.{}".format(
-            PDR_STREAMS_FILENAME, get_pdr_stream_version(), "jar"
-        ),
+        "{}-{}.{}".format(PDR_STREAMS_FILENAME, get_pdr_stream_version(), "jar"),
     )
 
 

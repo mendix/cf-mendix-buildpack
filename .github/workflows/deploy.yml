@@ -15,7 +15,7 @@ jobs:
     steps:
       - name: Check if workflow should be skipped
         id: skip-check
-        uses: fkirc/skip-duplicate-actions@v3
+        uses: fkirc/skip-duplicate-actions@v5
         with:
           github_token: ${{ github.token }}
           paths_ignore: '["**.md", "dev/**"]'

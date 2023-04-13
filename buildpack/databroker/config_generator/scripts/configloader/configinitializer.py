@@ -44,9 +44,7 @@ def __generate_source_topic_names(config):
 
 def validate_config(complete_conf):
     # check supported dbs
-    if not complete_conf.DatabaseType.lower() in [
-        db.lower() for db in SUPPORTED_DBS
-    ]:
+    if not complete_conf.DatabaseType.lower() in [db.lower() for db in SUPPORTED_DBS]:
         raise Exception(
             "{} is not supported. Supported dbs: {}".format(
                 complete_conf.DatabaseType, SUPPORTED_DBS
@@ -54,12 +52,8 @@ def validate_config(complete_conf):
         )
 
     # validate objectname length & constants
-    for (
-        published_service
-    ) in complete_conf.DataBrokerConfiguration.publishedServices:
-        if not get_value_for_constant(
-            complete_conf, published_service.brokerUrl
-        ):
+    for published_service in complete_conf.DataBrokerConfiguration.publishedServices:
+        if not get_value_for_constant(complete_conf, published_service.brokerUrl):
             raise Exception(
                 "No Constants found for {}".format(published_service.brokerUrl)
             )
@@ -77,9 +71,7 @@ def validate_config(complete_conf):
 
 
 def unify_configs(configs, database_config, parameters_replacement={}):
-    complete_conf = load_config(
-        configs, database_config, parameters_replacement
-    )
+    complete_conf = load_config(configs, database_config, parameters_replacement)
     validate_config(complete_conf)
     return complete_conf
 
@@ -156,13 +148,9 @@ def load_config(configs, database_config, parameters_replacement):
         )
         bootstrap_servers = get_value_for_constant(
             complete_conf,
-            complete_conf.DataBrokerConfiguration.publishedServices[
-                0
-            ].brokerUrl,
+            complete_conf.DataBrokerConfiguration.publishedServices[0].brokerUrl,
         )
-        OmegaConf.update(
-            complete_conf, BOOTSTRAP_SERVERS_KEY, bootstrap_servers
-        )
+        OmegaConf.update(complete_conf, BOOTSTRAP_SERVERS_KEY, bootstrap_servers)
 
         if not OmegaConf.select(complete_conf, NODE_COUNT_KEY):
             complete_conf[NODE_COUNT_KEY] = 1
@@ -172,15 +160,11 @@ def load_config(configs, database_config, parameters_replacement):
         OmegaConf.update(
             complete_conf,
             "log_level",
-            "DEBUG"
-            if util.get_buildpack_loglevel() == logging.DEBUG
-            else "INFO",
+            "DEBUG" if util.get_buildpack_loglevel() == logging.DEBUG else "INFO",
         )
 
         return complete_conf
     except Exception as exception:
         raise Exception(
-            "Error while reading input config files. Reason: '{}'".format(
-                exception
-            )
+            "Error while reading input config files. Reason: '{}'".format(exception)
         )

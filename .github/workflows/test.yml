@@ -9,7 +9,7 @@ on:
       - develop
       - master
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
@@ -46,7 +46,7 @@ jobs:
         FILES=$(cd tests/integration && ls -m test*.py | tr -d \ \\n)
         TEST=$(jq -n -c --arg inarr "$FILES" '{ test: $inarr | split(",") }')
         echo "::set-output name=matrix::${TEST}"
-  integration-test:      
+  integration-test:
     needs: [build, setup-integration-tests]
     name: Run integration tests
     runs-on: ubuntu-20.04

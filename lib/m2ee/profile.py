@@ -117,9 +117,7 @@ class M2EEProfiler(cmd.Cmd):
 
         while minimum_duration_to_log is None:
             try:
-                answer = input(
-                    "Minimum duration to log? Defaults to " "1000(ms) "
-                )
+                answer = input("Minimum duration to log? Defaults to " "1000(ms) ")
                 if answer == "":
                     minimum_duration_to_log = 1000
                 else:
@@ -172,9 +170,7 @@ if __name__ == "__main__":
 
         out = open(filename, "w")
         out.write(
-            format_as_csv(
-                profiler.m2ee_client.get_profiler_logs().get_feedback()
-            )
+            format_as_csv(profiler.m2ee_client.get_profiler_logs().get_feedback())
         )
         out.close()
     else:

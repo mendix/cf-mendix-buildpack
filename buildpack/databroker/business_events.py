@@ -72,9 +72,7 @@ def _get_config(vcap_services, existing_constants):
                 ):
                     kafka_creds = service_creds[0]["credentials"]
                     if CLIENT_CONFIG_URL_KEY in kafka_creds:
-                        auth_token = kafka_creds.get(
-                            "ClientConfigAuthToken", ""
-                        )
+                        auth_token = kafka_creds.get("ClientConfigAuthToken", "")
                         for constant in BE_CONSTANTS_TO_INJECT:
                             be_config[
                                 f"{CONSTANTS_PREFIX}.{constant}"
@@ -99,13 +97,10 @@ def _get_config(vcap_services, existing_constants):
                     logging.error("Business Events: configuration is empty")
 
                 # Update Business Events constants for metrics
-                _configure_business_events_metrics(
-                    be_config, existing_constants
-                )
+                _configure_business_events_metrics(be_config, existing_constants)
     except Exception as ex:
         logging.error(
-            "Business Events: error reading deployment configuration "
-            + str(ex)
+            "Business Events: error reading deployment configuration " + str(ex)
         )
 
     return be_config

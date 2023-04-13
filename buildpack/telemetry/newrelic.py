@@ -23,18 +23,14 @@ def _get_destination_dir(dot_local=ROOT_DIR):
 
 def update_config(m2ee, app_name):
     if get_new_relic_license_key() is None:
-        logging.debug(
-            "Skipping New Relic setup, no license key found in environment"
-        )
+        logging.debug("Skipping New Relic setup, no license key found in environment")
         return
     logging.info("Adding new relic")
 
     util.upsert_custom_environment_variable(
         m2ee, "NEW_RELIC_LICENSE_KEY", get_new_relic_license_key()
     )
-    util.upsert_custom_environment_variable(
-        m2ee, "NEW_RELIC_APP_NAME", app_name
-    )
+    util.upsert_custom_environment_variable(m2ee, "NEW_RELIC_APP_NAME", app_name)
     util.upsert_custom_environment_variable(
         m2ee,
         "NEW_RELIC_LOG",

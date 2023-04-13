@@ -185,9 +185,7 @@ def convert_and_push_payload():
         )
     except (ConnectionError, ConnectTimeout) as e:
         logging.error(
-            "AppDynamics Machine Agent is unreachable. Error: {}.".format(
-                str(e)
-            )
+            "AppDynamics Machine Agent is unreachable. Error: {}.".format(str(e))
         )
 
 

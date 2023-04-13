@@ -24,8 +24,7 @@ def _get_s3_specific_config(vcap_services):
 
     for key in vcap_services:
         if key.startswith("amazon-s3") or (
-            key == "objectstore"
-            and (blobstore_type is None or blobstore_type == "s3")
+            key == "objectstore" and (blobstore_type is None or blobstore_type == "s3")
         ):
             amazon_s3 = key
 
@@ -76,9 +75,7 @@ def _get_s3_specific_config(vcap_services):
     if "S3_ENCRYPTION_KEYS" in os.environ:
         encryption_keys = json.loads(os.getenv("S3_ENCRYPTION_KEYS"))
 
-    dont_perform_deletes = (
-        os.getenv("S3_PERFORM_DELETES", "true").lower() == "false"
-    )
+    dont_perform_deletes = os.getenv("S3_PERFORM_DELETES", "true").lower() == "false"
     key_suffix = os.getenv("S3_KEY_SUFFIX", key_suffix)
     endpoint = os.getenv("S3_ENDPOINT", endpoint)
     v2_auth = os.getenv("S3_USE_V2_AUTH", v2_auth).lower() == "true"
@@ -98,16 +95,12 @@ def _get_s3_specific_config(vcap_services):
             config_prefix + "BucketName": bucket,
         }
     elif (
-        tvm_endpoint
-        and tvm_username
-        and tvm_password
-        and _runtime_sts_support(version)
+        tvm_endpoint and tvm_username and tvm_password and _runtime_sts_support(version)
     ):
         logging.info("S3 TVM config detected")
         config = {
             STORAGE_CORE_CUSTOM_RUNTIME_SETTINGS_KEY: core_config_value,
-            config_prefix
-            + "tokenService.Url": "https://%s/v1/gettoken" % tvm_endpoint,
+            config_prefix + "tokenService.Url": "https://%s/v1/gettoken" % tvm_endpoint,
             config_prefix + "tokenService.Username": tvm_username,
             config_prefix + "tokenService.Password": tvm_password,
             config_prefix + "tokenService.RefreshPercentage": 80,
@@ -115,9 +108,7 @@ def _get_s3_specific_config(vcap_services):
             config_prefix + "BucketName": bucket,
         }
     elif tvm_endpoint and tvm_username and tvm_password:
-        logging.info(
-            "S3 TVM config detected, fetching IAM credentials from TVM..."
-        )
+        logging.info("S3 TVM config detected, fetching IAM credentials from TVM...")
         access_key, secret = _get_credentials_from_tvm(
             tvm_endpoint, tvm_username, tvm_password
         )
@@ -139,13 +130,11 @@ def _get_s3_specific_config(vcap_services):
             version.major == 9 and version.minor == 6 and version.patch >= 11
         ):
             config[
-                STORAGE_CUSTOM_RUNTIME_SETTINGS_PREFIX
-                + "PerformDeleteFromStorage"
+                STORAGE_CUSTOM_RUNTIME_SETTINGS_PREFIX + "PerformDeleteFromStorage"
             ] = "NoFiles"
         else:
             config[
-                STORAGE_CUSTOM_RUNTIME_SETTINGS_PREFIX
-                + "PerformDeleteFromStorage"
+                STORAGE_CUSTOM_RUNTIME_SETTINGS_PREFIX + "PerformDeleteFromStorage"
             ] = False
     if key_suffix:
         config[config_prefix + "ResourceNameSuffix"] = key_suffix
@@ -212,8 +201,7 @@ def _get_credentials_from_tvm(tvm_endpoint, tvm_username, tvm_password):
                 )
             )
             raise Exception(
-                "failed to get IAM credential from TVM for tvm_user %s"
-                % tvm_username
+                "failed to get IAM credential from TVM for tvm_user %s" % tvm_username
             )
         else:
             retry = retry - 1
@@ -276,16 +264,13 @@ def _get_azure_storage_specific_config(vcap_services):
 
     for key in vcap_services:
         if key.startswith("azure-storage") or (
-            key == "objectstore"
-            and os.getenv("MENDIX_BLOBSTORE_TYPE") == "azure"
+            key == "objectstore" and os.getenv("MENDIX_BLOBSTORE_TYPE") == "azure"
         ):
             azure_storage = vcap_services[key][0]
 
     if azure_storage:
         if runtime.get_runtime_version() < 6.7:
-            logging.warning(
-                "Can not configure Azure Storage with Mendix < 6.7"
-            )
+            logging.warning("Can not configure Azure Storage with Mendix < 6.7")
             return None
 
         creds = azure_storage["credentials"]
@@ -301,34 +286,22 @@ def _get_azure_storage_specific_config(vcap_services):
         }
 
         if "primary_access_key" in creds:
-            config_object[config_prefix + "AccountKey"] = creds[
-                "primary_access_key"
-            ]
+            config_object[config_prefix + "AccountKey"] = creds["primary_access_key"]
 
         if "storage_account_name" in creds:
-            config_object[config_prefix + "AccountName"] = creds[
-                "storage_account_name"
-            ]
+            config_object[config_prefix + "AccountName"] = creds["storage_account_name"]
 
         if "account_name" in creds:
-            config_object[config_prefix + "AccountName"] = creds[
-                "account_name"
-            ]
+            config_object[config_prefix + "AccountName"] = creds["account_name"]
 
         if "sas_token" in creds:
-            config_object[config_prefix + "SharedAccessSignature"] = creds[
-                "sas_token"
-            ]
+            config_object[config_prefix + "SharedAccessSignature"] = creds["sas_token"]
 
         if "container_uri" in creds:
-            config_object[config_prefix + "BlobEndpoint"] = creds[
-                "container_uri"
-            ]
+            config_object[config_prefix + "BlobEndpoint"] = creds["container_uri"]
 
         if "container_name" in creds:
-            config_object[config_prefix + "Container"] = creds[
-                "container_name"
-            ]
+            config_object[config_prefix + "Container"] = creds["container_name"]
 
         return config_object
     else:
@@ -355,13 +328,8 @@ def _get_config_from_vcap():
 def _is_user_defined_config(m2ee):
     keys = [x.lower() for x in util.get_custom_runtime_settings(m2ee).keys()]
     return any(
-        [
-            x.startswith(STORAGE_CUSTOM_RUNTIME_SETTINGS_PREFIX.lower())
-            for x in keys
-        ]
-    ) or any(
-        [x == STORAGE_CORE_CUSTOM_RUNTIME_SETTINGS_KEY.lower() for x in keys]
-    )
+        [x.startswith(STORAGE_CUSTOM_RUNTIME_SETTINGS_PREFIX.lower()) for x in keys]
+    ) or any([x == STORAGE_CORE_CUSTOM_RUNTIME_SETTINGS_KEY.lower() for x in keys])
 
 
 def update_config(m2ee):
@@ -379,15 +347,11 @@ def update_config(m2ee):
         )
     else:
         if len(vcap_config) > 0:
-            logging.info(
-                "Using external file store configured by service binding"
-            )
+            logging.info("Using external file store configured by service binding")
         else:
             logging.warning(
                 "External file store not configured. Files stored by the application will not persist across restarts. "
                 "See https://github.com/mendix/cf-mendix-buildpack for file store configuration details."
             )
 
-    util.upsert_custom_runtime_settings(
-        m2ee, vcap_config, overwrite=False, append=True
-    )
+    util.upsert_custom_runtime_settings(m2ee, vcap_config, overwrite=False, append=True)

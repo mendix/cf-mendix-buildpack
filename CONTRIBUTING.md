@@ -1,6 +1,6 @@
 # Contributing to the Mendix Buildpack
 
-This document contains guidelines for contributing to the Mendix Buildpack (issues, PRs). Use in conjunction with [ `DEVELOPING.md` ](DEVELOPING.md) and [ `LICENSE` ](LICENSE).
+This document contains guidelines for contributing to the Mendix Buildpack (issues, PRs). Use in conjunction with [`DEVELOPING.md`](DEVELOPING.md) and [`LICENSE`](LICENSE).
 
 We welcome your contributions! Please reach out to a maintainer if you need help or if you have any questions after reading this document.
 
@@ -12,7 +12,7 @@ The following rules and guidelines apply when contributing to the buildpack:
 * We require that you accept the [`LICENSE`](LICENSE).
 * We follow a `develop` to `master` flow, where `master` is always the latest tested / released / working branch. Features are in separate branches and may only be merged to `develop`. Hotfixes also have separate branches and may be merged into `master`. For inspiration, check [this article](https://nvie.com/posts/a-successful-git-branching-model/).
 * New releases are always tagged `vX.X.X` . We make use of semantic versioning, and version numbers are [generated automatically based on the commit history](#releases-and-hotfixes).
-* Our code complies to PEP8, is formatted in [`black`]((https://github.com/psf/black)) and linted in `pylint`.
+* Our code complies to PEP8, is formatted in [`ruff`](https://beta.ruff.rs/docs/) and linted in [`pylint`](https://pylint.readthedocs.io/en/latest/).
 
 ## Issues
 
@@ -30,9 +30,9 @@ The following guidelines apply to pull requests:
 
 ### Merge Procedure
 
-0. Ensure that your branch is based on the latest `develop` version.
-1. Ask at least one person to review the PR.
-2. Merge to `develop` using the **"Squash and Merge"** strategy.
+1. Ensure that your branch is based on the latest `develop` version.
+2. Ask at least one person to review the PR.
+3. Merge to `develop` using the **"Squash and Merge"** strategy.
 
 After a PR is merged to `develop` , be sure to:
 
@@ -68,6 +68,7 @@ After a release or hotfix PR is merged to `master`, a draft release is created a
   * Ensure that the changes from `master` are [backmerged](#backmerge-hotfixes) into `develop`.
 
 #### Backmerge Hotfixes
+
 If you merge a change directly from a hotfix branch into `master`, it will not automatically also be included in `develop`. Since `develop` is a protected branch, pushing to this branch cannot be automated with Github Actions.
 
 To get hotfix changes into `develop`, **backmerge** them:

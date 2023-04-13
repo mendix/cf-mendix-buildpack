@@ -59,9 +59,7 @@ def stage(buildpack_dir, root_dir, cache_path):
                 ignore_cache=True,
             )
         except Exception as e:
-            logging.warning(
-                "Dynatrace agent download and unpack failed", exc_info=True
-            )
+            logging.warning("Dynatrace agent download and unpack failed", exc_info=True)
 
 
 def update_config(m2ee, app_name):
@@ -78,17 +76,13 @@ def update_config(m2ee, app_name):
     try:
         manifest = get_manifest()
     except Exception as e:
-        logging.warning(
-            "Failed to parse Dynatrace manifest file", exc_info=True
-        )
+        logging.warning("Failed to parse Dynatrace manifest file", exc_info=True)
         return
 
     agent_path = get_agent_path()
     logging.debug("Agent path: [%s]", agent_path)
     if not os.path.exists(agent_path):
-        raise Exception(
-            "Dynatrace Agent not found: {agent_path}".format(agent_path)
-        )
+        raise Exception("Dynatrace Agent not found: {agent_path}".format(agent_path))
 
     # dynamic default
     default_env.update({"DT_TENANTTOKEN": manifest.get("tenantToken")})
@@ -121,9 +115,7 @@ def get_connection_endpoint():
     manifest = get_manifest()
     endpoints = manifest.get("communicationEndpoints", [])
     # prepend the DT_SAAS_URL because the communication endpoints might not be correct
-    endpoints.insert(
-        0, _join_url(os.environ.get("DT_SAAS_URL"), "communication")
-    )
+    endpoints.insert(0, _join_url(os.environ.get("DT_SAAS_URL"), "communication"))
     return ";".join(endpoints)
 
 
@@ -138,10 +130,7 @@ def get_agent_path():
 
 
 def is_telegraf_enabled():
-    return (
-        "DT_PAAS_TOKEN" in os.environ.keys()
-        and "DT_SAAS_URL" in os.environ.keys()
-    )
+    return "DT_PAAS_TOKEN" in os.environ.keys() and "DT_SAAS_URL" in os.environ.keys()
 
 
 def is_agent_enabled():

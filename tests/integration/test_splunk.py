@@ -36,9 +36,7 @@ class TestCaseDeployWithSplunk(basetest.BaseTest):
         assert str(output).find("fluent-bit") == -1
 
     def _test_splunk_is_configured(self):
-        self.assert_string_in_recent_logs(
-            "Splunk has been configured successfully."
-        )
+        self.assert_string_in_recent_logs("Splunk has been configured successfully.")
 
     def _test_splunk_is_not_configured(self):
         self.assert_patterns_not_in_recent_logs([SPLUNK_LOGS_PATTERN])

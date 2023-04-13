@@ -43,8 +43,7 @@ def _get_security_properties_file(jvm_location, java_major_version):
         conf_dir = "conf"
     else:
         raise ValueError(
-            "Cannot determine security subdirectory for Java [%s]"
-            % java_major_version
+            "Cannot determine security subdirectory for Java [%s]" % java_major_version
         )
     return os.path.join(
         os.path.abspath(jvm_location), conf_dir, "security", "java.security"
@@ -70,8 +69,7 @@ def _configure_outgoing_tls_10_11(jvm_location, java_major_version):
             )
         except ValueError as e:
             logging.error(
-                "Not enabling TLSv1.0 and TLSv1.1 for outgoing connections: "
-                % e
+                "Not enabling TLSv1.0 and TLSv1.1 for outgoing connections: " % e
             )
             return
         if not (
@@ -106,9 +104,7 @@ def _configure_outgoing_tls_10_11(jvm_location, java_major_version):
                     f.write(line)
             f.truncate()
     else:
-        logging.debug(
-            "Not enabling TLSv1.0 and TLSv1.1 for outgoing connections"
-        )
+        logging.debug("Not enabling TLSv1.0 and TLSv1.1 for outgoing connections")
 
 
 def stage(buildpack_path, cache_path, local_path, java_major_version):
@@ -198,9 +194,7 @@ def ensure_and_get_jvm(
     rootfs_java_path = "/{}".format(jdk_dir)
     if not os.path.isdir(rootfs_java_path):
         logging.debug(
-            "Downloading and installing Java {} if required...".format(
-                package.upper()
-            )
+            "Downloading and installing Java {} if required...".format(package.upper())
         )
         util.resolve_dependency(
             dependency,

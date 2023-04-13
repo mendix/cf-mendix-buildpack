@@ -75,21 +75,15 @@ class TestCaseS3BlobStoreDryRun(TestCase):
     def test_s3_blobstore(self):
         vcap = json.loads(S3_STORAGE_VCAP_EXAMPLE)
         config = storage._get_s3_specific_config(vcap)
+        assert config["com.mendix.core.StorageService"] == "com.mendix.storage.s3"
         assert (
-            config["com.mendix.core.StorageService"] == "com.mendix.storage.s3"
-        )
-        assert (
-            config["com.mendix.storage.s3.AccessKeyId"]
-            == "fake-access-key-from-vcap"
+            config["com.mendix.storage.s3.AccessKeyId"] == "fake-access-key-from-vcap"
         )
         assert (
             config["com.mendix.storage.s3.SecretAccessKey"]
             == "fake-secret-access-key-from-vcap"
         )
-        assert (
-            config["com.mendix.storage.s3.BucketName"]
-            == "fake-key-prefix-from-vcap"
-        )
+        assert config["com.mendix.storage.s3.BucketName"] == "fake-key-prefix-from-vcap"
         assert (
             config["com.mendix.storage.s3.EndPoint"]
             == "fake-s3-endpoint-from-vcap/fake-bucket-from-vcap"
@@ -113,13 +107,10 @@ class TestCaseS3BlobStoreDryRun(TestCase):
 
         vcap = json.loads(S3_TVM_STORAGE_VCAP_EXAMPLE)
         config = storage._get_s3_specific_config(vcap)
-        assert (
-            config["com.mendix.core.StorageService"] == "com.mendix.storage.s3"
-        )
+        assert config["com.mendix.core.StorageService"] == "com.mendix.storage.s3"
         assert config["com.mendix.storage.s3.AccessKeyId"] == "fake-access-key"
         assert (
-            config["com.mendix.storage.s3.SecretAccessKey"]
-            == "fake-secret-access-key"
+            config["com.mendix.storage.s3.SecretAccessKey"] == "fake-secret-access-key"
         )
         assert (
             config["com.mendix.storage.s3.BucketName"]
@@ -167,9 +158,7 @@ class TestCaseS3BlobStoreDryRun(TestCase):
     def test_s3_blobstore_tvm_runtime_with_sts(self):
         vcap = json.loads(S3_TVM_STORAGE_VCAP_EXAMPLE)
         config = storage._get_s3_specific_config(vcap)
-        assert (
-            config["com.mendix.core.StorageService"] == "com.mendix.storage.s3"
-        )
+        assert config["com.mendix.core.StorageService"] == "com.mendix.storage.s3"
         assert (
             config["com.mendix.storage.s3.tokenService.Url"]
             == "https://tvm-endpoint.mendix.com/v1/gettoken"
@@ -182,14 +171,8 @@ class TestCaseS3BlobStoreDryRun(TestCase):
             config["com.mendix.storage.s3.tokenService.Password"]
             == "fake-password-from-tvm-vcap"
         )
-        assert (
-            config["com.mendix.storage.s3.tokenService.RefreshPercentage"]
-            == 80
-        )
-        assert (
-            config["com.mendix.storage.s3.tokenService.RetryIntervalInSeconds"]
-            == 10
-        )
+        assert config["com.mendix.storage.s3.tokenService.RefreshPercentage"] == 80
+        assert config["com.mendix.storage.s3.tokenService.RetryIntervalInSeconds"] == 10
         assert (
             config["com.mendix.storage.s3.BucketName"]
             == "fake-key-prefix-from-tvm-vcap"
@@ -210,9 +193,7 @@ class TestCaseS3BlobStoreDryRun(TestCase):
         mock.MagicMock(return_value=MXVersion(9.2)),
     )
     @mock.patch("buildpack.infrastructure.storage.requests")
-    def test_s3_blobstore_tvm_runtime_with_sts_and_cas_broken(
-        self, mock_requests
-    ):
+    def test_s3_blobstore_tvm_runtime_with_sts_and_cas_broken(self, mock_requests):
         mock_response = mock.MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
@@ -226,13 +207,10 @@ class TestCaseS3BlobStoreDryRun(TestCase):
         vcap = json.loads(S3_TVM_STORAGE_VCAP_EXAMPLE)
         os.environ["CERTIFICATE_AUTHORITIES"] = "fake-certificate-authority"
         config = storage._get_s3_specific_config(vcap)
-        assert (
-            config["com.mendix.core.StorageService"] == "com.mendix.storage.s3"
-        )
+        assert config["com.mendix.core.StorageService"] == "com.mendix.storage.s3"
         assert config["com.mendix.storage.s3.AccessKeyId"] == "fake-access-key"
         assert (
-            config["com.mendix.storage.s3.SecretAccessKey"]
-            == "fake-secret-access-key"
+            config["com.mendix.storage.s3.SecretAccessKey"] == "fake-secret-access-key"
         )
         assert (
             config["com.mendix.storage.s3.BucketName"]
@@ -248,9 +226,7 @@ class TestCaseS3BlobStoreDryRun(TestCase):
         mock.MagicMock(return_value=MXVersion(9.2)),
     )
     @mock.patch("buildpack.infrastructure.storage.requests")
-    def test_s3_blobstore_tvm_runtime_with_sts_and_ccs_broken(
-        self, mock_requests
-    ):
+    def test_s3_blobstore_tvm_runtime_with_sts_and_ccs_broken(self, mock_requests):
         mock_response = mock.MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
@@ -264,13 +240,10 @@ class TestCaseS3BlobStoreDryRun(TestCase):
         vcap = json.loads(S3_TVM_STORAGE_VCAP_EXAMPLE)
         os.environ["CLIENT_CERTIFICATES"] = "fake-client-certificate"
         config = storage._get_s3_specific_config(vcap)
-        assert (
-            config["com.mendix.core.StorageService"] == "com.mendix.storage.s3"
-        )
+        assert config["com.mendix.core.StorageService"] == "com.mendix.storage.s3"
         assert config["com.mendix.storage.s3.AccessKeyId"] == "fake-access-key"
         assert (
-            config["com.mendix.storage.s3.SecretAccessKey"]
-            == "fake-secret-access-key"
+            config["com.mendix.storage.s3.SecretAccessKey"] == "fake-secret-access-key"
         )
         assert (
             config["com.mendix.storage.s3.BucketName"]
@@ -294,9 +267,7 @@ class TestCaseS3BlobStoreDryRun(TestCase):
         vcap = json.loads(S3_TVM_STORAGE_VCAP_EXAMPLE)
         os.environ["CERTIFICATE_AUTHORITIES"] = "fake-certificate-authority"
         config = storage._get_s3_specific_config(vcap)
-        assert (
-            config["com.mendix.core.StorageService"] == "com.mendix.storage.s3"
-        )
+        assert config["com.mendix.core.StorageService"] == "com.mendix.storage.s3"
         assert (
             config["com.mendix.storage.s3.tokenService.Url"]
             == "https://tvm-endpoint.mendix.com/v1/gettoken"
@@ -309,14 +280,8 @@ class TestCaseS3BlobStoreDryRun(TestCase):
             config["com.mendix.storage.s3.tokenService.Password"]
             == "fake-password-from-tvm-vcap"
         )
-        assert (
-            config["com.mendix.storage.s3.tokenService.RefreshPercentage"]
-            == 80
-        )
-        assert (
-            config["com.mendix.storage.s3.tokenService.RetryIntervalInSeconds"]
-            == 10
-        )
+        assert config["com.mendix.storage.s3.tokenService.RefreshPercentage"] == 80
+        assert config["com.mendix.storage.s3.tokenService.RetryIntervalInSeconds"] == 10
         assert (
             config["com.mendix.storage.s3.BucketName"]
             == "fake-key-prefix-from-tvm-vcap"
@@ -334,9 +299,7 @@ class TestCaseS3BlobStoreDryRun(TestCase):
         vcap = json.loads(S3_TVM_STORAGE_VCAP_EXAMPLE)
         os.environ["CLIENT_CERTIFICATES"] = "fake-client-certificate"
         config = storage._get_s3_specific_config(vcap)
-        assert (
-            config["com.mendix.core.StorageService"] == "com.mendix.storage.s3"
-        )
+        assert config["com.mendix.core.StorageService"] == "com.mendix.storage.s3"
         assert (
             config["com.mendix.storage.s3.tokenService.Url"]
             == "https://tvm-endpoint.mendix.com/v1/gettoken"
@@ -349,14 +312,8 @@ class TestCaseS3BlobStoreDryRun(TestCase):
             config["com.mendix.storage.s3.tokenService.Password"]
             == "fake-password-from-tvm-vcap"
         )
-        assert (
-            config["com.mendix.storage.s3.tokenService.RefreshPercentage"]
-            == 80
-        )
-        assert (
-            config["com.mendix.storage.s3.tokenService.RetryIntervalInSeconds"]
-            == 10
-        )
+        assert config["com.mendix.storage.s3.tokenService.RefreshPercentage"] == 80
+        assert config["com.mendix.storage.s3.tokenService.RetryIntervalInSeconds"] == 10
         assert (
             config["com.mendix.storage.s3.BucketName"]
             == "fake-key-prefix-from-tvm-vcap"

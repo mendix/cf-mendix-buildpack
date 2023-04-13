@@ -65,16 +65,13 @@ class M2EE:
             )
         elif not pid_alive and m2ee_alive:
             logger.error(
-                "pid %s is not available, but m2ee responds"
-                % self.runner.get_pid()
+                "pid %s is not available, but m2ee responds" % self.runner.get_pid()
             )
         return (pid_alive, m2ee_alive)
 
     def start_appcontainer(self):
         if not self.config.all_systems_are_go():
-            logger.error(
-                "Cannot start MxRuntime due to previous critical " "errors."
-            )
+            logger.error("Cannot start MxRuntime due to previous critical " "errors.")
             return False
 
         version = self.config.get_runtime_version()
@@ -105,9 +102,7 @@ class M2EE:
         m2eeresponse = self.client.runtime_status()
         status = m2eeresponse.get_feedback()["status"]
         if status not in ["feut", "created", "starting"]:
-            logger.error(
-                "Cannot start MxRuntime when it has status %s" % status
-            )
+            logger.error("Cannot start MxRuntime when it has status %s" % status)
             return False
         logger.debug("MxRuntime status: %s" % status)
 
@@ -208,15 +203,12 @@ class M2EE:
         logging_config = self.config.get_logging_config()
         if len(logging_config) == 0:
             logger.warn(
-                "No logging settings found, this is probably not what "
-                "you want."
+                "No logging settings found, this is probably not what " "you want."
             )
             return
         for log_subscriber in logging_config:
             if log_subscriber["name"] != "*":
-                m2eeresponse = self.client.create_log_subscriber(
-                    log_subscriber
-                )
+                m2eeresponse = self.client.create_log_subscriber(log_subscriber)
                 result = m2eeresponse.get_result()
                 if result == 3:  # logsubscriber name exists
                     pass
@@ -237,8 +229,7 @@ class M2EE:
             result = m2eeresponse.get_result()
             if result != 0:
                 logger.error(
-                    "Setting Jetty options failed: %s"
-                    % m2eeresponse.get_cause()
+                    "Setting Jetty options failed: %s" % m2eeresponse.get_cause()
                 )
 
     def _send_mime_types(self):
@@ -248,9 +239,7 @@ class M2EE:
             m2eeresponse = self.client.add_mime_type(mime_types)
             result = m2eeresponse.get_result()
             if result != 0:
-                logger.error(
-                    "Setting mime types failed: %s" % m2eeresponse.get_cause()
-                )
+                logger.error("Setting mime types failed: %s" % m2eeresponse.get_cause())
 
     def send_runtime_config(self, database_password=None):
         # send runtime configuration
@@ -296,12 +285,9 @@ class M2EE:
         m2eeresponse = self.client.update_configuration(config)
         result = m2eeresponse.get_result()
         if result == 1:
+            logger.error("Sending configuration failed: %s" % m2eeresponse.get_cause())
             logger.error(
-                "Sending configuration failed: %s" % m2eeresponse.get_cause()
-            )
-            logger.error(
-                "You'll have to fix the configuration and run start "
-                "again..."
+                "You'll have to fix the configuration and run start " "again..."
             )
             return False
 
@@ -309,14 +295,11 @@ class M2EE:
         # update_custom_configuration
         if custom_config_25:
             logger.debug("Sending 2.5.x custom configuration...")
-            m2eeresponse = self.client.update_custom_configuration(
-                custom_config_25
-            )
+            m2eeresponse = self.client.update_custom_configuration(custom_config_25)
             result = m2eeresponse.get_result()
             if result == 1:
                 logger.error(
-                    "Sending custom configuration failed: %s"
-                    % m2eeresponse.get_cause()
+                    "Sending custom configuration failed: %s" % m2eeresponse.get_cause()
                 )
                 return False
 

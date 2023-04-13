@@ -22,9 +22,7 @@ def get_env_with_monolib(mono_dir):
 
 
 def _detect_mono_version(mx_version):
-    logging.debug(
-        "Detecting Mono Runtime using Mendix version: %s", mx_version
-    )
+    logging.debug("Detecting Mono Runtime using Mendix version: %s", mx_version)
     if mx_version >= 8:
         target = "5"
     elif mx_version >= 7:
@@ -70,10 +68,7 @@ def ensure_and_get_mono(mx_version, buildpack_dir, cache_dir):
     dependency_name = _compose_mono_dependency_name(major_version)
     fallback_location = "/tmp/opt"
 
-    if (
-        major_version == "3"
-        and platform.linux_distribution()[2].lower() == "bionic"
-    ):
+    if major_version == "3" and platform.linux_distribution()[2].lower() == "bionic":
         dependency = util.resolve_dependency(
             dependency_name,
             os.path.join(fallback_location, "store"),
@@ -86,9 +81,7 @@ def ensure_and_get_mono(mx_version, buildpack_dir, cache_dir):
         mono_location = "/tmp/opt/mono-%s" % version
         os.symlink(mono_subpath[0], mono_location)
         logging.debug(
-            "Mono available: {mono_location}".format(
-                mono_location=mono_location
-            )
+            "Mono available: {mono_location}".format(mono_location=mono_location)
         )
         logging.warning(
             "The staging phase is likely going to fail when the default "
@@ -113,8 +106,6 @@ def ensure_and_get_mono(mx_version, buildpack_dir, cache_dir):
             )
             mono_location = _get_mono_path(fallback_location, version)
         logging.debug(
-            "Mono available: {mono_location}".format(
-                mono_location=mono_location
-            )
+            "Mono available: {mono_location}".format(mono_location=mono_location)
         )
         return mono_location

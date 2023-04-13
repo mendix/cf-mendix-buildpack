@@ -60,9 +60,7 @@ def build_from_source(
 
     if os.environ.get("FORCED_MXBUILD_URL"):
         args.append("--loose-version-check")
-        logging.warning(
-            "Using forced MxBuild version, the model will be converted"
-        )
+        logging.warning("Using forced MxBuild version, the model will be converted")
 
     args.append(util.get_mpr_file_from_dir(build_path))
 

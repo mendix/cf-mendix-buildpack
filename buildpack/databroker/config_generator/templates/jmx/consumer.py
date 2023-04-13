@@ -14,9 +14,7 @@ jmx_metrics = [
                 "last-poll-seconds-ago": {
                     "alias": "kafka.consumer.last-poll-seconds-ago"
                 },
-                "poll-idle-ratio-avg": {
-                    "alias": "kafka.consumer.poll-idle-ratio-avg"
-                },
+                "poll-idle-ratio-avg": {"alias": "kafka.consumer.poll-idle-ratio-avg"},
             },
         }
     },
@@ -30,12 +28,8 @@ jmx_metrics = [
                 "commit-latency-max": {
                     "alias": "kafka.consumer.coordinator.commit-latency-max"
                 },
-                "commit-rate": {
-                    "alias": "kafka.consumer.coordinator.commit-rate"
-                },
-                "commit-total": {
-                    "alias": "kafka.consumer.coordinator.commit-total"
-                },
+                "commit-rate": {"alias": "kafka.consumer.coordinator.commit-rate"},
+                "commit-total": {"alias": "kafka.consumer.coordinator.commit-total"},
                 "assigned-partitions": {
                     "alias": "kafka.consumer.coordinator.assigned-partitions"
                 },
@@ -48,26 +42,14 @@ jmx_metrics = [
                 "heartbeat-total": {
                     "alias": "kafka.consumer.coordinator.heartbeat-total"
                 },
-                "join-time-avg": {
-                    "alias": "kafka.consumer.coordinator.join-time-avg"
-                },
-                "join-time-max": {
-                    "alias": "kafka.consumer.coordinator.join-time-max"
-                },
+                "join-time-avg": {"alias": "kafka.consumer.coordinator.join-time-avg"},
+                "join-time-max": {"alias": "kafka.consumer.coordinator.join-time-max"},
                 "join-rate": {"alias": "kafka.consumer.coordinator.join-rate"},
-                "join-total": {
-                    "alias": "kafka.consumer.coordinator.join-total"
-                },
-                "sync-time-avg": {
-                    "alias": "kafka.consumer.coordinator.sync-time-avg"
-                },
-                "sync-time-max": {
-                    "alias": "kafka.consumer.coordinator.sync-time-max"
-                },
+                "join-total": {"alias": "kafka.consumer.coordinator.join-total"},
+                "sync-time-avg": {"alias": "kafka.consumer.coordinator.sync-time-avg"},
+                "sync-time-max": {"alias": "kafka.consumer.coordinator.sync-time-max"},
                 "sync-rate": {"alias": "kafka.consumer.coordinator.sync-rate"},
-                "sync-total": {
-                    "alias": "kafka.consumer.coordinator.sync-total"
-                },
+                "sync-total": {"alias": "kafka.consumer.coordinator.sync-total"},
                 "rebalance-latency-avg": {
                     "alias": "kafka.consumer.coordinator.rebalance-latency-avg"
                 },
@@ -132,9 +114,7 @@ jmx_metrics = [
                 "fetch-latency-max": {
                     "alias": "kafka.consumer.fetch.manager.fetch-latency-max"
                 },
-                "fetch-rate": {
-                    "alias": "kafka.consumer.fetch.manager.fetch-rate"
-                },
+                "fetch-rate": {"alias": "kafka.consumer.fetch.manager.fetch-rate"},
                 "fetch-size-avg": {
                     "alias": "kafka.consumer.fetch.manager.fetch-size-avg"
                 },
@@ -147,9 +127,7 @@ jmx_metrics = [
                 "fetch-throttle-time-max": {
                     "alias": "kafka.consumer.fetch.manager.fetch-throttle-time-max"
                 },
-                "fetch-total": {
-                    "alias": "kafka.consumer.fetch.manager.fetch-total"
-                },
+                "fetch-total": {"alias": "kafka.consumer.fetch.manager.fetch-total"},
                 "records-consumed-rate": {
                     "alias": "kafka.consumer.fetch.manager.records-consumed-rate"
                 },
@@ -203,18 +181,14 @@ jmx_metrics = [
                 "preferred-read-replica": {
                     "alias": "kafka.consumer.fetch.manager.preferred-read-replica"
                 },
-                "records-lag": {
-                    "alias": "kafka.consumer.fetch.manager.records-lag"
-                },
+                "records-lag": {"alias": "kafka.consumer.fetch.manager.records-lag"},
                 "records-lag-avg": {
                     "alias": "kafka.consumer.fetch.manager.records-lag-avg"
                 },
                 "records-lag-max": {
                     "alias": "kafka.consumer.fetch.manager.records-lag-max"
                 },
-                "records-lead": {
-                    "alias": "kafka.consumer.fetch.manager.records-lead"
-                },
+                "records-lead": {"alias": "kafka.consumer.fetch.manager.records-lead"},
                 "records-lead-avg": {
                     "alias": "kafka.consumer.fetch.manager.records-lead-avg"
                 },
@@ -228,15 +202,9 @@ jmx_metrics = [
         "include": {
             "bean": "com.mendix:type=DataBroker",
             "attribute": {
-                "EntitiesCreatedCount": {
-                    "alias": "com.mendix.EntitiesCreatedCount"
-                },
-                "EntitiesUpdatedCount": {
-                    "alias": "com.mendix.EntitiesUpdatedCount"
-                },
-                "EntitiesDeletedCount": {
-                    "alias": "com.mendix.EntitiesDeletedCount"
-                },
+                "EntitiesCreatedCount": {"alias": "com.mendix.EntitiesCreatedCount"},
+                "EntitiesUpdatedCount": {"alias": "com.mendix.EntitiesUpdatedCount"},
+                "EntitiesDeletedCount": {"alias": "com.mendix.EntitiesDeletedCount"},
             },
         }
     },

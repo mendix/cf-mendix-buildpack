@@ -1,6 +1,6 @@
 # Mendix Buildpack Development
 
-This document describes best practices of developing the Mendix Buildpack. Use in conjunction with [ `CONTRIBUTING.md` ](CONTRIBUTING.md).
+This document describes best practices of developing the Mendix Buildpack. Use in conjunction with [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Buildpack Structure
 
@@ -32,7 +32,7 @@ For developing the buildpack, you must set up the following:
 
 ### Installing `pyenv`
 
-[ `pyenv` ](https://github.com/pyenv/pyenv) in combination with [ `pyenv-virtualenv` ](https://github.com/pyenv/pyenv-virtualenv) can be used to create a local Python virtual environment to develop in. Note that you'll have to create an environment with the latest version of Python 3.6 - the default in the Cloud Foundry root filesystem ( `cflinuxfs3` ) we use to deploy applications on.
+[`pyenv`](https://github.com/pyenv/pyenv) in combination with [`pyenv-virtualenv`](https://github.com/pyenv/pyenv-virtualenv) can be used to create a local Python virtual environment to develop in. Note that you'll have to create an environment with the latest version of Python 3.6 - the default in the Cloud Foundry root filesystem ( `cflinuxfs3` ) we use to deploy applications on.
 
 ### Developing in Docker
 
@@ -40,7 +40,8 @@ As an alternative to running Python on your host you can run it in a Docker cont
 
 * Set up required environment variables
 * Go to the `dev/` directory
-* Run `./run-locally.sh`
+* Run `./start_dev_environment.sh`
+
 This will start the Docker container with preinstalled Python and provide you with an interactive shell.
 The project folder will be mapped to the current folder in the Docker container, so if you edit files on your host, the changes will be immediately available in the container.
 
@@ -185,7 +186,7 @@ This YAML snippet contains information about the dependency name (composed of a 
 The result of this example is the following Python dictionary:
 
 ```python
-{ 
+{
     "foo.bar": {
         "version": "1.0.0",
         "artifact": "some_location/some_archive-{{ version }}.tar.gz",
@@ -200,16 +201,16 @@ This dependency object is used to resolve and download the artifact. This happen
 
 The resolution function is used by all buildpack components, and performs the following steps:
 
-0. Find the dependency with the specified name in the list of dependencies. The name is composed of all the YAML sections, separated by `.`, and is used as a key in the dependency list. For the example: `foo.bar`.
-1. Render any unparsed fields (in the example: `artifact`) with:
+1. Find the dependency with the specified name in the list of dependencies. The name is composed of all the YAML sections, separated by `.`, and is used as a key in the dependency list. For the example: `foo.bar`.
+2. Render any unparsed fields (in the example: `artifact`) with:
    * The fields present in the dependency object itself (in the example: `version`). For the example, this will result in `some_location/some_archive-1.0.0.tar.gz`.
    * The fields specified in a `overrides` dictionary. These override any values present in the dependency object, or will extend the dependency object when they are not present.
-2. Compose the URL for the `artifact` field:
+3. Compose the URL for the `artifact` field:
    * If the URL starts with `http(s)://`, don't change it
    * If the URL starts with a `/`, prepend the blob store root URL (specified in code or in the `BLOBSTORE` environment variable).
    * Else, prepend the blob store root URL and `mx-buildpack/`. For the example, this results in `https://cdn.mendix.com/mx-buildpack/some_location/some_archive-1.0.0.tar.gz`.
-3. Delete any other versions of the file in the URL from the cache. Alternative names can be specified in an `alias` field.
-4. Download and optionally unpack the file in the URL to a specified location:
+4. Delete any other versions of the file in the URL from the cache. Alternative names can be specified in an `alias` field.
+5. Download and optionally unpack the file in the URL to a specified location:
    * Check the [`vendor` directory](#vendoring-external-dependencies) if the file is present. If so, retrieve from there
    * Check the Cloud Foundry cache directory if the file is present. If so, retrieve from there
    * If not, download from the Mendix CDN
@@ -240,7 +241,7 @@ dependencies:
         version: 1.0.0
         artifact: "some_location/some_archive-{{ type }}-{{ version }}.tar.gz"
         bar:
-            type: "fizz" 
+            type: "fizz"
         baz:
             type: "buzz"
 ```

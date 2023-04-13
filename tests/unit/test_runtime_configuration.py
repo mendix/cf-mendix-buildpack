@@ -39,10 +39,7 @@ class TestJettyConfiguration(TestCase):
     )
     def test_upsert_valid_jetty_settings(self):
         result = self._set_and_get_jetty_settings()
-        assert (
-            "runtime_max_threads" in result
-            and "max_form_content_size" in result
-        )
+        assert "runtime_max_threads" in result and "max_form_content_size" in result
 
     @mock.patch.dict(os.environ, {"JETTY_CONFIG": "invalid_json"})
     def test_upsert_invalid_jetty_settings(self):
@@ -80,16 +77,13 @@ class TestCustomRuntimeConfiguration(TestCase):
         os.environ,
         {
             "MXRUNTIME_PersistentSessions": "True",
-            "CUSTOM_RUNTIME_SETTINGS": json.dumps(
-                {"SourceDatabaseType": "MySQL"}
-            ),
+            "CUSTOM_RUNTIME_SETTINGS": json.dumps({"SourceDatabaseType": "MySQL"}),
         },
     )
     def test_custom_runtime_setting_is_set(self):
         result = runtime._get_custom_runtime_settings()
         assert (
-            "PersistentSessions" in result
-            and result["SourceDatabaseType"] == "MySQL"
+            "PersistentSessions" in result and result["SourceDatabaseType"] == "MySQL"
         )
 
 
@@ -126,9 +120,7 @@ class TestClientCertificateConfiguration(TestCase):
         "CLIENT_CERTIFICATES": json.dumps(
             [
                 {
-                    "pfx": base64.b64encode(_create_self_signed_cert()).decode(
-                        "utf-8"
-                    ),
+                    "pfx": base64.b64encode(_create_self_signed_cert()).decode("utf-8"),
                     "password": "",
                     "pin_to": [],
                 }
