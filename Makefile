@@ -4,10 +4,10 @@ MAX_LINE_LENGTH = $(shell cat .pylintrc | grep max-line-length | cut -d '=' -f 2
 VERSION ?= $(shell git tag --list --sort=-version:refname "v*" | head -n 1)
 COMMIT ?= $(shell git rev-parse --short HEAD)
 
-PIP_TOOLS_VERSION ?= 6.12.3
+PIP_TOOLS_VERSION ?= 6.13.0
 PIP_VERSION ?= 23.0.1
 PYTHON_PLATFORM ?= manylinux2014_x86_64
-PYTHON_VERSION ?= 311
+PYTHON_VERSION ?= 310
 
 .PHONY: vendor
 vendor: create_build_dirs copy_vendored_dependencies download_wheels
@@ -57,8 +57,8 @@ install_requirements: install_piptools requirements
 
 .PHONY: requirements
 requirements: install_piptools
-	pip-compile requirements*.in -o requirements-all.txt
-	pip-compile requirements.in
+	pip-compile requirements*.in -o requirements-all.txt --resolver=backtracking
+	pip-compile requirements.in --resolver=backtracking
 
 .PHONY: write_version
 write_version:

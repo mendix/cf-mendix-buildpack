@@ -873,7 +873,7 @@ purposes, you can do the following:
 
 ```shell
 cf ssh <YOUR_APP>
-export PYTHONPATH=/home/vcap/app/.local/lib/python3.11/site-packages/:/home/vcap/app/lib/
+export PYTHONPATH=/home/vcap/app/.local/lib/python3.10/site-packages/:/home/vcap/app/lib/
 python3
 ```
 

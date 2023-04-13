@@ -9,6 +9,7 @@ exclude = [
     "tests/unit/test_databroker_business_events.py",
     "tests/unit/test_databroker.py"
 ]
+
 # Assume Python 3.10
 target-version = "py310"
 
