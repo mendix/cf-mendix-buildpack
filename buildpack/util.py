@@ -117,7 +117,7 @@ def __render(o, variables):
 def __get_dependencies(obj):
     if (
         all(
-            True if k in DO_NOT_RECURSE_FIELDSelse _is_dependency_literal(v)
+            True if k in DO_NOT_RECURSE_FIELDS else _is_dependency_literal(v)
             for (k, v) in obj.items()
         )
         and DEPENDENCY_ARTIFACT_KEY in obj

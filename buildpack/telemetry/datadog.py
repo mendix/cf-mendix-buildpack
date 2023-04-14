@@ -87,7 +87,7 @@ def _is_logs_redaction_enabled():
 # By default, they are not compatible with the Datadog Postgres integration
 # due to Telegraf limitations
 def is_database_rate_count_metrics_enabled():
-    return strtobool(os.environ.get("DATADOG_DATABASE_RATE_COUNT_METRICS", "false"))
+    return strtobool(os.environ.get("DATADOG_DATABASE_RATE_COUNT_METRICS", "false"))  # noqa: E501
 
 
 # Toggles the database diskstorage metrics

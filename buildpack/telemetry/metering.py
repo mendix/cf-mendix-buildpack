@@ -47,7 +47,8 @@ def write_file(output_file_path, content):
                 json.dump(content, f)
         except Exception as exception:
             raise Exception(
-                f"Error while trying to write the configuration to a file. Reason: '{exception}'"  # noqa: line-too-long
+                "Error while trying to write the configuration to a file. "
+                f"Reason: '{exception}'"
             ) from exception
 
 
