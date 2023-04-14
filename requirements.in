@@ -1,6 +1,7 @@
 backoff==1.11.1
 certifi==2022.12.7
 cryptography==39.0.1
+distro==1.8.0
 httplib2==0.21.0
 jinja2==3.0.3
 omegaconf==2.3.0
