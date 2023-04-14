@@ -242,9 +242,7 @@ dependencies:
         with tempfile.TemporaryDirectory() as temp_dir:
             files = []
             for version in versions:
-                files.append(
-                    os.path.join(temp_dir, f"{prefix}{version}")
-                )
+                files.append(os.path.join(temp_dir, f"{prefix}{version}"))
 
             for f in files:
                 open(f, "a").close()
