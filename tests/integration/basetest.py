@@ -2,7 +2,6 @@ import os
 import re
 import unittest
 import uuid
-from distutils.util import strtobool
 
 from buildpack import util
 
@@ -53,7 +52,9 @@ class BaseTest(unittest.TestCase):
             env_vars=env_vars,
             use_snapshot=use_snapshot,
             password=os.environ.get(self.ENV_PREFIX + "MX_PASSWORD"),
-            debug=bool(strtobool(os.environ.get(self.ENV_PREFIX + "DEBUG", "true"))),
+            debug=bool(
+                util.strtobool(os.environ.get(self.ENV_PREFIX + "DEBUG", "true"))
+            ),
             host=os.environ.get(self.ENV_PREFIX + "HOST"),
             disk=os.environ.get(self.ENV_PREFIX + "DISK"),
             memory=os.environ.get(self.ENV_PREFIX + "MEMORY"),

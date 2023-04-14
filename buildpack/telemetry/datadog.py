@@ -15,7 +15,6 @@ import os
 import socket
 import subprocess
 from collections import OrderedDict
-from distutils.util import strtobool
 
 import backoff
 import yaml
@@ -75,28 +74,28 @@ def is_enabled():
 
 # Toggles Datadog APM
 def _is_tracing_enabled():
-    return strtobool(os.environ.get("DD_TRACE_ENABLED", "false"))
+    return util.strtobool(os.environ.get("DD_TRACE_ENABLED", "false"))
 
 
 # Toggles logs redaction (email addresses are replaced by a generic string)
 def _is_logs_redaction_enabled():
-    return strtobool(os.environ.get("DATADOG_LOGS_REDACTION", "true"))
+    return util.strtobool(os.environ.get("DATADOG_LOGS_REDACTION", "true"))
 
 
 # Toggles database rare / count metrics which are collected by Telegraf
 # By default, they are not compatible with the Datadog Postgres integration
 # due to Telegraf limitations
 def is_database_rate_count_metrics_enabled():
-    return strtobool(
+    return util.strtobool(
         os.environ.get("DATADOG_DATABASE_RATE_COUNT_METRICS", "false")
-    )  # noqa: line-too-long
+    )
 
 
 # Toggles the database diskstorage metrics
 # It is basically a fixed value based on an environment variable
 def is_database_diskstorage_metric_enabled():
     return (
-        strtobool(os.environ.get("DATADOG_DATABASE_DISKSTORAGE_METRIC", "true"))
+        util.strtobool(os.environ.get("DATADOG_DATABASE_DISKSTORAGE_METRIC", "true"))
         and os.environ.get("DATABASE_DISKSTORAGE") is not None
     )
 
@@ -104,7 +103,7 @@ def is_database_diskstorage_metric_enabled():
 # Toggles the system checks. Note that these may not mean anything as they
 # might show the host metrics instead of the container metrics.
 def _is_checks_enabled():
-    return strtobool(os.environ.get("DD_ENABLE_CHECKS", "false"))
+    return util.strtobool(os.environ.get("DD_ENABLE_CHECKS", "false"))
 
 
 # Toggles Datadog profiling. Can only enabled when using AdoptOpenJDK and
@@ -112,7 +111,7 @@ def _is_checks_enabled():
 def _is_profiling_enabled(runtime_version):
     if runtime_version < MXVersion("7.23.1") or not _is_tracing_enabled():
         return False
-    return strtobool(os.environ.get("DD_PROFILING_ENABLED", "false"))
+    return util.strtobool(os.environ.get("DD_PROFILING_ENABLED", "false"))
 
 
 def _is_installed():

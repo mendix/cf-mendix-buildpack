@@ -55,7 +55,7 @@ ENABLE_OUTGOING_TLS_10_11_KEY = "ENABLE_OUTGOING_TLS_10_11"
 
 
 def _is_outgoing_tls_10_11_enabled():
-    return json.loads(os.getenv(ENABLE_OUTGOING_TLS_10_11_KEY, "False"))
+    return bool(util.strtobool(os.getenv(ENABLE_OUTGOING_TLS_10_11_KEY, "false")))
 
 
 # Configures TLSv1.0 and TLSv1.1 for outgoing connections

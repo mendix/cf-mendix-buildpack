@@ -1,7 +1,6 @@
 import logging
 import os
 import subprocess
-from distutils.util import strtobool
 from buildpack import util
 
 
@@ -145,7 +144,7 @@ def machine_agent_enabled():
     if not appdynamics_used():
         return False
 
-    is_machine_agent_enabled = strtobool(
+    is_machine_agent_enabled = util.strtobool(
         os.getenv("APPDYNAMICS_MACHINE_AGENT_ENABLED", default="false")
     )
 

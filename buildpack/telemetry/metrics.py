@@ -7,7 +7,6 @@ import socket
 import threading
 import time
 from abc import ABCMeta, abstractmethod
-from distutils.util import strtobool
 from timeit import default_timer as timer
 
 import psycopg2
@@ -140,7 +139,9 @@ def get_micrometer_metrics_url():
     micrometer metrics only. Runtime version 9.7 and above is required.
 
     """
-    use_trends_forwarder = strtobool(os.getenv("USE_TRENDS_FORWARDER", default="true"))
+    use_trends_forwarder = util.strtobool(
+        os.getenv("USE_TRENDS_FORWARDER", default="true")
+    )
 
     trends_forwarder_url = os.getenv("TRENDS_FORWARDER_URL", default="")
 
@@ -159,7 +160,9 @@ def _micrometer_runtime_requirement(runtime_version):
     # TODO: DISABLE_MICROMETER_METRICS is a temporary flag to disable metrics
     # collection via micrometer till we are ready to do the switchover
     # from admin port metrics to micrometer based metrics
-    disable_micrometer = strtobool(os.getenv("DISABLE_MICROMETER_METRICS", "false"))
+    disable_micrometer = util.strtobool(
+        os.getenv("DISABLE_MICROMETER_METRICS", "false")
+    )
 
     runtime_version_supported = runtime_version >= MXVERSION_MICROMETER
 
@@ -206,7 +209,7 @@ def bypass_loggregator():
     # Throws a useful message if you put in a nonsensical value.
     # Necessary since we store these in cloud portal as strings.
     try:
-        bypass = strtobool(env_var)
+        bypass = util.strtobool(env_var)
     except ValueError:
         logging.warning(
             "Bypass loggregator has a nonsensical value: %s. "

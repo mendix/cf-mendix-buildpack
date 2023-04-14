@@ -1,5 +1,4 @@
 import crypt
-import distutils
 import json
 import logging
 import os
@@ -50,7 +49,7 @@ def _is_samesite_cookie_workaround_enabled(mx_version):
     SAMESITE_COOKIE_WORKAROUND_LESS_MX_VERSION = "8.12"
 
     try:
-        return distutils.util.strtobool(
+        return util.strtobool(
             os.environ.get(
                 SAMESITE_COOKIE_WORKAROUND_ENV_KEY,
                 str(SAMESITE_COOKIE_WORKAROUND_DEFAULT),

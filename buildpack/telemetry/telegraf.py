@@ -11,7 +11,6 @@ import logging
 import os
 import shutil
 import subprocess
-from distutils.util import strtobool
 
 from buildpack import util
 from buildpack.core import runtime
@@ -91,7 +90,7 @@ def include_db_metrics():
         # For customers who have Datadog or AppDynamics or APPMETRICS_TARGET enabled,
         # we always include the database metrics. They can opt out
         # using the APPMETRICS_INCLUDE_DB flag
-        result = strtobool(os.getenv("APPMETRICS_INCLUDE_DB", "true"))
+        result = util.strtobool(os.getenv("APPMETRICS_INCLUDE_DB", "true"))
 
     return result
 
@@ -263,7 +262,7 @@ def update_config(m2ee, app_name):
         dynatrace_enabled=dynatrace.is_telegraf_enabled(),
         dynatrace_config=_get_dynatrace_config(app_name),
         telegraf_debug_enabled=os.getenv("TELEGRAF_DEBUG_ENABLED", "false"),
-        telegraf_fileout_enabled=strtobool(
+        telegraf_fileout_enabled=util.strtobool(
             os.getenv("TELEGRAF_FILEOUT_ENABLED", "false")
         ),
     )
