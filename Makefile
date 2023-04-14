@@ -89,16 +89,12 @@ fixup:
 	chmod -R +r *
 	chmod +x bin/*
 
-.PHONY: set_pythonpath
-set_pythonpath:
-	export PYTHONPATH=.:lib/
-
 .PHONY: test_unit
-test_unit: set_pythonpath
+test_unit:
 	pytest -vvv --capture=no --durations=0 --color=no tests/unit/test_*.py
 
 .PHONY: test_integration
-test_integration: set_pythonpath
+test_integration:
 	pytest -vvv --capture=no --timeout=3600 --color=no tests/integration/test_*.py
 
 .PHONY: test
