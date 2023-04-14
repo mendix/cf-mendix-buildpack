@@ -23,7 +23,7 @@ try:
 except ImportError:
     try:
         import simplejson as json
-    except ImportError as ie:
+    except ImportError:
         logger.critical(
             "Failed to import json as well as simplejson. If "
             "using python 2.5, you need to provide the simplejson "
@@ -148,7 +148,7 @@ class M2EEConfig:
         logger.debug("Merging microflow constants configuration...")
 
         config_json = {}
-        if not self.get_dtap_mode()[0] in ("A", "P"):
+        if self.get_dtap_mode()[0] not in ("A", "P"):
             config_json_file = os.path.join(
                 self._conf["m2ee"]["app_base"], "model", "config.json"
             )
@@ -160,7 +160,7 @@ class M2EEConfig:
 
         # figure out which constants to use
         merge_constants = {}
-        if not self.get_dtap_mode()[0] in ("A", "P"):
+        if self.get_dtap_mode()[0] not in ("A", "P"):
             config_json_constants = config_json.get("Constants", {})
             logger.trace(
                 "In DTAPMode %s, so using Constants from "
@@ -185,7 +185,7 @@ class M2EEConfig:
             merge_constants.update(yaml_mxruntime_mfconstants)
         # merge all yaml runtime settings into config
         merge_config = {}
-        if not self.get_dtap_mode()[0] in ("A", "P"):
+        if self.get_dtap_mode()[0] not in ("A", "P"):
             config_json_configuration = config_json.get("Configuration", {})
             logger.trace(
                 "In DTAPMode %s, so seeding runtime configuration "
@@ -1009,7 +1009,7 @@ def load_config(yaml_file):
     fd = None
     try:
         fd = open(yaml_file)
-    except Exception as e:
+    except Exception:
         logger.error("Error reading configuration file %s, ignoring..." % yaml_file)
         return
 

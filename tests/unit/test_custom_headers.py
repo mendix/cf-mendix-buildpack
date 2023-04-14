@@ -76,20 +76,20 @@ class TestCaseCustomHeaderConfig(unittest.TestCase):
     def test_valid_header_contentSecurity(self):
         os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps(
             {
-                "Content-Security-Policy": "default-src https: \u0027unsafe-eval\u0027 \u0027unsafe-inline\u0027; object-src \u0027none\u0027"  # noqa: E501
+                "Content-Security-Policy": "default-src https: \u0027unsafe-eval\u0027 \u0027unsafe-inline\u0027; object-src \u0027none\u0027"  # noqa: line-too-long
             }
         )
         header_config = nginx._get_http_headers()
         self.assertIn(
             (
                 "Content-Security-Policy",
-                "default-src https: \\'unsafe-eval\\' \\'unsafe-inline\\'; object-src \\'none\\'",
-            ),  # noqa: E501
+                "default-src https: \\'unsafe-eval\\' \\'unsafe-inline\\'; object-src \\'none\\'",  # noqa: line-too-long
+            ),  # noqa: line-too-long
             header_config,
         )
 
     def test_valid_header_contentSecurity_sha(self):
-        base64_src = r"default-src 'self'; style-src 'self' 'sha256-aBc/dEf='; script-src 'self' 'unsafe-eval' 'sha256-aBc+dEf=';"
+        base64_src = r"default-src 'self'; style-src 'self' 'sha256-aBc/dEf='; script-src 'self' 'unsafe-eval' 'sha256-aBc+dEf=';"  # noqa: line-too-long
 
         os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps(
             {"Content-Security-Policy": base64_src}
@@ -106,7 +106,7 @@ class TestCaseCustomHeaderConfig(unittest.TestCase):
     def test_invalid_header_contentSecurity(self):
         os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps(
             {
-                "Content-Security-Policy": "$# default-src https://my.csp.domain.amsterdam"
+                "Content-Security-Policy": "$# default-src https://my.csp.domain.amsterdam"  # noqa: line-too-long
             }
         )
         header_config = nginx._get_http_headers()

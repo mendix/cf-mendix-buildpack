@@ -1,10 +1,12 @@
-from buildpack.databroker.config_generator.scripts.generators.debezium_configs.debezium_interface import (
+from buildpack.databroker.config_generator.scripts.generators.debezium_configs.debezium_interface import (  # noqa: line-too-long
     DebeziumInterface,
 )
-from buildpack.databroker.config_generator.scripts.generators.debezium_configs.debezium_default import (
+from buildpack.databroker.config_generator.scripts.generators.debezium_configs.debezium_default import (  # noqa: line-too-long
     DebeziumDefault,
 )
-from buildpack.databroker.config_generator.scripts.generators.debezium_configs import *  # Do not remove this import, it allows automatic class load
+
+# Do not remove this import, it allows automatic class load
+from buildpack.databroker.config_generator.scripts.generators.debezium_configs import *  # noqa: line-too-long,F403
 
 
 def generate_config(config):

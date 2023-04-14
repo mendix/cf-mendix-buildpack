@@ -1,4 +1,5 @@
-import os, tempfile
+import os
+import tempfile
 
 from unittest import TestCase, mock
 

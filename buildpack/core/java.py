@@ -1,10 +1,8 @@
-from email.mime import application
 import json
 import logging
 import os
 import re
 import subprocess
-from distutils.util import strtobool
 
 import certifi
 from buildpack import util
@@ -15,10 +13,13 @@ JAVA_VERSION_OVERRIDE_KEY = "JAVA_VERSION"
 
 
 def get_java_major_version(runtime_version):
-    result = 8
-    if runtime_version >= MXVersion("8.0.0"):
-        result = 11
-    return _get_major_version(os.getenv(JAVA_VERSION_OVERRIDE_KEY, result))
+    if os.getenv(JAVA_VERSION_OVERRIDE_KEY):
+        result = int(os.getenv(JAVA_VERSION_OVERRIDE_KEY))
+    else:
+        result = 8
+        if runtime_version >= MXVersion("8.0.0"):
+            result = 11
+    return _get_major_version(result)
 
 
 def _get_major_version(version):
@@ -28,11 +29,11 @@ def _get_major_version(version):
     ):
         return 8
     # Java >= 11
-    major_version = int(str(version).split(".")[0])
+    major_version = int(str(version).split(".", maxsplit=1)[0])
     if major_version >= 8:
         return major_version
     # Java < 8 is not supported
-    raise ValueError("Cannot determine major version for Java [%s]" % version)
+    raise ValueError(f"Cannot determine major version for Java [{version}]")
 
 
 def _get_security_properties_file(jvm_location, java_major_version):
@@ -43,7 +44,7 @@ def _get_security_properties_file(jvm_location, java_major_version):
         conf_dir = "conf"
     else:
         raise ValueError(
-            "Cannot determine security subdirectory for Java [%s]" % java_major_version
+            f"Cannot determine security subdirectory for Java [{java_major_version}]"
         )
     return os.path.join(
         os.path.abspath(jvm_location), conf_dir, "security", "java.security"
@@ -54,11 +55,12 @@ ENABLE_OUTGOING_TLS_10_11_KEY = "ENABLE_OUTGOING_TLS_10_11"
 
 
 def _is_outgoing_tls_10_11_enabled():
-    return bool(strtobool(os.getenv(ENABLE_OUTGOING_TLS_10_11_KEY, "false")))
+    return json.loads(os.getenv(ENABLE_OUTGOING_TLS_10_11_KEY, "False"))
 
 
 # Configures TLSv1.0 and TLSv1.1 for outgoing connections
-# These two protocols are considered insecure and have been disabled in OpenJDK after March 2021
+# These two protocols are considered insecure
+# and have been disabled in OpenJDK after March 2021
 # Re-enabling them is at your own risk!
 def _configure_outgoing_tls_10_11(jvm_location, java_major_version):
     if _is_outgoing_tls_10_11_enabled():
@@ -67,9 +69,10 @@ def _configure_outgoing_tls_10_11(jvm_location, java_major_version):
             security_properties_file = _get_security_properties_file(
                 jvm_location, java_major_version
             )
-        except ValueError as e:
+        except ValueError as exception:
             logging.error(
-                "Not enabling TLSv1.0 and TLSv1.1 for outgoing connections: " % e
+                "Not enabling TLSv1.0 and TLSv1.1 for outgoing connections: %s",
+                exception,
             )
             return
         if not (
@@ -77,11 +80,14 @@ def _configure_outgoing_tls_10_11(jvm_location, java_major_version):
             and os.access(security_properties_file, os.W_OK)
         ):
             logging.error(
-                "Java security properties file does not exist at expected location or is not writeable, not enabling TLSv1.0 and TLSv1.1 for outgoing connections"
+                "Java security properties file does not exist at expected location"
+                " or is not writeable, not enabling TLSv1.0 and TLSv1.1"
+                " for outgoing connections"
             )
             return
         logging.warning(
-            "Enabling TLSv1.0 and TLSv1.1 for outgoing connections. These protocols are considered insecure and End-Of-Life."
+            "Enabling TLSv1.0 and TLSv1.1 for outgoing connections. "
+            "These protocols are considered insecure and End-Of-Life."
         )
         with open(security_properties_file, "r+") as f:
             lines = f.readlines()
@@ -98,7 +104,8 @@ def _configure_outgoing_tls_10_11(jvm_location, java_major_version):
                     f.write(line)
                     if not line.endswith("\\\n"):
                         # Disable line modification after property has been parsed
-                        # This is required for multi-line properties with one or more line separators (backslash)
+                        # This is required for multi-line properties
+                        # with one or more line separators (backslash)
                         in_property = False
                 else:
                     f.write(line)
@@ -151,19 +158,16 @@ def stage(buildpack_path, cache_path, local_path, java_major_version):
 
 
 def _compose_jvm_target_dir(dependency):
-    return "usr/lib/jvm/%s-%s-%s-%s-x64" % (
-        dependency["vendor"],
-        dependency["type"],
-        dependency["version"],
-        dependency["vendor"],
-    )
+    return f"usr/lib/jvm/{dependency['vendor']}-{dependency['type']}-{dependency['version']}-{dependency['vendor']}-x64"  # noqa: line-too-long
 
 
 def _get_java_dependency(
-    java_major_version, package, buildpack_dir=os.getcwd(), variables={}
+    java_major_version, package, buildpack_dir=os.getcwd(), variables=None
 ):
+    if variables is None:
+        variables = {}
     return util.get_dependency(
-        "java.%s-%s" % (java_major_version, package), variables, buildpack_dir
+        f"java.{java_major_version}-{package}", variables, buildpack_dir
     )
 
 
@@ -178,7 +182,7 @@ def ensure_and_get_jvm(
     override_version = os.getenv(JAVA_VERSION_OVERRIDE_KEY)
     overrides = {}
     if override_version:
-        logging.info("Overriding Java version to [%s]..." % override_version)
+        logging.info("Overriding Java version to [%s]...", override_version)
         if not override_version.isdigit():
             overrides = {
                 "version": override_version,
@@ -191,10 +195,10 @@ def ensure_and_get_jvm(
 
     jdk_dir = _compose_jvm_target_dir(dependency)
 
-    rootfs_java_path = "/{}".format(jdk_dir)
+    rootfs_java_path = f"/{jdk_dir}"
     if not os.path.isdir(rootfs_java_path):
         logging.debug(
-            "Downloading and installing Java {} if required...".format(package.upper())
+            "Downloading and installing Java %s if required...", package.upper()
         )
         util.resolve_dependency(
             dependency,
@@ -204,7 +208,7 @@ def ensure_and_get_jvm(
             unpack_strip_directories=True,
             overrides=overrides,
         )
-        logging.debug("Java {} installed".format(package.upper()))
+        logging.debug("Java %s installed", package.upper())
     else:
         logging.debug("Root FS with Java SDK detected, not installing Java")
 
@@ -222,12 +226,14 @@ def _update_java_cacert(jar, cache_dir, jvm_location):
     cacerts_file = os.path.join(jvm_location, "lib", "security", "cacerts")
     if not os.path.exists(cacerts_file):
         logging.warning(
-            "Cannot locate Java cacerts file %s. Skipping update of JVM CA certificates.",
+            "Cannot locate Java cacerts file %s. "
+            "Skipping update of JVM CA certificates.",
             cacerts_file,
         )
         return
 
-    # Parse the Mozilla CA certificate bundle from certifi and import it into the keystore
+    # Parse the Mozilla CA certificate bundle from certifi
+    # and import it into the keystore
     keyutil_jar = os.path.abspath(os.path.join(cache_dir, jar))
 
     # Import the certificate into the keystore
@@ -249,7 +255,7 @@ def _update_java_cacert(jar, cache_dir, jvm_location):
             stderr=subprocess.STDOUT,
         )
     except subprocess.CalledProcessError as ex:
-        logging.error("Error importing certificates: {}".format(ex.output))
+        logging.error("Error importing certificates: %s", ex.output)
         raise ex
 
     logging.debug("Import of Mozilla certificates finished")
@@ -302,21 +308,22 @@ def _set_jvm_memory(m2ee, vcap):
     env_heap_size = os.environ.get("HEAP_SIZE")
     max_metaspace_size = os.getenv("MAX_METASPACE_SIZE", "256M")
 
-    util.upsert_javaopts(m2ee, "-XX:MaxMetaspaceSize=%s" % max_metaspace_size)
+    util.upsert_javaopts(m2ee, f"-XX:MaxMetaspaceSize={max_metaspace_size}")
 
     if env_heap_size:
         if int(env_heap_size[:-1]) < limit:
             heap_size = env_heap_size
         else:
             logging.warning(
-                "The specified heap size [{}] is larger than the maximum memory of the "
-                "container ([{}]). Falling back to a heap size of [{}]".format(
-                    env_heap_size, str(limit) + "M", heap_size
-                )
+                "The specified heap size [%s] is larger than the maximum memory of the "
+                "container ([%s]). Falling back to a heap size of [%s]",
+                env_heap_size,
+                str(limit) + "M",
+                heap_size,
             )
 
-    util.upsert_javaopts(m2ee, "-Xmx%s" % heap_size)
-    util.upsert_javaopts(m2ee, "-Xms%s" % heap_size)
+    util.upsert_javaopts(m2ee, f"-Xmx{heap_size}")
+    util.upsert_javaopts(m2ee, f"-Xms{heap_size}")
 
     logging.debug("Java heap size set to %s", heap_size)
 
@@ -329,7 +336,7 @@ def _set_jvm_memory(m2ee, vcap):
 
 
 def _set_application_name(m2ee, application_name):
-    util.upsert_javaopts(m2ee, "-DapplicationName=%s" % application_name)
+    util.upsert_javaopts(m2ee, f"-DapplicationName={application_name}")
 
 
 def update_config(m2ee, application_name, vcap_data, runtime_version):

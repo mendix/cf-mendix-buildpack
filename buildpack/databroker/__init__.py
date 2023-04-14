@@ -1,17 +1,17 @@
-#
-# [EXPERIMENTAL]
-#
-# Add databroker components to an mx app container
-#
+"""
+[EXPERIMENTAL]
+Add databroker components to an mx app container
+"""
 
 import atexit
 import json
 import logging
 import os
+import sys
 
 import backoff
 from buildpack import util
-from buildpack.databroker import business_events, connect, streams
+from buildpack.databroker import connect, streams
 from buildpack.databroker.config_generator.scripts.configloader import (
     configinitializer,
 )
@@ -47,23 +47,21 @@ def is_producer_app():
         metadata_json = json.load(f)
 
     db_config = metadata_json.get("DataBrokerConfiguration")
-    if (
-        db_config != None
-        and db_config.get("publishedServices") != None
+
+    return bool(
+        db_config is not None
+        and db_config.get("publishedServices") is not None
         and len(db_config.get("publishedServices")) > 0
-    ):
-        return True
-    else:
-        return False
+    )
 
 
 def should_run_kafka_connect():
     try:
         return (
-            os.environ["CF_INSTANCE_INDEX"] != None
+            os.environ["CF_INSTANCE_INDEX"] is not None
             and int(os.environ["CF_INSTANCE_INDEX"]) == 0
         )
-    except:
+    except Exception:
         return False
 
 
@@ -158,14 +156,14 @@ class Databroker:
             self.kafka_streams = streams.run(complete_conf)
             logging.info("Databroker: Initialization complete")
         except Exception as ex:
-            logging.error("Databroker: Initialization failed due to {}".format(ex))
+            logging.error("Databroker: Initialization failed due to %s", ex)
             raise Exception("Databroker initailization failed") from ex
 
         if not self.restart_if_any_component_not_healthy():
             logging.error(
                 "Databroker: component restart retries exhaused. Stopping the app"
             )
-            exit(0)
+            sys.exit(0)
 
     def stop(self):
         if not self.is_producer_app:

@@ -1,6 +1,5 @@
 import os
 from unittest.mock import patch
-from urllib.parse import urljoin
 
 from buildpack.telemetry import dynatrace
 from unittest import TestCase

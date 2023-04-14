@@ -4,7 +4,10 @@ import unittest
 from buildpack.core import nginx, runtime
 
 # Custom locations test cases
-# (access restrictions custom locations environment variable, custom locations expected in result, custom locations not expected in result, access restrictions expected in result)
+# (access restrictions custom locations environment variable,
+# custom locations expected in result,
+# custom locations not expected in result,
+# access restrictions expected in result)
 CUSTOM_LOCATIONS_CASES = [
     # Simple custom location
     (
@@ -78,7 +81,7 @@ class TestCaseLocationUtilFunctions(unittest.TestCase):
 
     def test_special_chars_in_template_path(self):
         for char in list("/.-_~!$&'()*+,;=:@"):
-            path = "/rest/my{}api/v1".format(char)
+            path = f"/rest/my{char}api/v1"
             template = {"swagger": "2.0", "basePath": path}
             assert path in runtime._get_paths_from_swagger_templates(
                 [json.dumps(template)]

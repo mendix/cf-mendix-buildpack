@@ -1,5 +1,4 @@
 import base64
-import json
 from socket import gethostname
 
 from OpenSSL import crypto

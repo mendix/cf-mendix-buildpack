@@ -1,4 +1,5 @@
-"""The module is used in runtime to convert metrics from telegraf for appdynamics Machine Agent"""
+"""The module is used in runtime to convert metrics from telegraf
+for appdynamics Machine Agent"""
 import json
 import logging
 import requests
@@ -90,7 +91,7 @@ def _convert_metric(metric):
         # Output:
         # [
         #     {
-        #     "metricName": "Custom Metrics|Mx Runtime Statistics|jvm.memory.used|heap|Eden Space",
+        #     "metricName": "Custom Metrics|[...]|Eden Space",
         #     "aggregatorType": "OBSERVATION",
         #     "value": 1,
         #     "timestamp": 1647939590,
@@ -104,7 +105,8 @@ def _convert_metric(metric):
 
     if fields is None:
         logging.error(
-            "Converting metrics for AppDynamics Machine Agent: invalid format of specific metric (telegraf)."
+            "Converting metrics for AppDynamics Machine Agent: "
+            "invalid format of specific metric (telegraf)."
         )
         return
 
@@ -147,16 +149,18 @@ def convert_and_push_payload():
     The function collect metrics json from STDIN (Telegraf 'output.exec')
     and transform it to the structure of the compatible payload for the
     AppDynamics Machine Agent HTTP listener.
-    AppDynamics Docs: https://docs.appdynamics.com/22.2/en/infrastructure-visibility/machine-agent/extensions-and-custom-metrics/machine-agent-http-listener
 
     """
+    # AppDynamics Docs: https://docs.appdynamics.com/22.2/en/infrastructure-visibility/machine-agent/extensions-and-custom-metrics/machine-agent-http-listener  # noqa: line-too-long
+
     metrics_str = input()
     metrics_dict = json.loads(metrics_str)
     metrics_list = metrics_dict.get("metrics")
 
     if metrics_list is None:
         logging.error(
-            "Converting metrics for AppDynamics Machine Agent: invalid format of metrics json (telegraf)."
+            "Converting metrics for AppDynamics Machine Agent: "
+            "invalid format of metrics json (telegraf)."
         )
         return
 
@@ -179,14 +183,10 @@ def convert_and_push_payload():
             timeout=APPDYNAMICS_MACHINE_AGENT_TIMEOUT,
         )
         logging.info(
-            "Request to AppDynamics Machine Agent. Status code: {}.".format(
-                resp.status_code
-            )
+            "Request to AppDynamics Machine Agent. Status code: %s.", resp.status_code
         )
-    except (ConnectionError, ConnectTimeout) as e:
-        logging.error(
-            "AppDynamics Machine Agent is unreachable. Error: {}.".format(str(e))
-        )
+    except (ConnectionError, ConnectTimeout) as exc:
+        logging.error("AppDynamics Machine Agent is unreachable. Error: %s.", str(exc))
 
 
 if __name__ == "__main__":

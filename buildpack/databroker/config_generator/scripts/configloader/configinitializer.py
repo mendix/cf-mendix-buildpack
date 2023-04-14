@@ -22,7 +22,8 @@ from buildpack.databroker.config_generator.scripts.config_env_whitelist import (
 )
 
 
-# variables generated with this method are going to have a single key of type "a.b.c" they are not nested
+# variables generated with this method are going to have a single key of type "a.b.c"
+# they are not nested
 # this will be possible in a future version of OmegaConf
 def __curate_key(key, prefix, replace_underscores=True):
     new_key = key.replace(prefix, "", 1)
@@ -44,25 +45,21 @@ def __generate_source_topic_names(config):
 
 def validate_config(complete_conf):
     # check supported dbs
-    if not complete_conf.DatabaseType.lower() in [db.lower() for db in SUPPORTED_DBS]:
+    if complete_conf.DatabaseType.lower() not in [db.lower() for db in SUPPORTED_DBS]:
         raise Exception(
-            "{} is not supported. Supported dbs: {}".format(
-                complete_conf.DatabaseType, SUPPORTED_DBS
-            )
+            f"{complete_conf.DatabaseType} is not supported."
+            f"Supported dbs: {SUPPORTED_DBS}"
         )
 
     # validate objectname length & constants
     for published_service in complete_conf.DataBrokerConfiguration.publishedServices:
         if not get_value_for_constant(complete_conf, published_service.brokerUrl):
-            raise Exception(
-                "No Constants found for {}".format(published_service.brokerUrl)
-            )
+            raise Exception(f"No Constants found for {published_service.brokerUrl}")
         for entity in published_service.entities:
             if len(entity.publicEntityName) > POSTGRESQL_MAX_TABLE_LENGTH:
                 raise Exception(
-                    "Entity {}'s name is too long. Max length of {} supported".format(
-                        entity.publicEntityName, POSTGRESQL_MAX_TABLE_LENGTH
-                    )
+                    f"Entity {entity.publicEntityName}'s name is too long. "
+                    f"Max length of {POSTGRESQL_MAX_TABLE_LENGTH} supported"
                 )
 
     # check if bootstrap server is empty
@@ -70,7 +67,9 @@ def validate_config(complete_conf):
         raise Exception("Broker URL not specified")
 
 
-def unify_configs(configs, database_config, parameters_replacement={}):
+def unify_configs(configs, database_config, parameters_replacement=None):
+    if parameters_replacement is None:
+        parameters_replacement = {}
     complete_conf = load_config(configs, database_config, parameters_replacement)
     validate_config(complete_conf)
     return complete_conf
@@ -83,17 +82,16 @@ def load_config(configs, database_config, parameters_replacement):
         try:
             tmp_json = json.loads(config.read())
         except Exception as exception:
-            raise Exception(
-                "Error loading input file called {}. Reason: '{}'".format(
-                    config.name, exception
-                )
+            raise (
+                f"Error loading input file called {config.name}."
+                f"Reason: '{exception}'"
             )
         # Special check for metadata files, if they exist the idea is to replace the
         # non existent constants with their default values
         if (
             config.name.endswith("metadata.json")
             and tmp_json["Constants"]
-            and type(tmp_json["Constants"]) is list
+            and isinstance(tmp_json["Constants"], list)
         ):
             tmp_json["Constants"] = dict(
                 map(
@@ -144,7 +142,7 @@ def load_config(configs, database_config, parameters_replacement):
             *loaded_json,
             modified_env_vars,
             modified_constants,
-            parameters_replacement_dict
+            parameters_replacement_dict,
         )
         bootstrap_servers = get_value_for_constant(
             complete_conf,
@@ -166,5 +164,5 @@ def load_config(configs, database_config, parameters_replacement):
         return complete_conf
     except Exception as exception:
         raise Exception(
-            "Error while reading input config files. Reason: '{}'".format(exception)
-        )
+            "Error while reading input config files. " f"Reason: '{exception}'"
+        ) from exception

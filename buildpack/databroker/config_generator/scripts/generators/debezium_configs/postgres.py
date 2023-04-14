@@ -1,4 +1,4 @@
-from buildpack.databroker.config_generator.scripts.generators.debezium_configs.debezium_interface import (
+from buildpack.databroker.config_generator.scripts.generators.debezium_configs.debezium_interface import (  # noqa: line-too-long
     DebeziumInterface,
 )
 from buildpack.databroker.config_generator.scripts.constants import (

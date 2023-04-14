@@ -16,7 +16,7 @@ try:
 except ImportError:
     try:
         import simplejson as json
-    except ImportError as ie:
+    except ImportError:
         logger.critical(
             "Failed to import json as well as simplejson. If "
             "using python 2.5, you need to provide the simplejson "
@@ -103,7 +103,7 @@ def sort_logs(logs):
 
 
 def print_logs(logs):
-    if len(logs) is 0:
+    if len(logs) == 0:
         print("no logs found")
         return
 

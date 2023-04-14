@@ -1,7 +1,7 @@
 import glob
 import logging
 import os
-import platform
+import distro
 
 from buildpack import util
 from buildpack.util import NotFoundException, get_dependency
@@ -17,7 +17,7 @@ def get_env_with_monolib(mono_dir):
         env["LC_ALL"] = "C"
 
     if not os.path.isfile(os.path.join(mono_dir, "lib", "libgdiplus.so")):
-        raise Exception("libgdiplus.so not found in dir %s" % mono_dir)
+        raise Exception(f"libgdiplus.so not found in dir {mono_dir}")
     return env
 
 
@@ -36,30 +36,28 @@ def _detect_mono_version(mx_version):
 def _get_mono_path(directory, mono_version):
     return util.get_existing_directory_or_raise(
         [
-            os.path.join(directory, "mono-%s" % mono_version),
-            "/opt/mono-%s" % mono_version,
-            "/tmp/mono-%s" % mono_version,
+            os.path.join(directory, f"mono-{mono_version}"),
+            f"/opt/mono-{mono_version}",
+            f"/tmp/mono-{mono_version}",
         ],
         "Mono not found",
     )
 
 
 def _compose_mono_dependency_name(mono_version):
-    distrib_id = platform.linux_distribution()[0].lower()
+    distrib_id = distro.id().lower()
     if distrib_id != "ubuntu":
         raise Exception(
-            "Only Ubuntu is supported at present, requested distribution: {}".format(
-                distrib_id
-            )
+            "Only Ubuntu is supported at present, "
+            f"requested distribution: {distrib_id}"
         )
-    distrib_codename = platform.linux_distribution()[2].lower()
-    if distrib_codename not in ["trusty", "bionic"]:
+    distrib_codename = distro.codename().lower()
+    if distrib_codename not in ["trusty", "bionic", "jammy"]:
         raise Exception(
-            "Buildpack supports Trusty and Bionic at the moment, requested version: {}".format(
-                distrib_codename
-            )
+            "Buildpack supports Trusty, Bionic, and Jammy at the moment, "
+            f"requested version: {distrib_codename}"
         )
-    return "mono.{}-{}".format(mono_version, distrib_codename)
+    return f"mono.{mono_version}-{distrib_codename}"
 
 
 def ensure_and_get_mono(mx_version, buildpack_dir, cache_dir):
@@ -68,7 +66,7 @@ def ensure_and_get_mono(mx_version, buildpack_dir, cache_dir):
     dependency_name = _compose_mono_dependency_name(major_version)
     fallback_location = "/tmp/opt"
 
-    if major_version == "3" and platform.linux_distribution()[2].lower() == "bionic":
+    if major_version == "3" and distro.codename().lower() == "bionic":
         dependency = util.resolve_dependency(
             dependency_name,
             os.path.join(fallback_location, "store"),
@@ -77,18 +75,16 @@ def ensure_and_get_mono(mx_version, buildpack_dir, cache_dir):
             unpack_strip_directories=True,
         )
         version = dependency["version"]
-        mono_subpath = glob.glob("/tmp/opt/store/*-mono-env-%s" % version)
-        mono_location = "/tmp/opt/mono-%s" % version
+        mono_subpath = glob.glob(f"/tmp/opt/store/*-mono-env-{version}")
+        mono_location = f"/tmp/opt/mono-{version}"
         os.symlink(mono_subpath[0], mono_location)
-        logging.debug(
-            "Mono available: {mono_location}".format(mono_location=mono_location)
-        )
+        logging.debug("Mono available: %s", mono_location)
         logging.warning(
             "The staging phase is likely going to fail when the default "
-            + "settings are used. As a workaround, more disk space needs to be "
-            + "allocated for the cache. Consult "
-            + "https://docs.cloudfoundry.org/devguide/deploy-apps/large-app-deploy.html "
-            + "for more information."
+            "settings are used. As a workaround, more disk space needs to be "
+            "allocated for the cache. Consult "
+            "https://docs.cloudfoundry.org/devguide/deploy-apps/large-app-deploy.html "
+            "for more information."
         )
         return mono_location
     else:
@@ -99,13 +95,11 @@ def ensure_and_get_mono(mx_version, buildpack_dir, cache_dir):
             logging.debug("Mono not found in default locations")
             util.resolve_dependency(
                 dependency_name,
-                os.path.join(fallback_location, "mono-%s" % version),
+                os.path.join(fallback_location, f"mono-{version}"),
                 buildpack_dir=buildpack_dir,
                 cache_dir=cache_dir,
                 unpack_strip_directories=True,
             )
             mono_location = _get_mono_path(fallback_location, version)
-        logging.debug(
-            "Mono available: {mono_location}".format(mono_location=mono_location)
-        )
+        logging.debug("Mono available: %s", mono_location)
         return mono_location

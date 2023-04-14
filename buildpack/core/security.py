@@ -81,16 +81,14 @@ def get_certificate_authorities():
 def get_client_certificates(mx_version):
     config = {}
     client_certificates_json = os.getenv("CLIENT_CERTIFICATES", "[]")
-    """
-    [
-        {
-        'pfx': 'base64...', # required
-        'password': '',
-        'pin_to': ['Module.WS1', 'Module2.WS2'] # optional
-        },
-        {...}
-    ]
-    """
+    # [
+    #     {
+    #     'pfx': 'base64...', # required
+    #     'password': '',
+    #     'pin_to': ['Module.WS1', 'Module2.WS2'] # optional
+    #     },
+    #     {...}
+    # ]
     client_certificates = json.loads(client_certificates_json)
     num = 0
     files = []
@@ -98,9 +96,9 @@ def get_client_certificates(mx_version):
     pins = {}
     for client_certificate in client_certificates:
         pfx = base64.b64decode(client_certificate["pfx"])
-        location = os.path.abspath(".local/client_certificate.%d.crt" % num)
-        with open(location, "wb") as f:
-            f.write(pfx)
+        location = os.path.abspath(f".local/client_certificate.{num}.crt")
+        with open(location, "wb") as pfx_location:
+            pfx_location.write(pfx)
         passwords.append(client_certificate["password"])
         files.append(location)
         if "pin_to" in client_certificate:
