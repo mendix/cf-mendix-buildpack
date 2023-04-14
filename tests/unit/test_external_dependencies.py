@@ -242,23 +242,23 @@ dependencies:
         with tempfile.TemporaryDirectory() as temp_dir:
             files = []
             for version in versions:
-                files.append(os.path.join(temp_dir.name, f"{prefix}{version}"))
+                files.append(
+                    os.path.join(temp_dir, f"{prefix}{version}")
+                )
 
             for f in files:
                 open(f, "a").close()
 
             test_file = files[index_to_keep]
 
-            _delete_other_versions(temp_dir.name, os.path.basename(test_file))
+            _delete_other_versions(temp_dir, os.path.basename(test_file))
 
-            result = glob.glob(f"{temp_dir.name}/*.*")
+            result = glob.glob(f"{temp_dir}/*.*")
 
             j = 0
             for i in indexes_to_remove:
                 del files[i - j]
                 j += 1
-
-            temp_dir.cleanup()
 
         return set(result) == set(files)
 
@@ -300,21 +300,18 @@ dependencies:
         assert self._test_delete_old_versions(ng_prefix, ng_versions, 0, {})
 
     def test_find_file_in_directory(self):
-        temp_dir = tempfile.TemporaryDirectory()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            file_names = [
+                "dependency1.zip",
+                "a/dependency2.zip",
+                "a/b/dependency3.zip",
+                "dependency4.zip/dependency4.zip",
+            ]
+            files = [os.path.join(temp_dir, f) for f in file_names]
+            for file_name in files:
+                mkdir_p(os.path.dirname(file_name))
+                open(file_name, "a").close()
 
-        file_names = [
-            "dependency1.zip",
-            "a/dependency2.zip",
-            "a/b/dependency3.zip",
-            "dependency4.zip/dependency4.zip",
-        ]
-        files = [os.path.join(temp_dir.name, f) for f in file_names]
-        for file_name in files:
-            mkdir_p(os.path.dirname(file_name))
-            open(file_name, "a").close()
-
-        for file_name in file_names:
-            result = _find_file_in_directory(os.path.basename(file_name), temp_dir.name)
-            assert result and is_path_accessible(result) and os.path.isfile(result)
-
-        temp_dir.cleanup()
+            for file_name in file_names:
+                result = _find_file_in_directory(os.path.basename(file_name), temp_dir)
+                assert result and is_path_accessible(result) and os.path.isfile(result)
