@@ -89,15 +89,17 @@ fixup:
 	chmod -R +r *
 	chmod +x bin/*
 
-.PHONY: test_unit
-test_unit:
+.PHONY: set_pythonpath
+set_pythonpath:
 	export PYTHONPATH=.:lib/
-	nosetests --verbosity=3 --nocapture --with-timer --timer-no-color tests/unit/test_*.py
+
+.PHONY: test_unit
+test_unit: set_pythonpath
+	pytest -vvv --capture=no --durations=0 --color=no tests/unit/test_*.py
 
 .PHONY: test_integration
-test_integration:
-	export PYTHONPATH=.:lib/
-	nosetests --verbosity=3 --nocapture --processes=${TEST_PROCESSES} --process-timeout=3600 --with-timer --timer-no-color ${TEST_FILES}
+test_integration: set_pythonpath
+	pytest -vvv --capture=no --timeout=3600 --color=no tests/integration/test_*.py
 
 .PHONY: test
 test: test_unit test_integration
