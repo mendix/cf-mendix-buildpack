@@ -22,7 +22,7 @@ class TestCaseCustomHeaderConfig(unittest.TestCase):
             {"X-Frame-Options": "allow-form htps://mendix.com"}
         )
         header_config = nginx._get_http_headers()
-        self.assertEquals([], header_config)
+        self.assertEqual([], header_config)
 
     def test_valid_with_xframeOption(self):
         os.environ["HTTP_RESPONSE_HEADERS"] = "{}"
@@ -45,7 +45,7 @@ class TestCaseCustomHeaderConfig(unittest.TestCase):
             {"Referrer-Policy": "no-referrr-when-downgrade"}
         )
         header_config = nginx._get_http_headers()
-        self.assertEquals([], header_config)
+        self.assertEqual([], header_config)
 
     def test_valid_header_accessControl(self):
         os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps(
@@ -59,7 +59,7 @@ class TestCaseCustomHeaderConfig(unittest.TestCase):
             {"Access-Control-Allow-Origin": "htps://this.is.mydomain.nl"}
         )
         header_config = nginx._get_http_headers()
-        self.assertEquals([], header_config)
+        self.assertEqual([], header_config)
 
     def test_valid_header_contentType(self):
         os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps(
@@ -71,7 +71,7 @@ class TestCaseCustomHeaderConfig(unittest.TestCase):
     def test_invalid_header_contentType(self):
         os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps({"X-Content-Type-Options": ""})
         header_config = nginx._get_http_headers()
-        self.assertEquals([], header_config)
+        self.assertEqual([], header_config)
 
     def test_valid_header_contentSecurity(self):
         os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps(
@@ -110,7 +110,7 @@ class TestCaseCustomHeaderConfig(unittest.TestCase):
             }
         )
         header_config = nginx._get_http_headers()
-        self.assertEquals([], header_config)
+        self.assertEqual([], header_config)
 
     def test_valid_header_permittedPolicies(self):
         os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps(
@@ -127,7 +127,7 @@ class TestCaseCustomHeaderConfig(unittest.TestCase):
             {"X-Permitted-Cross-Domain-Policies": "#%#^#^"}
         )
         header_config = nginx._get_http_headers()
-        self.assertEquals([], header_config)
+        self.assertEqual([], header_config)
 
     def test_valid_header_xssProtection(self):
         os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps(
@@ -147,7 +147,7 @@ class TestCaseCustomHeaderConfig(unittest.TestCase):
             {"X-XSS-Protection": "1;mode=bock"}
         )
         header_config = nginx._get_http_headers()
-        self.assertEquals([], header_config)
+        self.assertEqual([], header_config)
 
     def test_valid_header_partial(self):
         os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps(

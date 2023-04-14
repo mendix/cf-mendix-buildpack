@@ -94,7 +94,7 @@ class TestFreeAppsMetricsEmitter(TestCase):
             return_value=copy.deepcopy(self.mock_user_session_metrics)
         )
         self.metrics_emitter.emit = Mock()
-        self.metrics_emitter.setDaemon(True)
+        self.metrics_emitter.daemon = True
 
     def test_inject_user_session_metrics(self):
         stats = {"key": "value"}
