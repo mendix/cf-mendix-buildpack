@@ -144,8 +144,9 @@ def get_service_tag():
 
 
 def _get_service_from_tags():
-    def dict_filter(x, y):
-        return {[(i, x[i]) for i in x if i in set(y)]}
+    dict_filter = lambda x, y: dict(  # noqa: unnecessary-lambda-assignment
+        [(i, x[i]) for i in x if i in set(y)]
+    )
 
     service_tags = sorted(
         OrderedDict(
