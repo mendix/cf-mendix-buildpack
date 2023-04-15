@@ -95,7 +95,7 @@ test_unit:
 
 .PHONY: test_integration
 test_integration:
-	pytest -vvv --capture=no --timeout=3600 --color=no tests/integration/test_*.py
+	pytest -vvv --capture=no --timeout=3600 --color=no ${TEST_FILES}
 
 .PHONY: test
 test: test_unit test_integration

@@ -16,5 +16,5 @@ max-complexity = 10
 
 [tool.pytest.ini_options]
 pythonpath = [
-  ".", "lib"
+  ".", "lib", "buildpack"
 ]
