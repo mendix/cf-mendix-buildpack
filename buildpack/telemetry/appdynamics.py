@@ -2,6 +2,7 @@ import logging
 import os
 import subprocess
 from buildpack import util
+from lib.m2ee.util import strtobool
 
 
 APPDYNAMICS_INSTALL_PATH = os.path.abspath(".local/appdynamics/")
@@ -144,7 +145,7 @@ def machine_agent_enabled():
     if not appdynamics_used():
         return False
 
-    is_machine_agent_enabled = util.strtobool(
+    is_machine_agent_enabled = strtobool(
         os.getenv("APPDYNAMICS_MACHINE_AGENT_ENABLED", default="false")
     )
 

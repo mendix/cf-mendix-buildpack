@@ -11,6 +11,7 @@ from buildpack import util
 from buildpack.core import runtime, security
 from jinja2 import Template
 from lib.m2ee.version import MXVersion
+from lib.m2ee.util import strtobool
 
 ALLOWED_HEADERS = {
     "X-Frame-Options": r"(?i)(^allow-from https?://([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*(:\d+)?$|^deny$|^sameorigin$)",  # noqa: line-too-long
@@ -49,7 +50,7 @@ def _is_samesite_cookie_workaround_enabled(mx_version):
     SAMESITE_COOKIE_WORKAROUND_LESS_MX_VERSION = "8.12"
 
     try:
-        return util.strtobool(
+        return strtobool(
             os.environ.get(
                 SAMESITE_COOKIE_WORKAROUND_ENV_KEY,
                 str(SAMESITE_COOKIE_WORKAROUND_DEFAULT),

@@ -4,7 +4,7 @@ import unittest
 import uuid
 
 from buildpack import util
-
+from lib.m2ee.util import strtobool
 from .runner import CfLocalRunnerWithLocalDB, CfLocalRunnerWithPostgreSQL
 
 
@@ -52,9 +52,7 @@ class BaseTest(unittest.TestCase):
             env_vars=env_vars,
             use_snapshot=use_snapshot,
             password=os.environ.get(self.ENV_PREFIX + "MX_PASSWORD"),
-            debug=bool(
-                util.strtobool(os.environ.get(self.ENV_PREFIX + "DEBUG", "true"))
-            ),
+            debug=bool(strtobool(os.environ.get(self.ENV_PREFIX + "DEBUG", "true"))),
             host=os.environ.get(self.ENV_PREFIX + "HOST"),
             disk=os.environ.get(self.ENV_PREFIX + "DISK"),
             memory=os.environ.get(self.ENV_PREFIX + "MEMORY"),

@@ -7,6 +7,7 @@ import subprocess
 import certifi
 from buildpack import util
 from lib.m2ee.version import MXVersion
+from lib.m2ee.util import strtobool
 
 
 JAVA_VERSION_OVERRIDE_KEY = "JAVA_VERSION"
@@ -54,7 +55,7 @@ ENABLE_OUTGOING_TLS_10_11_KEY = "ENABLE_OUTGOING_TLS_10_11"
 
 
 def _is_outgoing_tls_10_11_enabled():
-    return bool(util.strtobool(os.getenv(ENABLE_OUTGOING_TLS_10_11_KEY, "false")))
+    return bool(strtobool(os.getenv(ENABLE_OUTGOING_TLS_10_11_KEY, "false")))
 
 
 # Configures TLSv1.0 and TLSv1.1 for outgoing connections
