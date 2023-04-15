@@ -8,6 +8,7 @@ import traceback
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from buildpack import databroker, util
+from buildpack.databroker import business_events
 from buildpack.core import java, nginx, runtime
 from buildpack.infrastructure import database, storage
 from buildpack.telemetry import (
@@ -172,8 +173,10 @@ if __name__ == "__main__":
             jmx_config_files=databroker_jmx_config_files,
         )
         nginx.update_config()
+        logging.debug(dir(databroker))
+        logging.debug(dir(business_events))
         databroker.update_config(m2ee)
-        databroker.business_events.update_config(m2ee, util.get_vcap_services_data())
+        business_events.update_config(m2ee, util.get_vcap_services_data())
 
         # Start components and runtime
         telegraf.run(runtime_version)
