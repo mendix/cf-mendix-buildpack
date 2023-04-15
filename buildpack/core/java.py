@@ -13,12 +13,11 @@ JAVA_VERSION_OVERRIDE_KEY = "JAVA_VERSION"
 
 
 def get_java_major_version(runtime_version):
+    result = 8
     if os.getenv(JAVA_VERSION_OVERRIDE_KEY):
-        result = int(os.getenv(JAVA_VERSION_OVERRIDE_KEY))
-    else:
-        result = 8
-        if runtime_version >= MXVersion("8.0.0"):
-            result = 11
+        return _get_major_version(os.getenv(JAVA_VERSION_OVERRIDE_KEY))
+    if runtime_version >= MXVersion("8.0.0"):
+        result = 11
     return _get_major_version(result)
 
 
