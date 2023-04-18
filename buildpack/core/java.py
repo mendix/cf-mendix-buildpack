@@ -7,7 +7,6 @@ import subprocess
 import certifi
 from buildpack import util
 from lib.m2ee.version import MXVersion
-from lib.m2ee.util import strtobool
 
 
 JAVA_VERSION_OVERRIDE_KEY = "JAVA_VERSION"

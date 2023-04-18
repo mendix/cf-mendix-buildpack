@@ -4,12 +4,6 @@ src = ["lib"]
 # Same as Black.
 line-length = 88
 
-# These files contain long lines in testdata that trigger the linter
-exclude = [
-    "tests/unit/test_databroker_business_events.py",
-    "tests/unit/test_databroker.py"
-]
-
 # Assume Python 3.10
 target-version = "py310"
 
