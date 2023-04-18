@@ -1,8 +1,8 @@
-#
-# [EXPERIMENTAL]
-#
-# Add Debezium to an app container to collect data from the DB for the Data Broker.
-#
+"""
+[EXPERIMENTAL]
+
+Add Debezium to an app container to collect data from the DB for the Data Broker.
+"""
 
 import os
 import time
@@ -52,7 +52,7 @@ KAFKA_CONNECT_JMX_PORT = "11003"
 def _download_pkgs(buildpack_dir, install_path, cache_dir):
     # Download kafka connect and debezium
     util.resolve_dependency(
-        "%s.kafka-connect" % NAMESPACE,
+        f"{NAMESPACE}.kafka-connect",
         os.path.join(install_path, BASE_DIR, KAFKA_CONNECT_DIR),
         buildpack_dir=buildpack_dir,
         cache_dir=cache_dir,
@@ -62,7 +62,7 @@ def _download_pkgs(buildpack_dir, install_path, cache_dir):
     if version:
         overrides = {"version": version}
     util.resolve_dependency(
-        "%s.debezium" % NAMESPACE,
+        f"{NAMESPACE}.debezium",
         os.path.join(install_path, BASE_DIR, DBZ_DIR),
         buildpack_dir=buildpack_dir,
         cache_dir=cache_dir,
@@ -104,18 +104,20 @@ def run(complete_conf):
         env,
     )
 
-    # Wait for kafka connect to initialize and then issue a request for debezium connector
+    # Wait for kafka connect to initialize
+    # and then issue a request for debezium connector
     time.sleep(INITIAL_WAIT)
     debezium_config = json.loads(debezium_generator.generate_config(complete_conf))
 
     def backoff_hdlr(details):
-        logging.warn(
-            "Databroker: Failed to receive successful response from connect. Retrying...({}/{})".format(
-                details["tries"], MAX_RETRIES
-            )
+        logging.warning(
+            "Databroker: Failed to receive successful response from connect. "
+            "Retrying...(%d/%d)",
+            details["tries"],
+            MAX_RETRIES,
         )
 
-    def giveup_hdlr(details):
+    def giveup_hdlr():
         logging.error("Databroker: Kafka Connect wait retries exhaused")
         raise Exception("Databroker: Kafka Connect failed to start")
 
@@ -136,7 +138,7 @@ def run(complete_conf):
     )
     def start_debezium_connector():
         return requests.put(
-            "{}/{}/{}".format(CONNECT_URL, debezium_config["name"], "config"),
+            f"{CONNECT_URL}/{debezium_config['name']}/config",
             json=debezium_config["config"],
         )
 

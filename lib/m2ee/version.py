@@ -14,7 +14,7 @@ class MXVersion:
         if isinstance(version, (int, float)):
             version = str(version)
         parsed = re.match(
-            "(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:\.(\d+))?(?:-(.*))?", version
+            r"(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:\.(\d+))?(?:-(.*))?", version
         )
         if parsed is None:
             raise Exception("Could not parse version string '%s'" % version)

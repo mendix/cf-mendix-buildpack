@@ -2,10 +2,9 @@ import os
 import re
 import unittest
 import uuid
-from distutils.util import strtobool
 
 from buildpack import util
-
+from lib.m2ee.util import strtobool
 from .runner import CfLocalRunnerWithLocalDB, CfLocalRunnerWithPostgreSQL
 
 

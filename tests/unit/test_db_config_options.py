@@ -30,12 +30,13 @@ class TestDatabaseConfigOptions(TestCase):
         os.environ,
         {
             "MXRUNTIME_DatabaseType": "PostgreSQL",
-            "MXRUNTIME_DatabaseJdbcUrl": "jdbc:postgresql://username:password@rdsbroker-testfree-nonprod-1-eu-west-1.asdbjasdg.eu-west-1.rds.amazonaws.com:5432/testdatabase",
+            "MXRUNTIME_DatabaseJdbcUrl": "jdbc:postgresql://username:password@rdsbroker-testfree-nonprod-1-eu-west-1.asdbjasdg.eu-west-1.rds.amazonaws.com:5432/testdatabase",  # noqa: line-too-long
         },
         clear=True,
     )
     def test_mx_runtime_db_config(self):
-        # Test if MXRUNTIME variables are set up if no database configuration is returned
+        # Test if MXRUNTIME variables are set up
+        # if no database configuration is returned
         # based on DATABASE_URL or VCAP_SERVICES
         config = get_config()
         assert not config

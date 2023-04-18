@@ -97,14 +97,12 @@ class CfLocalRunnerWithKafka(CfLocalRunnerWithPostgreSQL):
 
     def is_azkarra_running(self):
         topics = self.run_on_container(
-            "./opt/kafka_2.12-{}/bin/kafka-topics.sh --list --zookeeper localhost:{}".format(
-                KAFKA_CLUSTER_IMAGE_VERSION,
-                KAFKA_ZOOKEEPER_PORT,
-            ),
+            f"./opt/kafka_2.12-{KAFKA_CLUSTER_IMAGE_VERSION}/bin/kafka-topics.sh "
+            f"--list --zookeeper localhost:{KAFKA_ZOOKEEPER_PORT}",
             target_container=self._kafka_container_name,
         )
 
-        expect_public_topic_pattern = r".*?\.{}".format(DATABROKER_TOPIC_FORMAT_VERSION)
+        expect_public_topic_pattern = rf".*?\.{DATABROKER_TOPIC_FORMAT_VERSION}"
 
         return (
             len(

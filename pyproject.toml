@@ -1,0 +1,20 @@
+[tool.ruff]
+src = ["lib"]
+
+# Same as Black.
+line-length = 88
+
+# These files contain long lines in testdata that trigger the linter
+exclude = [
+    "tests/unit/test_databroker_business_events.py",
+    "tests/unit/test_databroker.py"
+]
+
+[tool.ruff.mccabe]
+# Unlike Flake8, default to a complexity level of 10.
+max-complexity = 10
+
+[tool.pytest.ini_options]
+pythonpath = [
+  ".", "lib", "buildpack"
+]

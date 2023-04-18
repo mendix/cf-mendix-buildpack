@@ -100,7 +100,7 @@ def _get_s3_specific_config(vcap_services):
         logging.info("S3 TVM config detected")
         config = {
             STORAGE_CORE_CUSTOM_RUNTIME_SETTINGS_KEY: core_config_value,
-            config_prefix + "tokenService.Url": "https://%s/v1/gettoken" % tvm_endpoint,
+            config_prefix + "tokenService.Url": f"https://{tvm_endpoint}/v1/gettoken",
             config_prefix + "tokenService.Username": tvm_username,
             config_prefix + "tokenService.Password": tvm_password,
             config_prefix + "tokenService.RefreshPercentage": 80,
@@ -176,11 +176,11 @@ def _get_credentials_from_tvm(tvm_endpoint, tvm_username, tvm_password):
     retry = 3
     while True:
         response = requests.get(
-            "https://%s/v1/getcredentials" % tvm_endpoint,
+            f"https://{tvm_endpoint}/v1/getcredentials",
             headers={
-                "User-Agent": "Mendix Buildpack {} (for Mendix {})".format(
-                    util.get_buildpack_version(),
-                    runtime.get_runtime_version(),
+                "User-Agent": (
+                    f"Mendix Buildpack {util.get_buildpack_version()} "
+                    f"(for Mendix {runtime.get_runtime_version()})"
                 )
             },
             auth=(tvm_username, tvm_password),
@@ -188,7 +188,7 @@ def _get_credentials_from_tvm(tvm_endpoint, tvm_username, tvm_password):
 
         if 200 <= response.status_code <= 299:
             break
-        elif 400 <= response.status_code <= 499:
+        if 400 <= response.status_code <= 499:
             message = response.content.decode("UTF-8").strip()
             try:
                 message = json.loads(message)["Error"]["Message"]
@@ -196,38 +196,37 @@ def _get_credentials_from_tvm(tvm_endpoint, tvm_username, tvm_password):
                 pass
 
             logging.error(
-                "Failed to get IAM credential from TVM (HTTP {}): {}".format(
-                    response.status_code, message
-                )
+                "Failed to get IAM credential from TVM (HTTP %d): %s",
+                response.status_code,
+                message,
             )
             raise Exception(
-                "failed to get IAM credential from TVM for tvm_user %s" % tvm_username
+                f"failed to get IAM credential from TVM for tvm_user {tvm_username}"
             )
         else:
             retry = retry - 1
             time.sleep(5)
             logging.error(
-                "Failed to get IAM credential from TVM (HTTP {}), Retrying... {}".format(
-                    response.status_code, retry
-                )
+                "Failed to get IAM credential from TVM (HTTP %d), Retrying... %d",
+                response.status_code,
+                retry,
             )
-            logging.error("Number of retries left = {}".format(retry))
+            logging.error("Number of retries left = %d", retry)
             if retry == 0:
                 raise Exception(
-                    "failed to get IAM credential from TVM for tvm_user %s"
-                    % tvm_username
+                    f"failed to get IAM credential from TVM for tvm_user {tvm_username}"
                 )
 
     result = response.json()
     if "AccessKeyId" not in result:
         raise Exception(
-            "failed to get IAM credential from TVM for tvm_user %s (missing AccessKeyId)"
-            % tvm_username
+            f"failed to get IAM credential from TVM for tvm_user {tvm_username} "
+            "(missing AccessKeyId)"
         )
     if "SecretAccessKey" not in result:
         raise Exception(
-            "failed to get IAM credential from TVM for tvm_user %s (missing SecretAccessKey)"
-            % tvm_username
+            f"failed to get IAM credential from TVM for tvm_user {tvm_username} "
+            "(missing SecretAccessKey)"
         )
 
     return result["AccessKeyId"], result["SecretAccessKey"]
@@ -304,8 +303,7 @@ def _get_azure_storage_specific_config(vcap_services):
             config_object[config_prefix + "Container"] = creds["container_name"]
 
         return config_object
-    else:
-        return None
+    return None
 
 
 def _get_config_from_vcap():
@@ -328,8 +326,8 @@ def _get_config_from_vcap():
 def _is_user_defined_config(m2ee):
     keys = [x.lower() for x in util.get_custom_runtime_settings(m2ee).keys()]
     return any(
-        [x.startswith(STORAGE_CUSTOM_RUNTIME_SETTINGS_PREFIX.lower()) for x in keys]
-    ) or any([x == STORAGE_CORE_CUSTOM_RUNTIME_SETTINGS_KEY.lower() for x in keys])
+        x.startswith(STORAGE_CUSTOM_RUNTIME_SETTINGS_PREFIX.lower()) for x in keys
+    ) or any(x == STORAGE_CORE_CUSTOM_RUNTIME_SETTINGS_KEY.lower() for x in keys)
 
 
 def update_config(m2ee):
@@ -339,19 +337,23 @@ def update_config(m2ee):
     if is_user_defined_config:
         if len(vcap_config) > 0:
             logging.warning(
-                "External file store service binding detected, but user-defined storage settings supplied."
+                "External file store service binding detected, "
+                "but user-defined storage settings supplied."
             )
         logging.info(
             "Using external file store configured by user-defined settings. "
-            "See https://github.com/mendix/cf-mendix-buildpack for file store configuration details."
+            "See https://github.com/mendix/cf-mendix-buildpack "
+            "for file store configuration details."
         )
     else:
         if len(vcap_config) > 0:
             logging.info("Using external file store configured by service binding")
         else:
             logging.warning(
-                "External file store not configured. Files stored by the application will not persist across restarts. "
-                "See https://github.com/mendix/cf-mendix-buildpack for file store configuration details."
+                "External file store not configured. "
+                "Files stored by the application will not persist across restarts. "
+                "See https://github.com/mendix/cf-mendix-buildpack "
+                "for file store configuration details."
             )
 
     util.upsert_custom_runtime_settings(m2ee, vcap_config, overwrite=False, append=True)

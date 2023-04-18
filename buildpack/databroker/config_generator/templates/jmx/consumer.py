@@ -1,5 +1,3 @@
-import os
-
 jmx_metrics = [
     {
         "include": {
@@ -20,7 +18,7 @@ jmx_metrics = [
     },
     {
         "include": {
-            "bean_regex": "kafka\.consumer:type=consumer-coordinator-metrics,client-id=.*",
+            "bean_regex": "kafka\.consumer:type=consumer-coordinator-metrics,client-id=.*",  # noqa: line-too-long
             "attribute": {
                 "commit-latency-avg": {
                     "alias": "kafka.consumer.coordinator.commit-latency-avg"
@@ -84,10 +82,10 @@ jmx_metrics = [
                     "alias": "kafka.consumer.coordinator.partitions-revoked-latency-max"
                 },
                 "partitions-assigned-latency-avg": {
-                    "alias": "kafka.consumer.coordinator.partitions-assigned-latency-avg"
+                    "alias": "kafka.consumer.coordinator.partitions-assigned-latency-avg"  # noqa: line-too-long
                 },
                 "partitions-assigned-latency-max": {
-                    "alias": "kafka.consumer.coordinator.partitions-assigned-latency-max"
+                    "alias": "kafka.consumer.coordinator.partitions-assigned-latency-max"  # noqa: line-too-long
                 },
                 "partitions-lost-latency-avg": {
                     "alias": "kafka.consumer.coordinator.partitions-lost-latency-avg"
@@ -100,7 +98,7 @@ jmx_metrics = [
     },
     {
         "include": {
-            "bean_regex": "kafka\.consumer:type=consumer-fetch-manager-metrics,client-id=.*",
+            "bean_regex": "kafka\.consumer:type=consumer-fetch-manager-metrics,client-id=.*",  # noqa: line-too-long
             "attribute": {
                 "bytes-consumed-rate": {
                     "alias": "kafka.consumer.fetch.manager.bytes-consumed-rate"
@@ -148,7 +146,7 @@ jmx_metrics = [
     },
     {
         "include": {
-            "bean_regex": "kafka\.consumer:type=consumer-fetch-manager-metrics,client-id=.*,topic=.*",
+            "bean_regex": "kafka\.consumer:type=consumer-fetch-manager-metrics,client-id=.*,topic=.*",  # noqa: line-too-long
             "attribute": {
                 "bytes-consumed-rate": {
                     "alias": "kafka.consumer.fetch.manager.bytes-consumed-rate"
@@ -176,7 +174,7 @@ jmx_metrics = [
     },
     {
         "include": {
-            "bean_regex": "kafka\.consumer:type=consumer-fetch-manager-metrics,partition=.*,topic=.*,client-id=.*",
+            "bean_regex": "kafka\.consumer:type=consumer-fetch-manager-metrics,partition=.*,topic=.*,client-id=.*",  # noqa: line-too-long
             "attribute": {
                 "preferred-read-replica": {
                     "alias": "kafka.consumer.fetch.manager.preferred-read-replica"

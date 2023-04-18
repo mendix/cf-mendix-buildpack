@@ -9,7 +9,7 @@ from buildpack.core import runtime
 from . import datadog, telegraf, metrics
 
 NAMESPACE = "mx-agent"
-DEPENDENCY = "mendix.%s" % NAMESPACE
+DEPENDENCY = f"mendix.{NAMESPACE}"
 ROOT_DIR = ".local"
 
 
@@ -55,8 +55,9 @@ def update_config(m2ee):
     runtime_version = runtime.get_runtime_version()
     if not meets_version_requirements(runtime_version):
         logging.warning(
-            "Not enabling Mendix Java Agent: runtime version must be 7.14 or up. "
-            "Application metrics will not be shipped to third-party monitoring services."
+            "Not enabling Mendix Java Agent: runtime version must be 7.14 "
+            "or up. Application metrics will not be shipped to third-party "
+            "monitoring services."
         )
     if is_enabled(runtime_version):
         _enable_mx_java_agent(m2ee)
@@ -69,7 +70,7 @@ def _enable_mx_java_agent(m2ee):
     )
 
     logging.debug("Checking if Mendix Java Agent is enabled...")
-    if 0 in [v.find("-javaagent:{}".format(jar)) for v in util.get_javaopts(m2ee)]:
+    if 0 in [v.find(f"-javaagent:{jar}") for v in util.get_javaopts(m2ee)]:
         logging.debug("Mendix Java Agent is already enabled")
         return
 
@@ -119,7 +120,7 @@ def _enable_mx_java_agent(m2ee):
     mx_agent_args = list(filter(lambda x: x, mx_agent_args))
     mx_agent_args_str = f'={",".join(mx_agent_args)}' if mx_agent_args else ""
 
-    util.upsert_javaopts(m2ee, "-javaagent:{}{}".format(jar, mx_agent_args_str))
+    util.upsert_javaopts(m2ee, f"-javaagent:{jar}{mx_agent_args_str}")
 
     # If not explicitly set,
     # - default to StatsD (MxVersion < metrics.MXVERSION_MICROMETER)
@@ -149,8 +150,8 @@ def _to_file(name, json_content):
         file_name = name.title().replace("_", "") + ".json"
         file_path = os.path.join(_get_destination_dir(), file_name)
 
-        with open(file_path, "w") as fh:
-            fh.write(json_content)
+        with open(file_path, "w") as file_handler:
+            file_handler.write(json_content)
 
         return file_path
     except ValueError:

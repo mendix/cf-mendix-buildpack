@@ -1,8 +1,8 @@
-#
-# [EXPERIMENTAL]
-#
-# Add streams to an app container to collect and optionally filter data
-#
+"""
+[EXPERIMENTAL]
+
+Add streams to an app container to collect and optionally filter data
+"""
 import os
 import logging
 
@@ -16,7 +16,7 @@ from buildpack.databroker.config_generator.scripts.utils import write_file
 
 # Constants
 NAMESPACE = BASE_DIR = "databroker"
-DEPENDENCY = "%s.stream-sidecar" % NAMESPACE
+DEPENDENCY = f"{NAMESPACE}.stream-sidecar"
 AZKARRA_TPLY_CONF_NAME = "topology.conf"
 PDR_STREAMS_FILENAME = "stream-sidecar"
 PDR_STREAMS_DIR = os.path.join(BASE_DIR, "producer-streams")
@@ -34,10 +34,7 @@ def get_pdr_stream_version():
 
 
 def _get_pdr_streams_home(version):
-    return os.path.join(
-        PDR_STREAMS_DIR,
-        "{}-{}".format(PDR_STREAMS_FILENAME, version),
-    )
+    return os.path.join(PDR_STREAMS_DIR, f"{PDR_STREAMS_FILENAME}-{version}")
 
 
 def _get_azkarra_conf_path(version):
@@ -52,7 +49,7 @@ def _get_pdr_streams_jar(version):
         LOCAL,
         _get_pdr_streams_home(version),
         "lib",
-        "{}-{}.{}".format(PDR_STREAMS_FILENAME, get_pdr_stream_version(), "jar"),
+        f"{PDR_STREAMS_FILENAME}-{get_pdr_stream_version()}.jar",
     )
 
 

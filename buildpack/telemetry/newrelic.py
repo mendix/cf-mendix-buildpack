@@ -10,7 +10,7 @@ ROOT_DIR = ".local"
 def stage(buildpack_dir, install_path, cache_path):
     if get_new_relic_license_key():
         util.resolve_dependency(
-            "%s.agent" % NAMESPACE,
+            f"{NAMESPACE}.agent",
             _get_destination_dir(install_path),
             buildpack_dir=buildpack_dir,
             cache_dir=cache_path,
@@ -39,9 +39,7 @@ def update_config(m2ee, app_name):
 
     util.upsert_javaopts(
         m2ee,
-        "-javaagent:{}".format(
-            os.path.join(_get_destination_dir(), "newrelic", "newrelic.jar")
-        ),
+        f"-javaagent:{os.path.join(_get_destination_dir(), 'newrelic', 'newrelic.jar')}",  # noqa: line-too-long
     )
 
 

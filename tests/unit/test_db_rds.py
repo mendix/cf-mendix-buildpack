@@ -77,7 +77,7 @@ class TestCaseRdsDryRun(TestCase):
         assert config["DatabaseType"] == "PostgreSQL"
         assert (
             config["DatabaseHost"]
-            == "rdsbroker-testfree-nonprod-1-eu-west-1.asdbjasdg.eu-west-1.rds.amazonaws.com:5432"  # noqa: E501
+            == "rdsbroker-testfree-nonprod-1-eu-west-1.asdbjasdg.eu-west-1.rds.amazonaws.com:5432"  # noqa: line-too-long
         )
         assert config["DatabaseName"] == "dbuajsdhkasdhaks"
         assert config["DatabaseJdbcUrl"].find("tcpKeepAlive") >= 0
@@ -91,7 +91,7 @@ class TestCaseRdsDryRun(TestCase):
         assert config["DatabaseType"] == "PostgreSQL"
         assert (
             config["DatabaseHost"]
-            == "rdsbroker-testfree-nonprod-1-eu-west-1.asdbjasdg.eu-west-1.rds.amazonaws.com:5432"  # noqa: E501
+            == "rdsbroker-testfree-nonprod-1-eu-west-1.asdbjasdg.eu-west-1.rds.amazonaws.com:5432"  # noqa: line-too-long
         )
         assert config["DatabaseName"] == "dbuajsdhkasdhaks"
         assert config["DatabaseJdbcUrl"].find("tcpKeepAlive") >= 0
