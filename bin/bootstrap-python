@@ -6,9 +6,6 @@ BUILDPACK_PATH=$(dirname "$0")/..
 BUILD_PATH=$1
 CACHE_PATH=$2
 
-# This is set as a (temporary) solution for pip 21.2 and https://github.com/pypa/pip/issues/10151
-export _PIP_LOCATIONS_NO_WARN_ON_MISMATCH=1
-
 # Bootstrap and install the Python requirements from wheels.
 # Minimal packaging for the buildpack includes pip and setuptools wheels.
 REQUIREMENTS_PATH="${BUILDPACK_PATH}/requirements.txt"
@@ -49,7 +46,7 @@ then
         python3 ${PIP_WHL_PATH}/pip install $PIP_VERBOSITY_FLAGS --user --no-warn-script-location --no-index --find-links=$PIP_WHEELDIR pip setuptools wheel
     else
         # Bootstrap wheels are not bundled in the buildpack
-        curl https://bootstrap.pypa.io/pip/3.6/get-pip.py -o get-pip.py
+        curl https://bootstrap.pypa.io/pip/get-pip.py -o get-pip.py
         python3 get-pip.py install $PIP_VERBOSITY_FLAGS --user --no-warn-script-location
     fi
     PIP_CMD="/home/vcap/.local/bin/pip"
