@@ -16,7 +16,10 @@
     flush_jitter = "5s"
     precision = ""
     debug = {{ telegraf_debug_enabled }}
-    logfile = ""
+    logtarget = "file"
+    logfile = "/app/log/telegraf.log"
+    logfile_rotation_max_size = "10MB"
+    logfile_rotation_max_archives = 5
     hostname = "{{ hostname }}"
     omit_hostname = false
 
