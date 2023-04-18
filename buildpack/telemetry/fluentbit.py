@@ -12,7 +12,7 @@ from buildpack.telemetry import splunk
 
 NAMESPACE = "fluentbit"
 CONF_FILENAME = f"{NAMESPACE}.conf"
-FILTER_FILENAME = "redaction.lua"
+FILTER_FILENAMES = ("redaction.lua", "metadata.lua")
 FLUENTBIT_ENV_VARS = {
     "FLUENTBIT_LOGS_PORT": os.getenv("FLUENTBIT_LOGS_PORT", default="5170"),
 }
@@ -36,7 +36,7 @@ def stage(buildpack_dir, destination_path, cache_path):
         cache_dir=cache_path,
     )
 
-    for filename in (CONF_FILENAME, FILTER_FILENAME):
+    for filename in (CONF_FILENAME, *FILTER_FILENAMES):
         shutil.copy(
             os.path.join(buildpack_dir, "etc", NAMESPACE, filename),
             os.path.join(
@@ -67,7 +67,7 @@ def update_config(m2ee):
     )
 
 
-def run():
+def run(model_version, runtime_version):
 
     if not is_fluentbit_enabled():
         return
@@ -96,10 +96,12 @@ def run():
         splunk.print_failed_message()
         return
 
+    agent_environment = _set_up_environment(model_version, runtime_version)
+
     logging.info("Starting Fluent Bit...")
 
     subprocess.Popen(
-        (fluentbit_bin_path, "-c", fluentbit_config_path),
+        (fluentbit_bin_path, "-c", fluentbit_config_path), env=agent_environment
     )
 
     # The runtime does not handle a non-open logs endpoint socket
@@ -120,6 +122,17 @@ def run():
             "Application logs will not be shipped to Fluent Bit."
         )
         splunk.print_failed_message()
+
+
+def _set_up_environment(model_version, runtime_version):
+    env_vars = dict(os.environ.copy())
+
+    env_vars["SPLUNK_APP_HOSTNAME"] = util.get_hostname()
+    env_vars["SPLUNK_APP_NAME"] = util.get_app_from_domain()
+    env_vars["SPLUNK_APP_RUNTIME_VERSION"] = str(runtime_version)
+    env_vars["SPLUNK_APP_MODEL_VERSION"] = model_version
+
+    return env_vars
 
 
 def is_fluentbit_enabled():

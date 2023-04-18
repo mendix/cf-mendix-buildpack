@@ -582,7 +582,10 @@ To enable New Relic, simply bind a New Relic service to this app and settings wi
 
 ### Splunk
 
-To collect Mendix Runtime logs to [Splunk Cloud Platform](https://www.splunk.com/en_us/products/splunk-cloud-platform.html), [Fluent Bit](https://docs.fluentbit.io/manual/) is used.
+#### Set up Splunk integration
+
+To collect Mendix Runtime logs to [Splunk Cloud Platform](https://www.splunk.com/en_us/products/splunk-cloud-platform.html), 
+[Fluent Bit](https://docs.fluentbit.io/manual/) is used.
 
 To enable Splunk integration for a Mendix application, following environment variables should be configured.
 
@@ -600,6 +603,26 @@ button `New Token` in the top-right corner of the page.
 
 Once the Mendix application is redeployed/restarted, the runtime application logs should appear on the Splunk Cloud under `Search & Reporting`.
 In the search line specify: `source="http:your_token_name"`, click search button.
+
+#### Metadata
+
+In addition to the runtime application logs, the following JSON-formatted metadata is automatically sent to the Splunk Cloud Platform:
+
+* `environment_id` - unique identifier of the environment;
+* `instance_index` - number of the application instance;
+* `hostname` - name of the application host;
+* `application_name` - default application name, retrieved from domain name;
+* `model_version` - model version of the Mendix runtime;
+* `runtime_version` - version of the Mendix runtime.
+
+You can filter the data by these fields on Splunk Cloud Platform web interface.
+
+#### Custom tags
+
+You can also set up custom tags in the following format `key:value`. We recommend that you add the following custom tags:
+
+* `app:{app_name}` – this enables you to identify all logs sent from your app (for example, **app:customermanagement**)
+* `env:{environment_name}` – this enables you to identify logs sent from a particular environment so you can separate out production logs from test logs (for example, **env:accp**)
 
 ### AppDynamics
 
