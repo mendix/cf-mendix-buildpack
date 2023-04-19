@@ -45,12 +45,12 @@ INFLUX_REGISTRY = {
             "values": ["mx.runtime.user.login"],
         },
         # Filter out irrelevant metrics to reduce
-        # the payload size passed to TSS
+        # the payload size passed to TSS/TFR
         # https://docs.mendix.com/refguide/metrics#filters
         {
             "type": "nameStartsWith",
             "result": "deny",
-            "values": ["commons.pool"],
+            "values": ["commons.pool", "jvm.buffer"],
         },
     ],
 }
