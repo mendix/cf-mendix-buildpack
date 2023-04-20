@@ -3,7 +3,8 @@ from unittest import TestCase
 from buildpack.core import runtime
 from lib.m2ee.version import MXVersion
 
-# Current supported / maintained versions (https://docs.mendix.com/releasenotes/studio-pro/lts-mts):
+# Current supported / maintained versions
+# (https://docs.mendix.com/releasenotes/studio-pro/lts-mts):
 # - Mendix 7: 7.23.x (LTS)
 # - Mendix 8: 8.18.x (LTS)
 # - Mendix 9: 9.6.x (MTS), 9.12.x (MTS), 9.18.x (MTS), 9.24.x (LTS)

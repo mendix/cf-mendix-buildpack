@@ -6,6 +6,7 @@ from lib.m2ee.munin import (
     _get_jre_major_version_from_version_string,
 )
 from lib.m2ee.version import MXVersion
+from buildpack.core.java import _get_major_version
 
 
 class TestJREVersionFromString(TestCase):
@@ -25,6 +26,19 @@ class TestJREVersionFromString(TestCase):
     def test_new_style_jre(self):
         version_string = "11.0.3"
         self.assertEqual(11, _get_jre_major_version_from_version_string(version_string))
+
+    def test_jre_get_major_version(self):
+        jre_versions = (
+            ("1.8.0_202", 8),
+            ("8u233", 8),
+            ("11.0.3", 11),
+        )
+        for version_string, major_version in jre_versions:
+            with self.subTest():
+                self.assertEqual(
+                    major_version,
+                    _get_major_version(version_string),
+                )
 
 
 class TestGuessJavaVersion(TestCase):

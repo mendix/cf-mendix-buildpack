@@ -20,8 +20,8 @@ from buildpack.util import (
 
 
 class TestExternalDependencies(TestCase):
-
-    # Dependency test cases: YAML, expected dependency objects, dependency name, overrides, expected dependency object
+    # Dependency test cases: YAML, expected dependency objects,
+    # dependency name, overrides, expected dependency object
     DEPENDENCY_LIST_TEST_CASES = [
         # Simple test case
         (
@@ -35,7 +35,7 @@ dependencies:
             {
                 "foo.bar": {
                     "version": "1.0.0",
-                    DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-{{ version }}.tar.gz",
+                    DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-{{ version }}.tar.gz",  # noqa: line-too-long
                     DEPENDENCY_NAME_KEY: ["foo", "bar"],
                 }
             },
@@ -54,13 +54,13 @@ dependencies:
 """,
             {
                 "foo.bar": {
-                    DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-{{ type }}-{{ version }}.tar.gz",
+                    DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-{{ type }}-{{ version }}.tar.gz",  # noqa: line-too-long
                     "type": "fizz",
                     "version": "1.0.0",
                     DEPENDENCY_NAME_KEY: ["foo", "bar"],
                 },
                 "foo.baz": {
-                    DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-{{ type }}-{{ version }}.tar.gz",
+                    DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-{{ type }}-{{ version }}.tar.gz",  # noqa: line-too-long
                     "type": "buzz",
                     "version": "1.0.0",
                     DEPENDENCY_NAME_KEY: ["foo", "baz"],
@@ -83,28 +83,28 @@ dependencies:
 """,
             {
                 "foo.fizz-1": {
-                    DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-{{ type }}-{{ version }}.tar.gz",
+                    DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-{{ type }}-{{ version }}.tar.gz",  # noqa: line-too-long
                     "type": "fizz",
                     "version": "1.0.0",
                     "version_key": "1",
                     DEPENDENCY_NAME_KEY: ["foo", "fizz-1"],
                 },
                 "foo.buzz-1": {
-                    DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-{{ type }}-{{ version }}.tar.gz",
+                    DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-{{ type }}-{{ version }}.tar.gz",  # noqa: line-too-long
                     "type": "buzz",
                     "version": "1.0.0",
                     "version_key": "1",
                     DEPENDENCY_NAME_KEY: ["foo", "buzz-1"],
                 },
                 "foo.fizz-2": {
-                    DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-{{ type }}-{{ version }}.tar.gz",
+                    DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-{{ type }}-{{ version }}.tar.gz",  # noqa: line-too-long
                     "type": "fizz",
                     "version": "2.0.0",
                     "version_key": "2",
                     DEPENDENCY_NAME_KEY: ["foo", "fizz-2"],
                 },
                 "foo.buzz-2": {
-                    DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-{{ type }}-{{ version }}.tar.gz",
+                    DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-{{ type }}-{{ version }}.tar.gz",  # noqa: line-too-long
                     "type": "buzz",
                     "version": "2.0.0",
                     "version_key": "2",
@@ -123,7 +123,8 @@ dependencies:
                 dependencies = _get_dependencies(os.getcwd())
                 assert dependencies == case[1]
 
-    # Single ependency test cases: YAML, dependency name, overrides, expected dependency object
+    # Single ependency test cases: YAML, dependency name,
+    # overrides, expected dependency object
     DEPENDENCY_TEST_CASES = [
         # Simple resolution
         (
@@ -181,7 +182,7 @@ dependencies:
             "foo",
             {},
             {
-                DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-{{ version }}.tar.gz",
+                DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-{{ version }}.tar.gz",  # noqa: line-too-long
                 DEPENDENCY_NAME_KEY: ["foo"],
             },
         ),
@@ -205,8 +206,8 @@ dependencies:
                 DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-1.0.0.tar.gz",
                 DEPENDENCY_NAME_KEY: ["foo"],
             },
-            "%s%ssome_location/some_archive-1.0.0.tar.gz"
-            % (BLOBSTORE_DEFAULT_URL, BLOBSTORE_BUILDPACK_DEFAULT_PREFIX),
+            f"{BLOBSTORE_DEFAULT_URL}{BLOBSTORE_BUILDPACK_DEFAULT_PREFIX}"
+            "some_location/some_archive-1.0.0.tar.gz",
         ),
         # Mendix CDN absolute path
         (
@@ -215,13 +216,13 @@ dependencies:
                 DEPENDENCY_ARTIFACT_KEY: "/some_location/some_archive-1.0.0.tar.gz",
                 DEPENDENCY_NAME_KEY: ["foo"],
             },
-            "%s/some_location/some_archive-1.0.0.tar.gz" % BLOBSTORE_DEFAULT_URL,
+            f"{BLOBSTORE_DEFAULT_URL}/some_location/some_archive-1.0.0.tar.gz",
         ),
         # Full url
         (
             {
                 "version": "1.0.0",
-                DEPENDENCY_ARTIFACT_KEY: "https://myowncdn.com/some_location/some_archive-1.0.0.tar.gz",
+                DEPENDENCY_ARTIFACT_KEY: "https://myowncdn.com/some_location/some_archive-1.0.0.tar.gz",  # noqa: line-too-long
                 DEPENDENCY_NAME_KEY: ["foo"],
             },
             "https://myowncdn.com/some_location/some_archive-1.0.0.tar.gz",
@@ -238,27 +239,24 @@ dependencies:
     def _test_delete_old_versions(
         self, prefix, versions, index_to_keep, indexes_to_remove
     ):
-        temp_dir = tempfile.TemporaryDirectory()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            files = []
+            for version in versions:
+                files.append(os.path.join(temp_dir, f"{prefix}{version}"))
 
-        files = []
-        for version in versions:
-            files.append(os.path.join(temp_dir.name, "{}{}".format(prefix, version)))
+            for f in files:
+                open(f, "a").close()
 
-        for f in files:
-            open(f, "a").close()
+            test_file = files[index_to_keep]
 
-        test_file = files[index_to_keep]
+            _delete_other_versions(temp_dir, os.path.basename(test_file))
 
-        _delete_other_versions(temp_dir.name, os.path.basename(test_file))
+            result = glob.glob(f"{temp_dir}/*.*")
 
-        result = glob.glob("%s/*.*" % temp_dir.name)
-
-        j = 0
-        for i in indexes_to_remove:
-            del files[i - j]
-            j += 1
-
-        temp_dir.cleanup()
+            j = 0
+            for i in indexes_to_remove:
+                del files[i - j]
+                j += 1
 
         return set(result) == set(files)
 
@@ -300,21 +298,18 @@ dependencies:
         assert self._test_delete_old_versions(ng_prefix, ng_versions, 0, {})
 
     def test_find_file_in_directory(self):
-        temp_dir = tempfile.TemporaryDirectory()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            file_names = [
+                "dependency1.zip",
+                "a/dependency2.zip",
+                "a/b/dependency3.zip",
+                "dependency4.zip/dependency4.zip",
+            ]
+            files = [os.path.join(temp_dir, f) for f in file_names]
+            for file_name in files:
+                mkdir_p(os.path.dirname(file_name))
+                open(file_name, "a").close()
 
-        file_names = [
-            "dependency1.zip",
-            "a/dependency2.zip",
-            "a/b/dependency3.zip",
-            "dependency4.zip/dependency4.zip",
-        ]
-        files = [os.path.join(temp_dir.name, f) for f in file_names]
-        for f in files:
-            mkdir_p(os.path.dirname(f))
-            open(f, "a").close()
-
-        for f in file_names:
-            result = _find_file_in_directory(os.path.basename(f), temp_dir.name)
-            assert result and is_path_accessible(result) and os.path.isfile(result)
-
-        temp_dir.cleanup()
+            for file_name in file_names:
+                result = _find_file_in_directory(os.path.basename(file_name), temp_dir)
+                assert result and is_path_accessible(result) and os.path.isfile(result)

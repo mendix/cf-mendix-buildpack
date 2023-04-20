@@ -2,7 +2,6 @@ import os
 from operator import itemgetter
 
 from buildpack.telemetry import metrics
-from lib.m2ee.version import MXVersion
 
 from unittest import TestCase
 from unittest.mock import Mock, patch

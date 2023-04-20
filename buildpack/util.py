@@ -17,7 +17,7 @@ from jinja2 import DebugUndefined, Template
 
 def print_all_logging_handlers():
     for k, v in logging.Logger.manager.loggerDict.items():
-        print("+ [%s] {%s} " % (str.ljust(k, 20), str(v.__class__)[8:-2]))
+        print(f"+ [{str.ljust(k, 20)}] {{str(v.__class__)[8:-2])}} ")
         if not isinstance(v, logging.PlaceHolder):
             for h in v.handlers:
                 print("     +++", str(h.__class__)[8:-2])
@@ -26,18 +26,16 @@ def print_all_logging_handlers():
 def get_vcap_services_data():
     if os.environ.get("VCAP_SERVICES"):
         return json.loads(os.environ.get("VCAP_SERVICES"))
-    else:
-        return {}
+    return {}
 
 
 def get_vcap_data():
     if os.environ.get("VCAP_APPLICATION"):
         return json.loads(os.environ.get("VCAP_APPLICATION"))
-    else:
-        return {
-            "application_uris": ["app.mendixcloud.com"],
-            "application_name": "Mendix App",
-        }
+    return {
+        "application_uris": ["app.mendixcloud.com"],
+        "application_name": "Mendix App",
+    }
 
 
 def get_domain():
@@ -48,7 +46,7 @@ def get_hostname(add_instance_index=True):
     result = get_domain()
     cf_instance_index = os.getenv("CF_INSTANCE_INDEX")
     if cf_instance_index and add_instance_index:
-        result += "-{}".format(cf_instance_index)
+        result += f"-{cf_instance_index}"
     return result
 
 
@@ -57,13 +55,13 @@ def get_app_from_domain():
 
 
 # Flattens a list
-def _flatten(l):
+def _flatten(unflat_list):
     result = []
-    for i in l:
-        if isinstance(i, list):
-            result.extend(_flatten(i))
+    for item in unflat_list:
+        if isinstance(item, list):
+            result.extend(_flatten(item))
         else:
-            result.append(i)
+            result.append(item)
     return result
 
 
@@ -90,21 +88,23 @@ def _is_dependency_literal(o):
 
 # Renders a dependency object
 def _render(
-    o,
+    obj,
     variables,
-    fields=[
-        DEPENDENCY_ARTIFACT_KEY,
-        DEPENDENCY_NAME_KEY,
-        DEPENDENCY_ALIAS_KEY,
-    ],
+    fields=None,
 ):
+    if fields is None:
+        fields = [
+            DEPENDENCY_ARTIFACT_KEY,
+            DEPENDENCY_NAME_KEY,
+            DEPENDENCY_ALIAS_KEY,
+        ]
     for field in fields:
-        if field in o:
-            if isinstance(o[field], list):
-                o[field] = [__render(item, variables) for item in o[field]]
+        if field in obj:
+            if isinstance(obj[field], list):
+                obj[field] = [__render(item, variables) for item in obj[field]]
             else:
-                o[field] = __render(o[field], variables)
-    return o
+                obj[field] = __render(obj[field], variables)
+    return obj
 
 
 def __render(o, variables):
@@ -114,63 +114,57 @@ def __render(o, variables):
 # Returns a list of external dependency objects
 # Function argument is an object, typically loaded from YAML
 # This function is a recursive descent parser
-def __get_dependencies(object):
+def __get_dependencies(obj):
     if (
         all(
-            [
-                True if k in DO_NOT_RECURSE_FIELDS else _is_dependency_literal(v)
-                for k, v in object.items()
-            ]
+            True if k in DO_NOT_RECURSE_FIELDS else _is_dependency_literal(v)
+            for (k, v) in obj.items()  # noqa: line-too-long
         )
-        and DEPENDENCY_ARTIFACT_KEY in object
+        and DEPENDENCY_ARTIFACT_KEY in obj
     ):
         # Leaf node found, return single artifact object
-        return _render(object, object, DO_NOT_RECURSE_FIELDS)
-    else:
-        # Normal node found, recurse further
-        result = []
-        for key, value in object.items():
-            name = {}
-            if not _is_dependency_literal(value) and key not in DO_NOT_RECURSE_FIELDS:
-                # Recurse non-literals
-                # If the item is a list, recurse for every item on the list
-                if isinstance(value, list):
-                    for item in value:
-                        # Recurse over the union of the parent object and item literals
-                        if _is_dependency_literal(item):
-                            result.append(__get_dependencies({**object, **{key: item}}))
-                        else:
-                            if isinstance(item, dict):
-                                for k, v in item.items():
-                                    # Add key-value mapping for dict object
-                                    result.append(
-                                        __get_dependencies(
-                                            {
-                                                **object,
-                                                **{key: v},
-                                                **{key + "_key": k},
-                                            }
-                                        )
-                                    )
-                            else:
-                                for subitem in item:
-                                    result.append(
-                                        __get_dependencies({**object, **{key: subitem}})
-                                    )
-                # If the item is another object, recurse over the union of the item and the parent object literals
-                else:
-                    name = {}
-                    if DEPENDENCY_NAME_KEY not in object:
-                        name = {DEPENDENCY_NAME_KEY: [key]}
+        return _render(obj, obj, DO_NOT_RECURSE_FIELDS)
+    # Normal node found, recurse further
+    result = []
+    for key, value in obj.items():
+        name = {}
+        if not _is_dependency_literal(value) and key not in DO_NOT_RECURSE_FIELDS:
+            # Recurse non-literals
+            # If the item is a list, recurse for every item on the list
+            if isinstance(value, list):
+                for item in value:
+                    # Recurse over the union of the parent object and item literals
+                    if _is_dependency_literal(item):
+                        result.append(__get_dependencies({**obj, **{key: item}}))
                     else:
-                        name = {
-                            DEPENDENCY_NAME_KEY: object[DEPENDENCY_NAME_KEY] + [key]
-                        }
-                    variables = {
-                        k: v for k, v in object.items() if _is_dependency_literal(v)
-                    }
-                    result.append(__get_dependencies({**value, **variables, **name}))
-        return result
+                        if isinstance(item, dict):
+                            for k, v in item.items():
+                                # Add key-value mapping for dict object
+                                result.append(
+                                    __get_dependencies(
+                                        {
+                                            **obj,
+                                            **{key: v},
+                                            **{key + "_key": k},
+                                        }
+                                    )
+                                )
+                        else:
+                            for subitem in item:
+                                result.append(
+                                    __get_dependencies({**obj, **{key: subitem}})
+                                )
+            # If the item is another object
+            # recurse over the union of the item and the parent object literals
+            else:
+                name = {}
+                if DEPENDENCY_NAME_KEY not in obj:
+                    name = {DEPENDENCY_NAME_KEY: [key]}
+                else:
+                    name = {DEPENDENCY_NAME_KEY: obj[DEPENDENCY_NAME_KEY] + [key]}
+                variables = {k: v for k, v in obj.items() if _is_dependency_literal(v)}
+                result.append(__get_dependencies({**value, **variables, **name}))
+    return result
 
 
 # Flattens a dependency name
@@ -182,9 +176,9 @@ def _get_dependency_file_contents(file):
     with open(os.path.join(file), "r") as f:
         try:
             return yaml.safe_load(f)
-        except yaml.YAMLError as e:
-            logging.error("Cannot parse dependency configuration file: %s" % e)
-            return
+        except yaml.YAMLError as exc:
+            logging.error("Cannot parse dependency configuration file: %s", exc)
+            return yaml.safe_load({})
 
 
 # Returns a dict of dependencies from the dependency configuration file
@@ -196,11 +190,13 @@ def _get_dependencies(buildpack_dir):
     if dependencies:
         result = _flatten(__get_dependencies(dependencies["dependencies"]))
         return {_get_dependency_name(x): x for x in result}
-    return
+    return {}
 
 
 # Gets a single dependency and renders
-def get_dependency(dependency, overrides={}, buildpack_dir=os.getcwd()):
+def get_dependency(dependency, overrides=None, buildpack_dir=os.getcwd()):
+    if overrides is None:
+        overrides = {}
     result = None
     artifacts = _get_dependencies(buildpack_dir)
     if artifacts is not None and dependency in artifacts:
@@ -244,9 +240,9 @@ def _get_dependency_artifact_url(dependency):
 # Also accounts for aliases (either a string or a list of strings)
 def _delete_other_versions(directory, file_name, alias=None):
     logging.debug(
-        "Deleting other dependency versions than [{}] from [{}]...".format(
-            file_name, directory
-        )
+        "Deleting other dependency versions than [%s] from [%s]...",
+        file_name,
+        directory,
     )
     expression = (
         r"^((?:[a-zA-Z]+-)+)((?:v*[0-9]+\.?)+.*)(\.(?:tar|tar\.gz|tgz|zip|jar))$"
@@ -256,18 +252,16 @@ def _delete_other_versions(directory, file_name, alias=None):
         if isinstance(alias, str):
             alias = [alias]
         for a in alias:
-            patterns.append("{}-*.*".format(a))
+            patterns.append(f"{a}-*.*")
 
     for pattern in patterns:
         logging.debug("Finding files matching [{}]...".format(pattern))
-        files = glob.glob("{}/{}".format(directory, pattern))
+        files = glob.glob(f"{directory}/{pattern}")
 
         for f in files:
             if os.path.basename(f) != file_name:
                 logging.debug(
-                    "Deleting version [{}] from [{}]...".format(
-                        os.path.basename(f), directory
-                    )
+                    "Deleting version [%s] from [%s]...", os.path.basename(f), directory
                 )
                 os.remove(f)
 
@@ -277,7 +271,7 @@ def _find_file_in_directory(file_name, directory):
         a
         for a in [
             os.path.abspath(p)
-            for p in glob.glob("{}/**/{}".format(directory, file_name), recursive=True)
+            for p in glob.glob(f"{directory}/**/{file_name}", recursive=True)
         ]
         if os.path.isfile(a)
     ]
@@ -288,7 +282,8 @@ def _find_file_in_directory(file_name, directory):
 
 
 # Resolves a dependency: fetches it and copies it to the specified location
-# Dependency can be either a string (dependency name) or a dependency object retrieved with get_dependency()
+# Dependency can be either a string (dependency name) or a dependency object
+# retrieved with get_dependency()
 def resolve_dependency(
     dependency,
     destination,
@@ -297,20 +292,22 @@ def resolve_dependency(
     ignore_cache=False,
     unpack=True,
     unpack_strip_directories=False,
-    overrides={},
+    overrides=None,
 ):
+    if overrides is None:
+        overrides = {}
     if isinstance(dependency, str):
         name = dependency
         dependency = get_dependency(dependency, overrides, buildpack_dir)
         if dependency is None:
-            logging.error("Cannot find dependency [%s]" % name)
+            logging.error("Cannot find dependency [%s]", name)
             return
     name = _get_dependency_name(dependency)
 
-    logging.debug("Resolving dependency [%s]..." % name)
+    logging.debug("Resolving dependency [%s]...", name)
     url = _get_dependency_artifact_url(dependency)
     if url is None:
-        logging.error("Cannot find dependency artifact URL for [%s]" % name)
+        logging.error("Cannot find dependency artifact URL for [%s]", name)
         return
     file_name = url.split("/")[-1]
 
@@ -324,7 +321,7 @@ def resolve_dependency(
 
     vendor_dir = os.path.join(buildpack_dir, "vendor")
     logging.debug(
-        "Looking for [{}] in [{}] and [{}]...".format(file_name, vendor_dir, cache_dir)
+        "Looking for [%s] in [%s] and [%s]...", file_name, vendor_dir, cache_dir
     )
 
     vendored_location = _find_file_in_directory(file_name, vendor_dir)
@@ -335,22 +332,18 @@ def resolve_dependency(
             download(url, cached_location)
         else:
             logging.debug(
-                "Found dependency in cache, not downloading [{}]".format(
-                    cached_location
-                )
+                "Found dependency in cache, not downloading [%s]", cached_location
             )
     else:
         shutil.copy(vendored_location, cached_location)
         logging.debug(
-            "Found vendored dependency, not downloading [{}]".format(vendored_location)
+            "Found vendored dependency, not downloading [%s]", vendored_location
         )
     if destination:
         mkdir_p(destination)
         if unpack:
             # Unpack the artifact
-            logging.debug(
-                "Extracting [{}] to [{}]...".format(cached_location, destination)
-            )
+            logging.debug("Extracting [%s] to [%s]...", cached_location, destination)
             if (
                 file_name.endswith(".tar.gz")
                 or file_name.endswith(".tgz")
@@ -373,14 +366,10 @@ def resolve_dependency(
 
         else:
             # Copy the artifact, don't unpack
-            logging.debug(
-                "Copying [{}] to [{}]...".format(cached_location, destination)
-            )
+            logging.debug("Copying [%s] to [%s]...", cached_location, destination)
             shutil.copy(cached_location, os.path.join(destination, file_name))
 
-        logging.debug(
-            "Dependency [{}] is now present at [{}]".format(file_name, destination)
-        )
+        logging.debug("Dependency [%s] is now present at [%s]", file_name, destination)
     return dependency
 
 
@@ -395,11 +384,7 @@ def get_buildpack_loglevel():
 
 
 def download(url, destination):
-    logging.debug(
-        "Downloading [{url}] to [{destination}]...".format(
-            url=url, destination=destination
-        )
-    )
+    logging.debug("Downloading [%s] to [%s]...", url, destination)
     with open(destination, "wb") as file_handle:
         response = requests.get(url, stream=True)
         if not response.ok:
@@ -425,26 +410,29 @@ def get_mpr_file_from_dir(directory):
     mprs = [x for x in os.listdir(directory) if x.endswith(".mpr")]
     if len(mprs) == 1:
         return os.path.join(directory, mprs[0])
-    elif len(mprs) > 1:
+    if len(mprs) > 1:
         raise Exception("More than one .mpr file found, can not continue")
-    else:
-        return None
+    return None
 
 
 def set_up_launch_environment(deps_dir, profile_dir):
     profile_dirs = get_existing_deps_dirs(deps_dir, "profile.d", deps_dir)
-    for dir in profile_dirs:
-        sections = dir.split(os.sep)
+    for directory in profile_dirs:
+        sections = directory.split(os.sep)
         if len(sections) < 2:
             raise Exception("Invalid dependencies directory")
 
         deps_idx = sections[len(sections) - 2]
 
-        files = [f for f in os.listdir(dir) if os.path.isfile(os.path.join(dir, f))]
+        files = [
+            f
+            for f in os.listdir(directory)
+            if os.path.isfile(os.path.join(directory, f))  # noqa: line-too-long
+        ]
 
-        for file in files:
-            src = os.path.join(dir, file)
-            dest = os.path.join(profile_dir, deps_idx + "_" + file)
+        for f in files:
+            src = os.path.join(directory, f)
+            dest = os.path.join(profile_dir, deps_idx + "_" + f)
             shutil.copyfile(src, dest)
 
 
@@ -454,9 +442,9 @@ def get_existing_deps_dirs(deps_dir, sub_dir, prefix):
     ]
     existing_dirs = []
 
-    for file in files:
-        filesystem_dir = os.path.join(deps_dir, file, sub_dir)
-        dir_to_join = os.path.join(prefix, file, sub_dir)
+    for f in files:
+        filesystem_dir = os.path.join(deps_dir, f, sub_dir)
+        dir_to_join = os.path.join(prefix, f, sub_dir)
 
         if os.path.exists(filesystem_dir):
             existing_dirs.append(dir_to_join)
@@ -467,8 +455,8 @@ def get_existing_deps_dirs(deps_dir, sub_dir, prefix):
 def lazy_remove_file(filename):
     try:
         os.remove(filename)
-    except OSError as e:
-        if e.errno != errno.ENOENT:
+    except OSError as exc:
+        if exc.errno != errno.ENOENT:
             raise
 
 
@@ -529,7 +517,7 @@ def get_tags():
             result[kv[0]] = kv[1]
         else:
             logging.warning(
-                "Skipping tag [{}] from TAGS: not in key:value format".format(kv[0])
+                "Skipping tag [%s] from TAGS: not in key:value format", kv[0]
             )
     return result
 
@@ -553,7 +541,7 @@ def set_executable(path_or_glob):
         files = glob.glob(path_or_glob)
     for f in files:
         if not os.access(f, os.X_OK):
-            logging.debug("Setting executable permissions for [{}]...".format(f))
+            logging.debug("Setting executable permissions for [%s]...", f)
             try:
                 os.chmod(
                     f,
@@ -561,10 +549,10 @@ def set_executable(path_or_glob):
                 )
             except PermissionError as err:
                 logging.exception(
-                    "Cannot set executable permissions for [{}]".format(f), err
+                    "Cannot set executable permissions for [%s]: %s", f, err
                 )
         else:
-            logging.debug("[{}] is already executable, skipping".format(f))
+            logging.debug("[%s] is already executable, skipping", f)
 
 
 # m2ee-tools utility functions for manipulating m2ee-tools and runtime configuration
@@ -580,8 +568,8 @@ M2EE_TOOLS_CUSTOM_ENV_KEY = "custom_environment"
 def _is_sequence_or_mapping(value):
     if isinstance(value, str):
         return False
-    return isinstance(value, collections.Sequence) or isinstance(
-        value, collections.Mapping
+    return isinstance(value, collections.abc.Sequence) or isinstance(
+        value, collections.abc.Mapping
     )
 
 
@@ -596,7 +584,7 @@ def _upsert_config(config, key, value, overwrite=False, append=False):
             if append and type(config[key]) == type(value):
                 if isinstance(value, list):
                     config[key].extend(value)
-                elif isinstance(value, set) or isinstance(value, dict):
+                elif isinstance(value, (dict, set)):
                     if overwrite:
                         # New config value = old config value + value
                         config[key].update(value)
@@ -770,12 +758,12 @@ if __name__ == "__main__":
     @cli.command(help="Lists managed external dependencies")
     @click.pass_context
     def list_external_dependencies(ctx):
-        verbose = ctx.obj["verbose"]
+        ctx.obj["verbose"]
         for key in _get_dependencies(PROJECT_ROOT_PATH).keys():
             dependency = get_dependency(key)
             if DEPENDENCY_MANAGED_KEY not in dependency or (
                 DEPENDENCY_MANAGED_KEY in dependency
-                and dependency[DEPENDENCY_MANAGED_KEY] == True
+                and dependency[DEPENDENCY_MANAGED_KEY] is True
             ):
                 click.echo(_get_dependency_artifact_url(dependency))
 
@@ -787,12 +775,12 @@ if __name__ == "__main__":
     def generate_software_bom(ctx):
         import uuid
 
-        verbose = ctx.obj["verbose"]
+        ctx.obj["verbose"]
         # CycloneDX top fields
         result = {
             "bomFormat": "CycloneDX",
             "specVersion": "1.4",
-            "serialNumber": "urn:uuid:%s" % uuid.uuid1(),
+            "serialNumber": f"urn:uuid:{uuid.uuid1()}",
             "version": 1,
         }
         components = []
@@ -800,7 +788,7 @@ if __name__ == "__main__":
             dependency = get_dependency(key)
             if DEPENDENCY_MANAGED_KEY not in dependency or (
                 DEPENDENCY_MANAGED_KEY in dependency
-                and dependency[DEPENDENCY_MANAGED_KEY] == True
+                and dependency[DEPENDENCY_MANAGED_KEY] is True
             ):
                 # Standard fields
                 component = {
@@ -816,11 +804,15 @@ if __name__ == "__main__":
                         **{"publisher": dependency["vendor"]},
                     }
                 # Identifier (CPE, PURL) fields
-                for id in ["cpe", "purl"]:
-                    if id in dependency:
+                for identifier in ["cpe", "purl"]:
+                    if identifier in dependency:
                         component = {
                             **component,
-                            **{id: _render(dependency, dependency, [id])[id]},
+                            **{
+                                identifier: _render(
+                                    dependency, dependency, [identifier]
+                                )[identifier]
+                            },
                         }
                 # BOM prefixed fields
                 for bom_key in [x for x in dependency.keys() if x.startswith("bom_")]:

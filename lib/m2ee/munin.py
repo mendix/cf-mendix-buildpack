@@ -7,7 +7,6 @@
 
 import itertools
 import os
-import string
 import warnings
 
 from m2ee.log import logger
@@ -20,7 +19,7 @@ try:
 except ImportError:
     try:
         import simplejson as json
-    except ImportError as ie:
+    except ImportError:
         logger.critical(
             "Failed to import json as well as simplejson. If "
             "using python 2.5, you need to provide the simplejson "
@@ -140,7 +139,7 @@ def _get_jre_major_version_from_version_string(version_string):
 
 
 def _guess_java_version(m2ee_response, runtime_version, m2ee_stats):
-    # type: ("lib.m2ee.client.M2EEResponse", "lib.m2ee.version.MXVersion", dict) -> "Optional[int]"
+    # type: ("lib.m2ee.client.M2EEResponse", "lib.m2ee.version.MXVersion", dict) -> "Optional[int]"  # noqa: line-too-long
     """ "This internal function has a more unit-testable API than
     `guess_java_version`, which enables us to preserve compatibility, whilst
     simultaneously adding unit testing.
@@ -660,7 +659,8 @@ def print_cache_config(name, stats):
     print("graph_title %s - Object Cache" % name)
     print("graph_category Mendix")
     print(
-        "graph_info This graph shows the total amount of objects in the runtime object cache"
+        "graph_info This graph shows the total amount of objects "
+        "in the runtime object cache"
     )
     print("total.label Objects in cache")
     print("total.draw LINE1")

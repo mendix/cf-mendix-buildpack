@@ -76,10 +76,10 @@ class TestDataBrokerBusinessEvents(unittest.TestCase):
         }}
     """
 
-    kafka_shared_vcap_with_null_creds = f"""
-        {{
+    kafka_shared_vcap_with_null_creds = """
+        {
             "kafka-testfree": [
-                {{
+                {
                     "binding_guid": "8ee827cd-d718-446c-b956-224845d7faf4",
                     "binding_name": null,
                     "credentials": null,
@@ -96,9 +96,9 @@ class TestDataBrokerBusinessEvents(unittest.TestCase):
                     "Kafka"
                     ],
                     "volume_mounts": []
-                }}
+                }
             ]
-        }}
+        }
     """
 
     expected_client_config = """
@@ -196,7 +196,7 @@ class TestDataBrokerBusinessEvents(unittest.TestCase):
     def test_business_events_config_with_empty_creds(self):
         os.environ["VCAP_SERVICES"] = self.kafka_shared_vcap_with_null_creds
         # make sure any exceptions in the business events does not cause any errors
-        business_events_cfg = business_events._get_config(
+        business_events._get_config(
             util.get_vcap_services_data(), self.module_constants_with_metrics
         )
 
@@ -222,5 +222,5 @@ class TestDataBrokerBusinessEvents(unittest.TestCase):
         business_events._configure_business_events_metrics(
             be_config, self.module_constants_without_metrics
         )
-        assert not "BusinessEvents.GenerateMetrics" in be_config
-        assert not "BusinessEvents.EnableHeartbeat" in be_config
+        assert "BusinessEvents.GenerateMetrics" not in be_config
+        assert "BusinessEvents.EnableHeartbeat" not in be_config

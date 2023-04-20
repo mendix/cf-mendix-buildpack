@@ -1,8 +1,8 @@
 import logging
 import os
 import subprocess
-from distutils.util import strtobool
 from buildpack import util
+from lib.m2ee.util import strtobool
 
 
 APPDYNAMICS_INSTALL_PATH = os.path.abspath(".local/appdynamics/")
@@ -15,7 +15,7 @@ APPDYNAMICS_MACHINE_AGENT_PATH = os.path.join(
     "machine-agent",
 )
 
-CF_APPLICATION_INDEX = os.getenv("CF_INSTANCE_INDEX", default=0)
+CF_APPLICATION_INDEX = int(os.getenv("CF_INSTANCE_INDEX", default="0"))
 CF_APPLICATION_NAME = util.get_vcap_data()["application_name"]
 
 APPDYNAMICS_ENV_VARS = {
@@ -23,10 +23,7 @@ APPDYNAMICS_ENV_VARS = {
         "APPDYNAMICS_AGENT_APPLICATION_NAME",
         default=util.get_app_from_domain(),
     ),
-    "APPDYNAMICS_AGENT_NODE_NAME": "{}-{}".format(
-        os.getenv("APPDYNAMICS_AGENT_NODE_NAME", default="node"),
-        CF_APPLICATION_INDEX,
-    ),
+    "APPDYNAMICS_AGENT_NODE_NAME": f"{os.getenv('APPDYNAMICS_AGENT_NODE_NAME', default='node')}-{CF_APPLICATION_INDEX}",  # noqa: line-too-long
     "APPDYNAMICS_AGENT_TIER_NAME": os.getenv(
         "APPDYNAMICS_AGENT_TIER_NAME", default=CF_APPLICATION_NAME
     ),
@@ -36,10 +33,7 @@ APPDYNAMICS_ENV_VARS = {
     "APPDYNAMICS_CONTROLLER_SSL_ENABLED": os.getenv(
         "APPDYNAMICS_CONTROLLER_SSL_ENABLED", default="true"
     ),
-    "APPDYNAMICS_AGENT_UNIQUE_HOST_ID": "{}-{}".format(
-        os.getenv("APPDYNAMICS_AGENT_UNIQUE_HOST_ID", default=CF_APPLICATION_NAME),
-        CF_APPLICATION_INDEX,
-    ),
+    "APPDYNAMICS_AGENT_UNIQUE_HOST_ID": f"{os.getenv('APPDYNAMICS_AGENT_UNIQUE_HOST_ID', default=CF_APPLICATION_NAME),}-{CF_APPLICATION_INDEX}",  # noqa: line-too-long
 }
 
 
@@ -84,8 +78,8 @@ def update_config(m2ee):
     util.upsert_javaopts(
         m2ee,
         [
-            "-javaagent:{path}".format(path=APPDYNAMICS_JAVAAGENT_PATH),
-            "-Dappagent.install.dir={path}".format(path=APPDYNAMICS_INSTALL_PATH),
+            f"-javaagent:{APPDYNAMICS_JAVAAGENT_PATH}",
+            f"-Dappagent.install.dir={APPDYNAMICS_INSTALL_PATH}",
         ],
     )
 
@@ -139,8 +133,7 @@ def appdynamics_used():
 
     if len(diff_envs) == 0:
         return True
-    else:
-        return False
+    return False
 
 
 def machine_agent_enabled():

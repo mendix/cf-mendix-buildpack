@@ -91,13 +91,11 @@ fixup:
 
 .PHONY: test_unit
 test_unit:
-	export PYTHONPATH=.:lib/
-	nosetests --verbosity=3 --nocapture --with-timer --timer-no-color tests/unit/test_*.py
+	pytest -vvv --capture=no --durations=0 --color=no tests/unit/test_*.py
 
 .PHONY: test_integration
 test_integration:
-	export PYTHONPATH=.:lib/
-	nosetests --verbosity=3 --nocapture --processes=${TEST_PROCESSES} --process-timeout=3600 --with-timer --timer-no-color ${TEST_FILES}
+	pytest -vvv --capture=no --timeout=3600 --color=no ${TEST_FILES}
 
 .PHONY: test
 test: test_unit test_integration

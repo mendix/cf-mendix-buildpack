@@ -13,7 +13,7 @@ class TestCaseCustomHeaders(basetest.BaseTest):
                     {
                         "X-Permitted-Cross-Domain-Policies": "by-content-type",
                         "Access-Control-Allow-Origin": "https://this.is.mydomain.nl",
-                        "X-XSS-Protection": "1; report=https://domainwithnewstyle.tld.consultancy",
+                        "X-XSS-Protection": "1; report=https://domainwithnewstyle.tld.consultancy",  # noqa: line-too-long
                         "X-Content-Type-Options": "nosniff",
                     }
                 ),

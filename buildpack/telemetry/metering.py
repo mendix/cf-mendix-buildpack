@@ -1,4 +1,3 @@
-from lib2to3.pgen2.token import NAME
 import logging
 import os
 import json
@@ -9,7 +8,7 @@ from buildpack.infrastructure import database
 
 NAMESPACE = "metering"
 BINARY = "metering-sidecar"
-DEPENDENCY = "%s.sidecar" % NAMESPACE
+DEPENDENCY = f"{NAMESPACE}.sidecar"
 SIDECAR_DIR = os.path.join("/home/vcap/app", NAMESPACE)
 SIDECAR_CONFIG_FILE = "conf.json"
 
@@ -35,8 +34,8 @@ def _get_project_id(file_path):
             return data["ProjectID"]
     except IOError as ioerror:
         raise Exception(
-            "Error while trying to get the ProjectID. Reason: '{}'".format(ioerror)
-        )
+            f"Error while trying to get the ProjectID. Reason: '{ioerror}'"
+        ) from ioerror
 
 
 def write_file(output_file_path, content):
@@ -48,10 +47,8 @@ def write_file(output_file_path, content):
                 json.dump(content, f)
         except Exception as exception:
             raise Exception(
-                "Error while trying to write the configuration to a file. Reason: '{}'".format(
-                    exception
-                )
-            )
+                f"Error while trying to write the configuration to a file. Reason: '{exception}'"  # noqa: line-too-long
+            ) from exception
 
 
 def _set_up_environment():
@@ -69,11 +66,11 @@ def _set_up_environment():
         ]
     dbconfig = database.get_config()
     if dbconfig:
-        os.environ["MXUMS_DB_CONNECTION_URL"] = "postgres://{}:{}@{}/{}".format(
-            dbconfig["DatabaseUserName"],
-            dbconfig["DatabasePassword"],
-            dbconfig["DatabaseHost"],
-            dbconfig["DatabaseName"],
+        os.environ["MXUMS_DB_CONNECTION_URL"] = (
+            f"postgres://{dbconfig['DatabaseUserName']}:"
+            f"{dbconfig['DatabasePassword']}@"
+            f"{dbconfig['DatabaseHost']}/"
+            f"{dbconfig['DatabaseName']}"
         )
     project_id = _get_project_id(os.path.join(SIDECAR_DIR, SIDECAR_CONFIG_FILE))
     os.environ["MXUMS_PROJECT_ID"] = project_id
@@ -112,7 +109,8 @@ def stage(buildpack_path, build_path, cache_dir):
             logging.info("Usage metering is NOT enabled")
     except Exception:
         logging.info(
-            "Encountered an exception while staging the metering sidecar. This is nothing to worry about."
+            "Encountered an exception while staging the metering sidecar. "
+            "This is nothing to worry about."
         )
 
 
@@ -126,5 +124,6 @@ def run():
             )
     except Exception:
         logging.info(
-            "Encountered an exception while starting the metering sidecar. This is nothing to worry about."
+            "Encountered an exception while starting the metering sidecar."
+            "This is nothing to worry about."
         )

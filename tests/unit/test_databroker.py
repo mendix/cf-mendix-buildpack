@@ -192,8 +192,10 @@ class TestDataBrokerConfigs(unittest.TestCase):
         # default
         assert streams.get_pdr_stream_version() == "0.23.0-9"
 
-    # There are two configs for streams, one is topology.conf another is azkarra.conf
-    # Make sure specifice fields would be replaced with correct value based on template file
+    # There are two configs for streams
+    # one is topology.conf another is azkarra.conf
+    # Make sure specifice fields would be replaced
+    # with correct value based on template file
     def test_stream_config(self):
 
         self._check_folder_exist(STREAM_SIDECAR_DIR)

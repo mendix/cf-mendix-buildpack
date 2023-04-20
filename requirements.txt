@@ -20,6 +20,8 @@ cryptography==39.0.1
     # via -r requirements.in
 dataclasses==0.8
     # via omegaconf
+distro==1.8.0
+    # via -r requirements.in
 httplib2==0.21.0
     # via -r requirements.in
 idna==2.8

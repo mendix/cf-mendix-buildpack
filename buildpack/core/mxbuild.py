@@ -8,7 +8,6 @@ import zipfile
 
 from buildpack import util
 from buildpack.core import java, mono, runtime
-from buildpack.util import NotFoundException
 
 BUILD_ERRORS_JSON = "/tmp/builderrors.json"
 
@@ -50,12 +49,12 @@ def build_from_source(
         os.path.join(mxbuild_location, "modeler/mxbuild.exe"),
         "--target=package",
         "--output=/tmp/model.mda",
-        "--java-home=%s" % jdk_location,
-        "--java-exe-path=%s" % os.path.join(jdk_location, "bin/java"),
+        f"--java-home={jdk_location}",
+        f"--java-exe-path={os.path.join(jdk_location, 'bin/java')}",
     ]
 
     if runtime_version >= 6.4 or os.environ.get("FORCE_WRITE_BUILD_ERRORS"):
-        args.append("--write-errors=%s" % BUILD_ERRORS_JSON)
+        args.append(f"--write-errors={BUILD_ERRORS_JSON}")
         logging.debug("Will write build errors to %s", BUILD_ERRORS_JSON)
 
     if os.environ.get("FORCED_MXBUILD_URL"):
@@ -68,7 +67,7 @@ def build_from_source(
         subprocess.check_call(args, env=mono_env)
     except subprocess.CalledProcessError as ex:
         _log_buildstatus_errors(BUILD_ERRORS_JSON)
-        raise RuntimeError(ex)
+        raise RuntimeError(ex) from ex
 
     for file_name in os.listdir(build_path):
         filepath = os.path.join(build_path, file_name)
@@ -78,14 +77,12 @@ def build_from_source(
             else:
                 os.unlink(filepath)
 
-    zf = zipfile.ZipFile("/tmp/model.mda")
-    try:
-        zf.extractall(build_path)
-    finally:
-        zf.close()
+    with zipfile.ZipFile("/tmp/model.mda") as zip_file:
+        zip_file.extractall(build_path)
 
     try:
-        with open(os.path.join(build_path, ".sourcepush"), "w") as dsp:
+        sourcepush = os.path.join(build_path, ".sourcepush")
+        with open(sourcepush, "w", encoding="UTF-8") as dsp:
             dsp.write("sourcepush")
     except OSError as ex:
         logging.warning("Could not write source push indicator: %s", str(ex))

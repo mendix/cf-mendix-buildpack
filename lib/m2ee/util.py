@@ -198,3 +198,19 @@ def download_and_unpack_runtime(url, path):
         logger.error("Could not download and unpack runtime:")
         logger.error(stderr)
         return False
+
+
+# Replacement for deprecated distutils.util.strtobool function
+# And by replacement I mean a direct copy
+def strtobool(val):
+    """Convert a string representation of truth to true (1) or false (0).
+    True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
+    are 'n', 'no', 'f', 'false', 'off', and '0'.  Raises ValueError if
+    'val' is anything else.
+    """
+    val = val.lower()
+    if val in ("y", "yes", "t", "true", "on", "1"):
+        return 1
+    if val in ("n", "no", "f", "false", "off", "0"):
+        return 0
+    raise ValueError(f"invalid truth value {val}")

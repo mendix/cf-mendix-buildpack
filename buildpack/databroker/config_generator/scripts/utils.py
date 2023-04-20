@@ -1,5 +1,5 @@
-from jinja2 import Environment, FileSystemLoader
 from functools import reduce
+from jinja2 import Environment, FileSystemLoader
 from omegaconf import OmegaConf
 from buildpack.databroker.config_generator.scripts.constants import (
     METADATA_CONSTANTS,
@@ -15,10 +15,9 @@ def write_file(output_file_path, content):
                 f.write(str(content))
         except Exception as exception:
             raise Exception(
-                "Error while trying to write the configuration to a file. Reason: '{}'".format(
-                    exception
-                )
-            )
+                "Error while trying to write the configuration to a file. "
+                f"Reason: '{exception}'"
+            ) from exception
 
 
 def template_engine_instance(
@@ -29,15 +28,14 @@ def template_engine_instance(
 
 def convert_dot_field_to_dict(field):
     output = {}
-    if type(field) is dict:
+    if isinstance(field, dict):
         for key, value in field.items():
             path = key.split(".")
             target = reduce(lambda d, k: d.setdefault(k, {}), path[:-1], output)
             target[path[-1]] = convert_dot_field_to_dict(value)
         return output
-    else:
-        return field
+    return field
 
 
 def get_value_for_constant(conf, key):
-    return OmegaConf.select(conf, "{}.{}".format(METADATA_CONSTANTS, key))
+    return OmegaConf.select(conf, f"{METADATA_CONSTANTS}.{key}")

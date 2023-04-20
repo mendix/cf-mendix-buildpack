@@ -252,8 +252,8 @@ class UrlDatabaseConfiguration(DatabaseConfiguration):
 
     def init(self):
         patterns = [
-            r"(?P<type>[a-zA-Z0-9]+)://(?P<user>[^:]+):(?P<password>[^@]+)@(?P<host>[^/]+)/(?P<dbname>[^?]*)(?P<extra>\?.*)?",  # noqa: E501
-            r"jdbc:(?P<type>[a-zA-Z0-9]+)://(?P<host>[^;]+);database=(?P<dbname>[^;]*);user=(?P<user>[^;]+);password=(?P<password>.*)$",  # noqa: E501
+            r"(?P<type>[a-zA-Z0-9]+)://(?P<user>[^:]+):(?P<password>[^@]+)@(?P<host>[^/]+)/(?P<dbname>[^?]*)(?P<extra>\?.*)?",  # noqa: line-too-long
+            r"jdbc:(?P<type>[a-zA-Z0-9]+)://(?P<host>[^;]+);database=(?P<dbname>[^;]*);user=(?P<user>[^;]+);password=(?P<password>.*)$",  # noqa: line-too-long
         ]
 
         supported_databases = {
@@ -273,7 +273,7 @@ class UrlDatabaseConfiguration(DatabaseConfiguration):
 
         database_type_input = match.group("type")
         if database_type_input not in supported_databases:
-            raise Exception("Unknown database type: {}".format(database_type_input))
+            raise Exception(f"Unknown database type: {database_type_input}")
         database_type = supported_databases[database_type_input]
 
         config = {
@@ -395,15 +395,14 @@ class UrlDatabaseConfiguration(DatabaseConfiguration):
             return url
 
         if len(jdbc_params) > 0:
-            extra_jdbc_params = "?{}".format(urlencode(jdbc_params, True))
+            extra_jdbc_params = f"?{urlencode(jdbc_params, True)}"
         else:
             extra_jdbc_params = ""
 
         if config["DatabaseType"] == "PostgreSQL":
-            jdbc_url = "jdbc:postgresql://{}/{}{}".format(
-                config["DatabaseHost"],
-                config["DatabaseName"],
-                extra_jdbc_params,
+            jdbc_url = (
+                f"jdbc:postgresql://{config['DatabaseHost']}"
+                f"/{config['DatabaseName']}{extra_jdbc_params}"
             )
             return jdbc_url
 
@@ -466,7 +465,7 @@ class SapHanaDatabaseConfiguration(DatabaseConfiguration):
     def get_database_jdbc_url(self):
         """Return the database jdbc url for the M2EE configuration"""
         url = self.credentials.get("url", "")
-        pattern = r"jdbc:sap://(?P<host>[^:]+):(?P<port>[0-9]+)/?(?P<q>\?(?P<params>.*))?$"  # noqa:E501
+        pattern = r"jdbc:sap://(?P<host>[^:]+):(?P<port>[0-9]+)/?(?P<q>\?(?P<params>.*))?$"  # noqa:line-too-long
         match = re.search(pattern, url)
         if match is None:
             logging.error("Unable to parse Hana JDBC url string for parameters")
@@ -482,7 +481,7 @@ class SapHanaDatabaseConfiguration(DatabaseConfiguration):
         parameters.update(self.get_override_connection_params())
 
         if q is not None and len(parameters) > 0:
-            parameter_str = "?{}".format(urlencode(parameters, True))
+            parameter_str = f"?{urlencode(parameters, True)}"
             url = url.replace(q, parameter_str)
 
         return url

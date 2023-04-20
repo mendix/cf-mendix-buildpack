@@ -28,7 +28,8 @@ else:
     PROJECT_ROOT_PATH = os.getcwd()
 sys.path.append(PROJECT_ROOT_PATH)
 
-from buildpack import util
+# TODO Understand if this needs to be here or can be moved to the top of file
+from buildpack import util  # noqa: E402
 
 
 class CfLocalRunner(metaclass=abc.ABCMeta):
@@ -53,7 +54,7 @@ class CfLocalRunner(metaclass=abc.ABCMeta):
             self._container_port = self._get_container_host_port(
                 self._container_id, 8080
             )
-        except:
+        except:  # noqa: E722
             self._container_port = None
 
     def stage(
@@ -345,14 +346,16 @@ class CfLocalRunner(metaclass=abc.ABCMeta):
             > 0
         ):
             raise RuntimeError(
-                "cf-local not found. Please ensure that you have installed the CF CLI and the cf-local plugin."
+                "cf-local not found. "
+                "Please ensure that you have installed the CF CLI "
+                "and the cf-local plugin."
             )
 
     def _bytes(self, s):
         return s.encode("utf-8")
 
     def _httprequest(self, method, path=None, **kwargs):
-        uri = "http://localhost:{}".format(self._container_port)
+        uri = f"http://localhost:{self._container_port}"
         if path:
             uri += path
         return requests.request(method, uri, **kwargs)
@@ -534,9 +537,8 @@ def _get_env_variable(env_option):
     result = env_option.rsplit("=")
     if len(result) != 2:
         raise ValueError(
-            "Invalid environment option {}. Must be formatted KEY=VALUE or be a valid file.".format(
-                env_option
-            )
+            f"Invalid environment option {env_option}. "
+            "Must be formatted KEY=VALUE or be a valid file."
         )
     return result
 
@@ -578,7 +580,8 @@ def _parse_env_options(env_options):
     "-e",
     "--env",
     multiple=True,
-    help="Sets an environment variable (KEY=VALUE) for the application. Providing a file with environment variables and multiple options are allowed.",
+    help="Sets an environment variable (KEY=VALUE) for the application. "
+    "Providing a file with environment variables and multiple options are allowed.",
 )
 @click.option(
     "--use-snapshot",
