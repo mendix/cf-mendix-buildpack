@@ -180,16 +180,17 @@ def _get_dependency_file_contents(file):
             logging.error("Cannot parse dependency configuration file: %s", exc)
             return yaml.safe_load({})
 
-
 # Returns a dict of dependencies from the dependency configuration file
 # The dict key is composed of the key names of the YAML file, separated by a "."
 def _get_dependencies(buildpack_dir):
-    dependencies = _get_dependency_file_contents(
-        os.path.join(buildpack_dir, DEPENDENCY_FILE)
-    )
-    if dependencies:
-        result = _flatten(__get_dependencies(dependencies["dependencies"]))
-        return {_get_dependency_name(x): x for x in result}
+    if os.path.exists(DEPENDENCY_FILE):
+        dependencies = _get_dependency_file_contents(
+            os.path.join(buildpack_dir, DEPENDENCY_FILE)
+        )
+        if dependencies:
+            result = _flatten(__get_dependencies(dependencies["dependencies"]))
+            return {_get_dependency_name(x): x for x in result}
+        return {}    
     return {}
 
 
