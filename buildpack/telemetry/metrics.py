@@ -352,8 +352,8 @@ class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
                 else:
                     health["health"] = translation["critical"]
                     health["diagnosis"] = (
-                        "Health check failed unexpectedly: %s",
-                        health_response.get_error(),
+                        "Health check failed unexpectedly: "
+                        f"{health_response.get_error()}"
                     )
             else:
                 feedback = health_response.get_feedback()
@@ -365,7 +365,7 @@ class BaseMetricsEmitterThread(threading.Thread, metaclass=ABCMeta):
         except Exception as exc:
             logging.warning("Metrics: Failed to get health status %s", str(exc))
             health["health"] = translation["critical"]
-            health["diagnosis"] = "Health check failed unexpectedly: %s", exc
+            health["diagnosis"] = f"Health check failed unexpectedly: {exc}"
         return stats
 
     @staticmethod
