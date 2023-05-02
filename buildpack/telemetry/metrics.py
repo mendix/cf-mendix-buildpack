@@ -64,7 +64,7 @@ STATSD_REGISTRY = {
         {
             "type": "nameStartsWith",
             "result": "accept",
-            "values": ["jvm.gc.max.data.size", "mx.runtime.stats.connectionbus.selects"],
+            "values": ["jvm.gc.max.data.size", "mx.runtime.stats.connectionbus.selects", "jvm.memory"],
         },
         # Filter out irrelevant metrics to reduce
         # the payload size passed to TSS
