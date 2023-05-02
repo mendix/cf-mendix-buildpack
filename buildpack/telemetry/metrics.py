@@ -58,6 +58,23 @@ INFLUX_REGISTRY = {
 STATSD_REGISTRY = {
     "type": "statsd",
     "settings": {"port": datadog.get_statsd_port()},
+    "filters": [
+        # Login metrics needs to be enabled explicitly as it's disabled
+        # by default
+        {
+            "type": "nameStartsWith",
+            "result": "accept",
+            "values": ["jvm.gc.max.data.size"],
+        },
+        # Filter out irrelevant metrics to reduce
+        # the payload size passed to TSS
+        # https://docs.mendix.com/refguide/metrics#filters
+        {
+            "type": "nameStartsWith",
+            "result": "deny",
+            "values": ["jvm"],
+        },
+    ],
 }
 
 # For freeapps we push only the session & login metrics
