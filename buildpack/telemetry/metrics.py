@@ -72,7 +72,7 @@ STATSD_REGISTRY = {
         {
             "type": "nameStartsWith",
             "result": "deny",
-            "values": ["jvm"],
+            "values": ["jvm", "mx.runtime.stats.connectionbus"],
         },
     ],
 }
