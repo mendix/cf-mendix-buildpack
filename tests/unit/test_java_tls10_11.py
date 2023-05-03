@@ -90,7 +90,7 @@ jdk.tls.disabledAlgorithms=SSLv3, RC4, DES, MD5withRSA
     MAJOR_VERSION_TEST_CASES = [
         ("8", 8),
         ("1.8.0", 8),
-        ("8u332", 8),
+        ("8u372", 8),
         ("11", 11),
         ("11.0.15", 11),
         ("7", ""),
