@@ -49,8 +49,8 @@ dependencies:
         - jdk
       vendor: Adoptium
       version:
-        - "8": 8u332
-        - "11": 11.0.16
+        - "8": 8u372
+        - "11": 11.0.18
   logs:
     mendix-logfilter:
       artifact: logs/mendix-logfilter-{{version}}.tar.gz
