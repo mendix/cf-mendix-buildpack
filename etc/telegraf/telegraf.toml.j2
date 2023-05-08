@@ -347,6 +347,8 @@
   app_name = "{{ app_name }}"
 
 [[outputs.http]]
+  alias = "mx-trends-metrics"
+
   ## URL is the address to send metrics to
   url = "{{ trends_storage_url }}"
 
@@ -379,8 +381,11 @@
   micrometer_metrics = ["true"]
 
 [[outputs.http]]
-  # This http output is ONLY to send all the
-  #  `mx_runtime_user_login` metrics as a single payload
+  alias = "datalake-metrics"
+
+  # This http output is ONLY to send all the datalake metrics
+  # as a single payload. For instance;
+  #  `mx_runtime_user_login`
   namepass = ["mx_runtime_user_login"]
 
   ## URL is the address to send metrics to
@@ -388,6 +393,12 @@
 
   ## Timeout for HTTP message
   timeout = "10s"
+
+  # Higher flush interval and batch size, so that we
+  # don't bombard TFR and DataLake with too many requests, but
+  # few requests with bigger payloads
+  metric_batch_size = 3000
+  flush_interval = "30s"
 
   ## HTTP method, one of: "POST" or "PUT"
   method = "POST"
