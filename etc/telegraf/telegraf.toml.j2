@@ -347,11 +347,58 @@
   app_name = "{{ app_name }}"
 
 [[outputs.http]]
+  alias = "mx-trends-metrics"
+
   ## URL is the address to send metrics to
   url = "{{ trends_storage_url }}"
 
   ## Timeout for HTTP message
   timeout = "10s"
+
+  ## HTTP method, one of: "POST" or "PUT"
+  method = "POST"
+
+  ## Data format to output.
+  data_format = "json"
+  json_timestamp_units = "1ns"
+
+  # tagexlude drops any non-relevant tags
+  tagexclude = ["host"]
+
+  # Drop `mx_runtime_user_login` metrics
+  # We drop them as we don't want it to be part of
+  # the payload which is used for Cloud graphs
+  namedrop = ["mx_runtime_user_login"]
+
+  ## Additional HTTP headers
+  [outputs.http.headers]
+  Content-Type = "application/json"
+  # custom header field
+  Micrometer-Metrics = "true"
+
+  # Pass only those metrics that has below tag set
+  [outputs.http.tagpass]
+  micrometer_metrics = ["true"]
+
+[[outputs.http]]
+  alias = "datalake-metrics"
+
+  # This http output is ONLY to send all the datalake metrics
+  # as a single payload. For instance;
+  #  `mx_runtime_user_login`
+  namepass = ["mx_runtime_user_login"]
+
+  ## URL is the address to send metrics to
+  url = "{{ trends_storage_url }}"
+
+  ## Timeout for HTTP message
+  timeout = "10s"
+
+  # Higher flush interval and batch size, so that we
+  # don't bombard TFR and DataLake with too many requests, but
+  # few requests with bigger payloads
+  metric_batch_size = 3000
+  flush_interval = "30s"
 
   ## HTTP method, one of: "POST" or "PUT"
   method = "POST"
@@ -398,6 +445,11 @@
 
   # tagexlude drops any non-relevant tags
   tagexclude = ["host"]
+
+  # Drop `mx_runtime_user_login` metrics
+  # We drop them as we don't want it to be part of
+  # the payload which is used for Cloud graphs
+  namedrop = ["mx_runtime_user_login"]
 
   # Pass only those metrics that has below tag set
   [outputs.file.tagpass]

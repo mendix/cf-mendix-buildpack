@@ -93,7 +93,7 @@ class TestCaseTelegraf(basetest.BaseTest):
 
         # Ensure the trends-storage-url is set
         output = self.run_on_container(
-            "cat {} | grep -A2 outputs.http".format(telegraf_config_path)
+            "cat {} | grep -A5 outputs.http".format(telegraf_config_path)
         )
         assert output is not None
         assert str(output).find("some-fake-url") >= 0
