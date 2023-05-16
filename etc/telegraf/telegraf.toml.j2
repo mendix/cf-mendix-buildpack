@@ -28,18 +28,28 @@
 [[inputs.exec]]
     commands = ["echo {{ is_enabled }}"]
     name_override = "integration_usage"
-    # timeout = "5s"
-    interval = "20s" # for tests
+    interval = "6h"
     data_format = "value"
     data_type = "integer"
     [inputs.exec.tags]
         app_name = "{{ app_name }}"
         instance_index = "{{ cf_instance_index }}"
-        runtime_version = "{{ runtime_version }}"
         integration_name = "{{ integration_name }}"
         internal_metrics = "true"
-
 {% endfor %}
+
+# Separate metric for runtime_version
+[[inputs.exec]]
+    commands = ["echo {{ runtime_version }}"]
+    name_override = "runtime_version"
+    interval = "24h"
+    data_format = "value"
+    data_type = "string"
+    [inputs.exec.tags]
+        app_name = "{{ app_name }}"
+        instance_index = "{{ cf_instance_index }}"
+        internal_metrics = "true"
+
 
 {% if statsd_port and not datadog_api_key %}
 # StatsD input for Mendix Java Agent
@@ -333,7 +343,7 @@
 # The API token needs "Ingest metrics" scope permission.
     api_token = "{{ dynatrace_config['token'] }}"
 #
-# Ignore any metric with micrometer_metrics tag, since they meant for our TSS/TFR metrics path
+# Ignore any metric with micrometer_metrics or internal_metrics tags, since they meant for our TSS/TFR metrics path
     [outputs.dynatrace.tagdrop]
         micrometer_metrics = ["true"]
         internal_metrics = ["true"]
