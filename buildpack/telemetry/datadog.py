@@ -516,7 +516,7 @@ def _patch_run_datadog_script(script_dir):
         lines = file_handler.readlines()
         file_handler.seek(0)
         for line in lines:
-            if "stop_datadog &" in line:
+            if "monit_datadog &" in line:
                 file_handler.write(f"# {line}")
             else:
                 file_handler.write(line)
