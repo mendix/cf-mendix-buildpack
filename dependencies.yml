@@ -20,7 +20,7 @@ dependencies:
     buildpack:
       alias: cf-datadog-sidecar
       artifact: datadog/datadog-cloudfoundry-buildpack-{{ version }}.zip
-      version: 4.33.0
+      version: 4.37.0
     trace-agent:
       artifact: datadog/dd-java-agent-{{ version }}.jar
       version: 0.101.0
