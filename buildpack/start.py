@@ -65,7 +65,15 @@ def _kill_process_group():
             )
         except OSError as error:
             logging.debug(
-                "Failed to send [%s] to process group [%s]: %s",
+                "Failed to send [%s] to process group [%s]: (OSError) %s",
+                signum.name,
+                process_group,
+                error,
+            )
+        except SystemExit as error:
+            # Workaround for UPV4-2859 - https://github.com/python/cpython/issues/103512#issuecomment-1541021187
+            logging.debug(
+                "Failed to send [%s] to process group [%s]: (SystemExit) %s",
                 signum.name,
                 process_group,
                 error,
