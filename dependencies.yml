@@ -54,7 +54,7 @@ dependencies:
   logs:
     mendix-logfilter:
       artifact: logs/mendix-logfilter-{{version}}.tar.gz
-      version: 0.0.2
+      version: 0.0.3
   mendix:
     mx-agent:
       artifact: mx-agent/mx-agent-v{{ version }}.jar
