@@ -77,7 +77,7 @@ jobs:
         echo "deb https://packages.cloudfoundry.org/debian stable main" | sudo tee /etc/apt/sources.list.d/cloudfoundry-cli.list
         sudo apt-get update && sudo apt-get install -y cf-cli
         sudo curl -s https://download.mendix.com/Mendix-CA-G2.crt -o /usr/local/share/ca-certificates/ca.crt && sudo update-ca-certificates
-        cf install-plugin cflocal -f
+        cf install-plugin https://cdn.mendix.com/mx-buildpack/cflocal/cflocal-0.20.0-rc1-linux -f
     - name: Export hostname for use in tests
       run: |
         TEST_HOST=$(ip -4 addr show docker0 | grep -Po 'inet \K[\d.]+')
