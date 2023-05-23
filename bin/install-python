@@ -44,7 +44,7 @@ function setup_online(){
 
 function get_python_from_manifest() {
   buildpack_dir="$1"
-  python_dep_info=$(cat "$buildpack_dir/manifest.yml" | grep -A 3 "name: python" | grep "uri:" | awk '{print $2}' | cut -d'/' -f 6)
+  python_dep_info=$(cat "$buildpack_dir/dependencies-stage.yml" | grep -A 3 "name: python" | grep "uri:" | awk '{print $2}' | cut -d'/' -f 6)
   echo "$python_dep_info"
 }
 
