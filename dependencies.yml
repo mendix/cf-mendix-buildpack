@@ -84,7 +84,7 @@ dependencies:
   newrelic:
     agent:
       artifact: newrelic/newrelic-java-{{ version }}.zip
-      version: 6.2.1
+      version: 6.5.4
   nginx:
     artifact: nginx_{{ version }}_linux_x64_cflinuxfs3_{{ commit }}.tgz
     commit: f0918d6b
