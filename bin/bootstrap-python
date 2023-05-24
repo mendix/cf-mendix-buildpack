@@ -39,7 +39,12 @@ then
 fi
 
 echo " ---> Bootstrapping pip..."
-PIP_CMD="pip"
+if [ "$CF_STACK" == "cflinuxfs4" ]; then
+  PIP_CMD="pip3"
+else
+  PIP_CMD="pip"
+fi
+
 if ! [[ -x "$(command -v ${PIP_CMD})" ]]
 then
     # pip is not included on the root FS
@@ -55,6 +60,9 @@ then
     PIP_CMD="/home/vcap/.local/bin/pip"
 else
     # pip is bundled on the root FS
+    if [ "$CF_STACK" == "cflinuxfs4" ]; then
+      PIP_CMD="python3 $(dirname "$(command -v python3)")/pip3"
+    fi
     $PIP_CMD install --upgrade --user --no-warn-script-location pip setuptools wheel
 fi
 
