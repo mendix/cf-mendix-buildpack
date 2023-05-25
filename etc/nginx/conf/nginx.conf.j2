@@ -40,7 +40,7 @@ http {
     gzip_types text/plain text/css text/js text/xml text/javascript application/javascript application/x-javascript application/json application/xml application/xml+rss;
 
     tcp_nopush on;
-    keepalive_timeout 30;
+    keepalive_timeout {{ nginx_keepalive_timeout }};
     absolute_redirect off;
     server_tokens off;
 
