@@ -76,9 +76,8 @@ dependencies:
       bom_type: framework
       cpe: cpe:2.3:a:mono-project:mono:{{ version }}:*:*:*:*:*:*:*
       type:
-        - bionic
+        - jammy
       version:
-        - "3": 3.10.0
         - "4": 4.6.2.16
         - "5": 5.20.1.27
   newrelic:
