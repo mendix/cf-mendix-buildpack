@@ -18,7 +18,7 @@ from buildpack.infrastructure import database
 from lib.m2ee.util import strtobool
 from jinja2 import Template
 
-from . import datadog, metrics, mx_java_agent, appdynamics, dynatrace
+from . import datadog, metrics, mx_java_agent, appdynamics, dynatrace, splunk
 
 NAMESPACE = "telegraf"
 DEPENDENCY = f"{NAMESPACE}.agent"
@@ -218,6 +218,26 @@ def _fix_metrics_registries_config(m2ee):
     )
 
 
+def _get_integration_usages():
+    """
+    Collects usage information of third-party integrations.
+    We emit these information via telegraf for internal monitoring
+    """
+    integration_usages = {}
+    checker_methods = {
+        "datadog": datadog.is_enabled,
+        "dynatrace": dynatrace.is_telegraf_enabled,
+        "appdynamics": appdynamics.appdynamics_used,
+        "splunk": splunk.is_splunk_enabled,
+    }
+
+    for integration, is_enabled in checker_methods.items():
+        if is_enabled():
+            integration_usages[integration] = 1
+
+    return integration_usages
+
+
 def update_config(m2ee, app_name):
     runtime_version = runtime.get_runtime_version()
     if not is_enabled(runtime_version) or not _is_installed():
@@ -266,6 +286,8 @@ def update_config(m2ee, app_name):
         telegraf_fileout_enabled=strtobool(
             os.getenv("TELEGRAF_FILEOUT_ENABLED", "false")
         ),
+        runtime_version=runtime_version,
+        integration_usages=_get_integration_usages(),
     )
 
     logging.debug("Writing Telegraf configuration file...")
