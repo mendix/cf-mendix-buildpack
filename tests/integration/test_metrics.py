@@ -83,7 +83,7 @@ class TestNewMetricsFlows(basetest.BaseTestWithPostgreSQL):
             env_vars={
                 "METRICS_INTERVAL": "10",
                 "BYPASS_LOGGREGATOR": "True",
-                "TRENDS_STORAGE_URL": "http://httpbin.org/post",
+                "TRENDS_STORAGE_URL": "http://postman-echo.com/post",
             },
         )
         self.start_container()
