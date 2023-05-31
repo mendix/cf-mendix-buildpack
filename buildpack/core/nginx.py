@@ -104,6 +104,7 @@ def update_config():
         samesite_cookie_workaround_enabled=samesite_cookie_workaround_enabled,
         locations=_get_locations(),
         default_headers=_get_http_headers(),
+        nginx_keepalive_timeout=_get_nginx_keepalive_timeout(),
         nginx_port=str(util.get_nginx_port()),
         runtime_port=str(util.get_runtime_port()),
         admin_port=str(util.get_admin_port()),
@@ -134,6 +135,10 @@ def update_config():
     logging.debug("proxy_params configuration file written")
 
     _generate_password_file({"MxAdmin": security.get_m2ee_password()})
+
+
+def _get_nginx_keepalive_timeout():
+    return os.environ.get("NGINX_KEEPALIVE_TIMEOUT", "30")
 
 
 def _get_proxy_buffer_size():
