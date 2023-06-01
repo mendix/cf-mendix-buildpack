@@ -1,3 +1,9 @@
 #!/usr/bin/env bash
 
-# Since the Mendix Cloud Foundry buildpack is designed to be used as a final buildpack, this script is empty
+BUILD_PATH=$1
+
+# setup defaults
+mkdir -p "${BUILD_PATH}/.profile.d/"
+cat > "${BUILD_PATH}/.profile.d/defaults.sh" <<SH
+export _JAVA_OPTIONS="-XX:+UseSerialGC"
+SH
