@@ -54,7 +54,7 @@ dependencies:
   logs:
     mendix-logfilter:
       artifact: logs/mendix-logfilter-{{version}}.tar.gz
-      version: 0.0.2
+      version: 0.0.3
   mendix:
     mx-agent:
       artifact: mx-agent/mx-agent-v{{ version }}.jar
@@ -84,7 +84,7 @@ dependencies:
   newrelic:
     agent:
       artifact: newrelic/newrelic-java-{{ version }}.zip
-      version: 6.2.1
+      version: 6.5.4
   nginx:
     artifact: nginx_{{ version }}_linux_x64_cflinuxfs3_{{ commit }}.tgz
     commit: f0918d6b
