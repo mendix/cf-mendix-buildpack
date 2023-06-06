@@ -13,7 +13,7 @@ The buildpack project features the following directories:
 * `lib` : A forked version of M2EE Tools suited for the cloud lives here, used for working with the Mendix Runtime
 * `tests` : All test code lives here
 
-The following directories are not included in the repositoty, but are used in the development process:
+The following directories are not included in the repository, but are used in the development process:
 
 * `build` : Working directory for building the buildpack
 * `dist` : The final build artifact lives here
@@ -32,7 +32,7 @@ For developing the buildpack, you must set up the following:
 
 ### Installing `pyenv`
 
-[`pyenv`](https://github.com/pyenv/pyenv) in combination with [`pyenv-virtualenv`](https://github.com/pyenv/pyenv-virtualenv) can be used to create a local Python virtual environment to develop in. Note that you'll have to create an environment with the latest version of Python 3.6 - the default in the Cloud Foundry root filesystem ( `cflinuxfs3` ) we use to deploy applications on.
+[`pyenv`](https://github.com/pyenv/pyenv) in combination with [`pyenv-virtualenv`](https://github.com/pyenv/pyenv-virtualenv) can be used to create a local Python virtual environment to develop in. Note that you'll have to create an environment with the latest version of Python 3.10 - the default in the Cloud Foundry root filesystem ( `cflinuxfs4` ) we use to deploy applications on.
 
 ### Developing in Docker
 

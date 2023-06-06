@@ -55,7 +55,7 @@ Release notes are available for the [buildpack](https://github.com/mendix/cf-men
 
 ## Requirements
 
-The buildpack requires a cluster which supports the `cflinuxfs3` stack.
+The buildpack requires a cluster which supports the `cflinuxfs4` stack.
 
 Additionally, we recommend a base level knowledge of Cloud Foundry. You should at least be familiar with the Cloud Foundry CLI.
 
@@ -73,6 +73,15 @@ The following table shows which specific buildpack release introduced or removed
 | `6`                  | `v1.0`    | `v4.16.0`      |
 
 We recommend using a [maintained (LTS / MTS)](https://docs.mendix.com/releasenotes/studio-pro/lts-mts) Mendix version. Additionally, we recommend to always [use / "pin to" a specific buildpack release](#buildpack-releases-and-version-pinning).
+
+## Supported CFLinuxFS Versions
+
+| Buildpack | Supported    | End-of-Support |
+|-----------|--------------|----------------|
+| `4.x`     | `cflinuxfs3` | 2023 Q3        |
+| `5.x`     | `cflinuxfs4` | -              |
+
+We recommend switching to version 5.x with cflinuxfs4 since cflinuxfs3 is no longer maintained.
 
 ## Buildpack Releases and Version Pinning
 
@@ -584,7 +593,7 @@ To enable New Relic, simply bind a New Relic service to this app and settings wi
 
 #### Set up Splunk integration
 
-To collect Mendix Runtime logs to [Splunk Cloud Platform](https://www.splunk.com/en_us/products/splunk-cloud-platform.html), 
+To collect Mendix Runtime logs to [Splunk Cloud Platform](https://www.splunk.com/en_us/products/splunk-cloud-platform.html),
 [Fluent Bit](https://docs.fluentbit.io/manual/) is used.
 
 To enable Splunk integration for a Mendix application, following environment variables should be configured.
@@ -873,7 +882,7 @@ purposes, you can do the following:
 
 ```shell
 cf ssh <YOUR_APP>
-export PYTHONPATH=/home/vcap/app/.local/lib/python3.6/site-packages/:/home/vcap/app/lib/
+export PYTHONPATH=/home/vcap/app/.local/lib/python3.10/site-packages/:/home/vcap/app/lib/
 python3
 ```
 

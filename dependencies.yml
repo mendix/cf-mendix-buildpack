@@ -29,7 +29,7 @@ dependencies:
       artifact: "{{ url }}/e/{{ environment }}/api/v1/deployment/installer/agent/unix/paas/latest?include=java&bitness=64&Api-Token={{ token }}"
       managed: false
   fluentbit:
-    artifact: fluentbit/fluent-bit-{{ version }}.tar.gz
+    artifact: fluentbit/fluent-bit-{{ version }}-cflinuxfs4.tar.gz
     version: 1.9.2
   java:
     keyutil:
@@ -76,9 +76,8 @@ dependencies:
       bom_type: framework
       cpe: cpe:2.3:a:mono-project:mono:{{ version }}:*:*:*:*:*:*:*
       type:
-        - bionic
+        - jammy
       version:
-        - "3": 3.10.0
         - "4": 4.6.2.16
         - "5": 5.20.1.27
   newrelic:
@@ -86,11 +85,13 @@ dependencies:
       artifact: newrelic/newrelic-java-{{ version }}.zip
       version: 6.5.4
   nginx:
-    artifact: nginx_{{ version }}_linux_x64_cflinuxfs3_{{ commit }}.tgz
-    commit: f0918d6b
+    artifact: nginx_{{ version }}_linux_x64_{{ fs }}_{{ commit }}.tgz
+    commit: 909b06a9
+    fs: cflinuxfs4
     cpe: cpe:2.3:a:f5:nginx:{{ version }}:*:*:*:*:*:*:*
-    version: 1.21.1
+    version: 1.22.1
   telegraf:
     agent:
       artifact: telegraf/telegraf-{{ version }}_linux_amd64.tar.gz
       version: 1.24.4
+# https://github.com/cloudfoundry/public-buildpacks-ci-robots/tree/main/binary-builds-new
