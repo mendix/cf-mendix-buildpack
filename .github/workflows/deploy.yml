@@ -5,6 +5,7 @@ on:
     types: [closed]
     branches:
       - master
+      - 'releases/**'
 
 jobs:
   pre:
