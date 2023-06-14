@@ -20,69 +20,6 @@ from lib.m2ee.util import strtobool
 
 from . import datadog, appdynamics, dynatrace
 
-# Runtime configuration for influx registry
-# This enables the new stream of metrics coming from micrometer instead
-# of the admin port.
-# https://docs.mendix.com/refguide/metrics#registries-configuration
-# NOTE: Metrics are usually dot separated. But each registry has its
-# own naming format. For instance, a metric like
-# `a.name.like.this` would appear as `a_name_like_this` in
-# influx-formatted metrics output. Hence the filter names uses the
-# dot-separated metric names.
-INFLUX_REGISTRY = {
-    "type": "influx",
-    "settings": {
-        "uri": "http://localhost:8086",
-        "db": "mendix",
-        "step": "10s",
-    },
-    "filters": [
-        # Login metrics needs to be enabled explicitly as it's disabled
-        # by default
-        {
-            "type": "nameStartsWith",
-            "result": "accept",
-            "values": ["mx.runtime.user.login"],
-        },
-        # Filter out irrelevant metrics to reduce
-        # the payload size passed to TSS/TFR
-        # https://docs.mendix.com/refguide/metrics#filters
-        {
-            "type": "nameStartsWith",
-            "result": "deny",
-            "values": ["commons.pool", "jvm.buffer"],
-        },
-    ],
-}
-
-STATSD_REGISTRY = {
-    "type": "statsd",
-    "settings": {"port": datadog.get_statsd_port()},
-}
-
-# For freeapps we push only the session & login metrics
-FREEAPPS_METRICS_REGISTRY = [
-    {
-        "type": "influx",
-        "settings": {
-            "uri": "http://localhost:8086",
-            "db": "mendix",
-            "step": "10s",
-        },
-        "filters": [
-            {
-                "type": "nameStartsWith",
-                "result": "accept",
-                "values": [
-                    "mx.runtime.stats.sessions",
-                    "mx.runtime.user.login",
-                ],
-            },
-            {"type": "nameStartsWith", "result": "deny", "values": [""]},
-        ],
-    }
-]
-
 METRICS_REGISTRIES_KEY = "Metrics.Registries"
 
 # From this MxRuntime version onwards we gather (available) runtime statistics
@@ -186,9 +123,9 @@ def configure_metrics_registry(m2ee):
 
     logging.info("Configuring runtime to push metrics to influx via micrometer")
     if util.is_free_app():
-        return FREEAPPS_METRICS_REGISTRY
+        return [get_freeapps_registry()]
 
-    paidapps_registries = [INFLUX_REGISTRY]
+    paidapps_registries = [get_influx_registry()]
 
     if (
         datadog.is_enabled()
@@ -196,9 +133,132 @@ def configure_metrics_registry(m2ee):
         or appdynamics.machine_agent_enabled()
         or dynatrace.is_telegraf_enabled()
     ):
-        paidapps_registries.append(STATSD_REGISTRY)
+        allow_list, deny_list = get_apm_filters()
+        paidapps_registries.append(get_statsd_registry(allow_list, deny_list))
 
     return paidapps_registries
+
+
+def get_apm_filters():
+    if deny_all_apm_metrics():
+        allow_list = []
+        deny_list = [""]
+    else:
+        allowed_metrics = os.getenv("APM_METRICS_FILTER_ALLOW")
+        denied_metrics = os.getenv("APM_METRICS_FILTER_DENY")
+
+        if allowed_metrics and (denied_metrics is None):
+            # if only allowed metrics are specified, deny all the others
+            denied_metrics = ""
+
+        allow_list = sanitize_metrics_filter(allowed_metrics)
+        deny_list = sanitize_metrics_filter(denied_metrics)
+
+    logging.info(
+        "For APM integrations; allowed metric prefixes are: %s, "
+        "and denied metric prefixes are: %s",
+        allow_list,
+        deny_list,
+    )
+
+    return allow_list, deny_list
+
+
+def deny_all_apm_metrics():
+    return strtobool(os.getenv("APM_METRICS_FILTER_DENY_ALL", default="false"))
+
+
+def sanitize_metrics_filter(metric_filter):
+    """
+    If we use empty string ("") in the filters that we use for statsd registry,
+    it accepts/denies every metric since we use type as `nameStartsWith`.
+    To prevent breaking the functionality because of this, we need to make sure
+    that we pass empty string to the registry filters only if it's intentional.
+    So, we strip the leading and trailing commas. Additionally we remove all
+    the white spaces to prevent any unintentional mistakes.
+    """
+    if metric_filter is None:
+        return []
+    return metric_filter.replace(" ", "").strip(",").split(",")
+
+
+def get_influx_registry():
+    # Runtime configuration for influx registry
+    # This enables the new stream of metrics coming from micrometer instead
+    # of the admin port.
+    # https://docs.mendix.com/refguide/metrics#registries-configuration
+    # NOTE: Metrics are usually dot separated. But each registry has its
+    # own naming format. For instance, a metric like
+    # `a.name.like.this` would appear as `a_name_like_this` in
+    # influx-formatted metrics output. Hence the filter names uses the
+    # dot-separated metric names.
+    return {
+        "type": "influx",
+        "settings": {
+            "uri": "http://localhost:8086",
+            "db": "mendix",
+            "step": "10s",
+        },
+        "filters": [
+            # Login metrics needs to be enabled explicitly as it's disabled
+            # by default
+            {
+                "type": "nameStartsWith",
+                "result": "accept",
+                "values": ["mx.runtime.user.login"],
+            },
+            # Filter out irrelevant metrics to reduce
+            # the payload size passed to TSS/TFR
+            # https://docs.mendix.com/refguide/metrics#filters
+            {
+                "type": "nameStartsWith",
+                "result": "deny",
+                "values": ["commons.pool", "jvm.buffer"],
+            },
+        ],
+    }
+
+
+def get_statsd_registry(allow_list, deny_list):
+    return {
+        "type": "statsd",
+        "settings": {"port": datadog.get_statsd_port()},
+        "filters": [
+            {
+                "type": "nameStartsWith",
+                "result": "accept",
+                "values": allow_list,
+            },
+            {
+                "type": "nameStartsWith",
+                "result": "deny",
+                "values": deny_list,
+            },
+        ],
+    }
+
+
+def get_freeapps_registry():
+    # For freeapps we push only the session & login metrics
+    return {
+        "type": "influx",
+        "settings": {
+            "uri": "http://localhost:8086",
+            "db": "mendix",
+            "step": "10s",
+        },
+        "filters": [
+            {
+                "type": "nameStartsWith",
+                "result": "accept",
+                "values": [
+                    "mx.runtime.stats.sessions",
+                    "mx.runtime.user.login",
+                ],
+            },
+            {"type": "nameStartsWith", "result": "deny", "values": [""]},
+        ],
+    }
 
 
 def bypass_loggregator():
