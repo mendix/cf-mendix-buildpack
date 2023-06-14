@@ -3,10 +3,14 @@
 Extract Business Events configuration from vcap services and create mx constants
 """
 
+import os
 import logging
 import requests
+import json
 
 from buildpack import util
+
+BASE_PATH = os.getcwd()
 
 CONSTANTS_PREFIX = "BusinessEvents"
 
@@ -30,16 +34,16 @@ def update_config(m2ee, vcap_services_data):
     logging.debug("Business Events config added to MicroflowConstants")
 
 
-def _get_client_config(url, auth_token, version):
+def _put_client_config(url, auth_token, dependencies_json):
     headers = {
-        "Authorization": f"Bearer {auth_token}",
-        "X-Version": version,
+        "Authorization": f"Bearer {auth_token}"
     }
 
-    resp = requests.get(
+    resp = requests.put(
         url=url,
         headers=headers,
-        timeout=30,
+        json=dependencies_json,
+        timeout=30
     )
     resp.raise_for_status()
     return resp.text
@@ -54,6 +58,17 @@ def _configure_business_events_metrics(be_config, existing_constants):
             be_config[f"{CONSTANTS_PREFIX}.GenerateMetrics"] = "true"
             be_config[f"{CONSTANTS_PREFIX}.EnableHeartbeat"] = "true"
 
+
+def _read_dependencies_json():
+    file_path = os.path.join(BASE_PATH, "model", "dependencies.json")
+    try:
+        with open(file_path) as f:
+            return json.load(f)
+    except FileNotFoundError:
+        logging.error(
+            "Business Events: dependencies.json not found %s", file_path
+        )
+        raise
 
 def _get_config(vcap_services, existing_constants):
     be_config = {}
@@ -76,10 +91,10 @@ def _get_config(vcap_services, existing_constants):
                             be_config[
                                 f"{CONSTANTS_PREFIX}.{constant}"
                             ] = kafka_creds.get(constant, "")
-                        client_config = _get_client_config(
+                        client_config = _put_client_config(
                             kafka_creds.get(CLIENT_CONFIG_URL_KEY, ""),
                             auth_token,
-                            "1",
+                            _read_dependencies_json(),
                         )
                         be_config[
                             f"{CONSTANTS_PREFIX}.ClientConfiguration"

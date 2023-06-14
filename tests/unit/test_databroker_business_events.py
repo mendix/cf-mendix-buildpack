@@ -166,13 +166,17 @@ class TestDataBrokerBusinessEvents(unittest.TestCase):
 
     def _verify_vcap_info(self, is_apply_limits_present=True):
         with mock.patch(
-            "buildpack.databroker.business_events._get_client_config",
+            "buildpack.databroker.business_events._put_client_config",
             mock.MagicMock(return_value=self.expected_client_config),
-        ):
+        ), mock.patch(
+            "buildpack.databroker.business_events._read_dependencies_json",
+            mock.MagicMock(return_value={})) as mock_read_dependencies_json:
             business_events_cfg = business_events._get_config(
                 util.get_vcap_services_data(),
                 self.module_constants_with_metrics,
             )
+            mock_read_dependencies_json.assert_called_once()
+
         prefix = business_events.CONSTANTS_PREFIX
 
         assert business_events_cfg[f"{prefix}.ServerUrl"] == self.server_url
