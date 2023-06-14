@@ -8,6 +8,7 @@ on:
     branches:
       - develop
       - master
+      - 'releases/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
