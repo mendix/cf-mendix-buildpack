@@ -334,6 +334,30 @@ def _set_jvm_memory(m2ee, vcap):
             m2ee, "MALLOC_ARENA_MAX", str(max(1, limit / 1024) * 2)
         )
 
+    if limit >= 4096:
+        jvm_garbage_collector_type = "G1"
+    else: 
+        jvm_garbage_collector_type = "Serial"
+
+    env_jvm_garbage_collector_type = os.getenv("JVM_GARBAGE_COLLECTOR_TYPE")
+    
+    if env_jvm_garbage_collector_type:
+        if env_jvm_garbage_collector_type in ("G1", "Serial"):
+             jvm_garbage_collector_type = env_jvm_garbage_collector_type
+        else:
+            logging.warning(
+                "Unsupported jvm garbage collector found. The " 
+                "specified garbage collector [%s] does not exist or is not supported"
+                "JVM garbage collector type falling back to default",
+                env_jvm_garbage_collector_type,
+            )
+    util.upsert_javaopts(m2ee, f"-XX:+Use{jvm_garbage_collector_type}GC")
+    
+    logging.info(
+        "JVM garbage collector is set to [%s]",
+        jvm_garbage_collector_type,
+    )        
+    
 
 def _set_application_name(m2ee, application_name):
     util.upsert_javaopts(m2ee, f"-DapplicationName={application_name}")
