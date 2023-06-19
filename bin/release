@@ -2,5 +2,5 @@
 
 cat << EOF
 default_process_types:
-  web: PYTHONPATH=$PYTHONPATH:buildpack:lib python3 buildpack/start.py
+  web: PATH="/home/vcap/deps/0/python/bin:$PATH" PYTHONPATH=$PYTHONPATH:buildpack:lib python3 buildpack/start.py
 EOF

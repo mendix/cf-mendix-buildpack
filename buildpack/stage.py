@@ -35,7 +35,7 @@ else:
     PROFILE_DIR = os.path.abspath(os.path.join(BUILD_DIR, ".profile.d"))
 
 SUPPORTED_STACKS = [
-    "cflinuxfs3",
+    "cflinuxfs4",
     None,
 ]  # None is allowed, but not supported
 
