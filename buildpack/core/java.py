@@ -345,8 +345,9 @@ def _set_garbage_collector(m2ee, vcap_data):
             # override from user-provided variable
             jvm_garbage_collector = env_jvm_garbage_collector
         else:
-            logging.warning("Unsupported jvm garbage collector found. The specified garbage collector [%s] "
-                            "is not supported. JVM garbage collector type falling back to default [%s]",
+            logging.warning("Unsupported jvm garbage collector found. The specified "
+                            "garbage collector [%s] is not supported. JVM garbage "
+                            "collector type falling back to default [%s]",
                             env_jvm_garbage_collector, jvm_garbage_collector)
 
     util.upsert_javaopts(m2ee, f"-XX:+Use{jvm_garbage_collector}GC")
