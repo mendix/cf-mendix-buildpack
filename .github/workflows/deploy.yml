@@ -8,22 +8,10 @@ on:
       - 'releases/**'
 
 jobs:
-  pre:
-    name: Prepare workflow run
-    runs-on: ubuntu-latest
-    outputs:
-      skip: ${{ steps.skip-check.outputs.should_skip }}
-    steps:
-      - name: Check if workflow should be skipped
-        id: skip-check
-        uses: fkirc/skip-duplicate-actions@v5
-        with:
-          github_token: ${{ github.token }}
-          paths_ignore: '["**.md", "dev/**"]'
   build:
     name: Build
     needs: pre
-    if: ${{ needs.pre.outputs.skip != 'true' && github.event.pull_request.merged }}
+    if: ${{ github.event.pull_request.merged }}
     uses: ./.github/workflows/build.yml
     with:
       skip_tests: true
