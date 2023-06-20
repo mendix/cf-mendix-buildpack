@@ -75,6 +75,8 @@ STATSD_PORT_ALT = 18125
 
 
 def include_db_metrics():
+    if metrics.deny_all_apm_metrics():
+        return False
     if util.is_free_app():
         # For free apps we are not interested in database metrics
         return False
@@ -169,7 +171,7 @@ def _get_http_outputs():
 
 
 def _get_db_config():
-    if (include_db_metrics() or datadog.get_api_key()) and util.is_cluster_leader():
+    if include_db_metrics() and util.is_cluster_leader():
         db_config = database.get_config()
         if db_config and db_config["DatabaseType"] == "PostgreSQL":
             return db_config

@@ -97,12 +97,119 @@ class TestMicrometerMetricRegistry(TestCase):
                 "statsd",
             )
 
+    @patch("buildpack.telemetry.datadog.is_enabled", return_value=True)
+    def test_apm_metrics_filters_in_registries(self, is_enabled):
+        with patch.dict(
+            os.environ,
+            {
+                "PROFILE": "some-random-mx-profile",
+                "APM_METRICS_FILTER_ALLOW": "allowed_metric",
+                "APM_METRICS_FILTER_DENY": "denied_metric",
+            },
+        ):
+            result = metrics.configure_metrics_registry(Mock())
+            metrics_registries = sorted(result, key=itemgetter("type"))
+
+            # influx registry shouldn't have the filters
+            self.assertNotIn(
+                "allowed_metric", metrics_registries[0]["filters"][0]["values"]
+            )
+
+            self.assertNotIn(
+                "denied_metric", metrics_registries[0]["filters"][1]["values"]
+            )
+
+            # statsd registry should have the filters
+            self.assertIn(
+                "allowed_metric", metrics_registries[1]["filters"][0]["values"]
+            )
+
+            self.assertIn(
+                "denied_metric", metrics_registries[1]["filters"][1]["values"]
+            )
+
+    @patch("buildpack.telemetry.datadog.is_enabled", return_value=True)
+    def test_statsd_registry_when_only_allow_filter_is_provided(self, is_enabled):
+        with patch.dict(
+            os.environ,
+            {
+                "PROFILE": "some-random-mx-profile",
+                "APM_METRICS_FILTER_ALLOW": "allowed_metric",
+            },
+        ):
+            result = metrics.configure_metrics_registry(Mock())
+            metrics_registries = sorted(result, key=itemgetter("type"))
+
+            # Allow list should contain allowed_metric
+            self.assertIn(
+                "allowed_metric", metrics_registries[1]["filters"][0]["values"]
+            )
+
+            # Deny list should be empty to deny all other metrics
+            self.assertEqual([""], metrics_registries[1]["filters"][1]["values"])
+
+    @patch("buildpack.telemetry.datadog.is_enabled", return_value=True)
+    def test_statsd_registry_when_only_deny_filter_is_provided(self, is_enabled):
+        with patch.dict(
+            os.environ,
+            {
+                "PROFILE": "some-random-mx-profile",
+                "APM_METRICS_FILTER_DENY": "denied_metric",
+            },
+        ):
+            result = metrics.configure_metrics_registry(Mock())
+            metrics_registries = sorted(result, key=itemgetter("type"))
+
+            # Allow list should be empty list
+            self.assertEqual([], metrics_registries[1]["filters"][0]["values"])
+
+            # Deny list should contain denied_metric
+            self.assertIn(
+                "denied_metric", metrics_registries[1]["filters"][1]["values"]
+            )
+
+    @patch("buildpack.telemetry.datadog.is_enabled", return_value=True)
+    def test_statsd_registry_when_no_filter_is_provided(self, is_enabled):
+        with patch.dict(
+            os.environ,
+            {
+                "PROFILE": "some-random-mx-profile",
+            },
+        ):
+            result = metrics.configure_metrics_registry(Mock())
+            metrics_registries = sorted(result, key=itemgetter("type"))
+
+            # Allow list should be empty list
+            self.assertEqual([], metrics_registries[1]["filters"][0]["values"])
+
+            # Deny list should contain denied_metric
+            self.assertEqual([], metrics_registries[1]["filters"][1]["values"])
+
+    @patch("buildpack.telemetry.datadog.is_enabled", return_value=True)
+    def test_statsd_registry_when_deny_all_is_set(self, is_enabled):
+        with patch.dict(
+            os.environ,
+            {
+                "PROFILE": "some-random-mx-profile",
+                "APM_METRICS_FILTER_ALLOW": "allowed_metric",
+                "APM_METRICS_FILTER_DENY": "denied_metric",
+                "APM_METRICS_FILTER_DENY_ALL": "true",
+            },
+        ):
+            result = metrics.configure_metrics_registry(Mock())
+            metrics_registries = sorted(result, key=itemgetter("type"))
+
+            # statsd registry should be configured to deny everything
+            self.assertEqual([], metrics_registries[1]["filters"][0]["values"])
+
+            self.assertEqual([""], metrics_registries[1]["filters"][1]["values"])
+
     def test_freeapps_metrics_registry(self):
         with patch.dict(os.environ, {"PROFILE": "free"}):
             result = metrics.configure_metrics_registry(Mock())
             self.assertEqual(
                 result,
-                metrics.FREEAPPS_METRICS_REGISTRY,
+                [metrics.get_freeapps_registry()],
             )
 
 
@@ -114,3 +221,37 @@ class TestOldApps(TestCase):
             result = metrics.configure_metrics_registry(Mock())
             # nothing to configure for apps below 9.7.0
             assert result == []
+
+
+class TestAPMMetricsFilterSanitization(TestCase):
+    @parameterized.expand(
+        [
+            [
+                "metric_1,metric_2",
+                ["metric_1", "metric_2"],
+            ],
+            [
+                "metric_1, metric_2",
+                ["metric_1", "metric_2"],
+            ],
+            [
+                "metric_1, metric_2,",
+                ["metric_1", "metric_2"],
+            ],
+            [
+                "metric_1,metric_2 ",
+                ["metric_1", "metric_2"],
+            ],
+            [
+                " metric_1,metric_2",
+                ["metric_1", "metric_2"],
+            ],
+            [
+                "",
+                [""],
+            ],
+        ]
+    )
+    def test_sanitize_metrics_filter(self, input_string, expected_list):
+        actual_list = metrics.sanitize_metrics_filter(input_string)
+        self.assertEqual(expected_list, actual_list)
