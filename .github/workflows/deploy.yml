@@ -10,7 +10,6 @@ on:
 jobs:
   build:
     name: Build
-    needs: pre
     if: ${{ github.event.pull_request.merged }}
     uses: ./.github/workflows/build.yml
     with:
