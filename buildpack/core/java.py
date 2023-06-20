@@ -11,6 +11,8 @@ from lib.m2ee.util import strtobool
 
 
 JAVA_VERSION_OVERRIDE_KEY = "JAVA_VERSION"
+DEFAULT_GC_COLLECTOR = "Serial"
+SUPPORTED_GC_COLLECTORS = ["Serial", "G1"]
 
 
 def get_java_major_version(runtime_version):
@@ -282,13 +284,7 @@ def _set_user_provided_java_options(m2ee):
 
 
 def _set_jvm_memory(m2ee, vcap):
-    max_memory = os.environ.get("MEMORY_LIMIT")
-
-    if max_memory:
-        match = re.search("([0-9]+)M", max_memory.upper())
-        limit = int(match.group(1))
-    else:
-        limit = int(vcap["limits"]["mem"])
+    limit = get_memory_limit(vcap)
 
     if limit >= 32768:
         heap_size = limit - 4096
@@ -335,6 +331,44 @@ def _set_jvm_memory(m2ee, vcap):
         )
 
 
+def _set_garbage_collector(m2ee, vcap_data):
+    limit = get_memory_limit(vcap_data)
+
+    jvm_garbage_collector = DEFAULT_GC_COLLECTOR
+    if limit >= 4096:
+        # override collector if memory > 4G
+        jvm_garbage_collector = "G1"
+
+    env_jvm_garbage_collector = os.getenv("JVM_GARBAGE_COLLECTOR")
+    if env_jvm_garbage_collector:
+        if env_jvm_garbage_collector in SUPPORTED_GC_COLLECTORS:
+            # override from user-provided variable
+            jvm_garbage_collector = env_jvm_garbage_collector
+        else:
+            logging.warning(
+                "Unsupported jvm garbage collector found. The specified "
+                "garbage collector [%s] is not supported. JVM garbage "
+                "collector type falling back to default [%s]",
+                env_jvm_garbage_collector,
+                jvm_garbage_collector,
+            )
+
+    util.upsert_javaopts(m2ee, f"-XX:+Use{jvm_garbage_collector}GC")
+
+    logging.info("JVM garbage collector is set to [%s]", jvm_garbage_collector)
+
+
+def get_memory_limit(vcap):
+    max_memory = os.environ.get("MEMORY_LIMIT")
+
+    if max_memory:
+        match = re.search("([0-9]+)M", max_memory.upper())
+        limit = int(match.group(1))
+    else:
+        limit = int(vcap["limits"]["mem"])
+    return limit
+
+
 def _set_application_name(m2ee, application_name):
     util.upsert_javaopts(m2ee, f"-DapplicationName={application_name}")
 
@@ -342,5 +376,6 @@ def _set_application_name(m2ee, application_name):
 def update_config(m2ee, application_name, vcap_data, runtime_version):
     _set_application_name(m2ee, application_name)
     _set_jvm_memory(m2ee, vcap_data)
+    _set_garbage_collector(m2ee, vcap_data)
     _set_jvm_locale(m2ee, get_java_major_version(runtime_version))
     _set_user_provided_java_options(m2ee)
