@@ -6,7 +6,6 @@ Extract Business Events configuration from vcap services and create mx constants
 import os
 import logging
 import requests
-import json
 
 from buildpack import util
 
@@ -34,15 +33,18 @@ def update_config(m2ee, vcap_services_data):
     logging.debug("Business Events config added to MicroflowConstants")
 
 
-def _put_client_config(url, auth_token, dependencies_json):
+def _put_client_config(url, auth_token, version, dependencies_json_str):
     headers = {
-        "Authorization": f"Bearer {auth_token}"
+        "Authorization": f"Bearer {auth_token}",
+        "X-Version": version,
     }
 
     resp = requests.put(
         url=url,
         headers=headers,
-        json=dependencies_json,
+        json={
+            "dependencies": dependencies_json_str
+        },
         timeout=30
     )
     resp.raise_for_status()
@@ -59,11 +61,11 @@ def _configure_business_events_metrics(be_config, existing_constants):
             be_config[f"{CONSTANTS_PREFIX}.EnableHeartbeat"] = "true"
 
 
-def _read_dependencies_json():
+def _read_dependencies_json_as_str():
     file_path = os.path.join(BASE_PATH, "model", "dependencies.json")
     try:
         with open(file_path) as f:
-            return json.load(f)
+            return f.read()
     except FileNotFoundError:
         logging.error(
             "Business Events: dependencies.json not found %s", file_path
@@ -94,7 +96,8 @@ def _get_config(vcap_services, existing_constants):
                         client_config = _put_client_config(
                             kafka_creds.get(CLIENT_CONFIG_URL_KEY, ""),
                             auth_token,
-                            _read_dependencies_json(),
+                            "2",
+                            _read_dependencies_json_as_str(),
                         )
                         be_config[
                             f"{CONSTANTS_PREFIX}.ClientConfiguration"
