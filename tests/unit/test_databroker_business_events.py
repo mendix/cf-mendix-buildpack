@@ -169,13 +169,13 @@ class TestDataBrokerBusinessEvents(unittest.TestCase):
             "buildpack.databroker.business_events._put_client_config",
             mock.MagicMock(return_value=self.expected_client_config),
         ), mock.patch(
-            "buildpack.databroker.business_events._read_dependencies_json",
-            mock.MagicMock(return_value={})) as mock_read_dependencies_json:
+            "buildpack.databroker.business_events._read_dependencies_json_as_str",
+            mock.MagicMock(return_value="")) as mock_read_dependencies_json_as_str:
             business_events_cfg = business_events._get_config(
                 util.get_vcap_services_data(),
                 self.module_constants_with_metrics,
             )
-            mock_read_dependencies_json.assert_called_once()
+            mock_read_dependencies_json_as_str.assert_called_once()
 
         prefix = business_events.CONSTANTS_PREFIX
 
