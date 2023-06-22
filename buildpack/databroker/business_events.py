@@ -6,6 +6,7 @@ Extract Business Events configuration from vcap services and create mx constants
 import os
 import logging
 import requests
+from requests.adapters import HTTPAdapter, Retry
 
 from buildpack import util
 
@@ -39,7 +40,15 @@ def _put_client_config(url, auth_token, version, dependencies_json_str):
         "X-Version": version,
     }
 
-    resp = requests.put(
+    session = requests.Session()
+    retries = Retry(total=2,
+            backoff_factor=0.1,
+            status_forcelist=[ 500, 502, 503, 504 ])
+    adapter = HTTPAdapter(max_retries=retries)
+    session.mount('http://', adapter)
+    session.mount('https://', adapter)
+
+    resp = session.put(
         url=url,
         headers=headers,
         json={
