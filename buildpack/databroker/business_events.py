@@ -45,7 +45,6 @@ def _put_client_config(url, auth_token, version, dependencies_json_str):
             backoff_factor=0.1,
             status_forcelist=[ 500, 502, 503, 504 ])
     adapter = HTTPAdapter(max_retries=retries)
-    session.mount('http://', adapter)
     session.mount('https://', adapter)
 
     resp = session.put(
