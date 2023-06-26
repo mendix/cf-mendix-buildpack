@@ -105,7 +105,7 @@ def _get_config(vcap_services, existing_constants):
                         client_config = _put_client_config(
                             kafka_creds.get(CLIENT_CONFIG_URL_KEY, ""),
                             auth_token,
-                            "2",
+                            "1",
                             _read_dependencies_json_as_str(),
                         )
                         be_config[
