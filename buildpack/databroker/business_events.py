@@ -41,19 +41,15 @@ def _put_client_config(url, auth_token, version, dependencies_json_str):
     }
 
     session = requests.Session()
-    retries = Retry(total=2,
-            backoff_factor=0.1,
-            status_forcelist=[ 500, 502, 503, 504 ])
+    retries = Retry(total=2, backoff_factor=0.1, status_forcelist=[500, 502, 503, 504])
     adapter = HTTPAdapter(max_retries=retries)
-    session.mount('https://', adapter)
+    session.mount("https://", adapter)
 
     resp = session.put(
         url=url,
         headers=headers,
-        json={
-            "dependencies": dependencies_json_str
-        },
-        timeout=30
+        json={"dependencies": dependencies_json_str},
+        timeout=30,
     )
     resp.raise_for_status()
     return resp.text
@@ -75,10 +71,9 @@ def _read_dependencies_json_as_str():
         with open(file_path) as f:
             return f.read()
     except FileNotFoundError:
-        logging.error(
-            "Business Events: dependencies.json not found %s", file_path
-        )
+        logging.error("Business Events: dependencies.json not found %s", file_path)
         raise
+
 
 def _get_config(vcap_services, existing_constants):
     be_config = {}
