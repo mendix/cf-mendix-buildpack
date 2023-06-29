@@ -7,6 +7,8 @@ This document contains general information on the Mendix Cloud Foundry Buildpack
 The buildpack is heavily tied to the Mendix Public Cloud, but can be used independently.
 Release notes are available for the [buildpack](https://github.com/mendix/cf-mendix-buildpack/releases/), [Mendix itself](https://docs.mendix.com/releasenotes/studio-pro/) and the [Mendix Public Cloud](https://docs.mendix.com/releasenotes/developer-portal/deployment).
 
+**⚠️ Warning** At this time, CF Buildpack doesn't support building Mendix 10 MPK files. To deploy a Mendix 10 app with CF Buildpack, you will need to build the MDA file first (using Studio Pro 10 or [MxBuild](https://docs.mendix.com/refguide/mxbuild/)), and deploy the MDA file using CF Buildpack.
+
 * [Requirements](#requirements)
 * [Supported Mendix Versions](#supported-mendix-versions)
 * [Buildpack Releases and Version Pinning](#buildpack-releases-and-version-pinning)
@@ -447,6 +449,14 @@ The Java Max Metaspace Size is configured automatically based on best practices.
 
 ```shell
 cf set-env <YOUR_APP> MAX_METASPACE_SIZE 512M
+```
+
+### Java Garbage Collector
+
+The Java garbage collector is configured automatically based on best practices. You can tweak this to your needs by using another environment variable, the accepted values are Serial or G1.
+
+```shell
+cf set-env <YOUR_APP> JVM_GARBAGE_COLLECTOR Serial
 ```
 
 ### Java Virtual Machine (JVM) Settings
