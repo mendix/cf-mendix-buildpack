@@ -123,8 +123,6 @@ def copy_buildpack_resources():
 
 
 def copy_dependency_file():
-    logging.debug("Copy dependency file from: %s ", os.path.join(BUILDPACK_DIR, util.DEPENDENCY_FILE))
-    logging.debug("Copy dependency file to: %s ", os.path.join(BUILD_DIR, util.DEPENDENCY_FILE))
     shutil.copy(
         os.path.join(BUILDPACK_DIR, util.DEPENDENCY_FILE),
         os.path.join(BUILD_DIR, util.DEPENDENCY_FILE),
@@ -176,7 +174,6 @@ if __name__ == "__main__":
     copy_dependency_file()
 
     if is_source_push():
-        logging.debug('BUILDPACK_DIR: [%s]', BUILDPACK_DIR)
         try:
             mxbuild.build_from_source(
                 BUILDPACK_DIR,
@@ -186,6 +183,7 @@ if __name__ == "__main__":
                 runtime_version,
                 JAVA_VERSION,
             )
+            copy_dependency_file()  # dependency file was deleted after mpk build process
         except RuntimeError as error:
             logging.error(error)
             sys.exit(1)

@@ -21,7 +21,7 @@ def build_from_source(
     java_version,
 ):
     logging.info("Building from source...")
-    logging.debug('BUILDPACK_DIR: build_from_source : [%s]', buildpack_path)
+
     mono_location = mono.ensure_and_get_mono(
         runtime_version, buildpack_path, cache_path
     )
@@ -46,13 +46,11 @@ def build_from_source(
         os.path.join(mono_location, "bin/mono"),
         "--config",
         os.path.join(mono_location, "etc/mono/config"),
-        os.path.join(mxbuild_location, "modeler/mxbuild.exe")
+        os.path.join(mxbuild_location, "modeler/mxbuild.exe"),
     ]
 
     if runtime_version >= 10:  # mx10 support
-        build_command = [
-            os.path.join(mxbuild_location, "modeler/mxbuild")
-        ]
+        build_command = [os.path.join(mxbuild_location, "modeler/mxbuild")]
 
     parameters = [
         "--target=package",

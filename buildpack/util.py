@@ -184,7 +184,6 @@ def _get_dependency_file_contents(file):
 # Returns a dict of dependencies from the dependency configuration file
 # The dict key is composed of the key names of the YAML file, separated by a "."
 def _get_dependencies(buildpack_dir):
-    logging.debug('BUILDPACK_DIR: get_dep: [%s]', buildpack_dir)
     dependencies = _get_dependency_file_contents(
         os.path.join(buildpack_dir, DEPENDENCY_FILE)
     )
@@ -196,7 +195,6 @@ def _get_dependencies(buildpack_dir):
 
 # Gets a single dependency and renders
 def get_dependency(dependency, overrides=None, buildpack_dir=os.getcwd()):
-    logging.debug('BUILDPACK_DIR: get_dependency : [%s]', buildpack_dir)
     if overrides is None:
         overrides = {}
     result = None
