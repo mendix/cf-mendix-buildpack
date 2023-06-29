@@ -41,6 +41,8 @@ def _get_client_config(url, auth_token, version):
     )
     resp.raise_for_status()
     return resp.text
+
+
 def _configure_business_events_metrics(be_config, existing_constants):
     if f"{CONSTANTS_PREFIX}.GenerateMetrics" in existing_constants:
         if util.is_free_app():
