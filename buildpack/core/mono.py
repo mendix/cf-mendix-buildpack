@@ -65,7 +65,7 @@ def ensure_and_get_mono(mx_version, buildpack_dir, cache_dir):
     major_version = _detect_mono_version(mx_version)
     dependency_name = _compose_mono_dependency_name(major_version)
     fallback_location = "/tmp/opt"
-
+    logging.debug('BUILDPACK_DIR: ensure_and_get_mono : [%s]', buildpack_dir)
     if major_version == "3" and distro.codename().lower() == "bionic":
         dependency = util.resolve_dependency(
             dependency_name,
@@ -88,7 +88,7 @@ def ensure_and_get_mono(mx_version, buildpack_dir, cache_dir):
         )
         return mono_location
     else:
-        version = get_dependency(dependency_name, buildpack_dir)["version"]
+        version = get_dependency(dependency_name, buildpack_dir=buildpack_dir)["version"]
         try:
             mono_location = _get_mono_path("/tmp/opt", version)
         except NotFoundException:
