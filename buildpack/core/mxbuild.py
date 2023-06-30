@@ -42,16 +42,24 @@ def build_from_source(
 
     util.lazy_remove_file(BUILD_ERRORS_JSON)
 
-    args = [
+    build_command = [
         os.path.join(mono_location, "bin/mono"),
         "--config",
         os.path.join(mono_location, "etc/mono/config"),
         os.path.join(mxbuild_location, "modeler/mxbuild.exe"),
+    ]
+
+    if runtime_version >= 10:  # mx10 support
+        build_command = [os.path.join(mxbuild_location, "modeler/mxbuild")]
+
+    parameters = [
         "--target=package",
         "--output=/tmp/model.mda",
         f"--java-home={jdk_location}",
         f"--java-exe-path={os.path.join(jdk_location, 'bin/java')}",
     ]
+
+    args = build_command + parameters
 
     if runtime_version >= 6.4 or os.environ.get("FORCE_WRITE_BUILD_ERRORS"):
         args.append(f"--write-errors={BUILD_ERRORS_JSON}")

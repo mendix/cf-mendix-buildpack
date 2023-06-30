@@ -183,6 +183,7 @@ if __name__ == "__main__":
                 runtime_version,
                 JAVA_VERSION,
             )
+            copy_dependency_file()  # dependency file was deleted after mpk build process
         except RuntimeError as error:
             logging.error(error)
             sys.exit(1)

@@ -88,7 +88,9 @@ def ensure_and_get_mono(mx_version, buildpack_dir, cache_dir):
         )
         return mono_location
     else:
-        version = get_dependency(dependency_name, buildpack_dir)["version"]
+        version = get_dependency(dependency_name, buildpack_dir=buildpack_dir)[
+            "version"
+        ]
         try:
             mono_location = _get_mono_path("/tmp/opt", version)
         except NotFoundException:
