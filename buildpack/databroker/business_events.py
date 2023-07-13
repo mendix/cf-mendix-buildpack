@@ -3,10 +3,14 @@
 Extract Business Events configuration from vcap services and create mx constants
 """
 
+import os
 import logging
 import requests
+from requests.adapters import HTTPAdapter, Retry
 
 from buildpack import util
+
+BASE_PATH = os.getcwd()
 
 CONSTANTS_PREFIX = "BusinessEvents"
 
@@ -28,15 +32,21 @@ def update_config(m2ee, vcap_services_data):
     logging.debug("Business Events config added to MicroflowConstants")
 
 
-def _get_client_config(url, auth_token, version):
+def _put_client_config(url, auth_token, version, dependencies_json_str):
     headers = {
         "Authorization": f"Bearer {auth_token}",
         "X-Version": version,
     }
 
-    resp = requests.get(
+    session = requests.Session()
+    retries = Retry(total=2, backoff_factor=0.1, status_forcelist=[500, 502, 503, 504])
+    adapter = HTTPAdapter(max_retries=retries)
+    session.mount("https://", adapter)
+
+    resp = session.put(
         url=url,
         headers=headers,
+        json={"dependencies": dependencies_json_str},
         timeout=30,
     )
     resp.raise_for_status()
@@ -51,6 +61,16 @@ def _configure_business_events_metrics(be_config, existing_constants):
         else:
             be_config[f"{CONSTANTS_PREFIX}.GenerateMetrics"] = "true"
             be_config[f"{CONSTANTS_PREFIX}.EnableHeartbeat"] = "true"
+
+
+def _read_dependencies_json_as_str():
+    file_path = os.path.join(BASE_PATH, "model", "dependencies.json")
+    try:
+        with open(file_path) as f:
+            return f.read()
+    except FileNotFoundError:
+        logging.error("Business Events: dependencies.json not found %s", file_path)
+        raise
 
 
 def _get_config(vcap_services, existing_constants):
@@ -74,10 +94,11 @@ def _get_config(vcap_services, existing_constants):
                             be_config[
                                 f"{CONSTANTS_PREFIX}.{constant}"
                             ] = kafka_creds.get(constant, "")
-                        client_config = _get_client_config(
+                        client_config = _put_client_config(
                             kafka_creds.get(CLIENT_CONFIG_URL_KEY, ""),
                             auth_token,
                             "1",
+                            _read_dependencies_json_as_str(),
                         )
                         be_config[
                             f"{CONSTANTS_PREFIX}.ClientConfiguration"
