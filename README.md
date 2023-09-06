@@ -7,8 +7,6 @@ This document contains general information on the Mendix Cloud Foundry Buildpack
 The buildpack is heavily tied to the Mendix Public Cloud, but can be used independently.
 Release notes are available for the [buildpack](https://github.com/mendix/cf-mendix-buildpack/releases/), [Mendix itself](https://docs.mendix.com/releasenotes/studio-pro/) and the [Mendix Public Cloud](https://docs.mendix.com/releasenotes/developer-portal/deployment).
 
-**⚠️ Warning** At this time, CF Buildpack doesn't support building Mendix 10 MPK files. To deploy a Mendix 10 app with CF Buildpack, you will need to build the MDA file first (using Studio Pro 10 or [MxBuild](https://docs.mendix.com/refguide/mxbuild/)), and deploy the MDA file using CF Buildpack.
-
 * [Requirements](#requirements)
 * [Supported Mendix Versions](#supported-mendix-versions)
 * [Buildpack Releases and Version Pinning](#buildpack-releases-and-version-pinning)
@@ -69,6 +67,7 @@ The following table shows which specific buildpack release introduced or removed
 
 | Mendix Major Version | Supported | End-of-Support |
 | -------------------- | --------- | -------------- |
+| `10`                 | `v4.24.0` | -              |
 | `9`                  | `v4.24.0` | -              |
 | `8`                  | `v3.4.0`  | -              |
 | `7`                  | `v3.1.0`  | -              |
@@ -107,6 +106,8 @@ The buildpack lifecycle has two main phases:
 * `run` : Start the various processes and run the application. [`start.py`](buildpack/start.py) is for orchestration, the JVM is for executing the Mendix Model, and nginx is used as reverse proxy including handling access restrictions.
 
 The staging phase accepts archives in `.mda` format (Mendix Deployment Archive). There is experimental support for `.mpk` archives (Mendix Project Package). If an `.mpk` file is pushed, `mxbuild` is executed using Mono in the compile phase as well, the run phase stays the same.
+
+Pushing `.mpk` files is only supported on `cflinuxfs4` for Mendix version 9.24 or higher. To push MPKs for older Mendix versions, you should stay on `cflinuxfs3`.
 
 ## How to Deploy
 
