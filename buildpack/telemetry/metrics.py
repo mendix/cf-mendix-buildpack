@@ -126,6 +126,10 @@ def configure_metrics_registry(m2ee):
         return [get_freeapps_registry()]
 
     paidapps_registries = [get_influx_registry()]
+    if os.getenv("RUNTIME_LOGIN_METRICS_ENABLED", default=True):
+        # Use this toggle to disable runtime user login metrics
+        paidapps_registries.append(
+            get_influx_registry_with_runtime_login_metrics())
 
     if (
         datadog.is_enabled()
@@ -182,6 +186,37 @@ def sanitize_metrics_filter(metric_filter):
     return metric_filter.replace(" ", "").strip(",").split(",")
 
 
+def get_influx_registry_with_runtime_login_metrics():
+    """
+    Influx registry definition to publish the runtime user login metrics
+    with a higher step-interval to reduce the datapoints
+    collected at the telegraf end.
+    """
+    return {
+        "type": "influx",
+        "settings": {
+            "uri": "http://localhost:8086",
+            "db": "mendix",
+            "step": "1m",
+        },
+        "filters": [
+            # Login metrics needs to be enabled explicitly as it's disabled
+            # by default
+            {
+                "type": "nameStartsWith",
+                "result": "accept",
+                "values": ["mx.runtime.user.login"],
+            },
+            # Filter out all other irrelevant metrics
+            {
+                "type": "nameStartsWith",
+                "result": "deny",
+                "values": [""],
+            },
+        ],
+    }
+
+
 def get_influx_registry():
     # Runtime configuration for influx registry
     # This enables the new stream of metrics coming from micrometer instead
@@ -200,13 +235,6 @@ def get_influx_registry():
             "step": "10s",
         },
         "filters": [
-            # Login metrics needs to be enabled explicitly as it's disabled
-            # by default
-            {
-                "type": "nameStartsWith",
-                "result": "accept",
-                "values": ["mx.runtime.user.login"],
-            },
             # Filter out irrelevant metrics to reduce
             # the payload size passed to TSS/TFR
             # https://docs.mendix.com/refguide/metrics#filters

@@ -63,6 +63,27 @@ class TestMicrometerMetrics(TestCase):
 
 
 class TestMicrometerMetricRegistry(TestCase):
+    def _get_registry_filters(self, registry, registry_type, deny=False):
+        """
+        Returns filters set on the registry entries by type.
+        Defaults to the allow list of filters.
+        """
+
+        values = list()
+        entries = [entry for entry in registry if entry.get("type") == registry_type]
+        for entry in entries:
+            for filter_entry in entry.get("filters"):
+                if not deny:
+                    # just fetch the allowed ones
+                    if filter_entry["result"] == "accept":
+                        values.extend(filter_entry["values"])
+                else:
+                    # just add the deny ones
+                    if filter_entry["result"] == "deny":
+                        values.extend(filter_entry["values"])
+
+        return values
+
     def setUp(self) -> None:
         self.addCleanup(patch.stopall)
         patch(
@@ -88,13 +109,13 @@ class TestMicrometerMetricRegistry(TestCase):
         with patch.dict(os.environ, {"PROFILE": "some-random-mx-profile"}):
             result = metrics.configure_metrics_registry(Mock())
             metrics_registries = sorted(result, key=itemgetter("type"))
-            self.assertEqual(
-                metrics_registries[0]["type"],
-                "influx",
-            )
-            self.assertEqual(
-                metrics_registries[1]["type"],
-                "statsd",
+            # Ensure we have a statsd entry
+            self.assertTrue(
+                [
+                    entry
+                    for entry in metrics_registries
+                    if entry.get("type") == "statsd"
+                ]
             )
 
     @patch("buildpack.telemetry.datadog.is_enabled", return_value=True)
@@ -112,20 +133,24 @@ class TestMicrometerMetricRegistry(TestCase):
 
             # influx registry shouldn't have the filters
             self.assertNotIn(
-                "allowed_metric", metrics_registries[0]["filters"][0]["values"]
+                "allowed_metric",
+                self._get_registry_filters(metrics_registries, "influx"),
             )
 
             self.assertNotIn(
-                "denied_metric", metrics_registries[0]["filters"][1]["values"]
+                "denied_metric",
+                self._get_registry_filters(metrics_registries, "influx", True),
             )
 
             # statsd registry should have the filters
             self.assertIn(
-                "allowed_metric", metrics_registries[1]["filters"][0]["values"]
+                "allowed_metric",
+                self._get_registry_filters(metrics_registries, "statsd"),
             )
 
             self.assertIn(
-                "denied_metric", metrics_registries[1]["filters"][1]["values"]
+                "denied_metric",
+                self._get_registry_filters(metrics_registries, "statsd", True),
             )
 
     @patch("buildpack.telemetry.datadog.is_enabled", return_value=True)
@@ -142,11 +167,14 @@ class TestMicrometerMetricRegistry(TestCase):
 
             # Allow list should contain allowed_metric
             self.assertIn(
-                "allowed_metric", metrics_registries[1]["filters"][0]["values"]
+                "allowed_metric",
+                self._get_registry_filters(metrics_registries, "statsd"),
             )
 
             # Deny list should be empty to deny all other metrics
-            self.assertEqual([""], metrics_registries[1]["filters"][1]["values"])
+            self.assertEqual(
+                [""], self._get_registry_filters(metrics_registries, "statsd", True)
+            )
 
     @patch("buildpack.telemetry.datadog.is_enabled", return_value=True)
     def test_statsd_registry_when_only_deny_filter_is_provided(self, is_enabled):
@@ -161,11 +189,14 @@ class TestMicrometerMetricRegistry(TestCase):
             metrics_registries = sorted(result, key=itemgetter("type"))
 
             # Allow list should be empty list
-            self.assertEqual([], metrics_registries[1]["filters"][0]["values"])
+            self.assertEqual(
+                [], self._get_registry_filters(metrics_registries, "statsd")
+            )
 
             # Deny list should contain denied_metric
             self.assertIn(
-                "denied_metric", metrics_registries[1]["filters"][1]["values"]
+                "denied_metric",
+                self._get_registry_filters(metrics_registries, "statsd", True),
             )
 
     @patch("buildpack.telemetry.datadog.is_enabled", return_value=True)
@@ -180,10 +211,14 @@ class TestMicrometerMetricRegistry(TestCase):
             metrics_registries = sorted(result, key=itemgetter("type"))
 
             # Allow list should be empty list
-            self.assertEqual([], metrics_registries[1]["filters"][0]["values"])
+            self.assertEqual(
+                [], self._get_registry_filters(metrics_registries, "statsd")
+            )
 
             # Deny list should contain denied_metric
-            self.assertEqual([], metrics_registries[1]["filters"][1]["values"])
+            self.assertEqual(
+                [], self._get_registry_filters(metrics_registries, "statsd", True)
+            )
 
     @patch("buildpack.telemetry.datadog.is_enabled", return_value=True)
     def test_statsd_registry_when_deny_all_is_set(self, is_enabled):
@@ -200,9 +235,13 @@ class TestMicrometerMetricRegistry(TestCase):
             metrics_registries = sorted(result, key=itemgetter("type"))
 
             # statsd registry should be configured to deny everything
-            self.assertEqual([], metrics_registries[1]["filters"][0]["values"])
+            self.assertEqual(
+                [], self._get_registry_filters(metrics_registries, "statsd")
+            )
 
-            self.assertEqual([""], metrics_registries[1]["filters"][1]["values"])
+            self.assertEqual(
+                [""], self._get_registry_filters(metrics_registries, "statsd", True)
+            )
 
     def test_freeapps_metrics_registry(self):
         with patch.dict(os.environ, {"PROFILE": "free"}):
