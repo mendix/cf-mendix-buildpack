@@ -7,7 +7,7 @@ class TestCaseLogging(basetest.BaseTest):
     def setUp(self):
         super().setUp()
         self.stage_container(
-            "Mendix8.1.1.58432_StarterApp.mda",
+            "BuildpackTestApp-mx9-7.mda",
             env_vars={
                 "LOGGING_CONFIG": json.dumps({"Jetty": "TRACE"}),
                 "LOG_RATELIMIT": 500,
