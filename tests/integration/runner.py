@@ -384,7 +384,7 @@ class CfLocalRunner(metaclass=abc.ABCMeta):
         )
         if not result[1]:
             raise RuntimeError("Cannot get container port: {}".format(result[0]))
-        return int(result[0].split(":")[-1].rstrip())
+        return int(result[0].split(":")[1].rstrip())
 
     def _get_container_ids(self, name):
         return self._cmd(("docker", "ps", "-aqf", "name={}*".format(name)))[0].rsplit(
