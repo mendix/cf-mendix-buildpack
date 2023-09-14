@@ -440,8 +440,8 @@
   data_format = "json"
   json_timestamp_units = "1ns"
 
-  # tagexlude drops any non-relevant tags
-  tagexclude = ["host"]
+  # include only relevant tags
+  taginclude = ["anonymous_upgrade", "user", "app_name", "instance_index"]
 
   ## Additional HTTP headers
   [outputs.http.headers]
