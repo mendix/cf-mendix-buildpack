@@ -138,7 +138,7 @@ def update_config():
 
 
 def _get_nginx_keepalive_timeout():
-    return os.environ.get("NGINX_KEEPALIVE_TIMEOUT", "30")
+    return os.environ.get("NGINX_KEEPALIVE_TIMEOUT", "100")
 
 
 def _get_proxy_buffer_size():
