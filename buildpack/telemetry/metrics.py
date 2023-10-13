@@ -18,7 +18,7 @@ from lib.m2ee import munin
 from lib.m2ee.version import MXVersion
 from lib.m2ee.util import strtobool
 
-from . import datadog, appdynamics, dynatrace
+from . import appdynamics, datadog, dynatrace, newrelic
 
 METRICS_REGISTRIES_KEY = "Metrics.Registries"
 
@@ -136,6 +136,7 @@ def configure_metrics_registry(m2ee):
         or get_appmetrics_target()
         or appdynamics.machine_agent_enabled()
         or dynatrace.is_telegraf_enabled()
+        or newrelic.is_enabled()
     ):
         allow_list, deny_list = get_apm_filters()
         paidapps_registries.append(get_statsd_registry(allow_list, deny_list))

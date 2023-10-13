@@ -31,30 +31,18 @@ def update_config(m2ee):
     _set_default_env(m2ee)
 
 
-def print_ready_message():
+def integration_complete(success: bool) -> None:
     """
     This function can be called from external module.
-    For example: fluentbit.py calls this function when Fluent Bit is ready.
-
+    For example: fluentbit.py calls this function when Fluent Bit is done.
     """
-
     if not is_splunk_enabled():
         return
 
-    logging.info("Splunk has been configured successfully.")
-
-
-def print_failed_message():
-    """
-    This function can be called from external module.
-    For example: fluentbit.py calls this function when Fluent Bit is failed.
-
-    """
-
-    if not is_splunk_enabled():
-        return
-
-    logging.error("Failed to configure Splunk.")
+    if success:
+        logging.info("Splunk has been configured successfully.")
+    else:
+        logging.error("Failed to configure Splunk.")
 
 
 def is_splunk_enabled():
