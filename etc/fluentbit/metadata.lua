@@ -2,10 +2,10 @@ function add_metadata(tag, timestamp, record)
 
     record["instance_index"] = os.getenv("CF_INSTANCE_INDEX") or ""
     record["environment_id"] = os.getenv("ENVIRONMENT") or ""
-    record["hostname"] = os.getenv("SPLUNK_APP_HOSTNAME") or ""
-    record["application_name"] = os.getenv("SPLUNK_APP_NAME") or ""
-    record["runtime_version"] = os.getenv("SPLUNK_APP_RUNTIME_VERSION") or ""
-    record["model_version"] = os.getenv("SPLUNK_APP_MODEL_VERSION") or ""
+    record["hostname"] = os.getenv("FLUENTBIT_APP_HOSTNAME") or ""
+    record["application_name"] = os.getenv("FLUENTBIT_APP_NAME") or ""
+    record["runtime_version"] = os.getenv("FLUENTBIT_APP_RUNTIME_VERSION") or ""
+    record["model_version"] = os.getenv("FLUENTBIT_APP_MODEL_VERSION") or ""
 
     local raw_tags = os.getenv("TAGS")
     if raw_tags then

@@ -70,7 +70,7 @@
 {% endif %}
 
 {% if db_config %}
-{% if not (datadog_api_key or appdynamics_enabled or dynatrace_enabled) %}
+{% if not (datadog_api_key or appdynamics_enabled or dynatrace_enabled or newrelic_enabled) %}
 # PostgreSQL input (standard)
 [[inputs.postgresql]]
     address = "postgres://{{ db_config['DatabaseUserName'] }}:{{ db_config['DatabasePassword'] }}@{{ db_config['DatabaseHost'] }}/{{ db_config['DatabaseName'] }}"
@@ -355,6 +355,20 @@
         {% endfor %}
 {% endif %}
 
+{% if newrelic_enabled %}
+[[outputs.newrelic]]
+    metric_url = "{{ newrelic_config['metrics_base_url'] }}"
+    insights_key = "{{ newrelic_config['api_key'] }}"
+
+    # tagexclude drops any non-relevant tags
+    tagexclude = ["host"]
+
+    # Ignore any micrometer_metrics
+    [outputs.newrelic.tagdrop]
+        micrometer_metrics = ["true"]
+        internal_metrics = ["true"]
+{% endif %}
+
 {% if micrometer_metrics %}
 ####################################################################################
 # App metrics via micrometer                                                       #
@@ -394,7 +408,7 @@
   data_format = "json"
   json_timestamp_units = "1ns"
 
-  # tagexlude drops any non-relevant tags
+  # tagexclude drops any non-relevant tags
   tagexclude = ["host"]
 
   # Drop `mx_runtime_user_login` metrics
@@ -476,7 +490,7 @@
   ## https://github.com/influxdata/telegraf/blob/master/docs/DATA_FORMATS_OUTPUT.md
   data_format = "influx"
 
-  # tagexlude drops any non-relevant tags
+  # tagexclude drops any non-relevant tags
   tagexclude = ["host"]
 
   # Drop `mx_runtime_user_login` metrics

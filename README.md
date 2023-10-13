@@ -598,7 +598,53 @@ The buildpack includes a variety of telemetry agents that can be configured to c
 
 ### New Relic
 
+#### Set up New Relic integration
+
+[Fluent Bit](https://docs.fluentbit.io/manual/) is used to collect Mendix Runtime logs to [New Relic](https://newrelic.com/).
+
+The metrics are collected by the [New Relic Java Agent](https://docs.newrelic.com/docs/apm/agents/java-agent/features/jvms-page-java-view-app-server-metrics-jmx/) and an integration with the [Telegraf agent](https://docs.influxdata.com/telegraf/).
+
+To enable the integration you must provide the following variables:
+
+| Environment variable    | Value example                                  | Default                  | Description                                                                                                                            |
+|-------------------------|------------------------------------------------|--------------------------|----------------------------------------------------------------------------------------------------------------------------------------|
+| `NEW_RELIC_LICENSE_KEY` | `api_key`                                      | -                        | License Key or API Key ([docs](https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/))                                    |
+| `NEW_RELIC_METRICS_URI` | `https://metric-api.eu.newrelic.com/metric/v1` | -                        | Metrics endpoint API ([docs](https://docs.newrelic.com/docs/data-apis/ingest-apis/metric-api/report-metrics-metric-api/#api-endpoint)) |
+| `NEW_RELIC_LOGS_URI`    | `https://log-api.eu.newrelic.com/log/v1`       | -                        | Logs endpoint API ([docs](https://docs.newrelic.com/docs/logs/log-api/introduction-log-api/))                                          |
+| `NEW_RELIC_APP_NAME`    | `MyApp`                                        | application domain name  | Optional. Mendix App name shown on New Relic                                                                                           |
+
+:warning: For the first usage of the New Relic integration, the Mendix app should be redeployed after setting the variables up.
+
+#### Tags/Metadata in metrics and logs
+
+In addition to the runtime application logs, the following JSON-formatted metadata is automatically sent to New Relic, both for
+the metrics collected by the agent and the custom ones, pushed by Telegraf:
+
+* `environment_id` - unique identifier of the environment;
+* `instance_index` - number of the application instance;
+* `hostname` - name of the application host;
+* `application_name` - default application name, retrieved from domain name;
+* `model_version` - model version of the Mendix runtime;
+* `runtime_version` - version of the Mendix runtime.
+
+:info: `model_version` and `runtime_version` are only available to the custom metrics.
+
+#### Custom tags
+
+Metrics also support custom tags in the following format `key:value`.
+Below, are listed some suggested tags that you might want to use:
+
+* `app:{app_name}` – this enables you to identify all logs sent from your app (for example, **app:customermanagement**)
+* `env:{environment_name}` – this enables you to identify logs sent from a particular environment so you can separate out production logs from test logs (for example, **env:accp**)
+
+#### Service-binding integration (on-prem only)
+
 To enable New Relic, simply bind a New Relic service to this app and settings will be picked up automatically. Afterwards you have to restage your application to enable the New Relic agent.
+
+This integration does not support logs or custom metrics.
+
+:warning: The default NEW_RELIC_APP_NAME for this integration used to be the environment ID of the application. Now the value is the domain name set to the application.
+If you want to keep using the environment id, you will have to set this variable yourself to that value.
 
 ### Splunk
 
