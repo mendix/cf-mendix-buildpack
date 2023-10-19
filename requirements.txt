@@ -42,5 +42,5 @@ pyyaml==6.0
     #   omegaconf
 requests==2.28.2
     # via -r requirements.in
-urllib3==1.26.6
+urllib3==1.26.18
     # via requests
