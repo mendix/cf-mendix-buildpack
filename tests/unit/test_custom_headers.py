@@ -174,18 +174,18 @@ class TestCaseCustomHeaderConfig(unittest.TestCase):
     def test_valid_header_originTrial(self):
         os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps(
             {
-                "Origin_trial": "ArmVE2nkyn2sDf+DNN9MJVBYCagx:+NCFIc7=="
+                "Origin-Trial": "ArmVE2nkyn2sDf+DNN9MJVBYCagx:+NCFIc7=="
             }
         )
         header_config = nginx._get_http_headers()
         self.assertIn(
-            ("Origin_trial", "ArmVE2nkyn2sDf+DNN9MJVBYCagx:+NCFIc7=="),
+            ("Origin-Trial", "ArmVE2nkyn2sDf+DNN9MJVBYCagx:+NCFIc7=="),
             header_config,
         )
     def test_inValid_header_originTrial(self):
         os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps(
             {
-                "Origin_trial": "ArmVE2nkyn2sDf+DNN9MJVBYCagx:+NCFIc7=="
+                "Origin-Trial": "ArmVE2nkyn2sDf+DNN9MJVBYCagx:+NCFIc7=="
             }
         )
         header_config = nginx._get_http_headers()
