@@ -187,7 +187,7 @@ class TestCaseCustomHeaderConfig(unittest.TestCase):
     def test_inValid_header_originTrial(self):
         os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps(
             {
-                "Origin-Trial": "ArmVE2nkyn2sDf+DNN9MJVBYCagx:+NCFIc7=="
+                "Origin-Trial": "#####"
             }
         )
         header_config = nginx._get_http_headers()
