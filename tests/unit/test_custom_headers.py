@@ -178,7 +178,7 @@ class TestCaseCustomHeaderConfig(unittest.TestCase):
             }
         )
         header_config = nginx._get_http_headers()
-         self.assertIn(
+        self.assertIn(
             ("Origin_trial", "ArmVE2nkyn2sDf+DNN9MJVBYCagx:+NCFIc7=="),
             header_config,
         )
