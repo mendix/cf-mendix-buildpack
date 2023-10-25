@@ -170,3 +170,25 @@ class TestCaseCustomHeaderConfig(unittest.TestCase):
         os.environ["HTTP_RESPONSE_HEADERS"] = "invalid"
         with self.assertRaises(ValueError):
             nginx._get_http_headers()
+
+    def test_valid_header_originTrial(self):
+        os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps(
+            {
+                "Origin-Trial": "ArmVE2nkyn2sDf+DNN9MJVBYCagx:+NCFIc7=="
+            }
+        )
+        header_config = nginx._get_http_headers()
+        self.assertIn(
+            ("Origin-Trial", 
+             "ArmVE2nkyn2sDf+DNN9MJVBYCagx:+NCFIc7==",
+            ),
+            header_config,
+        )
+    def test_inValid_header_originTrial(self):
+        os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps(
+            {
+                "Origin-Trial": "#####"
+            }
+        )
+        header_config = nginx._get_http_headers()
+        self.assertEqual([], header_config)
