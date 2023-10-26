@@ -33,7 +33,7 @@ def create_admin_user(m2ee, is_development_mode):
         return
     if not app_admin_password:
         logging.warning(
-            "ADMIN_PASSWORD not set, so skipping creation of application admin password"
+            "ADMIN_PASSWORD is not set, so skipping creation of application admin password"
         )
         return
     logging.debug("Creating admin user")
