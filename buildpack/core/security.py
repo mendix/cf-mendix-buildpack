@@ -17,7 +17,7 @@ def get_m2ee_password(default_m2ee_password=str(uuid.uuid4()).replace("-", "@") 
     if not m2ee_password:
         logging.debug(
             "No ADMIN_PASSWORD or M2EE_PASSWORD configured, "
-            "using a random password for the m2ee admin api"
+            "using a random password for the m2ee admin API"
         )
         m2ee_password = default_m2ee_password
     return m2ee_password
