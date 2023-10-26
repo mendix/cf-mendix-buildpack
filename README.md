@@ -145,7 +145,7 @@ The first push generates a new app. In order to login to your application as adm
 cf set-env <YOUR_APP> ADMIN_PASSWORD "<YOURSECRETPASSWORD>"
 ```
 
-### 4. Connect a Database
+### 4. Connect a Database 
 
 After configuring an admin password, proceed with [connecting a database](#connect-a-database).
 
