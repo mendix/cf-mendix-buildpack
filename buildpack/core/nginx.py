@@ -22,7 +22,7 @@ ALLOWED_HEADERS = {
     "Strict-Transport-Security": r"(?i)(^max-age=[0-9]*$|^max-age=[0-9]*; includeSubDomains$|^max-age=[0-9]*; preload$)",  # noqa: line-too-long
     "X-Permitted-Cross-Domain-Policies": r"(?i)(^all$|^none$|^master-only$|^by-content-type$|^by-ftp-filename$)",  # noqa: line-too-long
     "Origin-Trial": r"[a-zA-Z0-9:;/''\"\*_\- \.\n?=%&+]+",
-    "X-XSS-Protection": r"(?i)(^0$|^1$|^1; mode=block$|^1; report=https?://([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*(:\d+)?$)",  # noqa: line-too-long
+    "X-XSS-Protection": r"(?i)(^0$|^1$|^1; mode=block$|^1; report=https?://([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*(:\d+)?$)"  # noqa: line-too-long
 }
 
 CONFIG_FILE = "nginx/conf/nginx.conf"
