@@ -1,6 +1,6 @@
 function apply_redaction(tag, timestamp, record)
 
-    local stringtoboolean={ ["true"]=true, ["false"]=false }
+    local stringtoboolean={ ["True"]=true, ["False"]=false }
 
     local patterns = {
         '\'jdbc:postgresql://(.*)\'',
@@ -8,12 +8,8 @@ function apply_redaction(tag, timestamp, record)
         'Endpoint set to: s3-(.*)',
     }
 
-    local is_logs_redaction = os.getenv("SPLUNK_LOGS_REDACTION")
-    if is_logs_redaction == nil then
-        is_logs_redaction = true
-    else
-        is_logs_redaction = stringtoboolean[is_logs_redaction]
-    end
+    local is_logs_redaction = os.getenv("LOGS_REDACTION")
+    is_logs_redaction = stringtoboolean[is_logs_redaction]
 
     if is_logs_redaction then
         table.insert(patterns, '[%w+%.%-_]+@[%w+%.%-_]+%.%a%a+') --email

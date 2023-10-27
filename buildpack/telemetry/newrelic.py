@@ -63,7 +63,7 @@ def update_config(m2ee, app_name):
 
 def _get_new_relic_license_key() -> Optional[str]:
     """Get the New Relic's license key."""
-    # Service-binding based integration (on-prem only)
+    # DEPRECATED - Service-binding integration (on-prem only)
     vcap_services = util.get_vcap_services_data()
     if vcap_services and "newrelic" in vcap_services:
         return vcap_services["newrelic"][0]["credentials"]["licenseKey"]

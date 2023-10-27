@@ -9,7 +9,7 @@ import backoff
 
 from buildpack import util
 from buildpack.telemetry import newrelic, splunk
-
+from lib.m2ee.util import strtobool
 
 NAMESPACE = "fluentbit"
 CONF_FILENAME = f"{NAMESPACE}.conf"
@@ -148,6 +148,8 @@ def _set_up_environment(model_version, runtime_version):
     env_vars["FLUENTBIT_APP_RUNTIME_VERSION"] = str(runtime_version)
     env_vars["FLUENTBIT_APP_MODEL_VERSION"] = model_version
 
+    env_vars["LOGS_REDACTION"] = str(_is_logs_redaction_enabled())
+
     fluentbit_env_vars.update(env_vars)
     return fluentbit_env_vars
 
@@ -169,3 +171,19 @@ def _print_logs() -> Tuple:
     if FLUENTBIT_ENV_VARS["FLUENTBIT_LOG_LEVEL"] == "debug":
         return tuple()
     return "-l", "/dev/null"
+
+
+def _is_logs_redaction_enabled() -> bool:
+    """Check if logs should be redacted."""
+
+    # Use this, if it is set
+    logs_redaction = os.getenv("LOGS_REDACTION")
+    if logs_redaction is not None:
+        return bool(strtobool(logs_redaction))
+
+    # DEPRECATED - Splunk-specific LOGS_REDACTION variable
+    if splunk.is_splunk_enabled():
+        return bool(strtobool(os.getenv("SPLUNK_LOGS_REDACTION", "true")))
+
+    # Turned on by default
+    return True
