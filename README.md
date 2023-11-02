@@ -598,7 +598,54 @@ The buildpack includes a variety of telemetry agents that can be configured to c
 
 ### New Relic
 
+#### Set up New Relic integration
+
+[Fluent Bit](https://docs.fluentbit.io/manual/) is used to collect Mendix Runtime logs to [New Relic](https://newrelic.com/).
+
+The metrics are collected by the [New Relic Java Agent](https://docs.newrelic.com/docs/apm/agents/java-agent/features/jvms-page-java-view-app-server-metrics-jmx/) and an integration with the [Telegraf agent](https://docs.influxdata.com/telegraf/).
+
+To enable the integration you must provide the following variables:
+
+| Environment variable    | Value example                                  | Default                 | Description                                                                                                                            |
+|-------------------------|------------------------------------------------|-------------------------|----------------------------------------------------------------------------------------------------------------------------------------|
+| `NEW_RELIC_LICENSE_KEY` | `api_key`                                      | -                       | License Key or API Key ([docs](https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/))                                    |
+| `NEW_RELIC_METRICS_URI` | `https://metric-api.eu.newrelic.com/metric/v1` | -                       | Metrics endpoint API ([docs](https://docs.newrelic.com/docs/data-apis/ingest-apis/metric-api/report-metrics-metric-api/#api-endpoint)) |
+| `NEW_RELIC_LOGS_URI`    | `https://log-api.eu.newrelic.com/log/v1`       | -                       | Logs endpoint API ([docs](https://docs.newrelic.com/docs/logs/log-api/introduction-log-api/))                                          |
+| `NEW_RELIC_APP_NAME`    | `MyApp`                                        | application domain name | Optional. Mendix App name shown on New Relic                                                                                           |
+| `LOGS_REDACTION`        | `true`                                         | `true`                  | Optional. Enables email address redaction from logs                                                                                    |
+
+:warning: For the first usage of the New Relic integration, the Mendix app should be redeployed after setting the variables up.
+
+#### Tags/Metadata in metrics and logs
+
+In addition to the runtime application logs, the following JSON-formatted metadata is automatically sent to New Relic, both for
+the metrics collected by the agent and the custom ones, pushed by Telegraf:
+
+* `environment_id` - unique identifier of the environment;
+* `instance_index` - number of the application instance;
+* `hostname` - name of the application host;
+* `application_name` - default application name, retrieved from domain name;
+* `model_version` - model version of the Mendix runtime;
+* `runtime_version` - version of the Mendix runtime.
+
+:information_source: `model_version` and `runtime_version` are only available to the custom metrics.
+
+#### Custom tags
+
+You can also set up custom tags in the following format `key:value`.
+Below, are listed some suggested tags that you might want to use:
+
+* `app:{app_name}` – this enables you to identify all logs sent from your app (for example, **app:customermanagement**)
+* `env:{environment_name}` – this enables you to identify logs sent from a particular environment so you can separate out production logs from test logs (for example, **env:accp**)
+
+#### Service-binding integration (on-prem only) - DEPRECATED
+
 To enable New Relic, simply bind a New Relic service to this app and settings will be picked up automatically. Afterwards you have to restage your application to enable the New Relic agent.
+
+This integration does not support logs or custom metrics.
+
+:warning: The default `NEW_RELIC_APP_NAME` for this integration used to be the environment ID of the application. Now the value is the domain name set to the application.
+If you want to keep using the environment id, you will have to set this variable yourself to that value.
 
 ### Splunk
 
@@ -611,12 +658,13 @@ To enable Splunk integration for a Mendix application, following environment var
 
 :warning: For the first usage of Splunk integration the Mendix app should be **redeployed** after setting the variables up.
 
-| Environment variable | Value example | Default | Description |
-|-|-|-|-|
-| `SPLUNK_HOST` | `test.splunkcloud.com` | - | Host of Splunk Cloud without 'http://' |
-| `SPLUNK_PORT` | `8088` | `8088` | Port of Splunk Cloud |
-| `SPLUNK_TOKEN`¹ | `uuid token` | - | Token from Splunk Cloud dashboard |
-| `SPLUNK_LOGS_REDACTION` | `true` | `true` | If `true` emails in log message are redacted |
+| Environment variable    | Value example          | Default | Description                                                                                |
+|-------------------------|------------------------|---------|--------------------------------------------------------------------------------------------|
+| `SPLUNK_HOST`           | `test.splunkcloud.com` | -       | Host of Splunk Cloud without 'http://'                                                     |
+| `SPLUNK_PORT`           | `8088`                 | `8088`  | Port of Splunk Cloud                                                                       |
+| `SPLUNK_TOKEN`¹         | `uuid token`           | -       | Token from Splunk Cloud dashboard                                                          |
+| `SPLUNK_LOGS_REDACTION` | `true`                 | `true`  | **DEPRECATED** - If `true` emails in log message are redacted - Use LOGS_REDACTION instead |
+| `LOGS_REDACTION`        | `true`                 | `true`  | Enables email address redaction from logs                                                  |
 
 1) To create new token on Splunk Cloud dashboard go to `Settings -> Data Input -> HTTP Event Collector` and push
 button `New Token` in the top-right corner of the page.
@@ -724,7 +772,8 @@ Additionally, the following integration-specific variables are available:
 | ------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `DATADOG_DATABASE_DISKSTORAGE_METRIC` | `true`        | Enables a metric denoting the disk storage size available to the database. This metric is set in the `DATABASE_DISKSTORAGE` environment variable. |
 | `DATADOG_DATABASE_RATE_COUNT_METRICS` | `false`       | Enables additional rate / count database metrics currently not compatible with the Datadog PostgreSQL integration                                 |
-| `DATADOG_LOGS_REDACTION`              | `true`        | Enables email address redaction from logs                                                                                                         |
+| `DATADOG_LOGS_REDACTION`              | `true`        | **DEPRECATED** - Enables email address redaction from logs - Use LOGS_REDACTION instead                                                           |
+| `LOGS_REDACTION`                      | `true`        | Enables email address redaction from logs                                                                                                         |
 
 To receive metrics from the runtime, the Mendix Java Agent is added to the runtime as Java agent. This agent can be configured by passing a JSON in the environment variable `METRICS_AGENT_CONFIG` as described in [Datadog for v4 Mendix Cloud](https://docs.mendix.com/developerportal/operate/datadog-metrics).
 

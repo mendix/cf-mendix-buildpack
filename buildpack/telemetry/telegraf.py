@@ -18,7 +18,7 @@ from buildpack.infrastructure import database
 from lib.m2ee.util import strtobool
 from jinja2 import Template
 
-from . import datadog, metrics, mx_java_agent, appdynamics, dynatrace, splunk
+from . import appdynamics, datadog, dynatrace, metrics, mx_java_agent, newrelic, splunk
 
 NAMESPACE = "telegraf"
 DEPENDENCY = f"{NAMESPACE}.agent"
@@ -89,6 +89,7 @@ def include_db_metrics():
         or datadog.is_enabled()
         or appdynamics.machine_agent_enabled()
         or dynatrace.is_telegraf_enabled()
+        or newrelic.is_enabled()
     ):
         # For customers who have Datadog or AppDynamics or APPMETRICS_TARGET enabled,
         # we always include the database metrics. They can opt out
@@ -109,6 +110,7 @@ def is_enabled(runtime_version):
         or appdynamics.machine_agent_enabled()
         or dynatrace.is_telegraf_enabled()
         or metrics.micrometer_metrics_enabled(runtime_version)
+        or newrelic.is_enabled()
     )
 
 
@@ -231,6 +233,7 @@ def _get_integration_usages():
         "dynatrace": dynatrace.is_telegraf_enabled,
         "appdynamics": appdynamics.appdynamics_used,
         "splunk": splunk.is_splunk_enabled,
+        "newrelic": newrelic.is_enabled,
     }
 
     for integration, is_enabled in checker_methods.items():
@@ -255,9 +258,20 @@ def update_config(m2ee, app_name):
     template_path = os.path.join(_get_config_file_dir(version), TEMPLATE_FILENAME)
 
     tags = util.get_tags()
+
     if datadog.is_enabled() and "service" not in tags:
         # app and / or service tag not set
         tags["service"] = datadog.get_service_tag()
+
+    # Add application tags to the custom metrics sent to New Relic
+    if newrelic.is_enabled():
+        newrelic_tags = newrelic.get_metrics_tags(app_name)
+        newrelic_tags["runtime_version"] = runtime_version
+        newrelic_tags["model_version"] = runtime.get_model_version()
+
+        # Make sure the user defined values persist, if the tags overlap
+        newrelic_tags.update(tags)
+        tags = newrelic_tags
 
     dynatrace_token, dynatrace_ingest_url = dynatrace.get_ingestion_info()
 
@@ -284,6 +298,8 @@ def update_config(m2ee, app_name):
         appdynamics_output_script_path=APPDYNAMICS_OUTPUT_SCRIPT_PATH,
         dynatrace_enabled=dynatrace.is_telegraf_enabled(),
         dynatrace_config=_get_dynatrace_config(app_name),
+        newrelic_enabled=newrelic.is_enabled(),
+        newrelic_config=newrelic.get_metrics_config(),
         telegraf_debug_enabled=os.getenv("TELEGRAF_DEBUG_ENABLED", "false"),
         telegraf_fileout_enabled=strtobool(
             os.getenv("TELEGRAF_FILEOUT_ENABLED", "false")

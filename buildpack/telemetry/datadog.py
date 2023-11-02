@@ -80,6 +80,15 @@ def _is_tracing_enabled():
 
 # Toggles logs redaction (email addresses are replaced by a generic string)
 def _is_logs_redaction_enabled():
+    """Check if logs should be redacted."""
+
+    # Use this, if it is set
+    logs_redaction = os.getenv("LOGS_REDACTION")
+    if logs_redaction is not None:
+        return strtobool(logs_redaction)
+
+    # Turned on by default
+    # DEPRECATED - Datadog-specific LOGS_REDACTION variable
     return strtobool(os.environ.get("DATADOG_LOGS_REDACTION", "true"))
 
 
