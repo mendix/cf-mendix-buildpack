@@ -528,6 +528,36 @@ class SapHanaDatabaseConfiguration(DatabaseConfiguration):
 
 def stage(buildpack_dir, build_dir):
     logging.debug("Staging database...")
+    region_pem_map = {
+        "us-east-1": "us-east-1-bundle.pem",
+        "us-east-2": "us-east-2-bundle.pem",
+        "us-west-1": "us-west-1-bundle.pem",
+        "us-west-2": "us-west-2-bundle.pem",
+        "af-south-1": "af-south-1-bundle.pem",
+        "ap-east-1": "ap-east-1-bundle.pem",
+        "ap-south-2": "ap-south-2-bundle.pem",
+        "ap-southeast-3": "ap-southeast-3-bundle.pem",
+        "ap-southeast-4": "ap-southeast-4-bundle.pem",
+        "ap-south-1": "ap-south-1-bundle.pem",
+        "ap-northeast-3": "ap-northeast-3-bundle.pem",
+        "ap-northeast-1": "ap-northeast-1-bundle.pem",
+        "ap-northeast-2": "ap-northeast-2-bundle.pem",
+        "ap-southeast-1": "ap-southeast-1-bundle.pem",
+        "ap-southeast-2": "ap-southeast-2-bundle.pem",
+        "ca-central-1": "ca-central-1-bundle.pem",
+        "eu-central-1": "eu-central-1-bundle.pem",
+        "eu-west-1": "eu-west-1-bundle.pem",
+        "eu-west-2": "eu-west-2-bundle.pem",
+        "eu-south-1": "eu-south-1-bundle.pem",
+        "eu-west-3": "eu-west-3-bundle.pem",
+        "eu-south-2": "eu-south-2-bundle.pem",
+        "eu-north-1": "eu-north-1-bundle.pem",
+        "eu-central-2": "eu-central-2-bundle.pem",
+        "il-central-1": "il-central-1-bundle.pem",
+        "me-south-1": "me-south-1-bundle.pem",
+        "me-central-1": "me-central-1-bundle.pem",
+        "sa-east-1": "sa-east-1-bundle.pem"
+    }
     util.mkdir_p(os.path.join(build_dir, ".postgresql"))
     for key, value in region_pem_map.items():
         shutil.copy(
