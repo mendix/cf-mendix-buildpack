@@ -335,7 +335,7 @@ class UrlDatabaseConfiguration(DatabaseConfiguration):
         if database_type == "PostgreSQL" and config["DatabaseHost"].split(":")[
             0
         ].endswith(".rds.amazonaws.com"):
-            database_region = config["DatabaseHost"].split('.')[1]
+            database_region = config["DatabaseHost"].split('.')[2]
             jdbc_params.update(
                 {
                     "sslrootcert": os.path.expandvars(
