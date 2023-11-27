@@ -110,12 +110,12 @@ def micrometer_metrics_enabled(runtime_version):
     """Check for metrics from micrometer."""
     logging.info("checking is micrometer metrics enabled")
     micrometer_enabled=False
-    if(_micrometer_runtime_requirement(runtime_version))
+    if(_micrometer_runtime_requirement(runtime_version)):
         logging.info("satisfies micrometer runtime requirement")
-        if(bool(get_micrometer_metrics_url()))
+        if(bool(get_micrometer_metrics_url())):
             logging.info("Found micrometer metrics url configured")
             micrometer_enabled = True
-        elif(strtobool(os.getenv("NON_MENDIX_PUBLIC_CLOUD","false")))
+        elif(strtobool(os.getenv("NON_MENDIX_PUBLIC_CLOUD","false"))):
             logging.info("micrometer for non mendix public cloud")
             micrometer_enabled =  True
     return micrometer_enabled
