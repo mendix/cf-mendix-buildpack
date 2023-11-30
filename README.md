@@ -895,7 +895,7 @@ For the third-party integrations explained above, in addition to the metrics col
 This configuration also has a filtering mechanism that allows users to specify metrics they allow or deny for the vendor they are using.
 To filter the ingestion of custom runtime metrics to third party APMs, users should provide a list of prefixes of the metrics they want to allow/deny using the environment variables listed below.
 
-Note: Custom database metrics cannot be filtered by name, to turn them off, the `APPMETRICS_INCLUDE_DB` environment variable should be set to false. 
+Note: Custom database metrics cannot be filtered by name, to turn them off, the `APPMETRICS_INCLUDE_DB` environment variable should be set to false.
 
 #### APM_METRICS_FILTER_ALLOW
 
@@ -909,7 +909,7 @@ cf set-env <YOUR_APP> APM_METRICS_FILTER_ALLOW 'mx.runtime.stats.sessions'
 
 #### APM_METRICS_FILTER_DENY
 
-Comma-separated list of prefixes for the metrics to be denied. 
+Comma-separated list of prefixes for the metrics to be denied.
 
 For example, to deny all metrics starting with jetty or mx.runtime, the environment variable should be set to `jetty,mx.runtime`:
 
@@ -924,7 +924,6 @@ If this environment variable is set to `true`, all metrics will be denied regard
 ```shell
 cf set-env <YOUR_APP> APM_METRICS_FILTER_DENY_ALL true
 ```
-
 
 ## Using the Buildpack without an Internet Connection
 

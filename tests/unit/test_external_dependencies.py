@@ -35,7 +35,7 @@ dependencies:
             {
                 "foo.bar": {
                     "version": "1.0.0",
-                    DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-{{ version }}.tar.gz",  # noqa: line-too-long
+                    DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-{{ version }}.tar.gz",  # noqa: C0301
                     DEPENDENCY_NAME_KEY: ["foo", "bar"],
                 }
             },
@@ -54,13 +54,13 @@ dependencies:
 """,
             {
                 "foo.bar": {
-                    DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-{{ type }}-{{ version }}.tar.gz",  # noqa: line-too-long
+                    DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-{{ type }}-{{ version }}.tar.gz",  # noqa: C0301
                     "type": "fizz",
                     "version": "1.0.0",
                     DEPENDENCY_NAME_KEY: ["foo", "bar"],
                 },
                 "foo.baz": {
-                    DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-{{ type }}-{{ version }}.tar.gz",  # noqa: line-too-long
+                    DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-{{ type }}-{{ version }}.tar.gz",  # noqa: C0301
                     "type": "buzz",
                     "version": "1.0.0",
                     DEPENDENCY_NAME_KEY: ["foo", "baz"],
@@ -83,28 +83,28 @@ dependencies:
 """,
             {
                 "foo.fizz-1": {
-                    DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-{{ type }}-{{ version }}.tar.gz",  # noqa: line-too-long
+                    DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-{{ type }}-{{ version }}.tar.gz",  # noqa: C0301
                     "type": "fizz",
                     "version": "1.0.0",
                     "version_key": "1",
                     DEPENDENCY_NAME_KEY: ["foo", "fizz-1"],
                 },
                 "foo.buzz-1": {
-                    DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-{{ type }}-{{ version }}.tar.gz",  # noqa: line-too-long
+                    DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-{{ type }}-{{ version }}.tar.gz",  # noqa: C0301
                     "type": "buzz",
                     "version": "1.0.0",
                     "version_key": "1",
                     DEPENDENCY_NAME_KEY: ["foo", "buzz-1"],
                 },
                 "foo.fizz-2": {
-                    DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-{{ type }}-{{ version }}.tar.gz",  # noqa: line-too-long
+                    DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-{{ type }}-{{ version }}.tar.gz",  # noqa: C0301
                     "type": "fizz",
                     "version": "2.0.0",
                     "version_key": "2",
                     DEPENDENCY_NAME_KEY: ["foo", "fizz-2"],
                 },
                 "foo.buzz-2": {
-                    DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-{{ type }}-{{ version }}.tar.gz",  # noqa: line-too-long
+                    DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-{{ type }}-{{ version }}.tar.gz",  # noqa: C0301
                     "type": "buzz",
                     "version": "2.0.0",
                     "version_key": "2",
@@ -182,7 +182,7 @@ dependencies:
             "foo",
             {},
             {
-                DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-{{ version }}.tar.gz",  # noqa: line-too-long
+                DEPENDENCY_ARTIFACT_KEY: "some_location/some_archive-{{ version }}.tar.gz",  # noqa: C0301
                 DEPENDENCY_NAME_KEY: ["foo"],
             },
         ),
@@ -222,7 +222,7 @@ dependencies:
         (
             {
                 "version": "1.0.0",
-                DEPENDENCY_ARTIFACT_KEY: "https://myowncdn.com/some_location/some_archive-1.0.0.tar.gz",  # noqa: line-too-long
+                DEPENDENCY_ARTIFACT_KEY: "https://myowncdn.com/some_location/some_archive-1.0.0.tar.gz",  # noqa: C0301
                 DEPENDENCY_NAME_KEY: ["foo"],
             },
             "https://myowncdn.com/some_location/some_archive-1.0.0.tar.gz",
