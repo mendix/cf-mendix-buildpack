@@ -160,7 +160,7 @@ def stage(buildpack_path, cache_path, local_path, java_major_version):
 
 
 def _compose_jvm_target_dir(dependency):
-    return f"usr/lib/jvm/{dependency['vendor']}-{dependency['type']}-{dependency['version']}-{dependency['vendor']}-x64"  # noqa: line-too-long
+    return f"usr/lib/jvm/{dependency['vendor']}-{dependency['type']}-{dependency['version']}-{dependency['vendor']}-x64"  # noqa: C0301
 
 
 def _get_java_dependency(
