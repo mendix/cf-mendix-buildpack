@@ -125,7 +125,7 @@ class M2EE:
                     ),
                     "port": self.config.get_runtime_port(),
                     "application_base_path": self.config.get_app_base(),
-                    "use_blocking_connector": self.config.get_runtime_blocking_connector(),  # noqa: line-too-long
+                    "use_blocking_connector": self.config.get_runtime_blocking_connector(),  # noqa: C0301
                 }
             )
             response.display_error()
@@ -134,7 +134,7 @@ class M2EE:
             response = self.client.update_appcontainer_configuration(
                 {
                     "runtime_port": self.config.get_runtime_port(),
-                    "runtime_listen_addresses": self.config.get_runtime_listen_addresses(),  # noqa: line-too-long
+                    "runtime_listen_addresses": self.config.get_runtime_listen_addresses(),  # noqa: C0301
                     "runtime_jetty_options": self.config.get_jetty_options(),
                 }
             )

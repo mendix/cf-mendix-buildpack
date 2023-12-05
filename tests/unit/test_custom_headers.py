@@ -76,20 +76,20 @@ class TestCaseCustomHeaderConfig(unittest.TestCase):
     def test_valid_header_contentSecurity(self):
         os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps(
             {
-                "Content-Security-Policy": "default-src https: \u0027unsafe-eval\u0027 \u0027unsafe-inline\u0027; object-src \u0027none\u0027"  # noqa: line-too-long
+                "Content-Security-Policy": "default-src https: \u0027unsafe-eval\u0027 \u0027unsafe-inline\u0027; object-src \u0027none\u0027"  # noqa: C0301
             }
         )
         header_config = nginx._get_http_headers()
         self.assertIn(
             (
                 "Content-Security-Policy",
-                "default-src https: \\'unsafe-eval\\' \\'unsafe-inline\\'; object-src \\'none\\'",  # noqa: line-too-long
-            ),  # noqa: line-too-long
+                "default-src https: \\'unsafe-eval\\' \\'unsafe-inline\\'; object-src \\'none\\'",  # noqa: C0301
+            ),  # noqa: C0301
             header_config,
         )
 
     def test_valid_header_contentSecurity_sha(self):
-        base64_src = r"default-src 'self'; style-src 'self' 'sha256-aBc/dEf='; script-src 'self' 'unsafe-eval' 'sha256-aBc+dEf=';"  # noqa: line-too-long
+        base64_src = r"default-src 'self'; style-src 'self' 'sha256-aBc/dEf='; script-src 'self' 'unsafe-eval' 'sha256-aBc+dEf=';"  # noqa: C0301
 
         os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps(
             {"Content-Security-Policy": base64_src}
@@ -106,7 +106,7 @@ class TestCaseCustomHeaderConfig(unittest.TestCase):
     def test_invalid_header_contentSecurity(self):
         os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps(
             {
-                "Content-Security-Policy": "$# default-src https://my.csp.domain.amsterdam"  # noqa: line-too-long
+                "Content-Security-Policy": "$# default-src https://my.csp.domain.amsterdam"  # noqa: C0301
             }
         )
         header_config = nginx._get_http_headers()
@@ -179,7 +179,7 @@ class TestCaseCustomHeaderConfig(unittest.TestCase):
         )
         header_config = nginx._get_http_headers()
         self.assertIn(
-            ("Origin-Trial", 
+            ("Origin-Trial",
              "ArmVE2nkyn2sDf+DNN9MJVBYCagx:+NCFIc7==",
             ),
             header_config,

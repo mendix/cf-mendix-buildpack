@@ -55,7 +55,7 @@ def update_config(m2ee, app_name):
     util.upsert_javaopts(
         m2ee,
         [
-            f"-javaagent:{os.path.join(_get_destination_dir(), 'newrelic', 'newrelic.jar')}",  # noqa: line-too-long
+            f"-javaagent:{os.path.join(_get_destination_dir(), 'newrelic', 'newrelic.jar')}",  # noqa: C0301
             f"-Dnewrelic.config.labels=\"{_get_labels(app_name)}\"",
         ]
     )
