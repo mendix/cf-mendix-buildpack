@@ -332,19 +332,22 @@ class UrlDatabaseConfiguration(DatabaseConfiguration):
         if database_type == "PostgreSQL":
             jdbc_params.update({"tcpKeepAlive": "true"})
 
-        if database_type == "PostgreSQL" and config["DatabaseHost"].split(":")[
-            0
-        ].endswith(".rds.amazonaws.com"):
-            database_region = config["DatabaseHost"].split('.')[2]
-            jdbc_params.update(
-                {
-                    "sslrootcert": os.path.expandvars(
-                        "$HOME/.postgresql/"+region_pem_map[database_region]
-                    )
-                }
-            )
-            jdbc_params.update({"sslmode": "verify-full"})
-
+        try:
+            if database_type == "PostgreSQL" and config["DatabaseHost"].split(":")[
+                0
+            ].endswith(".rds.amazonaws.com"):
+                database_region = config["DatabaseHost"].split('.')[2]
+                jdbc_params.update(
+                    {
+                        "sslrootcert": os.path.expandvars(
+                            "$HOME/.postgresql/"+region_pem_map[database_region]
+                        )
+                    }
+                )
+                jdbc_params.update({"sslmode": "verify-full"})
+        except:
+            raise Exception("Could not find database CA certificate in map")
+    
         if database_type == "PostgreSQL" and not self.url.startswith("jdbc:"):
             self.extract_inline_cert(jdbc_params, self.SSLCERT, "postgresql.crt")
             self.extract_inline_cert(jdbc_params, self.SSLKEY, "postgresql.pk8")
@@ -561,7 +564,7 @@ def stage(buildpack_dir, build_dir):
     util.mkdir_p(os.path.join(build_dir, ".postgresql"))
     for key, value in region_pem_map.items():
         shutil.copy(
-            os.path.join(buildpack_dir, "etc", value),
+            os.path.join(buildpack_dir, "etc/rds-certificates", value),
             os.path.join(build_dir, ".postgresql", value ),
          )
 

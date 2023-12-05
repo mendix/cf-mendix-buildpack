@@ -196,6 +196,8 @@ cf set-env <YOUR_APP> DATABASE_CONNECTION_PARAMS '{"tcpKeepAlive": "true", "conn
 
 *:warning: If you set `DATABASE_URL` as JDBC connection string (prefixed with `jdbc:` and including parameters, `DATABASE_CONNECTION_PARAMS` is not required.*
 
+To allow connection to an AWS RDS database the buildpack selects the regional CA certificate stored in [`rds-certificates`](etc/rds-certificates). If the region's certificate doesn't exist, the buildpack will fail with an error `Could not find database CA certificate in map`.
+
 #### Supported VCAP Schemas
 
  Cloud Foundry database services are detected from Cloud Foundry service bindings ([VCAP](https://docs.cloudfoundry.org/devguide/deploy-apps/environment-variable.html#VCAP-SERVICES)) and translated into Mendix Runtime configuration. In case no database service is bound, the fallback is the environment variable `DATABASE_URL`.
