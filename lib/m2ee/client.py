@@ -94,7 +94,7 @@ class M2EEClient:
             errors = echo_feedback["errors"]
             # default to 3.0 format [{"message":"Hello,
             # world!","timestamp":1315316488958,"cause":""}, ...]
-            if type(errors[0]) != dict:
+            if not isinstance(errors[0], dict):
                 return errors
             from datetime import datetime
 

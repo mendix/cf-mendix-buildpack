@@ -695,7 +695,7 @@ WHERE t.schemaname='public';
 
         with conn.cursor() as cursor:
             cursor.execute(
-                "SELECT COUNT(id) from system$filedocument WHERE hascontents=true;"  # noqa:line-too-long
+                "SELECT COUNT(id) from system$filedocument WHERE hascontents=true;"  # noqa:C0301
             )
             rows = cursor.fetchall()
             if len(rows) == 0:
@@ -706,7 +706,7 @@ WHERE t.schemaname='public';
         conn = self._get_db_conn()
         with conn.cursor() as cursor:
             cursor.execute(
-                "SELECT SUM(size) from system$filedocument WHERE hascontents=true;"  # noqa:line-too-long
+                "SELECT SUM(size) from system$filedocument WHERE hascontents=true;"  # noqa:C0301
             )
             rows = cursor.fetchall()
             if len(rows) == 0:

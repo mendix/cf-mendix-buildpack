@@ -151,7 +151,7 @@ def convert_and_push_payload():
     AppDynamics Machine Agent HTTP listener.
 
     """
-    # AppDynamics Docs: https://docs.appdynamics.com/22.2/en/infrastructure-visibility/machine-agent/extensions-and-custom-metrics/machine-agent-http-listener  # noqa: line-too-long
+    # AppDynamics Docs: https://docs.appdynamics.com/22.2/en/infrastructure-visibility/machine-agent/extensions-and-custom-metrics/machine-agent-http-listener  # noqa: C0301
 
     metrics_str = input()
     metrics_dict = json.loads(metrics_str)
