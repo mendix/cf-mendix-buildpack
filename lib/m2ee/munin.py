@@ -139,7 +139,7 @@ def _get_jre_major_version_from_version_string(version_string):
 
 
 def _guess_java_version(m2ee_response, runtime_version, m2ee_stats):
-    # type: ("lib.m2ee.client.M2EEResponse", "lib.m2ee.version.MXVersion", dict) -> "Optional[int]"  # noqa: line-too-long
+    # type: ("lib.m2ee.client.M2EEResponse", "lib.m2ee.version.MXVersion", dict) -> "Optional[int]"  # noqa: C0301
     """ "This internal function has a more unit-testable API than
     `guess_java_version`, which enables us to preserve compatibility, whilst
     simultaneously adding unit testing.
@@ -208,7 +208,7 @@ def get_stats_from_runtime(client, config):
     m2eeresponse = client.server_statistics()
     if not m2eeresponse.has_error():
         stats.update(m2eeresponse.get_feedback())
-    if type(stats["requests"]) == list:
+    if isinstance(stats["requests"], list):
         # convert back to normal, whraagh
         bork = {}
         for x in stats["requests"]:
@@ -502,17 +502,17 @@ def print_connectionbus_values(name, stats):
 
 
 def print_sessions_config(name, stats, graph_total_named_users):
-    if type(stats["sessions"]) != dict:
-        print_sessions_pre254_config(name, stats)
-    else:
+    if isinstance(stats["sessions"], dict):
         print_sessions_since254_config(name, stats, graph_total_named_users)
+    else:
+        print_sessions_pre254_config(name, stats)
 
 
 def print_sessions_values(name, stats, graph_total_named_users):
-    if type(stats["sessions"]) != dict:
-        print_sessions_pre254_values(name, stats)
-    else:
+    if isinstance(stats["sessions"], dict):
         print_sessions_since254_values(name, stats, graph_total_named_users)
+    else:
+        print_sessions_pre254_values(name, stats)
 
 
 def print_sessions_pre254_config(name, stats):

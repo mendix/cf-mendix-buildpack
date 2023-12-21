@@ -108,9 +108,18 @@ def _micrometer_runtime_requirement(runtime_version):
 
 def micrometer_metrics_enabled(runtime_version):
     """Check for metrics from micrometer."""
-    return bool(get_micrometer_metrics_url()) and _micrometer_runtime_requirement(
-        runtime_version
-    )
+    logging.info("checking is micrometer metrics enabled")
+    micrometer_enabled=False
+    if(_micrometer_runtime_requirement(runtime_version)):
+        logging.debug("satisfies micrometer runtime requirement")
+        if(bool(get_micrometer_metrics_url())):
+            logging.debug("Found micrometer metrics url configured")
+            micrometer_enabled = True
+        elif(strtobool(os.getenv("NON_MENDIX_PUBLIC_CLOUD","false"))):
+            logging.debug("micrometer for non mendix public cloud")
+            micrometer_enabled =  True
+    return micrometer_enabled
+    
 
 
 def configure_metrics_registry(m2ee):
@@ -686,7 +695,7 @@ WHERE t.schemaname='public';
 
         with conn.cursor() as cursor:
             cursor.execute(
-                "SELECT COUNT(id) from system$filedocument WHERE hascontents=true;"  # noqa:line-too-long
+                "SELECT COUNT(id) from system$filedocument WHERE hascontents=true;"  # noqa:C0301
             )
             rows = cursor.fetchall()
             if len(rows) == 0:
@@ -697,7 +706,7 @@ WHERE t.schemaname='public';
         conn = self._get_db_conn()
         with conn.cursor() as cursor:
             cursor.execute(
-                "SELECT SUM(size) from system$filedocument WHERE hascontents=true;"  # noqa:line-too-long
+                "SELECT SUM(size) from system$filedocument WHERE hascontents=true;"  # noqa:C0301
             )
             rows = cursor.fetchall()
             if len(rows) == 0:

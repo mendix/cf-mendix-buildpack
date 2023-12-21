@@ -153,16 +153,30 @@ class BaseTest(unittest.TestCase):
         assert self.get_container_exitcode() == exitcode
         self.assert_string_in_recent_logs("Mendix Runtime is shutting down")
         self.assert_string_in_recent_logs("Mendix Runtime is now shut down")
+
+        # sometimes the java process is already killed but for some reason, it's in <defunct> state
+        if self.is_process_defunct("java"):
+            print("\n For some reason, java process is in <defunct> state.")
+            self.run_on_container("killall -9 java")  # force kill the process to continue
+            exitcode = 1
+
         if exitcode == 0:
             # sys.exit(1) only occurs before the await termination loop
             self.assert_string_in_recent_logs("Runtime process has been terminated")
-        self.assert_string_in_recent_logs("Terminating process group")
+            self.assert_string_in_recent_logs("Terminating process group")
 
     def query_mxadmin(self, *args, **kwargs):
         return self._runner.mxadmin(*args, **kwargs)
 
     def run_on_container(self, *args, **kwargs):
         return self._runner.run_on_container(*args, **kwargs)
+
+    def is_process_defunct(self, process):
+        try:
+            defunct_process = self.run_on_container("ps aux | grep {} | grep defunct".format(process))
+            return defunct_process is not None
+        except RuntimeError:
+            return False
 
 
 class BaseTestWithPostgreSQL(BaseTest):
