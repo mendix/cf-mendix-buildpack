@@ -5,8 +5,8 @@ TEST_FILES ?= tests/integration/test_*.py
 VERSION ?= $(shell git tag --list --sort=-version:refname "v*" | head -n 1)
 COMMIT ?= $(shell git rev-parse --short HEAD)
 
-PIP_TOOLS_VERSION ?= 6.13.0
-PIP_VERSION ?= 23.1
+PIP_TOOLS_VERSION ?= 7.3.0
+PIP_VERSION ?= 23.3.1
 PYTHON_PLATFORM ?= manylinux2014_x86_64
 PYTHON_VERSION ?= 310
 

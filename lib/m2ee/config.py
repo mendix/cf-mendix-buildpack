@@ -327,7 +327,7 @@ class M2EEConfig:
             # searching
             if not self._conf.get("mxnode", {}).get("mxjar_repo", None):
                 self._conf["mxnode"]["mxjar_repo"] = []
-            elif not type(self._conf.get("mxnode", {})["mxjar_repo"]) == list:
+            elif not isinstance((self._conf.get("mxnode", {})["mxjar_repo"]), list):
                 self._conf["mxnode"]["mxjar_repo"] = [
                     self._conf["mxnode"]["mxjar_repo"]
                 ]
@@ -512,7 +512,7 @@ class M2EEConfig:
             env = os.environ.copy()
         elif preserve_environment is False:
             pass
-        elif type(preserve_environment) == list:
+        elif isinstance(preserve_environment, list):
             for varname in preserve_environment:
                 if varname in os.environ:
                     env[varname] = os.environ[varname]
@@ -526,7 +526,7 @@ class M2EEConfig:
 
         custom_environment = self._conf["m2ee"].get("custom_environment", {})
         if custom_environment is not None:
-            if type(custom_environment) == dict:
+            if isinstance(custom_environment, dict):
                 env.update(custom_environment)
             else:
                 logger.warn(

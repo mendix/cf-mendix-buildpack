@@ -30,7 +30,7 @@ class TestDatabaseConfigOptions(TestCase):
         os.environ,
         {
             "MXRUNTIME_DatabaseType": "PostgreSQL",
-            "MXRUNTIME_DatabaseJdbcUrl": "jdbc:postgresql://username:password@rdsbroker-testfree-nonprod-1-eu-west-1.asdbjasdg.eu-west-1.rds.amazonaws.com:5432/testdatabase",  # noqa: line-too-long
+            "MXRUNTIME_DatabaseJdbcUrl": "jdbc:postgresql://username:password@rdsbroker-testfree-nonprod-1-eu-west-1.asdbjasdg.eu-west-1.rds.amazonaws.com:5432/testdatabase",  # noqa: C0301
         },
         clear=True,
     )
