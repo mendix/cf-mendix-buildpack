@@ -237,6 +237,19 @@ def get_influx_registry():
     # `a.name.like.this` would appear as `a_name_like_this` in
     # influx-formatted metrics output. Hence the filter names uses the
     # dot-separated metric names.
+    deny_list = ["commons.pool", "jvm.buffer"]
+
+    # Remove metrics sent by the Mendix Agent from internal processing
+    mendix_agent_metrics = [
+        "mx.microflow",
+        "mx.activity",
+        "mx.soap",
+        "mx.odata",
+        "mx.rest",
+        "mx.client",
+    ]
+    deny_list.extend(mendix_agent_metrics)
+
     return {
         "type": "influx",
         "settings": {
@@ -251,7 +264,7 @@ def get_influx_registry():
             {
                 "type": "nameStartsWith",
                 "result": "deny",
-                "values": ["commons.pool", "jvm.buffer"],
+                "values": deny_list,
             },
         ],
     }
