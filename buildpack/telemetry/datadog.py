@@ -389,6 +389,19 @@ def _set_up_environment(model_version, runtime_version):
     e["DD_ENABLE_CHECKS"] = str(bool(_is_checks_enabled())).lower()
     e["LOGS_CONFIG"] = json.dumps(_get_logging_config())
 
+    # Append the ruby binary path
+    ruby_path = os.path.join(ROOT_DIR, "ruby", "bin")
+    e["PATH"] += os.pathsep + ruby_path
+
+    # Add an empty .global_env file as the DD buildpack expects a .global_env
+    # This is in parity with how the DD buildpack sets up the environment before
+    # installing the DD agents. Sourced from bin/supply scripts
+    # https://github.com/DataDog/datadog-cloudfoundry-buildpack/blob/master/bin/supply#L31
+    # Keeping it empty as we're already adding the RUBY path as part of process env
+    global_env_file = os.path.join(_get_agent_dir(), ".global_env")
+    with open(global_env_file, mode='a'):
+        pass
+
     return e
 
 
@@ -492,6 +505,16 @@ def update_config(
 
 
 def _download(buildpack_dir, build_path, cache_dir):
+    # DD for cflinuxfs4 requires ruby to be available, so installing
+    # the ruby dependency first before we proceed
+    # https://github.com/DataDog/datadog-cloudfoundry-buildpack/pull/174
+    util.resolve_dependency(
+        "ruby",
+        os.path.join(build_path, "ruby"),
+        buildpack_dir=buildpack_dir,
+        cache_dir=cache_dir,
+    )
+
     util.resolve_dependency(
         f"{NAMESPACE}.buildpack",
         os.path.join(build_path, NAMESPACE),
@@ -525,7 +548,7 @@ def _patch_run_datadog_script(script_dir):
         lines = file_handler.readlines()
         file_handler.seek(0)
         for line in lines:
-            if "stop_datadog &" in line:
+            if "monit_datadog &" in line:
                 file_handler.write(f"# {line}")
             else:
                 file_handler.write(line)
