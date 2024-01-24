@@ -20,12 +20,12 @@ def get_java_major_version(runtime_version):
         return _get_major_version(os.getenv(JAVA_VERSION_OVERRIDE_KEY))
     if runtime_version >= MXVersion("8.0.0"):
         result = runtime.get_metadata_value("JavaVersion")
-        if "17" in result:
+        if result is None:
+            result = 11 # default version for mx 8 or above
+        elif "17" in result:
             result = 17
         elif "21" in result:
             result = 21
-        else: # can also mean none
-            result = 11
     return _get_major_version(result)
 
 def _get_major_version(version):
