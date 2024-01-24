@@ -16,7 +16,9 @@ SUPPORTED_GC_COLLECTORS = ["Serial", "G1"]
 
 def get_java_major_version(runtime_version):
     result = runtime.get_metadata_value("JavaVersion")
+    logging.info("JavaVersion 1 ...[{$result}]")
     if result is None:
+        logging.info("JavaVersion 2 ...")
         result = 8
         if os.getenv(JAVA_VERSION_OVERRIDE_KEY):
             return _get_major_version(os.getenv(JAVA_VERSION_OVERRIDE_KEY))
@@ -24,6 +26,7 @@ def get_java_major_version(runtime_version):
             result = 11
         return _get_major_version(result)
     else:
+        logging.info("JavaVersion 3 ...")
         if result.endsWith("17"):
             return 17
         if result.endsWith("21"):
