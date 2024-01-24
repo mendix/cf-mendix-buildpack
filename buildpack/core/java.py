@@ -15,28 +15,18 @@ DEFAULT_GC_COLLECTOR = "Serial"
 SUPPORTED_GC_COLLECTORS = ["Serial", "G1"]
 
 def get_java_major_version(runtime_version):
-    result = runtime.get_metadata_value("JavaVersion")
-    if result is None:
-        logging.debug(
-            "Cannot retrieve JavaVersion %s from metadata file, "
-            "falling back to old implementation",
-            result,
-        )
-        result = 8
-        if os.getenv(JAVA_VERSION_OVERRIDE_KEY):
-            return _get_major_version(os.getenv(JAVA_VERSION_OVERRIDE_KEY))
-        if runtime_version >= MXVersion("8.0.0"):
-            result = 11
-        return _get_major_version(result)
-    else:
-        if "11" in result:
-            return 11
+    result = 8
+    if os.getenv(JAVA_VERSION_OVERRIDE_KEY):
+        return _get_major_version(os.getenv(JAVA_VERSION_OVERRIDE_KEY))
+    if runtime_version >= MXVersion("8.0.0"):
+        result = runtime.get_metadata_value("JavaVersion")
         if "17" in result:
-            return 17
-        if "21" in result:
-            return 21
-        else:
-            raise ValueError(f"Cannot determine Java Version from MDA [{result}]")
+            result = 17
+        elif "21" in result:
+            result = 21
+        else: # can also mean none
+            result = 11
+    return _get_major_version(result)
 
 def _get_major_version(version):
     # Java 8
