@@ -29,9 +29,11 @@ def get_java_major_version(runtime_version):
             result = 11
         return _get_major_version(result)
     else:
-        if result.endsWith("17"):
+        if "11" in result:
+            return 11
+        if "17" in result:
             return 17
-        if result.endsWith("21"):
+        if "21" in result:
             return 21
         else:
             raise ValueError(f"Cannot determine Java Version from MDA [{result}]")
