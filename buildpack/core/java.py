@@ -26,6 +26,8 @@ def get_java_major_version(runtime_version):
             result = 17
         elif "21" in result:
             result = 21
+        else:
+            result = 11
     return _get_major_version(result)
 
 def _get_major_version(version):
