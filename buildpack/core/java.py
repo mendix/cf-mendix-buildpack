@@ -10,17 +10,19 @@ from buildpack.core import runtime
 from lib.m2ee.version import MXVersion
 from lib.m2ee.util import strtobool
 
+BASE_PATH = os.getcwd()
+
 JAVA_VERSION_OVERRIDE_KEY = "JAVA_VERSION"
 DEFAULT_GC_COLLECTOR = "Serial"
 SUPPORTED_GC_COLLECTORS = ["Serial", "G1"]
 
-def get_java_major_version(runtime_version):
+def get_java_major_version(runtime_version, build_path=BASE_PATH):
     result = 8
     if os.getenv(JAVA_VERSION_OVERRIDE_KEY):
         logging.info("get_java_major_version - 1")
         return _get_major_version(os.getenv(JAVA_VERSION_OVERRIDE_KEY))
     if runtime_version >= MXVersion("8.0.0"):
-        result = runtime.get_metadata_value("JavaVersion")
+        result = runtime.get_metadata_value("JavaVersion", build_path)
         logging.info("get_java_major_version : %s ", str(runtime_version))
         if result is None:
             logging.info("get_java_major_version - None")
