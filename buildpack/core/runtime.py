@@ -100,6 +100,7 @@ def resolve_runtime_dependency(
 
 def get_metadata_value(key, build_path=BASE_PATH):
     file_name = os.path.join(build_path, "model", "metadata.json")
+    logger.info("file name :  %s", str(file_name))
     try:
         with open(file_name) as file_handle:
             data = json.loads(file_handle.read())
