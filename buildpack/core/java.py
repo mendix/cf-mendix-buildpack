@@ -17,16 +17,22 @@ SUPPORTED_GC_COLLECTORS = ["Serial", "G1"]
 def get_java_major_version(runtime_version):
     result = 8
     if os.getenv(JAVA_VERSION_OVERRIDE_KEY):
+        logging.info("get_java_major_version - 1")
         return _get_major_version(os.getenv(JAVA_VERSION_OVERRIDE_KEY))
     if runtime_version >= MXVersion("8.0.0"):
         result = runtime.get_metadata_value("JavaVersion")
+        logging.info("get_java_major_version - 2")
         if result is None:
+            logging.info("get_java_major_version - None")
             result = 11 # default version for mx 8 or above
         elif "17" in result:
+            logging.info("get_java_major_version - 17")
             result = 17
         elif "21" in result:
+            logging.info("get_java_major_version - 21")
             result = 21
         else:
+            logging.info("get_java_major_version - 11")
             result = 11
     return _get_major_version(result)
 
