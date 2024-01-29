@@ -104,6 +104,7 @@ def get_metadata_value(key, build_path=BASE_PATH):
     try:
         with open(file_name) as file_handle:
             data = json.loads(file_handle.read())
+            logger.info("file name - data :  %s", str(data))
             return data[key]
     except (IOError, KeyError):
         return None
