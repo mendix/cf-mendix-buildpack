@@ -110,7 +110,6 @@ def get_metadata_value(key, build_path=BASE_PATH):
 
 def get_runtime_version(build_path=BASE_PATH):
     result = get_metadata_value("RuntimeVersion", build_path)
-    logging.info("get_runtime_version : %s", result)
     if result is None:
         logging.debug(
             "Cannot retrieve runtime version %s from metadata file, "
