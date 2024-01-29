@@ -34,7 +34,9 @@ def get_java_major_version(runtime_version):
         else:
             logging.info("get_java_major_version - 11")
             result = 11
-    return _get_major_version(result)
+    major_version = _get_major_version(result)
+    logging.info("get_java_major_version : major_version - %s", str(major_version))
+    return major_version
 
 def _get_major_version(version):
     # Java 8
