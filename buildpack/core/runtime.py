@@ -113,7 +113,7 @@ def get_runtime_version(build_path=BASE_PATH):
     if result is None:
         logging.debug(
             "Cannot retrieve runtime version %s from metadata file, "
-            "falling back to project file",
+            "falling back to project file ",
             result,
         )
         mpr = util.get_mpr_file_from_dir(build_path)
