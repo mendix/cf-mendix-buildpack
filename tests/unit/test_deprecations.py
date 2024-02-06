@@ -8,6 +8,7 @@ from lib.m2ee.version import MXVersion
 # - Mendix 7: 7.23.x (LTS)
 # - Mendix 8: 8.18.x (LTS)
 # - Mendix 9: 9.6.x (MTS), 9.12.x (MTS), 9.18.x (MTS), 9.24.x (LTS)
+# - Mendix 10: 10.6.x (MTS)
 
 
 class TestCaseMxImplemented(TestCase):
@@ -47,3 +48,9 @@ class TestCaseMxMaintained(TestCase):
 
     def test_mx9_not_maintained(self):
         assert not runtime.is_version_maintained(MXVersion("9.16"))
+
+    def test_mx10_maintained(self):
+        assert runtime.is_version_maintained(MXVersion("10.6.1"))
+
+    def test_mx10_not_maintained(self):
+        assert not runtime.is_version_maintained(MXVersion("10.5.1"))
