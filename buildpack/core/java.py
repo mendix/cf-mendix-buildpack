@@ -14,7 +14,7 @@ BASE_PATH = os.getcwd()
 
 JAVA_VERSION_OVERRIDE_KEY = "JAVA_VERSION"
 DEFAULT_GC_COLLECTOR = "Serial"
-SUPPORTED_GC_COLLECTORS = ["Serial", "G1"]
+SUPPORTED_GC_COLLECTORS = ["Serial", "G1", "Z"]
 
 def get_java_major_version(runtime_version, build_path=BASE_PATH):
     result = 8
