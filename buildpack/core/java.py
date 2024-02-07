@@ -24,9 +24,9 @@ def get_java_major_version(runtime_version, build_path=BASE_PATH):
         result = runtime.get_metadata_value("JavaVersion", build_path)
         if result is None:
             result = 11 # default version for mx 8 or above
-        elif "17" in result:
+        elif 17 == result:
             result = 17
-        elif "21" in result:
+        elif 21 == result:
             result = 21
         else:
             result = 11
