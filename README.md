@@ -427,7 +427,8 @@ This buildpack provides the [Adoptium](https://adoptium.net/) JDK and JRE.
 
 ### Java Version
 
-The buildpack will automatically determine the Java version to use based on the runtime version of the app being deployed. The default Java version is 8. For Mendix 8 and above, the default Java version is 11.
+The buildpack will automatically determine the Java version from metadata(it will have JavaVersion as json attribute). The default Java version is 8. For Mendix 8 and above, the default Java version is 11.
+Metadata JavaVersion attribute will have these values "11", "17" or in the future "21".
 
 We do not recommend overriding the Java version for the buildpack. However, for cases where this is required, the `JAVA_VERSION` variable can be used to override the version number.
 

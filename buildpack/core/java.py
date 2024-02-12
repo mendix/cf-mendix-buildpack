@@ -6,23 +6,33 @@ import subprocess
 
 import certifi
 from buildpack import util
+from buildpack.core import runtime
 from lib.m2ee.version import MXVersion
 from lib.m2ee.util import strtobool
 
+BASE_PATH = os.getcwd()
 
 JAVA_VERSION_OVERRIDE_KEY = "JAVA_VERSION"
 DEFAULT_GC_COLLECTOR = "Serial"
 SUPPORTED_GC_COLLECTORS = ["Serial", "G1"]
 
-
-def get_java_major_version(runtime_version):
+def get_java_major_version(runtime_version, build_path=BASE_PATH):
     result = 8
     if os.getenv(JAVA_VERSION_OVERRIDE_KEY):
         return _get_major_version(os.getenv(JAVA_VERSION_OVERRIDE_KEY))
     if runtime_version >= MXVersion("8.0.0"):
-        result = 11
-    return _get_major_version(result)
-
+        result = runtime.get_metadata_value("JavaVersion", build_path)
+        if result is None:
+            result = 11 # default version for mx 8 or above
+        elif 17 == result:
+            result = 17
+        elif 21 == result:
+            result = 21
+        else:
+            result = 11
+    major_version = _get_major_version(result)
+    logging.info("get_java_major_version : major_version - %s", str(major_version))
+    return major_version
 
 def _get_major_version(version):
     # Java 8
