@@ -163,7 +163,7 @@ if __name__ == "__main__":
     )
 
     runtime_version = runtime.get_runtime_version(BUILD_DIR)
-    JAVA_VERSION = java.get_java_major_version(runtime_version)
+    JAVA_VERSION = java.get_java_major_version(runtime_version, BUILD_DIR)
 
     try:
         preflight_check(runtime_version)

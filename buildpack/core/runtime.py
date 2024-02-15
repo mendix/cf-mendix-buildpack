@@ -44,13 +44,9 @@ def is_version_maintained(version):
         return True
     if version.major == 8 and version.minor == 18:
         return True
-    if version.major == 9 and version.minor == 6:
-        return True
-    if version.major == 9 and version.minor == 12:
-        return True
-    if version.major == 9 and version.minor == 18:
-        return True
     if version.major == 9 and version.minor == 24:
+        return True
+    if version.major == 10 and version.minor == 6:
         return True
     return False
 
@@ -104,7 +100,7 @@ def get_metadata_value(key, build_path=BASE_PATH):
         with open(file_name) as file_handle:
             data = json.loads(file_handle.read())
             return data[key]
-    except IOError:
+    except (IOError, KeyError):
         return None
 
 
@@ -113,7 +109,7 @@ def get_runtime_version(build_path=BASE_PATH):
     if result is None:
         logging.debug(
             "Cannot retrieve runtime version %s from metadata file, "
-            "falling back to project file",
+            "falling back to project file ",
             result,
         )
         mpr = util.get_mpr_file_from_dir(build_path)
