@@ -7,6 +7,7 @@ import shutil
 import sqlite3
 import subprocess
 import time
+from distutils.util import strtobool
 
 import backoff
 from buildpack import util
