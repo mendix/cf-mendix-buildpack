@@ -7,12 +7,12 @@ import shutil
 import sqlite3
 import subprocess
 import time
-from distutils.util import strtobool
 
 import backoff
 from buildpack import util
 from lib.m2ee import M2EE as m2ee_class
 from lib.m2ee.version import MXVersion
+from lib.m2ee.util import strtobool
 
 from . import security
 
