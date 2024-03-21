@@ -59,8 +59,8 @@ class TestCaseDeployWithDatadog(basetest.BaseTestWithPostgreSQL):
         logsubscribers = json.loads(logsubscribers_json.text)
         self.assertTrue("DatadogSubscriber" in logsubscribers["feedback"])
 
-    def test_datadog_mx7(self):
-        self._test_datadog("BuildpackTestApp-mx-7-16.mda")
-
     def test_datadog_mx8(self):
         self._test_datadog("Mendix8.1.1.58432_StarterApp.mda")
+
+    def test_datadog_mx9(self):
+        self._test_datadog("BuildpackTestApp-mx9-7.mda")
