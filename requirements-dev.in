@@ -2,7 +2,7 @@ click==8.1.7
 idna==3.6
 pytest==8.1.1
 pytest-timer==1.0.0
-pytest-timeout==2.2.0
+pytest-timeout==2.3.1
 pylint==3.0.3
 pyopenssl==24.0.0
 randomname==0.2.1
