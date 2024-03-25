@@ -4,7 +4,6 @@ pytest==8.2.2
 pytest-timer==1.0.0
 pytest-timeout==2.3.1
 pylint==3.2.7
-pyopenssl==24.0.0
 randomname==0.2.1
 requests-mock==1.12.1
 ruff==0.6.4
