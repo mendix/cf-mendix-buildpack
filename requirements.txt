@@ -16,7 +16,7 @@ cffi==1.14.4
     # via cryptography
 charset-normalizer==2.0.3
     # via requests
-cryptography==42.0.4
+cryptography==42.0.5
     # via -r requirements.in
 distro==1.9.0
     # via -r requirements.in
