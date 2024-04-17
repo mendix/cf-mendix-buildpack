@@ -5,10 +5,10 @@ TEST_FILES ?= tests/integration/test_*.py
 VERSION ?= $(shell git tag --list --sort=-version:refname "v*" | head -n 1)
 COMMIT ?= $(shell git rev-parse --short HEAD)
 
-PIP_TOOLS_VERSION ?= 7.4.0
+PIP_TOOLS_VERSION ?= 7.4.1
 PIP_VERSION ?= 24.0
 PYTHON_PLATFORM ?= manylinux2014_x86_64
-PYTHON_VERSION ?= 310
+PYTHON_VERSION ?= 312
 
 .PHONY: vendor
 vendor: create_build_dirs copy_vendored_dependencies download_wheels
