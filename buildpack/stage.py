@@ -25,6 +25,7 @@ BUILDPACK_DIR = os.path.abspath(
 )
 BUILD_DIR = os.path.abspath(sys.argv[1])
 CACHE_DIR = os.path.abspath(os.path.join(sys.argv[2], "bust"))
+DEPS_DIR = None
 DOT_LOCAL_LOCATION = os.path.abspath(os.path.join(BUILD_DIR, ".local"))
 if len(sys.argv) >= 5:
     DEPS_DIR = os.path.abspath(sys.argv[3])

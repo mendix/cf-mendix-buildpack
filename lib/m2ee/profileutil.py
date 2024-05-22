@@ -44,16 +44,17 @@ class Log:
 
     def pretty_format(self, print_queries=True):
         if print_queries:
-            queries = "\n\n".join(
-                [
-                    "query: %s \nduration:%s" % (x["query"], x["duration"])
-                    for x in self.queries
-                ]
-            )
-        elif not print_queries:
-            queries = "Omitting, %s queries in total" % len(self.queries)
-        elif len(self.queries) == 0:
-            queries = " None"
+            if len(self.queries) > 0:
+                queries = "\n\n".join(
+                    [
+                        f"query: {x['query']} \nduration: {x['duration']}"
+                        for x in self.queries
+                    ]
+                )
+            else:
+                queries = " None"
+        else:
+            queries = f"Omitting, {len(self.queries)} queries in total"
 
         if hasattr(self, "user_roles"):
             userroles = ",".join(self.user_roles)  # pylint: disable=no-member
