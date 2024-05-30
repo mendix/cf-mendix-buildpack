@@ -503,6 +503,7 @@ class SapHanaDatabaseConfiguration(DatabaseConfiguration):
         url = self.credentials.get("url", "")
         pattern = r"jdbc:sap://(?P<host>[^:]+):(?P<port>[0-9]+)/?(?P<q>\?(?P<params>.*))?$"  # noqa:C0301
         match = re.search(pattern, url)
+        q = None
         if match is None:
             logging.error("Unable to parse Hana JDBC url string for parameters")
             raise Exception("Unable to parse Hana JDBC url string for parameters")
