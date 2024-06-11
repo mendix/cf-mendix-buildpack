@@ -12,6 +12,7 @@ import backoff
 from buildpack import util
 from lib.m2ee import M2EE as m2ee_class
 from lib.m2ee.version import MXVersion
+from lib.m2ee.util import strtobool
 
 from . import security
 
@@ -173,6 +174,14 @@ def _activate_license():
   <entry key="license_key" value="{{LICENSE_KEY}}"/>
 </map>"""
 
+    if(strtobool(os.environ.get("MXRUNTIME_License.UseLicenseServer","false"))):
+        prefs_template = """<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+        <!DOCTYPE map SYSTEM "http://java.sun.com/dtd/preferences.dtd">
+        <map MAP_XML_VERSION="1.0">
+          <entry key="id2" value="{{LICENSE_ID}}"/>
+          <entry key="license_key2" value="{{LICENSE_KEY}}"/>
+        </map>"""
+        
     license_key = os.environ.get(
         "FORCED_LICENSE_KEY", os.environ.get("LICENSE_KEY", None)
     )

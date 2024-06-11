@@ -8,7 +8,7 @@ antlr4-python3-runtime==4.9.3
     # via omegaconf
 backoff==2.2.1
     # via -r requirements.in
-certifi==2024.2.2
+certifi==2024.6.2
     # via
     #   -r requirements.in
     #   requests
@@ -16,15 +16,15 @@ cffi==1.14.4
     # via cryptography
 charset-normalizer==2.0.3
     # via requests
-cryptography==42.0.4
+cryptography==42.0.8
     # via -r requirements.in
 distro==1.9.0
     # via -r requirements.in
 httplib2==0.22.0
     # via -r requirements.in
-idna==2.8
+idna==3.7
     # via requests
-jinja2==3.1.3
+jinja2==3.1.4
     # via -r requirements.in
 markupsafe==2.0.1
     # via jinja2
@@ -40,7 +40,7 @@ pyyaml==6.0.1
     # via
     #   -r requirements.in
     #   omegaconf
-requests==2.31.0
+requests==2.32.3
     # via -r requirements.in
 urllib3==2.2.1
     # via

@@ -12,6 +12,7 @@
 import json
 import logging
 import os
+import shutil
 import socket
 import subprocess
 from collections import OrderedDict
@@ -30,13 +31,21 @@ TRACE_AGENT_DEPENDENCY = f"{NAMESPACE}.trace-agent"
 ROOT_DIR = os.path.abspath(".local")
 SIDECAR_ROOT_DIR = os.path.join(ROOT_DIR, NAMESPACE)
 AGENT_USER_CHECKS_DIR = os.path.abspath("/home/vcap/app/datadog_integrations")
-
+DOT_DATADOG_PATH = os.path.abspath("/home/vcap/app/.datadog")
 STATSD_PORT = 8125
 LOGS_PORT = 9032
 
 
 def _get_agent_dir(root=ROOT_DIR):
-    return os.path.join(root, NAMESPACE, "lib")
+    # DD-CF-buildpack assumes the root DATADOG_DIR to be
+    # /home/vcap/app/.datadog
+    # So once we've downloaded and installed the binaries
+    # return the path with ".datadog/"
+    path_with_lib = os.path.join(root, NAMESPACE, "lib")
+    if os.path.exists(path_with_lib):
+        return os.path.join(root, NAMESPACE, "lib")
+    else:
+        return DOT_DATADOG_PATH
 
 
 def _get_user_checks_dir():
@@ -389,6 +398,19 @@ def _set_up_environment(model_version, runtime_version):
     e["DD_ENABLE_CHECKS"] = str(bool(_is_checks_enabled())).lower()
     e["LOGS_CONFIG"] = json.dumps(_get_logging_config())
 
+    # Append the ruby binary path
+    ruby_path = os.path.join(ROOT_DIR, "ruby", "bin")
+    e["PATH"] += os.pathsep + ruby_path
+
+    # Add an empty .global_env file as the DD buildpack expects a .global_env
+    # This is in parity with how the DD buildpack sets up the environment before
+    # installing the DD agents. Sourced from bin/supply scripts
+    # https://github.com/DataDog/datadog-cloudfoundry-buildpack/blob/master/bin/supply#L31
+    # Keeping it empty as we're already adding the RUBY path as part of process env
+    global_env_file = os.path.join(_get_agent_dir(), ".global_env")
+    with open(global_env_file, mode='a'):
+        pass
+
     return e
 
 
@@ -492,6 +514,16 @@ def update_config(
 
 
 def _download(buildpack_dir, build_path, cache_dir):
+    # DD for cflinuxfs4 requires ruby to be available, so installing
+    # the ruby dependency first before we proceed
+    # https://github.com/DataDog/datadog-cloudfoundry-buildpack/pull/174
+    util.resolve_dependency(
+        "ruby",
+        os.path.join(build_path, "ruby"),
+        buildpack_dir=buildpack_dir,
+        cache_dir=cache_dir,
+    )
+
     util.resolve_dependency(
         f"{NAMESPACE}.buildpack",
         os.path.join(build_path, NAMESPACE),
@@ -525,11 +557,46 @@ def _patch_run_datadog_script(script_dir):
         lines = file_handler.readlines()
         file_handler.seek(0)
         for line in lines:
-            if "stop_datadog &" in line:
+            if "monit_datadog &" in line:
                 file_handler.write(f"# {line}")
             else:
                 file_handler.write(line)
         file_handler.truncate()
+
+
+def _patch_create_logs_config_script(script_dir):
+    # Seems like there is a race condition between the
+    # File.exists check and Dir.mkdir call, as a result we get an exception.
+    # Commenting out the Dir.mkdir call, as it is already created as part of
+    # run-datadog.sh script
+    script = os.path.join(script_dir, "scripts", "create_logs_config.rb")
+    pattern = 'Dir.mkdir(logs_config_dir)'
+    with open(script, "r+") as file_handler:
+        lines = file_handler.readlines()
+        file_handler.seek(0)
+        for line in lines:
+            if pattern in line:
+                file_handler.write(f"# {line}")
+            else:
+                file_handler.write(line)
+        file_handler.truncate()
+
+
+def _prep_datadog_dir(datadog_install_path):
+    # Tries to replicate what the datadog-cloudfoundry-buildpack
+    # supply script does before running the datadog startup script.
+    # The DD buildpack assumes /home/vcap/app/.datadog to be the default
+    # directory for all configs and binaries though it provides DATADOG_DIR
+    # as an environment variable. So here we try to move all files under lib/
+    # to /home/vcap/app/.datadog/
+    shutil.copytree(
+        datadog_install_path,
+        DOT_DATADOG_PATH,
+        copy_function=shutil.move,
+        dirs_exist_ok=True,
+    )
+    # finally cleanup up the lib/ dir
+    shutil.rmtree(datadog_install_path)
 
 
 def stage(buildpack_path, build_path, cache_path):
@@ -545,6 +612,9 @@ def stage(buildpack_path, build_path, cache_path):
     logging.debug("Patching run-datadog.sh...")
     _patch_run_datadog_script(_get_agent_dir(build_path))
 
+    logging.debug("Patching create_logs_config.rb ...")
+    _patch_create_logs_config_script(_get_agent_dir(build_path))
+
 
 def run(model_version, runtime_version):
     if not is_enabled():
@@ -557,8 +627,11 @@ def run(model_version, runtime_version):
         )
         return
 
+    logging.debug("Prep DATADOG_DIR ... %s", _get_agent_dir())
+    _prep_datadog_dir(_get_agent_dir())
+
     logging.debug("Setting Datadog Agent script permissions if required...")
-    util.set_executable(f"{_get_agent_dir()}/*.sh")
+    util.set_executable(f"{_get_agent_dir()}/scripts/*.sh")
 
     # Start the run script "borrowed" from the official DD buildpack
     # and include settings as environment variables

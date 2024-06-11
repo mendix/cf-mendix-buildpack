@@ -3,9 +3,10 @@ dependencies:
   appdynamics:
     agent:
       artifact: appdynamics/appdynamics-agent-1.8-{{ version }}.zip
+      version: 24.4.1
     machine-agent:
       artifact: appdynamics/appdynamics-machineagent-bundle-{{ version }}.zip
-    version: 22.1.0
+      version: 24.4.0
   databroker:
     debezium:
       artifact: experimental/databroker/debezium-{{ version }}.tar.gz
@@ -20,10 +21,10 @@ dependencies:
     buildpack:
       alias: cf-datadog-sidecar
       artifact: datadog/datadog-cloudfoundry-buildpack-{{ version }}.zip
-      version: 4.33.0
+      version: 4.37.0
     trace-agent:
       artifact: datadog/dd-java-agent-{{ version }}.jar
-      version: 0.101.0
+      version: 1.27.0
   dynatrace:
     agent:
       artifact: "{{ url }}/e/{{ environment }}/api/v1/deployment/installer/agent/unix/paas/latest?include=java&bitness=64&Api-Token={{ token }}"
@@ -92,6 +93,11 @@ dependencies:
     fs: cflinuxfs4
     cpe: cpe:2.3:a:f5:nginx:{{ version }}:*:*:*:*:*:*:*
     version: 1.22.1
+  ruby:
+    artifact: ruby/ruby_{{ version }}_linux_x64_{{ fs }}_{{ commit }}.tgz
+    commit: 5fed98f8
+    fs: cflinuxfs4
+    version: 3.2.2
   telegraf:
     agent:
       artifact: telegraf/telegraf-{{ version }}_linux_amd64.tar.gz
