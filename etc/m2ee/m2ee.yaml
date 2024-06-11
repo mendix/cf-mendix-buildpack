@@ -6,6 +6,7 @@ m2ee:
   app_name: My Project Name
   app_base: BUILD_PATH/
   admin_port: ADMIN_PORT
+  admin_listen_addresses: "*"
   custom_environment:
     HOME: BUILD_PATH
   javabin: BUILD_PATH/.local/bin/java
