@@ -22,7 +22,7 @@ class TestCaseDeployWithSplunk(basetest.BaseTest):
         self._deploy_app(mda_file)
         self.assert_app_running()
 
-        # check if Fluentbit is running
+        # check if Fluentbit is running:
         output = self.run_on_container("ps -ef| grep fluentbit")
         assert output is not None
         assert str(output).find("fluent-bit") >= 0
