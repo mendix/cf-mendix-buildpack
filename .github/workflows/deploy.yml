@@ -38,21 +38,12 @@ jobs:
           path: dist
       - name: Create Github release
         id: create-release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/heads/master')
         with:
+          name: "${{ needs.build.outputs.version_tag }}: ${{ github.event.pull_request.title }}"
           tag_name: ${{ needs.build.outputs.version_tag }}
-          release_name: "${{ needs.build.outputs.version_tag }}: ${{ github.event.pull_request.title }}"
           body: ${{ github.event.pull_request.body }}
-          draft: true
-          prerelease: false
-      - name: Upload release asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create-release.outputs.upload_url }}
-          asset_path: dist/cf-mendix-buildpack.zip
-          asset_name: cf-mendix-buildpack.zip
-          asset_content_type: application/zip
+          files: |
+            dist/cf-mendix-buildpack.zip
+          token: ${{ secrets.GITHUB_TOKEN }}
