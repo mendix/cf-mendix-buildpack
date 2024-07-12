@@ -24,7 +24,7 @@ dependencies:
       version: 4.37.0
     trace-agent:
       artifact: datadog/dd-java-agent-{{ version }}.jar
-      version: 1.27.0
+      version: 1.37.0
   dynatrace:
     agent:
       artifact: "{{ url }}/e/{{ environment }}/api/v1/deployment/installer/agent/unix/paas/latest?include=java&bitness=64&Api-Token={{ token }}"
