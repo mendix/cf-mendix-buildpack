@@ -359,7 +359,7 @@ cf restart <YOUR_APP>
 
 The scheduled events can be configured using environment variable `SCHEDULED_EVENTS` .
 
-Possible values are `ALL` , `NONE`, or a comma separated list of the scheduled events that you would like to enable. For example: `ModuleA. ScheduledEvent, ModuleB. OtherScheduledEvent`
+Possible values are `ALL` , `NONE`, or a comma separated list of the scheduled events that you would like to enable. For example: `ModuleA. ScheduledEvent, ModuleB. OtherScheduledEvent`.
 
 For Mendix versions < 9.12, when scaling to multiple instances, the scheduled events that are enabled via the settings above will only be executed on instance `0` . The other instances will not execute scheduled events at all.
 
