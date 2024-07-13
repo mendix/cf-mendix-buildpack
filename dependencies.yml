@@ -31,7 +31,7 @@ dependencies:
       managed: false
   fluentbit:
     artifact: fluentbit/fluent-bit-{{ version }}-cflinuxfs4.tar.gz
-    version: 1.9.2
+    version: 3.1.2
   java:
     keyutil:
       artifact: java-keyutil/keyutil-{{ version }}.jar
