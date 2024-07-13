@@ -3,9 +3,9 @@ idna==3.7
 pytest==8.2.2
 pytest-timer==1.0.0
 pytest-timeout==2.3.1
-pylint==3.2.3
-pyopenssl==24.0.0
+pytest-timestamper==0.0.10
+pylint==3.2.5
 randomname==0.2.1
 requests-mock==1.12.1
-ruff==0.4.8
+ruff==0.5.1
 parameterized==0.9.0
