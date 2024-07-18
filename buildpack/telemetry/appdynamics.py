@@ -11,7 +11,6 @@ APPDYNAMICS_JAVAAGENT_PATH = os.path.join(APPDYNAMICS_INSTALL_PATH, "javaagent.j
 APPDYNAMICS_MACHINE_AGENT_PATH = os.path.join(
     APPDYNAMICS_INSTALL_PATH,
     "machineagent",
-    "machineagent-bundle-64bit-linux-24.4.0.4150-debug",
     "bin",
     "machine-agent",
 )
