@@ -141,7 +141,7 @@ class CfLocalRunner(metaclass=abc.ABCMeta):
 
         return result
 
-    def start(self, start_timeout=120, health="healthy"):
+    def start(self, start_timeout=180, health="healthy"):
         self._check_for_cflocal()
 
         if not self._container_id:
@@ -500,7 +500,7 @@ class CfLocalRunnerWithPostgreSQL(CfLocalRunner):
 
         return super().stage(*args, **kwargs)
 
-    def start(self, start_timeout=120, health="healthy"):
+    def start(self, start_timeout=180, health="healthy"):
         # Wait until the database is up
         @backoff.on_predicate(backoff.expo, lambda x: x > 0, max_time=30)
         def _await_database():
