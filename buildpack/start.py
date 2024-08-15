@@ -17,6 +17,7 @@ from buildpack.telemetry import (
     fluentbit,
     splunk,
     logs,
+    metering,
     metrics,
     mx_java_agent,
     newrelic,
@@ -189,7 +190,7 @@ if __name__ == "__main__":
         telegraf.run(runtime_version)
         datadog.run(model_version, runtime_version)
         fluentbit.run(model_version, runtime_version)
-        # metering.run()
+        metering.run()
         logs.run(m2ee)
         runtime.run(m2ee, logs.get_loglevels())
         metrics.run(m2ee)
