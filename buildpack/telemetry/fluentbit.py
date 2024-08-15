@@ -111,7 +111,7 @@ def run(model_version, runtime_version):
 
     # The runtime does not handle a non-open logs endpoint socket
     # gracefully, so wait until it's up
-    @backoff.on_predicate(backoff.expo, lambda x: x > 0, max_time=120)
+    @backoff.on_predicate(backoff.expo, lambda x: x > 0, max_time=240)
     def _await_logging_endpoint():
         return socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect_ex(
             ("localhost", int(FLUENTBIT_ENV_VARS["FLUENTBIT_LOGS_PORT"]))
