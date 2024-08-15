@@ -1,5 +1,3 @@
-import time
-
 from tests.integration import basetest
 
 
@@ -53,11 +51,9 @@ class TestCaseDeployWithNewRelic(basetest.BaseTest):
         self.assert_string_in_recent_logs("Skipping New Relic setup")
 
     def test_newrelic_mx9(self):
-        time.sleep(120)
         self._test_newrelic_running("BuildpackTestApp-mx9-18.mda")
         self._test_newrelic_is_configured()
 
     def test_newrelic_not_configured(self):
-        time.sleep(120)
         self._test_newrelic_not_running("BuildpackTestApp-mx9-18.mda")
         self._test_newrelic_is_not_configured()
