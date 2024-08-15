@@ -41,3 +41,11 @@ class TestCaseDeployWithSplunk(basetest.BaseTest):
 
     def _test_splunk_is_not_configured(self):
         self.assert_patterns_not_in_recent_logs([SPLUNK_LOGS_PATTERN])
+
+    def test_splunk_mx9(self):
+        self._test_fluentbit_running("BuildpackTestApp-mx9-7.mda")
+        self._test_splunk_is_configured()
+
+    def test_splunk_not_configured(self):
+        self._test_fluentbit_not_running("BuildpackTestApp-mx9-7.mda")
+        self._test_splunk_is_not_configured()
