@@ -14,6 +14,7 @@ class TestCaseDeployWithNewRelic(basetest.BaseTest):
             env_vars["NEW_RELIC_LOGS_URI"] = "https://log-api.eu.newrelic.com/log/v1"
 
         self.stage_container(mda_file, env_vars=env_vars)
+        time.sleep(60)
         self.start_container()
 
     def _test_newrelic_running(self, mda_file):

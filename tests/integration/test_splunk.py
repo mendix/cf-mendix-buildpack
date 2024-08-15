@@ -19,6 +19,7 @@ class TestCaseDeployWithSplunk(basetest.BaseTest):
             env_vars["SPLUNK_TOKEN"] = "dummy_token"
 
         self.stage_container(mda_file, env_vars=env_vars)
+        time.sleep(60)
         self.start_container()
 
     def _test_fluentbit_running(self, mda_file):
