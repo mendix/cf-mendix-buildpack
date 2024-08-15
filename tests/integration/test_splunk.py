@@ -10,6 +10,7 @@ class TestCaseDeployWithSplunk(basetest.BaseTest):
 
         env_vars = {
             "SPLUNK_HOST": "test.test.com",
+            "SPLUNK_PORT": "8088",
         }
 
         if splunk:
