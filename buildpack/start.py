@@ -190,17 +190,20 @@ if __name__ == "__main__":
         telegraf.run(runtime_version)
         datadog.run(model_version, runtime_version)
         fluentbit.run(model_version, runtime_version)
-        metering.run()
         logs.run(m2ee)
         runtime.run(m2ee, logs.get_loglevels())
         metrics.run(m2ee)
         appdynamics.run()
         nginx.run()
 
-        # Wait for the runtime to be ready before starting Databroker
+        # Block of code where the order is important
+        # Wait for the Runtime to be ready before starting Databroker and User-metering Sidecar to not block the Runtime from start
+        runtime.await_database_ready(m2ee)
+        metering.run()
         if databroker.is_enabled():
-            runtime.await_database_ready(m2ee)
             databroker_processes.run(database.get_config())
+        # End of the block where order is important
+
     except RuntimeError as re:
         # Only the runtime throws RuntimeErrors (no pun intended)
         # Don't use the stack trace for these
