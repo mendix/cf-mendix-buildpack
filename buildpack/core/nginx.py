@@ -1,4 +1,5 @@
 import crypt
+import ipaddress
 import json
 import logging
 import os
@@ -112,6 +113,7 @@ def update_config():
         root=os.getcwd(),
         mxadmin_path=MXADMIN_PATH,
         client_cert_check_internal_path_prefix=CLIENT_CERT_CHECK_INTERNAL_PATH_PREFIX,
+        ip_addresses_to_block=_get_ip_addresses_to_block(),
     )
 
     logging.debug("Writing nginx configuration file...")
@@ -148,6 +150,25 @@ def _get_proxy_buffer_size():
 
 def _get_proxy_buffers():
     return os.environ.get("NGINX_PROXY_BUFFERS", None)
+
+
+def _get_ip_addresses_to_block():
+    deny_ranges = []
+
+    deny_ranges_from_env = os.environ.get("NGINX_BLOCK_IP_ADDRESSES", None)
+    if deny_ranges_from_env is not None:
+        for cidr in deny_ranges_from_env.split(","):
+            try:
+                ip_addr = ipaddress.ip_network(cidr.strip())
+                deny_ranges.append(str(ip_addr))
+            except ValueError:
+                logging.error(
+                    "Failed to parse NGINX_BLOCK_IP_ADDRESSES due to invalid CIDR: '%s'",
+                    cidr,
+                )
+                raise
+
+    return deny_ranges
 
 
 # Access restriction configuration

@@ -54,6 +54,13 @@ http {
         keepalive 8;
     }
 
+    {% if ip_addresses_to_block %}
+    # mark bad IPs
+    {% for cidr in ip_addresses_to_block %}
+    deny {{cidr}};
+    {% endfor %}
+    {% endif %}
+
     server {
         listen {{ nginx_port }};
         server_name _;
