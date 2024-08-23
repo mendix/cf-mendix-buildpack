@@ -198,6 +198,8 @@ cf set-env <YOUR_APP> DATABASE_CONNECTION_PARAMS '{"tcpKeepAlive": "true", "conn
 
 To allow connection to an AWS RDS database the buildpack selects the regional CA certificate stored in [`rds-certificates`](etc/rds-certificates). If the region's certificate doesn't exist, the buildpack will fail with an error `Could not find database CA certificate in map`.
 
+*:warning: After the root CA rotation of AWS RDS on 22nd August 2024, only buildpacks v5.0.5 or higher will continue to work, all older buildpacks only import no longer valid certificates and no longer can establish a connection to AWS RDS.*
+
 #### Supported VCAP Schemas
 
  Cloud Foundry database services are detected from Cloud Foundry service bindings ([VCAP](https://docs.cloudfoundry.org/devguide/deploy-apps/environment-variable.html#VCAP-SERVICES)) and translated into Mendix Runtime configuration. In case no database service is bound, the fallback is the environment variable `DATABASE_URL`.
