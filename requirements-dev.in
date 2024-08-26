@@ -7,5 +7,5 @@ pylint==3.2.3
 pyopenssl==24.0.0
 randomname==0.2.1
 requests-mock==1.12.1
-ruff==0.4.8
+ruff==0.6.2
 parameterized==0.9.0
