@@ -27,10 +27,8 @@ class TestCaseMxSupported(TestCase):
 
 
 class TestCaseMxMaintained(TestCase):
-    def test_mx7_maintained(self):
-        assert runtime.is_version_maintained(MXVersion("7.23.1"))
-
     def test_mx7_not_maintained(self):
+        assert not runtime.is_version_maintained(MXVersion("7.23.1"))
         assert not runtime.is_version_maintained(MXVersion("7.16"))
 
     def test_mx8_maintained(self):
@@ -49,6 +47,9 @@ class TestCaseMxMaintained(TestCase):
 
     def test_mx10_maintained(self):
         assert runtime.is_version_maintained(MXVersion("10.6.1"))
+        assert runtime.is_version_maintained(MXVersion("10.12.1"))
+        assert runtime.is_version_maintained(MXVersion("10.18.1"))
+        assert runtime.is_version_maintained(MXVersion("10.21.1"))
 
     def test_mx10_not_maintained(self):
         assert not runtime.is_version_maintained(MXVersion("10.5.1"))
