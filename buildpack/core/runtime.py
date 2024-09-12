@@ -41,13 +41,17 @@ def is_version_supported(version):
 
 def is_version_maintained(version):
     # LTS / MTS versions: https://docs.mendix.com/releasenotes/studio-pro/lts-mts
-    if version.major == 7 and version.minor == 23:
-        return True
     if version.major == 8 and version.minor == 18:
         return True
     if version.major == 9 and version.minor == 24:
         return True
     if version.major == 10 and version.minor == 6:
+        return True
+    if version.major == 10 and version.minor == 12:
+        return True
+    if version.major == 10 and version.minor == 18:
+        return True
+    if version.major == 10 and version.minor == 21:
         return True
     return False
 
