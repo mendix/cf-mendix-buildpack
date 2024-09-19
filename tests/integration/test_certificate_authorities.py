@@ -1,7 +1,11 @@
 import base64
+from datetime import datetime, timedelta
 from socket import gethostname
 
-from OpenSSL import crypto
+from cryptography import x509
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.x509.oid import NameOID
 
 from tests.integration import basetest
 
@@ -15,28 +19,40 @@ class TestCaseCertificateAuthorities(basetest.BaseTest):
         self.certificate = self._create_self_signed_cert()
 
     def _create_self_signed_cert(self):
+        # Generate a private key
+        private_key = rsa.generate_private_key(
+            public_exponent=65537,
+            key_size=2048,
+        )
 
-        # Create a key pair
-        k = crypto.PKey()
-        k.generate_key(crypto.TYPE_RSA, 1024)
+        # Create a self-signed certificate
+        subject = issuer = x509.Name([
+            x509.NameAttribute(NameOID.COUNTRY_NAME, "NL"),
+            x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, "Rotterdam"),
+            x509.NameAttribute(NameOID.LOCALITY_NAME, "Rotterdam"),
+            x509.NameAttribute(NameOID.ORGANIZATION_NAME, "Mendix"),
+            x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, "Mendix"),
+            x509.NameAttribute(NameOID.COMMON_NAME, gethostname()),
+        ])
+        cert = x509.CertificateBuilder().subject_name(
+            subject
+        ).issuer_name(
+            issuer
+        ).public_key(
+            private_key.public_key()
+        ).serial_number(
+            1000
+        ).not_valid_before(
+            datetime.utcnow()
+        ).not_valid_after(
+            datetime.utcnow() + timedelta(days=365*10)
+        ).add_extension(
+            x509.BasicConstraints(ca=True, path_length=None), critical=True,
+        ).sign(private_key, hashes.SHA256())
 
-        # Create a self-signed cert
-        cert = crypto.X509()
-        cert.get_subject().C = "NL"
-        cert.get_subject().ST = "Rotterdam"
-        cert.get_subject().L = "Rotterdam"
-        cert.get_subject().O = "Mendix"  # noqa: E741
-        cert.get_subject().OU = "Mendix"
-        cert.get_subject().CN = gethostname()
-        cert.set_serial_number(1000)
-        cert.gmtime_adj_notBefore(0)
-        cert.gmtime_adj_notAfter(10 * 365 * 24 * 60 * 60)
-        cert.set_issuer(cert.get_subject())
-        cert.set_pubkey(k)
-        cert.sign(k, "sha1")
+        cert_pem = cert.public_bytes(serialization.Encoding.PEM)
 
-        # Return a .PEM certificate
-        return crypto.dump_certificate(crypto.FILETYPE_PEM, cert)
+        return cert_pem
 
     def test_certificate_authorities(self):
         self.stage_container(

@@ -581,7 +581,7 @@ def _upsert_config(config, key, value, overwrite=False, append=False):
         if not append and overwrite:
             config[key] = value
         else:
-            if append and type(config[key]) == type(value):
+            if append and type(config[key]) is type(value):
                 if isinstance(value, list):
                     config[key].extend(value)
                 elif isinstance(value, (dict, set)):
