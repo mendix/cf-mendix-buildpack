@@ -58,8 +58,8 @@ install_requirements: install_piptools requirements
 
 .PHONY: requirements
 requirements: install_piptools
-	pip-compile --resolver=backtracking requirements*.in -o requirements-all.txt
-	pip-compile --resolver=backtracking requirements.in
+	pip-compile --strip-extras --resolver=backtracking requirements*.in -o requirements-all.txt
+	pip-compile --strip-extras --resolver=backtracking requirements.in
 
 .PHONY: write_version
 write_version:
