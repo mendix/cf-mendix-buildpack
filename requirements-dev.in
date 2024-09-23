@@ -1,5 +1,5 @@
 click==8.1.7
-idna==3.8
+idna==3.10
 pytest==8.3.3
 pytest-timer==1.0.0
 pytest-timeout==2.3.1
