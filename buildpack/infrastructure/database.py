@@ -347,7 +347,7 @@ class UrlDatabaseConfiguration(DatabaseConfiguration):
                 jdbc_params.update({"sslmode": "verify-full"})
         except Exception:
             raise Exception("Could not find database CA certificate in map")
-    
+
         if database_type == "PostgreSQL" and not self.url.startswith("jdbc:"):
             self.extract_inline_cert(jdbc_params, self.SSLCERT, "postgresql.crt")
             self.extract_inline_cert(jdbc_params, self.SSLKEY, "postgresql.pk8")

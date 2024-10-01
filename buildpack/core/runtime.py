@@ -185,7 +185,7 @@ def _activate_license():
           <entry key="id2" value="{{LICENSE_ID}}"/>
           <entry key="license_key2" value="{{LICENSE_KEY}}"/>
         </map>"""
-        
+
     license_key = os.environ.get(
         "FORCED_LICENSE_KEY", os.environ.get("LICENSE_KEY", None)
     )
