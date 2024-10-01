@@ -119,7 +119,7 @@ def micrometer_metrics_enabled(runtime_version):
             logging.debug("micrometer for non mendix public cloud")
             micrometer_enabled =  True
     return micrometer_enabled
-    
+
 
 
 def configure_metrics_registry(m2ee):
