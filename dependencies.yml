@@ -89,10 +89,10 @@ dependencies:
       version: 8.6.0
   nginx:
     artifact: nginx_{{ version }}_linux_x64_{{ fs }}_{{ commit }}.tgz
-    commit: 909b06a9
+    commit: b1316f75
     fs: cflinuxfs4
     cpe: cpe:2.3:a:f5:nginx:{{ version }}:*:*:*:*:*:*:*
-    version: 1.22.1
+    version: 1.26.1
   ruby:
     artifact: ruby/ruby_{{ version }}_linux_x64_{{ fs }}_{{ commit }}.tgz
     commit: 5fed98f8
