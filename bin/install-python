@@ -39,7 +39,7 @@ function setup_online(){
   install_dir="$2"
   buildpack_dir="$3"
 
-  curl -Ls "https://buildpacks.cloudfoundry.org/dependencies/python/$python_dep_name" | tar -xzf - -C "$install_dir"
+  curl -Ls "https://cdn.mendix.com/mx-buildpack/python/python_3.10.14_linux_x64_cflinuxfs4_dda5228c.tgz" | tar -xzf - -C "$install_dir"
 }
 
 function get_python_from_manifest() {

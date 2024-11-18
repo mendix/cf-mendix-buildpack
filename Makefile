@@ -5,8 +5,8 @@ TEST_FILES ?= tests/integration/test_*.py
 VERSION ?= $(shell git tag --list --sort=-version:refname "v*" | head -n 1)
 COMMIT ?= $(shell git rev-parse --short HEAD)
 
-PIP_TOOLS_VERSION ?= 7.4.0
-PIP_VERSION ?= 24.0
+PIP_TOOLS_VERSION ?= 7.4.1
+PIP_VERSION ?= 24.1.2
 PYTHON_PLATFORM ?= manylinux2014_x86_64
 PYTHON_VERSION ?= 310
 
@@ -58,8 +58,8 @@ install_requirements: install_piptools requirements
 
 .PHONY: requirements
 requirements: install_piptools
-	pip-compile --resolver=backtracking requirements*.in -o requirements-all.txt
-	pip-compile --resolver=backtracking requirements.in
+	pip-compile --strip-extras --resolver=backtracking requirements*.in -o requirements-all.txt
+	pip-compile --strip-extras --resolver=backtracking requirements.in
 
 .PHONY: write_version
 write_version:
