@@ -1,11 +1,11 @@
 backoff==2.2.1
 certifi==2024.8.30
-cryptography==43.0.1
+cryptography==43.0.3
 distro==1.9.0
 httplib2==0.22.0
 jinja2==3.1.4
 omegaconf==2.3.0
-psycopg2-binary==2.9.9
+psycopg2-binary==2.9.10
 pyyaml==6.0.2
 requests==2.32.3
 urllib3==2.2.3
