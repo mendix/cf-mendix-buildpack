@@ -47,7 +47,7 @@ def _put_client_config(url, auth_token, version, dependencies_json_str):
         url=url,
         headers=headers,
         json={"dependencies": dependencies_json_str},
-        timeout=30,
+        timeout=180,
     )
     resp.raise_for_status()
     return resp.text
