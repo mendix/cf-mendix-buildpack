@@ -8,7 +8,7 @@ antlr4-python3-runtime==4.9.3
     # via omegaconf
 backoff==2.2.1
     # via -r requirements.in
-certifi==2024.8.30
+certifi==2024.12.14
     # via
     #   -r requirements.in
     #   requests
