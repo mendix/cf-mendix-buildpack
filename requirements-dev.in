@@ -1,4 +1,4 @@
-click==8.1.7
+click==8.1.8
 idna==3.10
 pytest==8.3.4
 pytest-timer==1.0.0
