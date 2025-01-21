@@ -2,11 +2,11 @@
 dependencies:
   appdynamics:
     agent:
-      artifact: appdynamics/appdynamics-agent-1.8-{{ version }}.zip
-      version: 24.4.1
+      artifact: appdynamics/AppServerAgent-1.8-{{ version }}.zip
+      version: 24.12.0.36528
     machine-agent:
-      artifact: appdynamics/appdynamics-machineagent-bundle-{{ version }}.zip
-      version: 24.4.0
+      artifact: appdynamics/machineagent-bundle-64bit-linux-{{ version }}.zip
+      version: 24.12.0.4485
   databroker:
     debezium:
       artifact: experimental/databroker/debezium-{{ version }}.tar.gz
