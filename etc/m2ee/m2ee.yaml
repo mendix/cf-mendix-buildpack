@@ -22,9 +22,9 @@ m2ee:
   javaopts:
     [
       "-Dfile.encoding=UTF-8",
-      "-Djava.io.tmpdir=BUILD_PATH/data/tmp",
-      "-XX:OnError=kill -s USR1 PYTHONPID",
-      "-XX:OnOutOfMemoryError=kill -s USR2 PYTHONPID",
+      "-Djava.io.tmpdir=/tmp",
+      "-XX:OnError=BUILD_PATH/.local/scripts/on_error.sh",
+      "-XX:OnOutOfMemoryError=BUILD_PATH/.local/scripts/on_out_of_memory_error.sh",
     ]
 
   jetty:
