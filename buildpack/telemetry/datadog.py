@@ -272,6 +272,9 @@ def _get_runtime_jmx_config(extra_jmx_instance_config=None):
     # and run app/.local/bin/java -jar ~/jmxterm.jar
     #
     # The extra attributes are only available from Mendix 7.15.0+
+    # Note: aliases are added later to make the metrics available for free on
+    # Datadog as `mx` is a supported prefix. Before that, all these metrics were
+    # being indexed as custom metrics by Datadog which are not free.
     config = {
         "init_config": {},
         "instances": [
@@ -287,9 +290,9 @@ def _get_runtime_jmx_config(extra_jmx_instance_config=None):
                             # NamedUserSessions = 0;
                             # AnonymousSessions = 0;
                             "attribute": {
-                                "NamedUsers": {"metrics_type": "gauge"},
-                                "NamedUserSessions": {"metrics_type": "gauge"},
-                                "AnonymousSessions": {"metrics_type": "gauge"},
+                                "NamedUsers": {"metrics_type": "gauge", "alias": "mx.com.mendix.named_users"},
+                                "NamedUserSessions": {"metrics_type": "gauge", "alias": "mx.com.mendix.named_user_sessions"},
+                                "AnonymousSessions": {"metrics_type": "gauge", "alias": "mx.com.mendix.anonymous_sessions"},
                             },
                         }
                     },
@@ -302,11 +305,11 @@ def _get_runtime_jmx_config(extra_jmx_instance_config=None):
                             # Deletes = 0;
                             # Transactions = 25;
                             "attribute": {
-                                "Selects": {"metrics_type": "counter"},
-                                "Updates": {"metrics_type": "counter"},
-                                "Inserts": {"metrics_type": "counter"},
-                                "Deletes": {"metrics_type": "counter"},
-                                "Transactions": {"metrics_type": "counter"},
+                                "Selects": {"metrics_type": "counter", "alias": "mx.com.mendix.selects"},
+                                "Updates": {"metrics_type": "counter", "alias": "mx.com.mendix.updates"},
+                                "Inserts": {"metrics_type": "counter", "alias": "mx.com.mendix.inserts"},
+                                "Deletes": {"metrics_type": "counter", "alias": "mx.com.mendix.deletes"},
+                                "Transactions": {"metrics_type": "counter", "alias": "mx.com.mendix.transactions"},
                             },
                         }
                     },
@@ -315,7 +318,9 @@ def _get_runtime_jmx_config(extra_jmx_instance_config=None):
                             "bean": "com.mendix:type=General",
                             # Languages = en_US;
                             # Entities = 24;
-                            "attribute": {"Entities": {"metrics_type": "gauge"}},
+                            "attribute": {
+                                "Entities": {"metrics_type": "gauge", "alias": "mx.com.mendix.entities"},
+                            },
                         }
                     },
                     {
@@ -330,23 +335,14 @@ def _get_runtime_jmx_config(extra_jmx_instance_config=None):
                             # ThreadsPriority = 5;
                             # QueueSize = 0;
                             "attribute": {
-                                "Threads": {"metrics_type": "gauge"},
-                                "MaxThreads": {"metrics_type": "gauge"},
-                                "IdleThreads": {"metrics_type": "gauge"},
-                                "QueueSize": {"metrics_type": "gauge"},
+                                "Threads": {"metrics_type": "gauge", "alias": "mx.com.mendix.threads"},
+                                "MaxThreads": {"metrics_type": "gauge", "alias": "mx.com.mendix.max_threads"},
+                                "IdleThreads": {"metrics_type": "gauge", "alias": "mx.com.mendix.idle_threads"},
+                                "QueueSize": {"metrics_type": "gauge", "alias": "mx.com.mendix.queue_size"},
                             },
                         }
                     },
                 ],
-                #  }, {
-                #    'include': {
-                #        'bean': 'com.mendix:type=Jetty',
-                #        # ConnectedEndPoints = 0;
-                #        # IdleTimeout = 30000;
-                #        # RequestsActiveMax = 0;
-                #        'attribute': {
-                #        }
-                #    },
             }
         ],
     }
