@@ -68,6 +68,21 @@ def stage(buildpack_dir, build_path, cache_path):
         os.path.join(buildpack_dir, "etc", "m2ee", "m2ee.yaml"),
         os.path.join(build_path, ".local", "m2ee.yaml"),
     )
+
+    scripts_path_source = os.path.join(buildpack_dir, "etc", "scripts")
+    scripts_path_dest = os.path.join(build_path, ".local", "scripts")
+    shutil.copytree(
+        scripts_path_source,
+        scripts_path_dest,
+        dirs_exist_ok=True
+    )
+
+    # Add +x permission for all sh scripts
+    for root, _, files in os.walk(scripts_path_dest):
+        for file in files:
+            file_path = os.path.join(root, file)
+            util.set_executable(file_path)
+
     resolve_runtime_dependency(buildpack_dir, build_path, cache_path)
 
 
@@ -613,15 +628,35 @@ def _pre_process_m2ee_yaml():
             "-i",
             f"s|BUILD_PATH|{os.getcwd()}|g; "
             f"s|RUNTIME_PORT|{util.get_runtime_port()}|; "
-            f"s|ADMIN_PORT|{util.get_admin_port()}|; "
-            f"s|PYTHONPID|{os.getpid()}|",
+            f"s|ADMIN_PORT|{util.get_admin_port()}|",
             ".local/m2ee.yaml",
+        ]
+    )
+
+
+def _pre_process_on_error_scripts():
+    logging.debug("Preprocessing on error scripts...")
+    subprocess.check_call(
+        [
+            "sed",
+            "-i",
+            f"s|PYTHONPID|{os.getpid()}|",
+            ".local/scripts/on_error.sh",
+        ]
+    )
+    subprocess.check_call(
+        [
+            "sed",
+            "-i",
+            f"s|PYTHONPID|{os.getpid()}|",
+            ".local/scripts/on_out_of_memory_error.sh",
         ]
     )
 
 
 def setup(vcap_data):
     _pre_process_m2ee_yaml()
+    _pre_process_on_error_scripts()
     _activate_license()
 
     client = m2ee_class(
