@@ -19,6 +19,10 @@ FLUENTBIT_ENV_VARS = {
     "FLUENTBIT_LOG_LEVEL": os.getenv(
         "FLUENTBIT_LOG_LEVEL", default="info"
     ).lower(),
+    "FLUENTBIT_LOGS_BUFFER_SIZE": os.getenv(
+        "FLUENTBIT_LOGS_BUFFER_SIZE", default="128"),
+    "FLUENTBIT_LOGS_MEM_BUF_LIMIT": os.getenv(
+        "FLUENTBIT_LOGS_MEM_BUF_LIMIT", default="50MB")
 }
 
 
