@@ -22,7 +22,7 @@ m2ee:
   javaopts:
     [
       "-Dfile.encoding=UTF-8",
-      "-Djava.io.tmpdir=/tmp",
+      "-Djava.io.tmpdir=BUILD_PATH/data/tmp",
       "-XX:OnError=BUILD_PATH/.local/scripts/on_error.sh",
       "-XX:OnOutOfMemoryError=BUILD_PATH/.local/scripts/on_out_of_memory_error.sh",
     ]
