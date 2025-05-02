@@ -105,6 +105,11 @@ http {
                 {{ self.default_headers_block() }}
                 add_header Cache-Control "no-cache";
             }
+
+            if ($uri ~ ";") {                                                                                                                                    
+                return 404;                                                                                                                                              
+            } 
+
             proxy_pass http://mendix;
             {% if samesite_cookie_workaround_enabled %}
             proxy_cookie_path ~(.*) "$1; SameSite=None; Secure";
