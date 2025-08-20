@@ -4,7 +4,7 @@ import os
 import shutil
 import sys
 
-from buildpack import databroker, util
+from buildpack import util
 from buildpack.core import java, mxbuild, nginx, runtime
 from buildpack.infrastructure import database
 from buildpack.telemetry import (
@@ -210,7 +210,6 @@ if __name__ == "__main__":
     database.stage(BUILDPACK_DIR, BUILD_DIR)
     runtime.stage(BUILDPACK_DIR, BUILD_DIR, CACHE_DIR)
     logs.stage(BUILDPACK_DIR, BUILD_DIR, CACHE_DIR)
-    databroker.stage(BUILDPACK_DIR, DOT_LOCAL_LOCATION, CACHE_DIR)
     nginx.stage(BUILDPACK_DIR, BUILD_DIR, CACHE_DIR)
     logging.info("Mendix Cloud Foundry Buildpack staging completed")
 
