@@ -76,5 +76,5 @@ else
 fi
 
 echo " ---> Installing Python dependencies to ${SITE_PACKAGES_PATH}..."
-$PIP_CMD install $PIP_VERBOSITY_FLAGS --target $SITE_PACKAGES_PATH --prefer-binary --no-warn-script-location --no-index --no-build-isolation --find-links=$PIP_WHEELDIR --use-pep517 -r $REQUIREMENTS_PATH
+$PIP_CMD install $PIP_VERBOSITY_FLAGS --target $SITE_PACKAGES_PATH --prefer-binary --no-warn-script-location --no-index --find-links=$PIP_WHEELDIR -r $REQUIREMENTS_PATH
 echo " ---> Finished installing Python dependencies"
