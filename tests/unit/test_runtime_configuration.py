@@ -94,7 +94,7 @@ class TestCustomRuntimeConfiguration(TestCase):
 
 
 class TestClientCertificateConfiguration(TestCase):
-    def _create_self_signed_cert(self):  # pylint: disable=no-method-argument
+    def _create_self_signed_cert():  # pylint: disable=no-method-argument
         # Generate a private key
         private_key = rsa.generate_private_key(
             public_exponent=65537,
