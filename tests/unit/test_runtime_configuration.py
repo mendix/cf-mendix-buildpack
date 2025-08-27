@@ -12,8 +12,8 @@ from cryptography.hazmat.primitives.serialization import pkcs12
 from cryptography.x509.oid import NameOID
 
 from buildpack import util
-from buildpack.core import runtime, security
-from lib.m2ee.version import MXVersion
+from buildpack.core import runtime#, security
+#from lib.m2ee.version import MXVersion
 
 
 class M2EEMock:
