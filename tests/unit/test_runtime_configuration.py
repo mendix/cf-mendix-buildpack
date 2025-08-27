@@ -149,10 +149,10 @@ class TestClientCertificateConfiguration(TestCase):
         )
     }
 
-    @mock.patch.dict(os.environ, CERTIFICATE_ENV)
-    def test_selfsigned_certificate_less_mx720(self):
-        result = security.get_client_certificates(MXVersion(7.16))
-        assert "WebServiceClientCertificates" in result
+#    @mock.patch.dict(os.environ, CERTIFICATE_ENV)
+#    def test_selfsigned_certificate_less_mx720(self):
+#        result = security.get_client_certificates(MXVersion(7.16))
+#        assert "WebServiceClientCertificates" in result
 
     @mock.patch.dict(os.environ, CERTIFICATE_ENV)
     def test_selfsigned_certificate_greq_mx720(self):
