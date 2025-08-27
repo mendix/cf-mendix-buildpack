@@ -7,6 +7,7 @@ dependencies:
     machine-agent:
       artifact: appdynamics/machineagent-bundle-64bit-linux-{{ version }}.zip
       version: 24.12.0.4485
+  datadog:
     buildpack:
       alias: cf-datadog-sidecar
       artifact: datadog/datadog-cloudfoundry-buildpack-{{ version }}.zip
