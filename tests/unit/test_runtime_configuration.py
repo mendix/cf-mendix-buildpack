@@ -93,51 +93,50 @@ class TestCustomRuntimeConfiguration(TestCase):
         )
 
 
-def _create_self_signed_cert():  # pylint: disable=no-method-argument
-    # Generate a private key
-    private_key = rsa.generate_private_key(
-        public_exponent=65537,
-        key_size=2048,
-    )
-
-    # Create a self-signed certificate
-    subject = issuer = x509.Name([
-        x509.NameAttribute(NameOID.COUNTRY_NAME, "NL"),
-        x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, "Rotterdam"),
-        x509.NameAttribute(NameOID.LOCALITY_NAME, "Rotterdam"),
-        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "Mendix"),
-        x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, "Mendix"),
-        x509.NameAttribute(NameOID.COMMON_NAME, gethostname()),
-    ])
-    cert = x509.CertificateBuilder().subject_name(
-        subject
-    ).issuer_name(
-        issuer
-    ).public_key(
-        private_key.public_key()
-    ).serial_number(
-        1000
-    ).not_valid_before(
-        datetime.utcnow()
-    ).not_valid_after(
-        datetime.utcnow() + timedelta(days=365*10)
-    ).add_extension(
-        x509.BasicConstraints(ca=True, path_length=None), critical=True,
-    ).sign(private_key, hashes.SHA256())
-
-    # Serialize private key and certificate to a PKCS12 container
-    p12 = pkcs12.serialize_key_and_certificates(
-        name=b"selfsigned",
-        key=private_key,
-        cert=cert,
-        cas=None,
-        encryption_algorithm=serialization.NoEncryption()
-    )
-
-    return p12
-
-
 class TestClientCertificateConfiguration(TestCase):
+    def _create_self_signed_cert():  # pylint: disable=no-method-argument
+        # Generate a private key
+        private_key = rsa.generate_private_key(
+            public_exponent=65537,
+            key_size=2048,
+        )
+
+        # Create a self-signed certificate
+        subject = issuer = x509.Name([
+            x509.NameAttribute(NameOID.COUNTRY_NAME, "NL"),
+            x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, "Rotterdam"),
+            x509.NameAttribute(NameOID.LOCALITY_NAME, "Rotterdam"),
+            x509.NameAttribute(NameOID.ORGANIZATION_NAME, "Mendix"),
+            x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, "Mendix"),
+            x509.NameAttribute(NameOID.COMMON_NAME, gethostname()),
+        ])
+        cert = x509.CertificateBuilder().subject_name(
+            subject
+        ).issuer_name(
+            issuer
+        ).public_key(
+            private_key.public_key()
+        ).serial_number(
+            1000
+        ).not_valid_before(
+            datetime.utcnow()
+        ).not_valid_after(
+            datetime.utcnow() + timedelta(days=365*10)
+        ).add_extension(
+            x509.BasicConstraints(ca=True, path_length=None), critical=True,
+        ).sign(private_key, hashes.SHA256())
+
+        # Serialize private key and certificate to a PKCS12 container
+        p12 = pkcs12.serialize_key_and_certificates(
+            name=b"selfsigned",
+            key=private_key,
+            cert=cert,
+            cas=None,
+            encryption_algorithm=serialization.NoEncryption()
+        )
+
+        return p12
+
     CERTIFICATE_ENV = {
         "CLIENT_CERTIFICATES": json.dumps(
             [
@@ -152,10 +151,12 @@ class TestClientCertificateConfiguration(TestCase):
 
     @mock.patch.dict(os.environ, CERTIFICATE_ENV)
     def test_selfsigned_certificate_less_mx720(self):
+        util.mkdir_p(".local") # make sure .local exists in unit test
         result = security.get_client_certificates(MXVersion(7.16))
         assert "WebServiceClientCertificates" in result
 
     @mock.patch.dict(os.environ, CERTIFICATE_ENV)
     def test_selfsigned_certificate_greq_mx720(self):
+        util.mkdir_p(".local") # make sure .local exists in unit test
         result = security.get_client_certificates(MXVersion(7.23))
         assert "ClientCertificateUsages" in result
