@@ -13,7 +13,6 @@ from cryptography.x509.oid import NameOID
 
 from buildpack import util
 from buildpack.core import runtime, security
-from buildpack.stage import set_up_directory_structure
 from lib.m2ee.version import MXVersion
 
 
@@ -152,12 +151,12 @@ class TestClientCertificateConfiguration(TestCase):
 
     @mock.patch.dict(os.environ, CERTIFICATE_ENV)
     def test_selfsigned_certificate_less_mx720(self):
-        set_up_directory_structure() # make sure .local exists in test
+        util.mkdir_p(".local") # make sure .local exists in test
         result = security.get_client_certificates(MXVersion(7.16))
         assert "WebServiceClientCertificates" in result
 
     @mock.patch.dict(os.environ, CERTIFICATE_ENV)
     def test_selfsigned_certificate_greq_mx720(self):
-        set_up_directory_structure() # make sure .local exists in test
+        util.mkdir_p(".local") # make sure .local exists in test
         result = security.get_client_certificates(MXVersion(7.23))
         assert "ClientCertificateUsages" in result
