@@ -51,7 +51,7 @@ then
     if [[ -n "${PIP_WHL_PATH}" ]]
     then
         # Bootstrap wheels are bundled in the buildpack
-        python3 ${PIP_WHL_PATH}/pip install $PIP_VERBOSITY_FLAGS --user --no-warn-script-location --no-index --find-links=$PIP_WHEELDIR pip setuptools wheel
+        python3 ${PIP_WHL_PATH}/pip install $PIP_VERBOSITY_FLAGS --user --no-warn-script-location --no-index --no-build-isolation --find-links=$PIP_WHEELDIR --use-pep517 pip setuptools wheel
     else
         # Bootstrap wheels are not bundled in the buildpack
         curl -sS https://bootstrap.pypa.io/pip/get-pip.py -o get-pip.py
@@ -63,7 +63,7 @@ else
     if [ "$CF_STACK" == "cflinuxfs4" ]; then
       PIP_CMD="python3 $(dirname "$(command -v python3)")/pip3"
     fi
-    $PIP_CMD install --upgrade --user --no-warn-script-location pip setuptools wheel
+    $PIP_CMD install --upgrade --user --no-warn-script-location --use-pep517 pip setuptools wheel
 fi
 
 # Only download Python dependencies if they are not bundled
@@ -72,9 +72,9 @@ then
     echo " ---> Using bundled Python dependencies"
 else
     echo " ---> Downloading Python dependencies..."
-    $PIP_CMD download $PIP_VERBOSITY_FLAGS -r $REQUIREMENTS_PATH --prefer-binary -d $PIP_WHEELDIR
+    $PIP_CMD download $PIP_VERBOSITY_FLAGS --use-pep517 -r $REQUIREMENTS_PATH --prefer-binary -d $PIP_WHEELDIR
 fi
 
 echo " ---> Installing Python dependencies to ${SITE_PACKAGES_PATH}..."
-$PIP_CMD install $PIP_VERBOSITY_FLAGS --target $SITE_PACKAGES_PATH --prefer-binary --no-warn-script-location --no-index --find-links=$PIP_WHEELDIR -r $REQUIREMENTS_PATH
+$PIP_CMD install $PIP_VERBOSITY_FLAGS --target $SITE_PACKAGES_PATH --prefer-binary --no-warn-script-location --no-index --no-build-isolation --find-links=$PIP_WHEELDIR --use-pep517 -r $REQUIREMENTS_PATH
 echo " ---> Finished installing Python dependencies"

@@ -7,16 +7,6 @@ dependencies:
     machine-agent:
       artifact: appdynamics/machineagent-bundle-64bit-linux-{{ version }}.zip
       version: 24.12.0.4485
-  databroker:
-    debezium:
-      artifact: experimental/databroker/debezium-{{ version }}.tar.gz
-      version: 1.2.0
-    kafka-connect:
-      artifact: experimental/databroker/kafka-connect-{{ version }}.tar.gz
-      version: 2.13-2.5.1-v2
-    stream-sidecar:
-      artifact: experimental/databroker/stream-sidecar-{{ version }}.tar
-      version: 0.23.0-9
   datadog:
     buildpack:
       alias: cf-datadog-sidecar
