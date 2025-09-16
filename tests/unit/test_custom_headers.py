@@ -192,3 +192,91 @@ class TestCaseCustomHeaderConfig(unittest.TestCase):
         )
         header_config = nginx._get_http_headers()
         self.assertEqual([], header_config)
+
+    def test_valid_header_cross_origin_resource_policy(self):
+        os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps(
+            {
+                "Cross-Origin-Resource-Policy": "same-origin"
+            }
+        )
+        header_config = nginx._get_http_headers()
+        self.assertIn(
+            ("Cross-Origin-Resource-Policy",
+             "same-origin",
+             ),
+            header_config,
+        )
+    def test_invalid_header_cross_origin_resource_policy(self):
+        os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps(
+            {
+                "Cross-Origin-Resource-Policy": "#####"
+            }
+        )
+        header_config = nginx._get_http_headers()
+        self.assertEqual([], header_config)
+
+    def test_valid_header_cross_origin_opener_policy(self):
+        os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps(
+            {
+                "Cross-Origin-Opener-Policy": "same-origin"
+            }
+        )
+        header_config = nginx._get_http_headers()
+        self.assertIn(
+            ("Cross-Origin-Opener-Policy",
+             "same-origin",
+             ),
+            header_config,
+        )
+    def test_invalid_header_cross_origin_opener_policy(self):
+        os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps(
+            {
+                "Cross-Origin-Opener-Policy": "&^%$#"
+            }
+        )
+        header_config = nginx._get_http_headers()
+        self.assertEqual([], header_config)
+
+    def test_valid_header_cross_origin_embedder_policy(self):
+        os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps(
+            {
+                "Cross-Origin-Embedder-Policy": "require-corp"
+            }
+        )
+        header_config = nginx._get_http_headers()
+        self.assertIn(
+            ("Cross-Origin-Embedder-Policy",
+             "require-corp",
+             ),
+            header_config,
+        )
+    def test_invalid_header_cross_origin_embedder_policy(self):
+        os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps(
+            {
+                "Cross-Origin-Embedder-Policy": "&^as%$#"
+            }
+        )
+        header_config = nginx._get_http_headers()
+        self.assertEqual([], header_config)
+
+    def test_valid_header_clear_site_data_policy(self):
+        os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps(
+            {
+                "Clear-Site-Data": "executionContexts"
+            }
+        )
+        header_config = nginx._get_http_headers()
+        self.assertIn(
+            ("Clear-Site-Data",
+             "executionContexts",
+             ),
+            header_config,
+        )
+    def test_invalid_header_clear_site_data_policy(self):
+        os.environ["HTTP_RESPONSE_HEADERS"] = json.dumps(
+            {
+                "Clear-Site-Data": "&^as%$#"
+            }
+        )
+        header_config = nginx._get_http_headers()
+        self.assertEqual([], header_config)
