@@ -23,6 +23,10 @@ ALLOWED_HEADERS = {
     "X-Permitted-Cross-Domain-Policies": r"(?i)(^all$|^none$|^master-only$|^by-content-type$|^by-ftp-filename$)",  # noqa: C0301
     "Origin-Trial": r"[a-zA-Z0-9:;/''\"\*_\- \.\n?=%&+]+",
     "X-XSS-Protection": r"(?i)(^0$|^1$|^1; mode=block$|^1; report=https?://([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*(:\d+)?$)",  # noqa: C0301
+    "Cross-Origin-Resource-Policy": r"(?i)(^same-origin$|^same-site$|^cross-origin$)",
+    "Cross-Origin-Opener-Policy": r"(?i)(^unsafe-none$|^same-origin$|^same-origin-allow-popups$|^noopener-allow-popups$)",
+    "Cross-Origin-Embedder-Policy": r"(?i)(^unsafe-none$|^require-corp$|^credentialless$)",
+    "Clear-Site-Data": r"(?i)(^cache$|^cookies$|^storage$|^executionContexts$|^prefetchCache$|^prerenderCache$)",
 }
 
 CONFIG_FILE = "nginx/conf/nginx.conf"
