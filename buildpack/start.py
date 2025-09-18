@@ -7,7 +7,7 @@ import sys
 import traceback
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-from buildpack import databroker, util
+from buildpack import util
 from buildpack.databroker import business_events
 from buildpack.core import java, nginx, runtime
 from buildpack.infrastructure import database, storage
@@ -125,7 +125,6 @@ if os.environ.get("DEBUG_CONTAINER", "false").lower() == "true":
 if __name__ == "__main__":
     m2ee = None
     nginx_process = None
-    databroker_processes = databroker.Databroker()
 
     _register_signal_handlers()
 
@@ -169,21 +168,13 @@ if __name__ == "__main__":
         fluentbit.update_config(m2ee)
         mx_java_agent.update_config(m2ee)
         telegraf.update_config(m2ee, application_name)
-        (
-            databroker_jmx_instance_cfg,
-            databroker_jmx_config_files,
-        ) = databroker_processes.get_datadog_config(datadog._get_user_checks_dir())
         datadog.update_config(
             m2ee,
             model_version=model_version,
             runtime_version=runtime_version,
-            extra_jmx_instance_config=databroker_jmx_instance_cfg,
-            jmx_config_files=databroker_jmx_config_files,
         )
         nginx.update_config()
-        logging.debug(dir(databroker))
         logging.debug(dir(business_events))
-        databroker.update_config(m2ee)
         business_events.update_config(m2ee, util.get_vcap_services_data())
 
         # Start components and runtime
@@ -197,11 +188,9 @@ if __name__ == "__main__":
         nginx.run()
 
         # Block of code where the order is important
-        # Wait for the Runtime to be ready before starting Databroker and User-metering Sidecar to not block the Runtime from start
+        # Wait for the Runtime to be ready before starting User-metering Sidecar to not block the Runtime from start
         runtime.await_database_ready(m2ee)
         metering.run()
-        if databroker.is_enabled():
-            databroker_processes.run(database.get_config())
         # End of the block where order is important
 
     except RuntimeError as re:
