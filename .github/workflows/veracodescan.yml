@@ -22,7 +22,7 @@ jobs:
           name: dist
           path: dist
       - name: Upload and scan
-        uses: veracode/veracode-uploadandscan-action@master
+        uses: veracode/veracode-uploadandscan-action@0.2.10
         continue-on-error: true
         with:
           filepath: dist/cf-mendix-buildpack.zip
