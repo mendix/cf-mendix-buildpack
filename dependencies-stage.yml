@@ -1,9 +1,9 @@
 ---
 # https://github.com/cloudfoundry/python-buildpack/blob/master/manifest.yml
 - name: python
-  version: 3.10.14
-  uri: https://cdn.mendix.com/mx-buildpack/python/python_3.10.14_linux_x64_cflinuxfs4_dda5228c.tgz
-  sha256: dda5228c36196f8a7346767ad9c9ac774ec270aa55065beb8d3d052d652b9120
+  version: 3.10.19
+  uri: https://cdn.mendix.com/mx-buildpack/python/python_3.10.19_linux_x64_cflinuxfs4_f7aee30e.tgz
+  sha256: f7aee30e56f7909efc650fd9cd118a8e97155800826e388c407f05eff80b528d
   cf_stacks:
     - cflinuxfs4
-  source_sha256: cefea32d3be89c02436711c95a45c7f8e880105514b78680c14fe76f5709a0f6
+  source_sha256: a078fb2d7a216071ebbe2e34b5f5355dd6b6e9b0cd1bacc4a41c63990c5a0eec

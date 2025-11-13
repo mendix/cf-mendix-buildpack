@@ -23,7 +23,7 @@ jobs:
     steps:
     - name: Check if workflow should be skipped
       id: skip-check
-      uses: fkirc/skip-duplicate-actions@v5
+      uses: fkirc/skip-duplicate-actions@v5.3.1
       with:
         github_token: ${{ github.token }}
         paths_ignore: '["**.md", "dev/**", "LICENSE"]'
@@ -46,7 +46,7 @@ jobs:
       run: |
         FILES=$(cd tests/integration && ls -m test*.py | tr -d \ \\n)
         TEST=$(jq -n -c --arg inarr "$FILES" '{ test: $inarr | split(",") }')
-        echo "::set-output name=matrix::${TEST}"
+        echo "matrix=${TEST}" >> $GITHUB_OUTPUT
   integration-test:
     needs: [build, setup-integration-tests]
     name: Run integration tests
@@ -67,15 +67,16 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: 3.10.14
+        python-version: 3.10.19
         cache: pip
     - name: Install Python requirements
       run: make install_requirements
     - name: Install Cloud Foundry development tools
       run: |
         wget --no-check-certificate -v -O gpg.key https://packages.cloudfoundry.org/debian/cli.cloudfoundry.org.key
-        sudo apt-key add gpg.key
-        echo "deb https://packages.cloudfoundry.org/debian stable main" | sudo tee /etc/apt/sources.list.d/cloudfoundry-cli.list
+        sudo mkdir -p /etc/apt/keyrings
+        cat gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/cloudfoundry-cli.gpg
+        echo "deb [signed-by=/etc/apt/keyrings/cloudfoundry-cli.gpg] https://packages.cloudfoundry.org/debian stable main" | sudo tee /etc/apt/sources.list.d/cloudfoundry-cli.list
         sudo apt-get update && sudo apt-get install -y cf-cli
         sudo curl -s https://download.mendix.com/Mendix-CA-G2.crt -o /usr/local/share/ca-certificates/ca.crt && sudo update-ca-certificates
         cf install-plugin https://cdn.mendix.com/mx-buildpack/cflocal/cflocal-0.20.0-rc1-linux -f

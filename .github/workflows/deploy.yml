@@ -16,7 +16,7 @@ jobs:
     steps:
       - name: Check if workflow should be skipped
         id: skip-check
-        uses: fkirc/skip-duplicate-actions@v5
+        uses: fkirc/skip-duplicate-actions@v5.3.1
         with:
           github_token: ${{ github.token }}
           paths_ignore: '["**.md", "dev/**"]'
@@ -41,7 +41,7 @@ jobs:
       - name: Create Github release
         id: create-release
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/heads/master')
+        if: github.event.pull_request.base.ref == 'master'
         with:
           name: "${{ needs.build.outputs.version_tag }}: ${{ github.event.pull_request.title }}"
           tag_name: ${{ needs.build.outputs.version_tag }}
