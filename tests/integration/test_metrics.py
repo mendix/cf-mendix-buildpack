@@ -85,7 +85,7 @@ class TestNewMetricsFlows(basetest.BaseTest):
             env_vars={
                 "METRICS_INTERVAL": "10",
                 "BYPASS_LOGGREGATOR": "True",
-                "TRENDS_STORAGE_URL": "http://postman-echo.com/post",
+                "TRENDS_STORAGE_URL": "https://postman-echo.com/post",
             },
         )
         self.start_container()
