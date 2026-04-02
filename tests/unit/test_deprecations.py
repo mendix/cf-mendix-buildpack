@@ -5,9 +5,10 @@ from lib.m2ee.version import MXVersion
 
 # Current supported / maintained versions
 # (https://docs.mendix.com/releasenotes/studio-pro/lts-mts):
-# - Mendix 7: 7.23.x (LTS)
-# - Mendix 8: 8.18.x (LTS)
-# - Mendix 9: 9.6.x (MTS), 9.12.x (MTS), 9.18.x (MTS), 9.24.x (LTS)
+# - Mendix 8: 8.18.x (Extended Support until July 2026)
+# - Mendix 9: 9.24.x (LTS)
+# - Mendix 10: 10.24.x (LTS)
+# - Mendix 11: 11.x until 11.6 (MTS) is released (December 2025)
 
 
 class TestCaseMxImplemented(TestCase):
@@ -22,17 +23,22 @@ class TestCaseMxSupported(TestCase):
     def test_mx6_not_supported(self):
         assert not runtime.is_version_supported(MXVersion("6.2"))
 
-    def test_mx7_supported(self):
-        assert runtime.is_version_supported(MXVersion("7.16"))
+    def test_mx11_supported(self):
+        assert runtime.is_version_supported(MXVersion("11.6"))
+
+
+class TestCaseMxExtendedSupported(TestCase):
+    def test_mx7_not_extended_supported(self):
+        assert not runtime.is_version_extended_supported(MXVersion("7.2"))
+
+    def test_mx8_extended_supported(self):
+        assert runtime.is_version_extended_supported(MXVersion("8.24"))
 
 
 class TestCaseMxMaintained(TestCase):
     def test_mx7_not_maintained(self):
         assert not runtime.is_version_maintained(MXVersion("7.23.1"))
         assert not runtime.is_version_maintained(MXVersion("7.16"))
-
-    def test_mx8_maintained(self):
-        assert runtime.is_version_maintained(MXVersion("8.18.1"))
 
     def test_mx8_not_maintained(self):
         assert not runtime.is_version_maintained(MXVersion("8.17"))
@@ -46,10 +52,10 @@ class TestCaseMxMaintained(TestCase):
         assert not runtime.is_version_maintained(MXVersion("9.12.1"))
 
     def test_mx10_maintained(self):
-        assert runtime.is_version_maintained(MXVersion("10.6.1"))
-        assert runtime.is_version_maintained(MXVersion("10.12.1"))
-        assert runtime.is_version_maintained(MXVersion("10.18.1"))
-        assert runtime.is_version_maintained(MXVersion("10.21.1"))
+        assert runtime.is_version_maintained(MXVersion("10.24.1"))
 
     def test_mx10_not_maintained(self):
         assert not runtime.is_version_maintained(MXVersion("10.5.1"))
+
+    def test_mx11_maintained(self):
+        assert runtime.is_version_maintained(MXVersion("11.5.1"))

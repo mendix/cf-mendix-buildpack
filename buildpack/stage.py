@@ -74,7 +74,15 @@ def preflight_check(version):
         raise NotImplementedError(
             "Mendix [{version.major}] is not supported by this buildpack"
         )
-    if not runtime.is_version_supported(version):
+    if runtime.is_version_extended_supported(version):
+        logging.warning(
+            "Mendix [%s] is in Extended Support "
+            "(https://docs.mendix.com/support/#extended-support)."
+            "Please use a supported Mendix version "
+            "(https://docs.mendix.com/releasenotes/studio-pro/lts-mts).",
+            version.major,
+        )
+    elif not runtime.is_version_supported(version):
         logging.warning(
             "Mendix [%s] is end-of-support. Please use a supported Mendix version "
             "(https://docs.mendix.com/releasenotes/studio-pro/lts-mts).",

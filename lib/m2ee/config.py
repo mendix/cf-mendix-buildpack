@@ -465,7 +465,8 @@ class M2EEConfig:
 
                 logger.debug(traceback.format_exc())
                 logger.critical(
-                    "Directory %s does not exist, and cannot be " "created!"
+                    "Directory %s does not exist, and cannot be " "created!",
+                    dotm2ee
                 )
                 logger.critical(
                     "If you do not want to use .m2ee in your home "

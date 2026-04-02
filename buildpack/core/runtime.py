@@ -33,25 +33,26 @@ def is_version_implemented(version):
     return bool(version.major >= 6)
 
 
+def is_version_extended_supported(version):
+    # See https://docs.mendix.com/support/#extended-support
+    return bool(version.major == 8 and version.minor == 24)
+
+
 def is_version_supported(version):
     # Support for the latest three major versions:
     # https://docs.mendix.com/releasenotes/studio-pro/lts-mts
-    return bool(version.major >= 7)
+    return bool(version.major >= 9)
 
 
 def is_version_maintained(version):
     # LTS / MTS versions: https://docs.mendix.com/releasenotes/studio-pro/lts-mts
-    if version.major == 8 and version.minor == 18:
+    if version.major == 8 and version.minor == 24:
         return True
     if version.major == 9 and version.minor == 24:
         return True
-    if version.major == 10 and version.minor == 6:
+    if version.major == 10 and version.minor == 24:
         return True
-    if version.major == 10 and version.minor == 12:
-        return True
-    if version.major == 10 and version.minor == 18:
-        return True
-    if version.major == 10 and version.minor == 21:
+    if version.major == 11:
         return True
     return False
 
