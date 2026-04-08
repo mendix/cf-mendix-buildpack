@@ -29,7 +29,13 @@ def _is_usage_metering_enabled():
 
 def _should_use_license_server():
     use_license_server = os.environ.get("MXRUNTIME_License.UseLicenseServer", "").lower()
-    return use_license_server == "true"
+    result = use_license_server == "true"
+    logging.info(
+        "License server usage check: MXRUNTIME_License.UseLicenseServer=%r, result=%s",
+        use_license_server,
+        result,
+    )
+    return result
 
 
 def _get_sap_metering_endpoint():
@@ -154,23 +160,27 @@ def _download_sap_sidecar(build_path, endpoint, token):
 
 
 def stage(buildpack_path, build_path, cache_dir):
+    logging.info("Starting metering stage (buildpack_path=%s, build_path=%s)", buildpack_path, build_path)
     if _should_use_license_server():
+        logging.info("Using Mendix license server flow for metering")
         # UseLicenseServer = true: original Mendix metering flow
         try:
             if _is_usage_metering_enabled():
                 logging.info("Usage metering is enabled")
+                logging.info("Downloading Mendix metering sidecar...")
                 _download(buildpack_path, build_path, cache_dir)
+                logging.info("Mendix metering sidecar downloaded successfully")
 
-                project_id = _get_project_id(
-                    os.path.join(build_path, "model", "metadata.json")
-                )
+                metadata_path = os.path.join(build_path, "model", "metadata.json")
+                logging.info("Reading project ID from: %s", metadata_path)
+                project_id = _get_project_id(metadata_path)
+                logging.info("Project ID: %s", project_id)
                 config = {"ProjectID": project_id}
 
-                logging.debug("Writing metering sidecar configuration file...")
-                write_file(
-                    os.path.join(build_path, NAMESPACE, SIDECAR_CONFIG_FILE),
-                    config,
-                )
+                config_path = os.path.join(build_path, NAMESPACE, SIDECAR_CONFIG_FILE)
+                logging.info("Writing metering sidecar configuration file to: %s", config_path)
+                write_file(config_path, config)
+                logging.info("Metering sidecar configuration file written successfully")
             else:
                 logging.info("Usage metering is NOT enabled")
         except Exception:
@@ -179,9 +189,15 @@ def stage(buildpack_path, build_path, cache_dir):
                 "This is nothing to worry about."
             )
     else:
+        logging.info("License server not used; attempting SAP metering sidecar flow")
         # UseLicenseServer = false: attempt SAP metering sidecar download
         endpoint = _get_sap_metering_endpoint()
         token = _get_sap_metering_token()
+        logging.info(
+            "SAP metering config: endpoint=%s, token_present=%s",
+            endpoint,
+            bool(token),
+        )
 
         if not endpoint or not token:
             logging.warning(
@@ -192,6 +208,7 @@ def stage(buildpack_path, build_path, cache_dir):
             return
 
         try:
+            logging.info("Downloading SAP metering sidecar from endpoint: %s", endpoint)
             _download_sap_sidecar(build_path, endpoint, token)
             logging.info("SAP metering sidecar staged successfully")
         except Exception:
@@ -200,6 +217,7 @@ def stage(buildpack_path, build_path, cache_dir):
                 "Continuing buildpack execution.",
                 exc_info=True,
             )
+    logging.info("Metering stage completed")
 
 
 def run():
