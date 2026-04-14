@@ -33,9 +33,8 @@ def _is_sap_metering_configured():
         return False
     
     endpoint = _get_sap_metering_endpoint()
-    token = _get_sap_metering_token()
 
-    if not endpoint or not token:
+    if not endpoint:
         logging.warning(
             "Missing configuration for SAP metering sidecar."
         )
@@ -45,11 +44,11 @@ def _is_sap_metering_configured():
 
 
 def _get_sap_metering_endpoint():
-    return os.environ.get("MXRUNTIME_License.MeteringEndpoint", "").strip() or None
+    return os.environ.get("MXRUNTIME_License.MeteringEndpoint", "").strip()
 
 
 def _get_sap_metering_token():
-    return os.environ.get("MXRUNTIME_License.MeteringToken", "").strip() or None
+    return os.environ.get("MXRUNTIME_License.MeteringToken", "").strip()
 
 
 def _get_project_id(file_path):
