@@ -121,7 +121,6 @@ def _copy_sap_metering_sidecar(build_path, endpoint, token):
     destination = os.path.join(sidecar_dir, BINARY)
     util.mkdir_p(sidecar_dir)
 
-    # Download binary file via HTTPS with auth-token header
     response = requests.get(
         endpoint,
         headers={"auth-token": token},
@@ -130,7 +129,6 @@ def _copy_sap_metering_sidecar(build_path, endpoint, token):
     )
     response.raise_for_status()
 
-    # Stream binary content to disk
     with open(destination, "wb") as file_handle:
         for chunk in response.iter_content(chunk_size=8192):
             if chunk:
@@ -144,7 +142,6 @@ def _copy_sap_metering_sidecar(build_path, endpoint, token):
 def stage(buildpack_path, build_path, cache_dir):
     try:
         if _is_usage_metering_enabled():
-            # Original Mendix metering flow
             logging.info("Usage metering is enabled")
             _download(buildpack_path, build_path, cache_dir)
 
@@ -159,7 +156,6 @@ def stage(buildpack_path, build_path, cache_dir):
                 config,
             )
         elif _is_sap_metering_configured():
-            # UseLicenseServer = false with valid SAP endpoint and token
             endpoint = _get_sap_metering_endpoint()
             token = _get_sap_metering_token()
             try:
