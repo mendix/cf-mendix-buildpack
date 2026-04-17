@@ -44,11 +44,11 @@ def _is_sap_metering_configured():
 
 
 def _get_sap_metering_endpoint():
-    return os.environ.get("MXRUNTIME_License.MeteringEndpoint", "").strip()
+    return os.environ.get("METERING_BINARY_PATH", "").strip()
 
 
 def _get_sap_metering_token():
-    return os.environ.get("MXRUNTIME_License.MeteringToken", "").strip()
+    return os.environ.get("METERING_BINARY_TOKEN", "").strip()
 
 
 def _get_project_id(file_path):
