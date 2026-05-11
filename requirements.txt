@@ -40,7 +40,7 @@ pyyaml==6.0.2
     # via
     #   -r requirements.in
     #   omegaconf
-requests==2.32.5
+requests==2.33.1
     # via -r requirements.in
 typing-extensions==4.15.0
     # via cryptography
