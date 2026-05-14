@@ -27,6 +27,30 @@ def _is_usage_metering_enabled():
         return True
 
 
+def _is_sap_metering_configured():
+    use_license_server = os.environ.get("MXRUNTIME_License.UseLicenseServer", "false").lower()
+    if use_license_server == "true":
+        return False
+    
+    endpoint = _get_sap_metering_endpoint()
+
+    if not endpoint:
+        logging.warning(
+            "Missing configuration for SAP metering sidecar."
+        )
+        return False
+
+    return True
+
+
+def _get_sap_metering_endpoint():
+    return os.environ.get("METERING_BINARY_PATH", "").strip()
+
+
+def _get_sap_metering_token():
+    return os.environ.get("METERING_BINARY_TOKEN", "").strip()
+
+
 def _get_project_id(file_path):
     try:
         with open(file_path) as file_handle:
@@ -89,6 +113,32 @@ def _is_sidecar_installed():
     return False
 
 
+def _copy_sap_metering_sidecar(build_path, endpoint, token):
+    """Download SAP metering sidecar binary from HTTPS endpoint."""
+    import requests
+
+    sidecar_dir = os.path.join(build_path, NAMESPACE)
+    destination = os.path.join(sidecar_dir, BINARY)
+    util.mkdir_p(sidecar_dir)
+
+    response = requests.get(
+        endpoint,
+        headers={"auth-token": token},
+        stream=True,
+        timeout=60,
+    )
+    response.raise_for_status()
+
+    with open(destination, "wb") as file_handle:
+        for chunk in response.iter_content(chunk_size=8192):
+            if chunk:
+                file_handle.write(chunk)
+
+    logging.info("SAP metering sidecar downloaded successfully")
+    util.set_executable(destination)
+    return destination
+
+
 def stage(buildpack_path, build_path, cache_dir):
     try:
         if _is_usage_metering_enabled():
@@ -105,6 +155,18 @@ def stage(buildpack_path, build_path, cache_dir):
                 os.path.join(build_path, NAMESPACE, SIDECAR_CONFIG_FILE),
                 config,
             )
+        elif _is_sap_metering_configured():
+            endpoint = _get_sap_metering_endpoint()
+            token = _get_sap_metering_token()
+            try:
+                _copy_sap_metering_sidecar(build_path, endpoint, token)
+                logging.info("SAP metering sidecar staged successfully")
+            except Exception:
+                logging.error(
+                    "Encountered an exception while staging the SAP metering sidecar. "
+                    "Continuing buildpack execution."
+                )
+                logging.debug("SAP metering sidecar staging exception details:", exc_info=True)
         else:
             logging.info("Usage metering is NOT enabled")
     except Exception:
