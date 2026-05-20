@@ -33,21 +33,26 @@ def is_version_implemented(version):
     return bool(version.major >= 6)
 
 
+def is_version_extended_supported(version):
+    # See https://docs.mendix.com/support/#extended-support
+    return bool(version.major == 8 and version.minor == 24)
+
+
 def is_version_supported(version):
     # Support for the latest three major versions:
     # https://docs.mendix.com/releasenotes/studio-pro/lts-mts
-    return bool(version.major >= 7)
+    return bool(version.major >= 9)
 
 
 def is_version_maintained(version):
     # LTS / MTS versions: https://docs.mendix.com/releasenotes/studio-pro/lts-mts
-    if version.major == 7 and version.minor == 23:
-        return True
-    if version.major == 8 and version.minor == 18:
+    if version.major == 8 and version.minor == 24:
         return True
     if version.major == 9 and version.minor == 24:
         return True
-    if version.major == 10 and version.minor == 6:
+    if version.major == 10 and version.minor == 24:
+        return True
+    if version.major == 11:
         return True
     return False
 
@@ -64,6 +69,21 @@ def stage(buildpack_dir, build_path, cache_path):
         os.path.join(buildpack_dir, "etc", "m2ee", "m2ee.yaml"),
         os.path.join(build_path, ".local", "m2ee.yaml"),
     )
+
+    scripts_path_source = os.path.join(buildpack_dir, "etc", "scripts")
+    scripts_path_dest = os.path.join(build_path, ".local", "scripts")
+    shutil.copytree(
+        scripts_path_source,
+        scripts_path_dest,
+        dirs_exist_ok=True
+    )
+
+    # Add +x permission for all sh scripts
+    for root, _, files in os.walk(scripts_path_dest):
+        for file in files:
+            file_path = os.path.join(root, file)
+            util.set_executable(file_path)
+
     resolve_runtime_dependency(buildpack_dir, build_path, cache_path)
 
 
@@ -181,7 +201,7 @@ def _activate_license():
           <entry key="id2" value="{{LICENSE_ID}}"/>
           <entry key="license_key2" value="{{LICENSE_KEY}}"/>
         </map>"""
-        
+
     license_key = os.environ.get(
         "FORCED_LICENSE_KEY", os.environ.get("LICENSE_KEY", None)
     )
@@ -609,15 +629,35 @@ def _pre_process_m2ee_yaml():
             "-i",
             f"s|BUILD_PATH|{os.getcwd()}|g; "
             f"s|RUNTIME_PORT|{util.get_runtime_port()}|; "
-            f"s|ADMIN_PORT|{util.get_admin_port()}|; "
-            f"s|PYTHONPID|{os.getpid()}|",
+            f"s|ADMIN_PORT|{util.get_admin_port()}|",
             ".local/m2ee.yaml",
+        ]
+    )
+
+
+def _pre_process_on_error_scripts():
+    logging.debug("Preprocessing on error scripts...")
+    subprocess.check_call(
+        [
+            "sed",
+            "-i",
+            f"s|PYTHONPID|{os.getpid()}|",
+            ".local/scripts/on_error.sh",
+        ]
+    )
+    subprocess.check_call(
+        [
+            "sed",
+            "-i",
+            f"s|PYTHONPID|{os.getpid()}|",
+            ".local/scripts/on_out_of_memory_error.sh",
         ]
     )
 
 
 def setup(vcap_data):
     _pre_process_m2ee_yaml()
+    _pre_process_on_error_scripts()
     _activate_license()
 
     client = m2ee_class(
