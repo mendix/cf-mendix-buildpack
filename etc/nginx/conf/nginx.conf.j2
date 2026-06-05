@@ -97,7 +97,7 @@ http {
         {{ location.body }}
         }
         {% else %}
-            if ($request_uri ~ ^/(.*\.(css|js)|forms/.*|img/.*|pages/.*|mxclientsystem/images/.*)\?[0-9]+$) {
+            if ($request_uri ~ ^/((.*\.(css|js)|forms/.*|img/.*|pages/.*|mxclientsystem/images/.*)\?[0-9]+|dist/chunks/.*\.js|.*\.(woff2?|ttf|otf|eot))$) {
                     expires 1y;
             }
         {% if location.path == "/" %}
