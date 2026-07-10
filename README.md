@@ -2,6 +2,7 @@
 
 ![Integration Test Status](https://github.com/mendix/cf-mendix-buildpack/workflows/Run%20Integration%20Tests/badge.svg?branch=develop) [![Known Vulnerabilities](https://snyk.io/test/github/mendix/cf-mendix-buildpack/badge.svg)](https://snyk.io/test/github/mendix/cf-mendix-buildpack)
 
+**Warning** - We strongly encourage customers to begin their journey toward [Mendix Portable Runtime](https://docs.mendix.com/developerportal/deploy/portable-app-distribution-deploy/), as the Cloud Foundry Buildpack will no longer support Mendix 12 and future Runtime versions, marking the start of the deprecation process. For more information, see the [blog release](https://www.mendix.com/blog/mendix-portable-runtime/) 
 This document contains general information on the Mendix Cloud Foundry Buildpack.
 
 The buildpack is heavily tied to the Mendix Public Cloud, but can be used independently.
