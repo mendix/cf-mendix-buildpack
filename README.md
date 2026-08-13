@@ -4,6 +4,8 @@
 
 This document contains general information on the Mendix Cloud Foundry Buildpack.
 
+**Warning** - We strongly encourage customers to begin their journey toward [Mendix Portable Runtime](https://docs.mendix.com/developerportal/deploy/portable-app-distribution-deploy/), as the Cloud Foundry Buildpack will no longer support Mendix 12 and future Runtime versions, marking the start of the deprecation process. For more information, see the [blog release](https://www.mendix.com/blog/mendix-portable-runtime/) 
+
 The buildpack is heavily tied to the Mendix Public Cloud, but can be used independently.
 Release notes are available for the [buildpack](https://github.com/mendix/cf-mendix-buildpack/releases/), [Mendix itself](https://docs.mendix.com/releasenotes/studio-pro/) and the [Mendix Public Cloud](https://docs.mendix.com/releasenotes/developer-portal/deployment).
 
