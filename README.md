@@ -273,6 +273,16 @@ Selection based on name `hana` and tags `["hana", "database", "relational"]`.
   ],
 ```
 
+#### SAP HANA JDBC Client JAR
+
+To include the SAP HANA JDBC client JAR (`ngdbc.jar`) in your app's classpath at staging time, set the following environment variable:
+
+```shell
+cf set-env <YOUR_APP> MXRUNTIME_IncludeSAPHanaClient true
+```
+
+When enabled, the buildpack fetches the latest `ngdbc.jar` from the Mendix CDN and places it in `model/lib/userlib/`, making it available to the Mendix runtime. If the download fails, staging continues without the JAR and a warning is logged.
+
 ### Connect an External File Store
 
 The Mendix Runtime supports multiple external file stores: AWS S3, Azure Storage and Swift (Bluemix Object Storage).
