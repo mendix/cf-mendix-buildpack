@@ -9,6 +9,7 @@ import subprocess
 import time
 
 import backoff
+import glob
 import requests
 from buildpack import util
 from lib.m2ee import M2EE as m2ee_class
@@ -62,9 +63,19 @@ def _stage_hana_client(build_dir):
     if not enabled:
         return
 
+    model_lib = os.path.join(build_dir, "model", "lib")
+    for lib_dir in ("userlib", "vendorlib"):
+        existing = glob.glob(os.path.join(model_lib, lib_dir, "ngdbc-*.jar"))
+        if existing:
+            logging.info(
+                "SAP HANA client JAR [%s] already present, skipping download",
+                existing[0],
+            )
+            return
+
     cdn_prefix = util.BLOBSTORE_BUILDPACK_DEFAULT_PREFIX + "sap-hana-client"
     try:
-        dest = os.path.join(build_dir, "model", "lib", "userlib")
+        dest = os.path.join(model_lib, "userlib")
         util.mkdir_p(dest)
         version_url = util.get_blobstore_url(f"{cdn_prefix}/version.txt")
         resp = requests.get(version_url, timeout=10)
