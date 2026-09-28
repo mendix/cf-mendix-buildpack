@@ -99,3 +99,14 @@ class TestCaseRdsDryRun(TestCase):
         assert config["DatabaseJdbcUrl"].find("sslmode") >= 0
         assert config["DatabaseUserName"] == "ua98s7?ananla"
         assert config["DatabasePassword"] == "na8na+nlay&aona0--anbs"
+
+    def test_rds_ap_southeast_7_uses_regional_certificate(self):
+        os.environ["VCAP_SERVICES"] = self.rds_vcap_example.replace(
+            "eu-west-1", "ap-southeast-7"
+        )
+
+        factory = DatabaseConfigurationFactory()
+
+        config = factory.get_instance().get_m2ee_configuration()
+
+        assert "ap-southeast-7-bundle.pem" in config["DatabaseJdbcUrl"]
