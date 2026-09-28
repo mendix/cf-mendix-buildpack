@@ -9,6 +9,8 @@ import subprocess
 import time
 
 import backoff
+import glob
+import requests
 from buildpack import util
 from lib.m2ee import M2EE as m2ee_class
 from lib.m2ee.version import MXVersion
@@ -56,6 +58,42 @@ def is_version_maintained(version):
         return True
     return False
 
+def _stage_hana_client(build_dir):
+    enabled = os.environ.get("MXRUNTIME_IncludeSAPHanaClient", "").strip().lower() == "true"
+    if not enabled:
+        return
+
+    model_lib = os.path.join(build_dir, "model", "lib")
+    for lib_dir in ("userlib", "vendorlib"):
+        existing = glob.glob(os.path.join(model_lib, lib_dir, "ngdbc-*.jar"))
+        if existing:
+            logging.info(
+                "SAP HANA client JAR [%s] already present, skipping download",
+                existing[0],
+            )
+            return
+
+    cdn_prefix = util.BLOBSTORE_BUILDPACK_DEFAULT_PREFIX + "sap-hana-client"
+    try:
+        dest = os.path.join(model_lib, "userlib")
+        util.mkdir_p(dest)
+        version_url = util.get_blobstore_url(f"{cdn_prefix}/version.txt")
+        resp = requests.get(version_url, timeout=10)
+        resp.raise_for_status()
+        jar_name = f"ngdbc-{resp.text.strip()}.jar"
+        jar_url = util.get_blobstore_url(f"{cdn_prefix}/{jar_name}")
+        util.download(jar_url, os.path.join(dest, jar_name))
+        logging.info(
+            "SAP HANA client JAR [%s] staged to [%s]",
+            jar_name,
+            dest,
+        )
+    except Exception:
+        logging.warning(
+            "Failed to stage SAP HANA client JAR, continuing deployment...",
+            exc_info=True,
+        )
+
 
 def stage(buildpack_dir, build_path, cache_path):
     logging.debug("Creating directory structure for Mendix runtime...")
@@ -85,6 +123,7 @@ def stage(buildpack_dir, build_path, cache_path):
             util.set_executable(file_path)
 
     resolve_runtime_dependency(buildpack_dir, build_path, cache_path)
+    _stage_hana_client(build_path)
 
 
 FORCED_MXRUNTIME_URL_KEY = "FORCED_MXRUNTIME_URL"
