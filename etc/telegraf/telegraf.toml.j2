@@ -104,6 +104,7 @@
                 numbackends AS connections,
                 pg_database_size(datname) AS database_size
             FROM pg_stat_database
+            WHERE datname = '{{ db_config["DatabaseName"] }}'
         """
         version = 901
         withdbname = false
@@ -116,6 +117,7 @@
                 datname,
                 deadlocks
             FROM pg_stat_database
+            WHERE datname = '{{ db_config["DatabaseName"] }}'
         """
         version = 920
         withdbname = false
@@ -128,6 +130,7 @@
                 datname,
                 2^31 - age(datfrozenxid) AS before_xid_wraparound
             FROM pg_database
+            WHERE datname = '{{ db_config["DatabaseName"] }}'
         """
         version = 901
         withdbname = false
@@ -175,6 +178,7 @@
                 MAX(setting) AS max_connections,
                 SUM(numbackends)/MAX(setting) AS percent_usage_connections
             FROM pg_stat_database, max_con
+            WHERE datname = '{{ db_config["DatabaseName"] }}'
         """
         version = 901
         withdbname = false
@@ -216,6 +220,7 @@
                 tup_returned AS rows_returned_rate,
                 tup_updated AS rows_updated_rate
             FROM pg_stat_database
+            WHERE datname = '{{ db_config["DatabaseName"] }}'
         """
         version = 901
         withdbname = false
@@ -228,6 +233,7 @@
                 datname,
                 temp_files AS temp_files_rate
             FROM pg_stat_database
+            WHERE datname = '{{ db_config["DatabaseName"] }}'
         """
         version = 920
         withdbname = false

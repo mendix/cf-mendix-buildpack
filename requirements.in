@@ -1,5 +1,5 @@
 backoff==2.2.1
-certifi==2024.8.30
+certifi==2026.10.19
 cryptography==50.0.0
 distro==1.9.0
 httplib2==0.32.0
