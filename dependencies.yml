@@ -44,6 +44,7 @@ dependencies:
         - "11": 11.0.33
         - "17": 17.0.21
         - "21": 21.0.13
+        - "25": 25.0.1
   logs:
     mendix-logfilter:
       artifact: logs/mendix-logfilter-{{version}}.tar.gz
