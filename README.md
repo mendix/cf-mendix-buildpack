@@ -63,17 +63,18 @@ Additionally, we recommend a base level knowledge of Cloud Foundry. You should a
 
 ## Supported Mendix Versions
 
-The latest [buildpack release](https://github.com/mendix/cf-mendix-buildpack/releases/latest) supports all [officially-supported](https://docs.mendix.com/releasenotes/studio-pro/lts-mts) Mendix versions (7, 8 and 9).
+The latest [buildpack release](https://github.com/mendix/cf-mendix-buildpack/releases/latest) supports all [officially-supported](https://docs.mendix.com/releasenotes/studio-pro/lts-mts) Mendix versions.
 
 The following table shows which specific buildpack release introduced or removed support for specific Mendix versions.
 
-| Mendix Major Version | Supported | End-of-Support |
-| -------------------- | --------- | -------------- |
-| `10`                 | `v4.24.0` | -              |
-| `9`                  | `v4.24.0` | -              |
-| `8`                  | `v3.4.0`  | -              |
-| `7`                  | `v3.1.0`  | -              |
-| `6`                  | `v1.0`    | `v4.16.0`      |
+| Mendix Major Version | Supported |
+| -------------------- | --------- |
+| `11`                 | `v5.0.15` | 
+| `10`                 | `v4.24.0` |
+| `9`                  | `v4.24.0` |
+| `8`                  | `v3.4.0`  | 
+| `7`                  | `v3.1.0`  |
+| `6`                  | `v1.0`    |
 
 We recommend using a [maintained (LTS / MTS)](https://docs.mendix.com/releasenotes/studio-pro/lts-mts) Mendix version. Additionally, we recommend to always [use / "pin to" a specific buildpack release](#buildpack-releases-and-version-pinning).
 
