@@ -1,4 +1,5 @@
 from unittest import TestCase
+from unittest.mock import patch
 
 from lib.m2ee.client import M2EEResponse
 from lib.m2ee.munin import (
@@ -6,7 +7,7 @@ from lib.m2ee.munin import (
     _get_jre_major_version_from_version_string,
 )
 from lib.m2ee.version import MXVersion
-from buildpack.core.java import _get_major_version
+from buildpack.core.java import _get_major_version, get_java_major_version
 
 
 class TestJREVersionFromString(TestCase):
@@ -32,6 +33,7 @@ class TestJREVersionFromString(TestCase):
             ("1.8.0_202", 8),
             ("8u233", 8),
             ("11.0.3", 11),
+            ("25.0.5", 25),
         )
         for version_string, major_version in jre_versions:
             with self.subTest():
@@ -39,6 +41,17 @@ class TestJREVersionFromString(TestCase):
                     major_version,
                     _get_major_version(version_string),
                 )
+
+
+class TestGetJavaMajorVersion(TestCase):
+    @patch.dict("os.environ", {}, clear=True)
+    @patch("buildpack.core.java.runtime.get_metadata_value", return_value=25)
+    def test_java_25_from_metadata(self, _):
+        self.assertEqual(25, get_java_major_version(MXVersion("11.0.0")))
+
+    @patch.dict("os.environ", {"JAVA_VERSION": "25"}, clear=True)
+    def test_java_25_from_override(self):
+        self.assertEqual(25, get_java_major_version(MXVersion("11.0.0")))
 
 
 class TestGuessJavaVersion(TestCase):

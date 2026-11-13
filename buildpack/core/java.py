@@ -28,6 +28,8 @@ def get_java_major_version(runtime_version, build_path=BASE_PATH):
             result = 17
         elif 21 == result:
             result = 21
+        elif 25 == result:
+            result = 25
         else:
             result = 11
     major_version = _get_major_version(result)
