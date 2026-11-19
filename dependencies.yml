@@ -80,10 +80,10 @@ dependencies:
       version: 8.24.0
   nginx:
     artifact: nginx_{{ version }}_linux_x64_{{ fs }}_{{ commit }}.tgz
-    commit: 8ae9e822
+    commit: d4043e47
     fs: cflinuxfs4
     cpe: cpe:2.3:a:f5:nginx:{{ version }}:*:*:*:*:*:*:*
-    version: 1.30.4
+    version: 1.30.7
   ruby:
     artifact: ruby/ruby_{{ version }}_linux_x64_{{ fs }}_{{ commit }}.tgz
     commit: 5fed98f8
